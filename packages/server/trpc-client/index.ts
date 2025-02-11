@@ -2,7 +2,7 @@ import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "../src/api/routes";
 import superjson from "superjson";
 
-const trpc = createTRPCProxyClient<AppRouter>({
+export const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
       url: "http://0.0.0.0:1337/trpc",
@@ -21,5 +21,6 @@ async function main() {
   const exec = await trpc.a.exec.mutate("test");
   console.log(exec);
 }
-
-void main();
+if (import.meta.main) {
+  void main();
+}

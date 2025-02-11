@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc";
+import { stacksRouter } from "./stacks";
+import { linksRouter } from "./links";
 
 export const appRouter = router({
+  stacks: stacksRouter,
+  lnks: linksRouter,
+
+  // test are public procedures & routes
   a: router({
     test: publicProcedure.query(async () => {
       return "A test! 👋";

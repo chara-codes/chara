@@ -6,7 +6,8 @@
     "@types/better-sqlite3": "^7.6.12",
     "@types/bun": "latest",
     "drizzle-kit": "^0.30.4",
-    "trpc-ui": "^1.0.12"
+    "trpc-ui": "^1.0.12",
+    "vitest": "^3.0.5"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -17,16 +18,20 @@
     "start": "./dist/server",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "vitest"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/trpc": "^1.1.0",
     "@elysiajs/websocket": "^0.2.8",
+    "@grotto/logysia": "^0.1.6",
+    "@libsql/client": "^0.14.0",
     "@trpc/client": "^10.45.2",
     "@trpc/server": "^10.45.2",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.39.2",
+    "drizzle-zod": "^0.7.0",
     "elysia": "^1.2.12",
     "picocolors": "^1.1.1",
     "superjson": "^2.2.2",
