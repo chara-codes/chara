@@ -4,11 +4,10 @@
   "module": "index.ts",
   "type": "module",
   "workspaces": [
-    "packages/a",
-    "packages/b"
+    "packages/*"
   ],
   "scripts": {
-    "clean": "rm -rf node_modules packages/a/node_modules packages/b/node_modules bun.lockb packages/a/bun.lockb packages/b/bun.lockb"
+    "clean": "rm -rf node_modules packages/*/node_modules bun.lockb packages/*/bun.lockb"
   },
   "devDependencies": {
     "@types/bun": "^1.2.2"

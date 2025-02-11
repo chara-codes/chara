@@ -1,4 +1,6 @@
-# Chara Codes
+<p align="center">
+    <img src="chara-logo.jpeg" alt="Chara Codes" title="Chara Codes" width=300/>
+</p>
 
 ## Table of Contents
 - [Introduction](#introduction)

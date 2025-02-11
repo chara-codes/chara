@@ -1,0 +1,24 @@
+{
+  "name": "chara",
+  "module": "src/index.ts",
+  "bin": {
+    "chara": "./dist/chara"
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outfile ./dist/chara --compile",
+    "dev": "bun ./src/index.ts",
+    "start": "./dist/chara"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/yargs": "^17.0.33",
+    "vitest": "^3.0.5"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "yargs": "^17.7.2"
+  }
+}
