@@ -1,6 +1,13 @@
-import { trpc } from ".";
+import { createTRPCProxyClient, unstable_httpBatchStreamLink } from "@trpc/client";
+import type { AppRouter } from "../src";
 
 async function main() {
+  const url = "http://localhost:3030/trpc/";
+
+  const trpc = createTRPCProxyClient<AppRouter>({
+    links: [unstable_httpBatchStreamLink({ url })],
+  });
+
   const stack = await trpc.stacks.create.mutate({
     title: `title ${Math.random()}`,
     description: `description ${Math.random()}`,
