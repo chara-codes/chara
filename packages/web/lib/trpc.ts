@@ -8,7 +8,6 @@ import {
   loggerLink,
   unstable_httpBatchStreamLink,
 } from "@trpc/client";
-import type { Observable } from "@trpc/server/observable";
 import type { inferRouterOutputs } from "@trpc/server";
 
 type RouterOutput = inferRouterOutputs<AppRouter>;
