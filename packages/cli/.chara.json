@@ -1,0 +1,11 @@
+{
+  "host": "localhost",
+  "port": 3000,
+  "dev": "bun dev",
+  "mcpServers": {
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
+    }
+  }
+}

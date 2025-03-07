@@ -1,4 +1,4 @@
-import { aiProvider } from "./ai";
+import { aiProvider } from "../ai/ai";
 import { db } from "./db";
 
 export const createContext = () => {

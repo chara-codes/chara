@@ -1,1 +1,3 @@
-export * from "./server";
+import type { AppRouter } from "./server";
+
+export type { AppRouter };

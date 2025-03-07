@@ -1,5 +1,6 @@
 {
   "name": "chara",
+  "version": "1.0.0",
   "module": "src/index.ts",
   "bin": {
     "chara": "./dist/chara"
@@ -19,6 +20,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0",
     "yargs": "^17.7.2"
   }
 }

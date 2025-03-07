@@ -5,11 +5,14 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
     "@types/bun": "latest",
-    "drizzle-kit": "^0.30.4",
-    "vitest": "^3.0.5"
+    "@types/node": "^22.13.9",
+    "drizzle-kit": "^0.30.5",
+    "mastra": "^0.2.8",
+    "tsx": "^4.19.3",
+    "vitest": "^3.0.7"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.7.3"
   },
   "scripts": {
     "dev": "bun --watch src/server.ts",
@@ -21,25 +24,27 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.1.6",
-    "@ai-sdk/azure": "^1.1.9",
-    "@ai-sdk/cohere": "^1.1.8",
-    "@ai-sdk/deepinfra": "^0.1.9",
-    "@ai-sdk/deepseek": "^0.1.8",
-    "@ai-sdk/mistral": "^1.1.8",
-    "@ai-sdk/openai": "^1.1.9",
-    "@ai-sdk/openai-compatible": "^0.1.8",
+    "@ai-sdk/anthropic": "^1.1.14",
+    "@ai-sdk/azure": "^1.2.0",
+    "@ai-sdk/cohere": "^1.1.12",
+    "@ai-sdk/deepinfra": "^0.1.13",
+    "@ai-sdk/deepseek": "^0.1.12",
+    "@ai-sdk/mistral": "^1.1.13",
+    "@ai-sdk/openai": "^1.2.0",
+    "@ai-sdk/openai-compatible": "^0.1.12",
     "@libsql/client": "^0.14.0",
-    "@trpc/client": "^11.0.0-rc.764",
-    "@trpc/server": "^11.0.0-rc.764",
-    "ai": "^4.1.34",
+    "@mastra/core": "^0.4.4",
+    "@trpc/client": "^11.0.0-rc.824",
+    "@trpc/server": "^11.0.0-rc.824",
+    "ai": "^4.1.51",
     "dotenv": "^16.4.7",
-    "drizzle-orm": "^0.39.2",
+    "drizzle-orm": "^0.39.3",
     "drizzle-zod": "^0.7.0",
     "fastify": "^5.2.1",
     "ollama-ai-provider": "^1.2.0",
     "picocolors": "^1.1.1",
     "superjson": "^2.2.2",
-    "zod": "^3.24.1"
+    "trpc-bun-adapter": "^1.2.2",
+    "zod": "^3.24.2"
   }
 }
