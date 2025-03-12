@@ -17,11 +17,12 @@ async function main() {
     links: [unstable_httpBatchStreamLink({ url })],
   });
 
-  const answers = await proxy.messages.ask.query("Tell me a joke about Obama?")
+  const answers = await proxy.messages.ask.query({
+    question: "Tell me a long joke about Ollama?",
+  });
   for await (const answer of answers) {
     process.stdout.write(answer);
   }
-
 }
 
 main().catch((err) => {

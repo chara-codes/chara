@@ -11,5 +11,9 @@
   },
   "devDependencies": {
     "@types/bun": "^1.2.2"
-  }
+  },
+  "trustedDependencies": [
+    "@swc/core",
+    "protobufjs"
+  ]
 }

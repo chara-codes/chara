@@ -9,6 +9,10 @@ export const messagesRouter = router({
       const { textStream } = streamText({
         messages: [
           {
+            role: "system",
+            content: "Answer for question in markdown format",
+          },
+          {
             role: "user",
             content: input.question,
           },

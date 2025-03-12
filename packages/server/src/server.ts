@@ -1,45 +1,30 @@
 import { initTRPC, tracked } from "@trpc/server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import { z } from "zod";
 import { linksRouter } from "./api/routes/links";
 import { stacksRouter } from "./api/routes/stacks";
 import { messagesRouter } from "./api/routes/messages";
 import { createContext, type Context } from "./api/context";
-import { bold } from "picocolors";
+import { cyan } from "picocolors";
 import { serve } from "bun";
 import { createBunWSHandler } from "./utils/create-bun-ws-handler";
-import EventEmitter, { on } from "node:events";
+import { myLogger as logger } from "./utils/logger";
+import { on } from "node:events";
+import { chatRouter } from "./api/routes/chat";
+import { ee } from "./utils/event-emitter";
+import type { subscribe } from "node:diagnostics_channel";
+import { subscription } from "./api/routes/subscription";
 
 const t = initTRPC.context<Context>().create();
-
-const ee = new EventEmitter();
 
 const publicProcedure = t.procedure;
 const router = t.router;
 
 export const appRouter = router({
-  hello: publicProcedure.input(z.string().nullish()).query(({ input }) => {
-    return `hello ${input ?? "world"}`;
-  }),
-  iterable: publicProcedure.query(async function* () {
-    for (let i = 0; i < 3; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      yield i;
-    }
-  }),
   lnks: linksRouter,
   stacks: stacksRouter,
   messages: messagesRouter,
-  aaa: publicProcedure.subscription(async function* (opts) {
-    // listen for new events
-    for await (const [data] of on(ee, "add", {
-      // Passing the AbortSignal from the request automatically cancels the event emitter when the request is aborted
-      signal: opts.signal,
-    })) {
-      console.log(data);
-      yield tracked(data.test, data);
-    }
-  }),
+  chat: chatRouter,
+  subscribe: subscription,
 });
 
 export type AppRouter = typeof appRouter;
@@ -48,7 +33,8 @@ const websocket = createBunWSHandler({
   router: appRouter,
   // optional arguments:
   createContext,
-  onError: console.error,
+  onError: (error) =>
+    logger.error(`WebSocket error: ${JSON.stringify(error, null, 2)}`),
   batching: {
     enabled: true,
   },
@@ -84,8 +70,8 @@ const server = serve({
         ? undefined
         : new Response("WebSocket upgrade error", { status: 400 });
     }
-    console.log(`${bold(request.method)} ${request.url}`);
-    console.log(request.headers);
+    logger.request(request.method, request.url);
+    logger.info(`Headers: ${JSON.stringify(request.headers, null, 2)}`);
     const response = await fetchRequestHandler({
       endpoint: "/trpc",
       req: request,
@@ -97,5 +83,8 @@ const server = serve({
   },
   websocket,
 });
-console.log(`🚀 Server ready at: http://localhost:${server.port}/`);
-console.log(websocket);
+logger.server(`Server ready at: http://localhost:${server.port}/`);
+logger.success("WebSocket handler initialized");
+logger.info("Available endpoints:");
+logger.api(`- HTTP: ${cyan(`http://localhost:${server.port}/trpc`)}`);
+logger.api(`- WebSocket: ${cyan(`ws://localhost:${server.port}/chat`)}`);
