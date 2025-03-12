@@ -52,6 +52,51 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+            color: 'hsl(var(--foreground))',
+            a: {
+              color: 'hsl(var(--primary))',
+              textDecoration: 'underline',
+              fontWeight: '500',
+              '&:hover': {
+                opacity: '0.8',
+              },
+            },
+            blockquote: {
+              borderLeftColor: 'hsl(var(--primary))',
+              color: 'hsl(var(--foreground))',
+            },
+            'h1,h2,h3,h4,h5,h6': {
+              color: 'hsl(var(--foreground))',
+            },
+            hr: { borderColor: 'hsl(var(--border))' },
+            'ol > li::marker': {
+              color: 'hsl(var(--muted-foreground))',
+            },
+            'ul > li::marker': {
+              color: 'hsl(var(--muted-foreground))',
+            },
+            strong: { color: 'hsl(var(--foreground))' },
+            code: {
+              color: 'hsl(var(--foreground))',
+              backgroundColor: 'hsl(var(--muted))',
+            },
+            pre: {
+              backgroundColor: 'hsl(var(--muted))',
+              color: 'hsl(var(--foreground))',
+            },
+            thead: {
+              borderBottomColor: 'hsl(var(--border))',
+            },
+            'tbody tr': {
+              borderBottomColor: 'hsl(var(--border))',
+            },
+          },
+        },
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -59,6 +104,9 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require('@tailwindcss/typography'),
+  ],
 }
 

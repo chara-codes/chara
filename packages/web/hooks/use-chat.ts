@@ -1,10 +1,10 @@
 "use client";
 import React from "react";
-import { useStreamText } from "@/hooks/use-stream-text";
-import { parseStreamChunk } from "./stream-parser";
+import { parseStreamChunk } from "../lib/stream-parser";
+import { useAIChat } from "@/hooks/use-ai-chat";
 
 // Custom hook to handle chat with tRPC
-export function useTrpcChat() {
+export function useChat() {
   const [messages, setMessages] = React.useState<
     Array<{
       id: string;
@@ -53,7 +53,9 @@ export function useTrpcChat() {
     setStatus("submitted");
     setError(null);
 
-    const { stream } = useStreamText();
+    const { stream } = useAIChat<{ question: string }>(
+      "http://localhost:3030/trpc",
+    );
     try {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -78,7 +80,7 @@ export function useTrpcChat() {
       ]);
       setStatus("streaming");
 
-      const chunks = await stream(input, signal);
+      const chunks = await stream({ question: input }, signal);
       let fullResponse = "";
 
       for await (const chunk of chunks) {
@@ -178,7 +180,7 @@ export function useTrpcChat() {
     setError(null);
     setStatus("submitted");
 
-    const { stream } = useStreamText();
+    const { stream } = useAIChat("http://localhost:3030/trpc");
     try {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();

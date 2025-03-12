@@ -1,8 +1,8 @@
-export const useStreamText = () => {
-  const stream = async (input: string, signal: AbortSignal) => {
+export const useAIChat = <Input>(url: string) => {
+  const stream = async (input: Input, signal: AbortSignal) => {
     const params: Record<string, string | number> = {
       batch: 1,
-      input: JSON.stringify({ 0: { question: input } }),
+      input: JSON.stringify({ 0: input }),
     };
 
     const query = Object.keys(params)
@@ -12,18 +12,15 @@ export const useStreamText = () => {
       )
       .join("&");
 
-    const response = await fetch(
-      `http://localhost:3030/trpc/messages.ask?${query}`,
-      {
-        signal,
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "trpc-accept": "application/jsonl",
-          "transfer-encoding": "chunked",
-        },
+    const response = await fetch(`${url}/chat.streamText?${query}`, {
+      signal,
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "trpc-accept": "application/jsonl",
+        "transfer-encoding": "chunked",
       },
-    );
+    });
 
     return {
       async *[Symbol.asyncIterator]() {

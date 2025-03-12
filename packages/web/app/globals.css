@@ -74,4 +74,59 @@
     @apply bg-background text-foreground;
   }
 }
+/* Markdown styling */
+.markdown-container pre {
+  position: relative;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.markdown-container pre > code {
+  display: grid;
+  padding: 1rem;
+  overflow-x: auto;
+  background-color: transparent !important;
+}
+
+.markdown-container code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+}
+
+.markdown-container table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.markdown-container table th,
+.markdown-container table td {
+  padding: 0.5rem;
+  border: 1px solid hsl(var(--border));
+}
+
+.markdown-container table th {
+  background-color: hsl(var(--muted));
+  font-weight: 600;
+  text-align: left;
+}
+
+.markdown-container img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.markdown-container figure {
+  margin: 1.5rem 0;
+}
+
+.markdown-container figcaption {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  text-align: center;
+  margin-top: 0.5rem;
+}
 
