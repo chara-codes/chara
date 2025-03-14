@@ -16,6 +16,7 @@
 ## Introduction
 
 Chara Codes is an AI-powered development environment designed to streamline frontend development workflows. It combines AI assistance with intuitive tools to help developers write, review, and manage code more efficiently. The platform provides real-time AI suggestions, code generation, and project management capabilities through a modern web interface.
+In Greek, the word 'chara' (χαρά) means 'joy' or 'happiness'. Chara Codes aims to bring joy to developers by simplifying and enhancing their coding experience.
 
 ## Features
 
@@ -53,7 +54,7 @@ The project is organized as a monorepo with the following packages:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/chara.git
+git clone git@github.com:chara-codes/chara.git
 
 # Install dependencies
 bun install
@@ -124,4 +125,10 @@ See individual package READMEs for detailed configuration options.
 
 ## License
 
-2025 Chara Codes MIT License
+MIT License
+
+Copyright (c) 2025 Chara Codes
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.

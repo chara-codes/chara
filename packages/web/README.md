@@ -97,4 +97,8 @@ This web package is designed to work with the following packages in the Chara wo
 
 ## License
 
-This project is proprietary and confidential. All rights reserved.
+MIT License
+
+Copyright (c) 2025 Chara Codes
+
+This project is licensed under the MIT License - see the main [LICENSE](../../LICENSE) file for details.

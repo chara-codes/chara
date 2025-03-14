@@ -139,4 +139,8 @@ async function main() {
 
 ## License
 
-This project is proprietary and confidential. All rights reserved.
+MIT License
+
+Copyright (c) 2025 Chara Codes
+
+This project is licensed under the MIT License - see the main [LICENSE](../../LICENSE) file for details.
