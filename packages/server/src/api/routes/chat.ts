@@ -2,6 +2,39 @@ import { streamObject, streamText } from "ai";
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc";
 
+export const messageSchema = z.object({
+  content: z
+    .string()
+    .describe(
+      "Explanation of the changes and actions needed to be execute to implement the task (in markdown for better formatting)",
+    ),
+  fileChanges: z
+    .array(
+      z.object({
+        id: z.string().describe("File id, should include path and filename"),
+        filename: z.string(),
+        type: z.enum(["add", "delete", "modify"]).describe("Type of changes"),
+        description: z.string().describe("Short description of the chages "),
+        content: z.string().describe("File content that should be saved"),
+      }),
+    )
+    .describe("List of files that should be changed")
+    .optional(),
+  commands: z
+    .array(
+      z.object({
+        command: z.string().describe("Command to execute"),
+        description: z.string().optional(),
+      }),
+    )
+    .describe(
+      "Array of commands that needs to be executed, ordered by priority",
+    )
+    .optional(),
+});
+
+export type MessageSchema = z.infer<typeof messageSchema>;
+
 export const chatRouter = router({
   streamText: publicProcedure
     .input(z.object({ question: z.string() }))
@@ -19,21 +52,24 @@ export const chatRouter = router({
         yield textPart;
       }
     }),
-  agents: publicProcedure
-    .input(z.object({ question: z.string() }))
-    .query(async function* ({ ctx }) {
+  streamObject: publicProcedure
+    .input(z.object({ message: z.string() }))
+    .mutation(async function* ({ ctx, input }) {
       const { partialObjectStream } = streamObject({
-        model: ctx.ai("gpt-4-turbo"),
-        schema: z.object({
-          recipe: z.object({
-            name: z.string(),
-            ingredients: z.array(z.string()),
-            steps: z.array(z.string()),
-          }),
-        }),
-        prompt: "Generate a lasagna recipe.",
+        model: ctx.ai(process.env.AI_MODEL || "gpt-4o-mini"),
+        schema: messageSchema,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are expirienced software engineer and need to analyze the request and suggest the solution. The solution should include the list of files that should be changed, commands that needs to be executed and the explanation of the changes and actions needed to be execute to implement the task.",
+          },
+          {
+            role: "user",
+            content: input.message,
+          },
+        ],
       });
-
       for await (const partialObject of partialObjectStream) {
         yield partialObject;
       }

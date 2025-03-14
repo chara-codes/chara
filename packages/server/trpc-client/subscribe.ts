@@ -7,7 +7,7 @@ import {
 import type { AppRouter } from "../src";
 // create persistent WebSocket connection
 const wsClient = createWSClient({
-  url: "ws://localhost:3030/chat",
+  url: "ws://localhost:3030/events",
 });
 // configure TRPCClient to use WebSockets transport
 const client = createTRPCClient<AppRouter>({
@@ -19,7 +19,7 @@ const client = createTRPCClient<AppRouter>({
   ],
 });
 
-const res = client.aaa.subscribe(undefined, {
+const res = client.events.subscribe(undefined, {
   onData(data) {
     console.log("Received data:", data);
   },

@@ -2,40 +2,85 @@
     <img src="chara-logo.jpeg" alt="Chara Codes" title="Chara Codes" width=300/>
 </p>
 
-## Table of Contents
+# Table of Contents
 - [Introduction](#introduction)
-- [Installation](#installation)
-- [Usage](#usage)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
 - [Architecture](#architecture)
+- [Configuration](#configuration)
 - [Contributing](#contributing)
-- [Questions](#questions)
+- [Documentation](#documentation)
 - [License](#license)
 
 ## Introduction
 
-Chara codes is a AI powered tool to make frontend development easier.
-It is a tool that can generate frontend code based on the design.
-It can generate code for HTML, CSS, and JavaScript. You can configure technologies and frameworks you want to use.
+Chara Codes is an AI-powered development environment designed to streamline frontend development workflows. It combines AI assistance with intuitive tools to help developers write, review, and manage code more efficiently. The platform provides real-time AI suggestions, code generation, and project management capabilities through a modern web interface.
 
-## Installation
+## Features
 
-// TODO
+- 🤖 AI-powered code generation and suggestions
+- 💻 Intuitive split interface with chat and preview panels
+- 📝 Real-time code preview and editing
+- 🔄 Seamless integration with multiple AI providers
+- 🌐 Built-in Model Context Protocol (MCP) support
+- 🚀 Project synchronization between local and remote environments
+- 📊 Advanced code visualization and navigation
+- 🔍 Smart code analysis and suggestions
 
-## Usage
+## Project Structure
 
-// TODO
+The project is organized as a monorepo with the following packages:
+
+- `@chara/web` - Next.js frontend application
+  - Split interface for chat and preview
+  - Real-time code editing and preview
+  - Responsive UI built with Tailwind and shadcn/ui
+
+- `@chara/server` - Backend server application
+  - tRPC API with WebSocket support
+  - Multiple AI provider integrations
+  - SQLite/LibSQL database with Drizzle ORM
+  - Streaming response support
+
+- `@chara/cli` - Command line interface
+  - Project management and configuration
+  - Development environment setup
+  - MCP server integration
+  - Local-remote sync capabilities
+
+## Getting Started
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/chara.git
+
+# Install dependencies
+bun install
+
+# Start development servers
+bun dev
+```
 
 ## Architecture
 
-// TODO
+Chara uses a modern stack with:
 
-## Contributing
+- **Frontend**: Next.js, React, TailwindCSS, shadcn/ui
+- **Backend**: Bun, tRPC, Drizzle ORM, LibSQL
+- **AI**: Multiple provider support through AI SDK
+- **Real-time**: WebSocket for live updates
+- **CLI**: Bun-powered command line tool
 
-// TODO
+## Configuration
 
-## Questions
+Each package can be configured independently:
 
-// TODO
+- **Web**: Environment variables for API endpoints and features
+- **Server**: `.env` file for database and AI provider settings
+- **CLI**: `.chara.json` for project-specific configuration
+
+See individual package READMEs for detailed configuration options.
 
 ## Documentation
 

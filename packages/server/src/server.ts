@@ -1,4 +1,4 @@
-import { initTRPC, tracked } from "@trpc/server";
+import { initTRPC } from "@trpc/server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { linksRouter } from "./api/routes/links";
 import { stacksRouter } from "./api/routes/stacks";
@@ -8,10 +8,7 @@ import { cyan } from "picocolors";
 import { serve } from "bun";
 import { createBunWSHandler } from "./utils/create-bun-ws-handler";
 import { myLogger as logger } from "./utils/logger";
-import { on } from "node:events";
 import { chatRouter } from "./api/routes/chat";
-import { ee } from "./utils/event-emitter";
-import type { subscribe } from "node:diagnostics_channel";
 import { subscription } from "./api/routes/subscription";
 
 const t = initTRPC.context<Context>().create();
@@ -24,7 +21,7 @@ export const appRouter = router({
   stacks: stacksRouter,
   messages: messagesRouter,
   chat: chatRouter,
-  subscribe: subscription,
+  events: subscription,
 });
 
 export type AppRouter = typeof appRouter;
@@ -44,7 +41,8 @@ const server = serve({
   port: 3030,
   async fetch(request): Promise<Response | undefined> {
     const url = new URL(request.url);
-
+    logger.request(request.method, request.url);
+    logger.info(`Headers: ${JSON.stringify(request.headers, null, 2)}`);
     // Only used for start-server-and-test package that
     // expects a 200 OK to start testing the server
     if (request.method === "HEAD" || request.method === "OPTIONS") {
@@ -62,7 +60,7 @@ const server = serve({
       return new Response("hello world");
     }
 
-    if (url.pathname === "/chat") {
+    if (url.pathname === "/events") {
       const success = server.upgrade(request, {
         data: { username: "test", req: request },
       });
@@ -70,8 +68,38 @@ const server = serve({
         ? undefined
         : new Response("WebSocket upgrade error", { status: 400 });
     }
-    logger.request(request.method, request.url);
-    logger.info(`Headers: ${JSON.stringify(request.headers, null, 2)}`);
+
+    if (url.pathname === "/chat") {
+      const generatorFunction = async function* () {
+        for (let i = 0; i < 5; i++) {
+          yield `Data chunk ${i}\n`;
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
+        }
+      };
+      const chatGenerator = generatorFunction(); // engineerAgent(body.message);
+
+      // Create a ReadableStream from the generator
+      const chatStream = new ReadableStream({
+        start(controller) {
+          const pushData = () => {
+            const { value, done } = chatGenerator.next();
+            if (done) {
+              controller.close();
+              return;
+            }
+            controller.enqueue(new TextEncoder().encode(value));
+            // setTimeout(pushData, 10); // Simulate streaming with delay
+          };
+          pushData();
+        },
+      });
+
+      return new Response(chatStream, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
     const response = await fetchRequestHandler({
       endpoint: "/trpc",
       req: request,
@@ -87,4 +115,4 @@ logger.server(`Server ready at: http://localhost:${server.port}/`);
 logger.success("WebSocket handler initialized");
 logger.info("Available endpoints:");
 logger.api(`- HTTP: ${cyan(`http://localhost:${server.port}/trpc`)}`);
-logger.api(`- WebSocket: ${cyan(`ws://localhost:${server.port}/chat`)}`);
+logger.api(`- WebSocket: ${cyan(`ws://localhost:${server.port}/events`)}`);
