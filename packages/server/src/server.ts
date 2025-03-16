@@ -82,7 +82,7 @@ const server = serve({
       const chatStream = new ReadableStream({
         start(controller) {
           const pushData = () => {
-            const { value, done } = chatGenerator.next();
+            const { value, done }: any = chatGenerator.next();
             if (done) {
               controller.close();
               return;

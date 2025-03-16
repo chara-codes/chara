@@ -73,6 +73,33 @@ Chara uses a modern stack with:
 - **Real-time**: WebSocket for live updates
 - **CLI**: Bun-powered command line tool
 
+### Architecture Diagram
+
+```mermaid
+graph TD
+    subgraph "Chara Codes"
+        Web["@chara/web"]
+        CLI["@chara/cli"]
+        Server["@chara/server"]
+    end
+    
+    LLMs["LLMs API<br/>(OpenAI, Ollama, Anthropic, Deepseek, etc)"]
+    MCP["MCP"]
+    
+    Server1["Server 1"]
+    Server2["Server 2"]
+    ServerN["Server N"]
+    
+    Server1 --> MCP
+    Server2 --> MCP
+    ServerN --> MCP
+    
+    MCP --> CLI
+    CLI --> Server
+    Server --> LLMs
+    CLI --> Web
+```
+
 ## Configuration
 
 Each package can be configured independently:

@@ -5,7 +5,7 @@ export type EventsMap = Record<string, any>;
 
 /**
  * TypedEventEmitter extends the Node.js EventEmitter with type safety
- * 
+ *
  * @template T - EventsMap defining event names as keys and their payload types as values
  */
 export class TypedEventEmitter<T extends EventsMap> extends EventEmitter {
@@ -30,25 +30,31 @@ export class TypedEventEmitter<T extends EventsMap> extends EventEmitter {
   }
 
   // Override addListener method with proper typing
-  addListener<E extends keyof T>(event: E, listener: (payload: T[E]) => void): this {
+  addListener<E extends keyof T>(
+    event: E,
+    listener: (payload: T[E]) => void,
+  ): this {
     return super.addListener(event as string, listener);
   }
 
   // Override removeListener method with proper typing
-  removeListener<E extends keyof T>(event: E, listener: (payload: T[E]) => void): this {
+  removeListener<E extends keyof T>(
+    event: E,
+    listener: (payload: T[E]) => void,
+  ): this {
     return super.removeListener(event as string, listener);
   }
 }
 
 // Define an interface for your application's events
 export interface ServerEvents {
-  'server:start': { port: number };
-  'server:stop': { code: number };
-  'user:login': { userId: string; timestamp: number };
-  'user:logout': { userId: string; timestamp: number };
+  "server:start": { port: number };
+  "server:stop": { code: number };
+  "server:ping": { test: number; timestamp: number };
+  "user:login": { userId: string; timestamp: number };
+  "user:logout": { userId: string; timestamp: number };
   // Add other events as needed
 }
 
 // Create and export a typed event emitter instance
 export const ee = new TypedEventEmitter<ServerEvents>();
-

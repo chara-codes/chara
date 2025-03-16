@@ -1,6 +1,8 @@
 {
   "name": "@chara/server",
   "module": "src/index.ts",
+  "types": "./src/index.ts",
+  "version": "0.1.0",
   "type": "module",
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
