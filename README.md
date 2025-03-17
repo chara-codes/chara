@@ -25,9 +25,10 @@ In Greek, the word 'chara' (χαρά) means 'joy' or 'happiness'. Chara Codes ai
 - 📝 Real-time code preview and editing
 - 🔄 Seamless integration with multiple AI providers
 - 🌐 Built-in Model Context Protocol (MCP) support
-- 🚀 Project synchronization between local and remote environments
 - 📊 Advanced code visualization and navigation
 - 🔍 Smart code analysis and suggestions
+- 🖥️ Focus on local environment changes with minimal setup
+- 🔌 Support for multiple technology stacks (React, Vue, Angular, etc.)
 
 ## Project Structure
 
@@ -82,18 +83,18 @@ graph TD
         CLI["@chara/cli"]
         Server["@chara/server"]
     end
-    
+
     LLMs["LLMs API<br/>(OpenAI, Ollama, Anthropic, Deepseek, etc)"]
     MCP["MCP"]
-    
+
     Server1["Server 1"]
     Server2["Server 2"]
     ServerN["Server N"]
-    
+
     Server1 --> MCP
     Server2 --> MCP
     ServerN --> MCP
-    
+
     MCP --> CLI
     CLI --> Server
     Server --> LLMs
