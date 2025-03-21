@@ -11,6 +11,7 @@
 - [Configuration](#configuration)
 - [Contributing](#contributing)
 - [Documentation](#documentation)
+- [Technical depts](#technical-depts)
 - [License](#license)
 
 ## Introduction
@@ -162,6 +163,13 @@ See individual package READMEs for detailed configuration options.
 ### Common
  - [bun javascript runtime](https://bun.sh/)
  - [zod](https://zod.dev/)
+
+## Technical depts
+
+ - [ ] Implement object streaming in tRPC
+ - [ ] Add support for multiple AI providers
+ - [ ] Add history and undo/redo functionality
+ - [ ] Implement MCP servers integration
 
 ## License
 
