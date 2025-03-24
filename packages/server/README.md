@@ -75,7 +75,7 @@ The Chara server uses a relational database with the following entity structure:
 
 ### Entities and Relationships
 
-```plantuml
+```mermaid
 @startuml
 skinparam linetype ortho
 skinparam monochrome true
