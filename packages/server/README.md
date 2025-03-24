@@ -75,77 +75,7 @@ The Chara server uses a relational database with the following entity structure:
 
 ### Entities and Relationships
 
-```mermaid
-@startuml
-skinparam linetype ortho
-skinparam monochrome true
-skinparam shadowing false
-skinparam defaultFontName "Arial"
-skinparam roundCorner 10
 
-entity "stacks" as stacks {
-  * id: integer <<PK>>
-  --
-  * title: text
-  * description: text
-  * createdAt: timestamp
-}
-
-entity "links" as links {
-  * id: integer <<PK>>
-  --
-  * title: text
-  * url: text <<unique>>
-  * createdAt: timestamp
-  scannedAt: timestamp
-  * stackId: integer <<FK>>
-}
-
-entity "chunks" as chunks {
-  * id: integer <<PK>>
-  --
-  * content: text
-  * vector: json
-  * url: text
-  createdAt: timestamp
-  * linkId: integer <<FK>>
-}
-
-entity "projects" as projects {
-  * id: integer <<PK>>
-  --
-  * name: text
-  * createdAt: timestamp
-  * stackId: integer <<FK>>
-}
-
-entity "chats" as chats {
-  * id: integer <<PK>>
-  --
-  * title: text
-  * createdAt: timestamp
-  * projectId: integer <<FK>>
-  parentId: integer <<FK>>
-}
-
-entity "messages" as messages {
-  * id: integer <<PK>>
-  --
-  * content: text
-  * role: text
-  * createdAt: timestamp
-  * chatId: integer <<FK>>
-}
-
-stacks ||--o{ links : "contains"
-links ||--o{ chunks : "divided into"
-stacks ||--o{ projects : "used by"
-projects ||--o{ chats : "contains"
-chats ||--o{ messages : "contains"
-chats }o--|| chats : "parent/child"
-
-@enduml
-```
 
 #### Stacks
 The top-level organization unit that collects related links (documents/URLs).
