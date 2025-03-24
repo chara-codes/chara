@@ -75,7 +75,77 @@ The Chara server uses a relational database with the following entity structure:
 
 ### Entities and Relationships
 
-![Database Schema](https://mermaid.ink/img/pako:eNqNU01PAjEQ_SvNnCCJBw9wgENiDHphY8JBvNQpnZVN261tF1z8723ZFVb5MMGL7cx7b2b6Oic5CU6USIl59I2ZS3mNhpdPvDJBFQm9BzdA-fkIlpwIEzUEKIMNg3lXfRrBBDWZL1BT-aZJnuOcsCYs-Oa-y7EBCyh1DT1iOdM6OI9AaaYxrqDWHJ2F-wAXEaqBfhWh02HZbxZXcNoJzjKLLm7eM0uahKYaFGLWGvZaFyutUGWgZXBf3JHDN0FjE7HVQnkHUPpoBpPRK9DvTpRSW3gXOJnhzuvlpBRRJiJ_VvXwTSjhRGnX0Kg1NmB6j1gp4IqEJXJZg3G2-ZxNgfEFLTuP8SPnDfopjLe6Jj93T_lANMhixl6KYb-4M6Q0OnxXRxcNm7-aaO8g2W07BNAZjLbG7lLjHaQXu4Zp9-r3RkRhcHyJfqMRktOSHJG-JEU4kkkahrwfhmk8SDtJyCPXc5zLXi91e7JHEteLx6nrhmGvl6bxOOmmx0mSuANJZH3KJ5MhHB_-3-ILFaX0Bw?type=png)
+```plantuml
+@startuml
+skinparam linetype ortho
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Arial"
+skinparam roundCorner 10
+
+entity "stacks" as stacks {
+  * id: integer <<PK>>
+  --
+  * title: text
+  * description: text
+  * createdAt: timestamp
+}
+
+entity "links" as links {
+  * id: integer <<PK>>
+  --
+  * title: text
+  * url: text <<unique>>
+  * createdAt: timestamp
+  scannedAt: timestamp
+  * stackId: integer <<FK>>
+}
+
+entity "chunks" as chunks {
+  * id: integer <<PK>>
+  --
+  * content: text
+  * vector: json
+  * url: text
+  createdAt: timestamp
+  * linkId: integer <<FK>>
+}
+
+entity "projects" as projects {
+  * id: integer <<PK>>
+  --
+  * name: text
+  * createdAt: timestamp
+  * stackId: integer <<FK>>
+}
+
+entity "chats" as chats {
+  * id: integer <<PK>>
+  --
+  * title: text
+  * createdAt: timestamp
+  * projectId: integer <<FK>>
+  parentId: integer <<FK>>
+}
+
+entity "messages" as messages {
+  * id: integer <<PK>>
+  --
+  * content: text
+  * role: text
+  * createdAt: timestamp
+  * chatId: integer <<FK>>
+}
+
+stacks ||--o{ links : "contains"
+links ||--o{ chunks : "divided into"
+stacks ||--o{ projects : "used by"
+projects ||--o{ chats : "contains"
+chats ||--o{ messages : "contains"
+chats }o--|| chats : "parent/child"
+
+@enduml
+```
 
 #### Stacks
 The top-level organization unit that collects related links (documents/URLs).
