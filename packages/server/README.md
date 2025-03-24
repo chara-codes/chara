@@ -68,7 +68,6 @@ bun db:studio
 ```
 
 ## Usage
-```
 
 ## Database Schema
 
