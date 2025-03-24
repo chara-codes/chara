@@ -131,7 +131,7 @@ This database design enables the application to:
 ## Usage
 ### Database Schema Diagram
 
-```plantuml
+```mermaid
 @startuml
 !theme plain
 skinparam backgroundColor white
