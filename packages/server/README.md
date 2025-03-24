@@ -132,73 +132,62 @@ This database design enables the application to:
 ### Database Schema Diagram
 
 ```mermaid
-@startuml
-!theme plain
-skinparam backgroundColor white
-skinparam linetype ortho
-
-entity "stacks" {
-  * id: integer <<PK>>
-  --
-  * title: text
-  * description: text
-  * createdAt: timestamp
-}
-
-entity "links" {
-  * id: integer <<PK>>
-  --
-  * title: text
-  * url: text <<unique>>
-  * createdAt: timestamp
-  scannedAt: timestamp
-  * stackId: integer <<FK>>
-}
-
-entity "chunks" {
-  * id: integer <<PK>>
-  --
-  * content: text
-  * vector: text (json)
-  * url: text
-  createdAt: timestamp
-  * linkId: integer <<FK>>
-}
-
-entity "projects" {
-  * id: integer <<PK>>
-  --
-  * name: text
-  * createdAt: timestamp
-  * stackId: integer <<FK>>
-}
-
-entity "chats" {
-  * id: integer <<PK>>
-  --
-  * title: text
-  * createdAt: timestamp
-  * projectId: integer <<FK>>
-  parentId: integer <<FK>>
-}
-
-entity "messages" {
-  * id: integer <<PK>>
-  --
-  * content: text
-  context: text (json)
-  * role: text
-  * createdAt: timestamp
-  * chatId: integer <<FK>>
-}
-
-stacks ||--o{ links : contains
-links ||--o{ chunks : split into
-stacks ||--o{ projects : used by
-projects ||--o{ chats : contains
-chats ||--o{ messages : contains
-chats ||--o{ chats : parent-child
-@enduml
+erDiagram
+    STACKS {
+        int id PK
+        text title
+        text description
+        timestamp createdAt
+    }
+    
+    LINKS {
+        int id PK
+        text title
+        text url UK
+        timestamp createdAt
+        timestamp scannedAt
+        int stackId FK
+    }
+    
+    CHUNKS {
+        int id PK
+        text content
+        json vector
+        text url
+        timestamp createdAt
+        int linkId FK
+    }
+    
+    PROJECTS {
+        int id PK
+        text name
+        timestamp createdAt
+        int stackId FK
+    }
+    
+    CHATS {
+        int id PK
+        text title
+        timestamp createdAt
+        int projectId FK
+        int parentId FK
+    }
+    
+    MESSAGES {
+        int id PK
+        text content
+        json context
+        text role
+        timestamp createdAt
+        int chatId FK
+    }
+    
+    STACKS ||--o{ LINKS : "contains"
+    LINKS ||--o{ CHUNKS : "split into"
+    STACKS ||--o{ PROJECTS : "used by"
+    PROJECTS ||--o{ CHATS : "contains"
+    CHATS ||--o{ MESSAGES : "contains"
+    CHATS ||--o{ CHATS : "parent-child"
 ```
 
 ## Usage
