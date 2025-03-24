@@ -68,6 +68,68 @@ bun db:studio
 ```
 
 ## Usage
+```
+
+## Database Schema
+
+The Chara server uses a relational database with the following entity structure:
+
+### Entities and Relationships
+
+![Database Schema](https://mermaid.ink/img/pako:eNqNU01PAjEQ_SvNnCCJBw9wgENiDHphY8JBvNQpnZVN261tF1z8723ZFVb5MMGL7cx7b2b6Oic5CU6USIl59I2ZS3mNhpdPvDJBFQm9BzdA-fkIlpwIEzUEKIMNg3lXfRrBBDWZL1BT-aZJnuOcsCYs-Oa-y7EBCyh1DT1iOdM6OI9AaaYxrqDWHJ2F-wAXEaqBfhWh02HZbxZXcNoJzjKLLm7eM0uahKYaFGLWGvZaFyutUGWgZXBf3JHDN0FjE7HVQnkHUPpoBpPRK9DvTpRSW3gXOJnhzuvlpBRRJiJ_VvXwTSjhRGnX0Kg1NmB6j1gp4IqEJXJZg3G2-ZxNgfEFLTuP8SPnDfopjLe6Jj93T_lANMhixl6KYb-4M6Q0OnxXRxcNm7-aaO8g2W07BNAZjLbG7lLjHaQXu4Zp9-r3RkRhcHyJfqMRktOSHJG-JEU4kkkahrwfhmk8SDtJyCPXc5zLXi91e7JHEteLx6nrhmGvl6bxOOmmx0mSuANJZH3KJ5MhHB_-3-ILFaX0Bw?type=png)
+
+#### Stacks
+The top-level organization unit that collects related links (documents/URLs).
+- Contains a title and description
+- Acts as a container for related links/documents
+
+#### Links
+URL references that belong to stacks.
+- Each link points to a document/URL with useful content
+- Links are processed into chunks for semantic search
+- Links track when they were last scanned/processed
+
+#### Chunks
+Segments of content extracted from links.
+- Created by splitting document content into smaller pieces
+- Each chunk contains a vector embedding for semantic search
+- Chunks are used to provide relevant context to AI responses
+
+#### Projects
+Working environments created from stacks.
+- Each project is based on a specific stack
+- Projects organize conversations around a particular set of documents
+- Multiple projects can reference the same stack
+
+#### Chats
+Conversation instances within projects.
+- Each chat belongs to a project
+- Chats can be organized hierarchically (with parent-child relationships)
+- A project can contain multiple chats on different topics
+
+#### Messages
+Individual exchanges within a chat.
+- Contains the actual content with context of user questions and AI responses
+- Each message has a role (user or assistant)
+- Messages maintain conversation history for context
+
+### Relationships
+
+- Stacks contain many Links (one-to-many)
+- Links contain many Chunks (one-to-many)
+- Stacks can have many Projects (one-to-many)
+- Projects contain many Chats (one-to-many)
+- Chats contain many Messages (one-to-many)
+- Chats can have parent-child relationships (self-referential)
+
+This database design enables the application to:
+1. Organize knowledge in collections (stacks)
+2. Process and index document content (chunks)
+3. Create focused work environments (projects)
+4. Maintain conversation context (chats and messages)
+5. Perform semantic search across relevant documents
+
+## Usage
 
 ### Development
 

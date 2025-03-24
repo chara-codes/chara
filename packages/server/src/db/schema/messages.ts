@@ -5,7 +5,7 @@ import { sql } from "drizzle-orm";
 /**
  * Represents individual messages in a chat conversation, storing both user queries
  * and LLM responses.
- * 
+ *
  * @remarks
  * - Each message belongs to a specific chat conversation
  * - Messages are ordered chronologically by creation timestamp
@@ -20,6 +20,10 @@ export const messages = sqliteTable("messages", {
   }),
   /** The actual text content of the message */
   content: text().notNull(),
+
+  /** Optional JSON object containing additional context for the message (can include list of files, commands, etc) */
+  context: text({ mode: "json" }),
+
   /** Indicates message sender type: 'user' for user messages or 'assistant' for LLM responses */
   role: text().notNull(),
   /** Timestamp when this message was created */
