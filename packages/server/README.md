@@ -129,6 +129,79 @@ This database design enables the application to:
 5. Perform semantic search across relevant documents
 
 ## Usage
+### Database Schema Diagram
+
+```plantuml
+@startuml
+!theme plain
+skinparam backgroundColor white
+skinparam linetype ortho
+
+entity "stacks" {
+  * id: integer <<PK>>
+  --
+  * title: text
+  * description: text
+  * createdAt: timestamp
+}
+
+entity "links" {
+  * id: integer <<PK>>
+  --
+  * title: text
+  * url: text <<unique>>
+  * createdAt: timestamp
+  scannedAt: timestamp
+  * stackId: integer <<FK>>
+}
+
+entity "chunks" {
+  * id: integer <<PK>>
+  --
+  * content: text
+  * vector: text (json)
+  * url: text
+  createdAt: timestamp
+  * linkId: integer <<FK>>
+}
+
+entity "projects" {
+  * id: integer <<PK>>
+  --
+  * name: text
+  * createdAt: timestamp
+  * stackId: integer <<FK>>
+}
+
+entity "chats" {
+  * id: integer <<PK>>
+  --
+  * title: text
+  * createdAt: timestamp
+  * projectId: integer <<FK>>
+  parentId: integer <<FK>>
+}
+
+entity "messages" {
+  * id: integer <<PK>>
+  --
+  * content: text
+  context: text (json)
+  * role: text
+  * createdAt: timestamp
+  * chatId: integer <<FK>>
+}
+
+stacks ||--o{ links : contains
+links ||--o{ chunks : split into
+stacks ||--o{ projects : used by
+projects ||--o{ chats : contains
+chats ||--o{ messages : contains
+chats ||--o{ chats : parent-child
+@enduml
+```
+
+## Usage
 
 ### Development
 
