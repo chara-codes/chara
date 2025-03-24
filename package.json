@@ -10,7 +10,7 @@
     "clean": "rm -rf node_modules packages/*/node_modules bun.lockb packages/*/bun.lockb"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.2"
+    "@types/bun": "^1.2.5"
   },
   "trustedDependencies": [
     "@swc/core",
