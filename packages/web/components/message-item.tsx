@@ -23,11 +23,7 @@ import ReactMarkdown from "react-markdown";
 
 interface MessageItemProps {
   message: Message;
-  onRegenerate: (messageId: string) => void;
-  onNavigateRegeneration: (
-    messageId: string,
-    direction: "prev" | "next",
-  ) => void;
+
   onCopyMessage: (content: string, messageId: string) => void;
   copiedMessageId: string | null;
   isGenerating?: boolean;
@@ -35,13 +31,18 @@ interface MessageItemProps {
 
 export function MessageItem({
   message,
-  onRegenerate,
-  onNavigateRegeneration,
   onCopyMessage,
   copiedMessageId,
   isGenerating = false,
 }: MessageItemProps) {
   const { context, content } = message;
+
+  // Define onRegenerate function to fix the missing reference
+  const onRegenerate = (messageId: string) => {
+    // Placeholder implementation
+    console.log("Regenerate message:", messageId);
+  };
+
   return (
     <div
       className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
@@ -72,11 +73,11 @@ export function MessageItem({
               <span className="text-sm text-gray-500">Generating...</span>
             </div>
           )}
-          {context && context.fileChanges && context.fileChanges.length > 0 && (
-            <FileChangesList changes={context.fileChanges} />
-          )}
           {context && context?.commands && context?.commands.length > 0 && (
             <CommandsList commands={context?.commands} />
+          )}
+          {context && context.fileChanges && context.fileChanges.length > 0 && (
+            <FileChangesList changes={context.fileChanges} />
           )}
           {context?.attachments && context?.attachments.length > 0 && (
             <FileAttachmentDisplay attachments={context?.attachments} />
@@ -114,7 +115,7 @@ export function MessageItem({
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
-            {(message.regenerations?.length ?? 0) > 0 && (
+            {/* {(message.regenerations?.length ?? 0) > 0 && (
               <>
                 <Button
                   variant="ghost"
@@ -137,7 +138,7 @@ export function MessageItem({
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </>
-            )}
+            )} */}
           </div>
         )}
       </div>

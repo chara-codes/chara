@@ -15,17 +15,9 @@ import { useChat } from "@/hooks/use-chat";
 
 interface ChatPanelProps {
   initialMessages: Message[];
-  onRegenerate: (messageId: string) => void;
-  onNavigateRegeneration: (
-    messageId: string,
-    direction: "prev" | "next",
-  ) => void;
 }
 
-export function ChatPanel({
-  onRegenerate,
-  onNavigateRegeneration,
-}: ChatPanelProps) {
+export function ChatPanel({ initialMessages }: ChatPanelProps) {
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,8 +73,6 @@ export function ChatPanel({
           <MessageItem
             key={message.id}
             message={message}
-            onRegenerate={onRegenerate}
-            onNavigateRegeneration={onNavigateRegeneration}
             onCopyMessage={copyMessage}
             copiedMessageId={copiedMessageId}
           />
