@@ -53,8 +53,8 @@ export const chatRouter = router({
       }
     }),
   streamObject: publicProcedure
-    .input(z.object({ message: z.string() }))
-    .mutation(async function* ({ ctx, input }) {
+    .input(z.object({ question: z.string() }))
+    .query(async function* ({ ctx, input }) {
       const { partialObjectStream } = streamObject({
         model: ctx.ai(process.env.AI_MODEL || "gpt-4o-mini"),
         schema: messageSchema,
@@ -66,7 +66,7 @@ export const chatRouter = router({
           },
           {
             role: "user",
-            content: input.message,
+            content: input.question,
           },
         ],
       });

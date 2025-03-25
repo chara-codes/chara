@@ -75,8 +75,6 @@ The Chara server uses a relational database with the following entity structure:
 
 ### Entities and Relationships
 
-
-
 #### Stacks
 The top-level organization unit that collects related links (documents/URLs).
 - Contains a title and description
@@ -139,7 +137,7 @@ erDiagram
         text description
         timestamp createdAt
     }
-    
+
     LINKS {
         int id PK
         text title
@@ -148,7 +146,7 @@ erDiagram
         timestamp scannedAt
         int stackId FK
     }
-    
+
     CHUNKS {
         int id PK
         text content
@@ -157,14 +155,14 @@ erDiagram
         timestamp createdAt
         int linkId FK
     }
-    
+
     PROJECTS {
         int id PK
         text name
         timestamp createdAt
         int stackId FK
     }
-    
+
     CHATS {
         int id PK
         text title
@@ -172,7 +170,7 @@ erDiagram
         int projectId FK
         int parentId FK
     }
-    
+
     MESSAGES {
         int id PK
         text content
@@ -181,7 +179,7 @@ erDiagram
         timestamp createdAt
         int chatId FK
     }
-    
+
     STACKS ||--o{ LINKS : "contains"
     LINKS ||--o{ CHUNKS : "split into"
     STACKS ||--o{ PROJECTS : "used by"

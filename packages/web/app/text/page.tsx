@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Copy, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { PreviewBlock } from "@/components/preview-block";
-import { experimental_useObject as useObject } from "@ai-sdk/react";
 import {
   Tooltip,
   TooltipContent,
@@ -16,7 +15,6 @@ import {
 } from "@/components/ui/tooltip";
 import { useChat } from "@/hooks/use-chat";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
-import { z } from "zod";
 
 interface Message {
   id: string;
@@ -36,14 +34,6 @@ export default function SplitInterface() {
     handleInputChange,
     handleSubmit,
   } = useChat();
-
-  const { object, submit } = useObject({
-    api: "/api/use-object",
-    schema: z.object({
-      url: z.string().url(),
-      content: z.string(),
-    }),
-  });
 
   const [leftPanelWidth, setLeftPanelWidth] = useState(30); // Default 30%
   const [isResizing, setIsResizing] = useState(false);

@@ -1,9 +1,5 @@
 "use client";
-
-import type React from "react";
-
-import { useState, useRef, useEffect } from "react";
-import { experimental_useObject as useObject } from "@ai-sdk/react";
+import { useState, useRef, useEffect, ChangeEvent, FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +11,7 @@ import {
 import { Send, Paperclip, X, Loader2 } from "lucide-react";
 import type { Message, FileAttachment } from "../types";
 import { MessageItem } from "./message-item";
-import { messageSchema } from "@/lib/schema";
+import { useChat } from "@/hooks/use-chat";
 
 interface ChatPanelProps {
   initialMessages: Message[];
@@ -27,47 +23,23 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({
-  initialMessages,
   onRegenerate,
   onNavigateRegeneration,
 }: ChatPanelProps) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [input, setInput] = useState("");
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Use the AI SDK's useObject hook
-  const {
-    object: streamedMessage,
-    submit,
-    isLoading,
-    error,
-  } = useObject({
-    api: `http://localhost:3030/chat`,
-    schema: messageSchema,
-    headers: {
-      "trpc-accept": "application/jsonl",
-    },
-    onFinish: (...args) => {
-      console.log(args);
-    },
-  });
+  const { messages, input, handleInputChange, handleSubmit, error, status } =
+    useChat(true);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Add the streamed message to the messages array when it's complete
-  useEffect(() => {
-    if (streamedMessage && !isLoading) {
-      setMessages((prev) => [...prev, streamedMessage as Message]);
-    }
-  }, [streamedMessage, isLoading]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files).map((file) => ({
         id: Math.random().toString(36).substring(2, 9),
@@ -96,29 +68,6 @@ export function ChatPanel({
     });
   };
 
-  const handleSendMessage = () => {
-    if ((input.trim() || attachments.length > 0) && !isLoading) {
-      // Create user message
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        content: input,
-        sender: "user",
-        timestamp: new Date(),
-        attachments: attachments.length > 0 ? [...attachments] : undefined,
-      };
-
-      // Add user message to state
-      setMessages((prev) => [...prev, userMessage]);
-
-      // Submit the message to the API
-      submit({ 0: { message: input } });
-
-      // Clear input and attachments
-      setInput("");
-      setAttachments([]);
-    }
-  };
-
   const copyMessage = (content: string, messageId: string) => {
     navigator.clipboard.writeText(content);
     setCopiedMessageId(messageId);
@@ -138,19 +87,6 @@ export function ChatPanel({
             copiedMessageId={copiedMessageId}
           />
         ))}
-
-        {/* Show the streaming message */}
-        {isLoading && streamedMessage && (
-          <MessageItem
-            key="streaming"
-            message={streamedMessage as Message}
-            onRegenerate={onRegenerate}
-            onNavigateRegeneration={onNavigateRegeneration}
-            onCopyMessage={copyMessage}
-            copiedMessageId={copiedMessageId}
-            isGenerating={true}
-          />
-        )}
 
         {/* Error message */}
         {error && (
@@ -183,15 +119,15 @@ export function ChatPanel({
         <div className="flex gap-2">
           <Input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Type a message..."
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleSendMessage();
+                handleSubmit(e as unknown as FormEvent<HTMLFormElement>);
               }
             }}
-            disabled={isLoading}
+            disabled={status === "streaming"}
           />
           <input
             type="file"
@@ -207,7 +143,7 @@ export function ChatPanel({
                   variant="outline"
                   size="icon"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isLoading}
+                  disabled={status === "streaming"}
                 >
                   <Paperclip className="h-4 w-4" />
                 </Button>
@@ -217,8 +153,15 @@ export function ChatPanel({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <Button size="icon" onClick={handleSendMessage} disabled={isLoading}>
-            {isLoading ? (
+          <Button
+            size="icon"
+            onClick={(e) => {
+              e.preventDefault();
+              handleSubmit(e as unknown as FormEvent<HTMLFormElement>);
+            }}
+            disabled={status === "streaming"}
+          >
+            {status === "streaming" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Send className="h-4 w-4" />

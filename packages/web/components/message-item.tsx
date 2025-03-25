@@ -19,6 +19,7 @@ import type { Message } from "../types";
 import { FileChangesList } from "./file-changes-list";
 import { CommandsList } from "./commands-list";
 import { FileAttachmentDisplay } from "./file-attachment-display";
+import ReactMarkdown from "react-markdown";
 
 interface MessageItemProps {
   message: Message;
@@ -40,12 +41,13 @@ export function MessageItem({
   copiedMessageId,
   isGenerating = false,
 }: MessageItemProps) {
+  const { context, content } = message;
   return (
     <div
-      className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+      className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
     >
       <div className="flex flex-col items-start gap-2 max-w-[80%]">
-        {message.sender === "assistant" && (
+        {message.role === "assistant" && (
           <Avatar className="h-8 w-8">
             <AvatarImage
               src="/placeholder.svg?height=32&width=32"
@@ -55,36 +57,38 @@ export function MessageItem({
           </Avatar>
         )}
         <div
-          className={`p-3 rounded-lg ${
-            message.sender === "user"
-              ? "bg-blue-100 text-blue-800"
-              : "bg-gray-100 text-gray-800"
+          className={`p-3 rounded-lg prose prose-sm max-w-full ${
+            message.role === "user"
+              ? "bg-blue-100 text-blue-800 prose-blue"
+              : "bg-gray-100 text-gray-800 prose-gray"
           }`}
         >
-          {message.content}
+          <div className="markdown-content">
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </div>
           {isGenerating && (
             <div className="mt-1 flex items-center">
               <Loader2 className="h-4 w-4 mr-2 animate-spin text-gray-500" />
               <span className="text-sm text-gray-500">Generating...</span>
             </div>
           )}
-          {message.fileChanges && message.fileChanges.length > 0 && (
-            <FileChangesList changes={message.fileChanges} />
+          {context && context.fileChanges && context.fileChanges.length > 0 && (
+            <FileChangesList changes={context.fileChanges} />
           )}
-          {message.commands && message.commands.length > 0 && (
-            <CommandsList commands={message.commands} />
+          {context && context?.commands && context?.commands.length > 0 && (
+            <CommandsList commands={context?.commands} />
           )}
-          {message.attachments && message.attachments.length > 0 && (
-            <FileAttachmentDisplay attachments={message.attachments} />
+          {context?.attachments && context?.attachments.length > 0 && (
+            <FileAttachmentDisplay attachments={context?.attachments} />
           )}
         </div>
-        {message.sender === "user" && (
+        {message.role === "user" && (
           <Avatar className="h-8 w-8 self-end">
             <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
             <AvatarFallback>U</AvatarFallback>
           </Avatar>
         )}
-        {message.sender === "assistant" && !isGenerating && (
+        {message.role === "assistant" && !isGenerating && (
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <TooltipProvider>
               <Tooltip open={copiedMessageId === message.id}>
@@ -93,6 +97,7 @@ export function MessageItem({
                     variant="ghost"
                     size="icon"
                     onClick={() => onCopyMessage(message.content, message.id)}
+                    title="Copy raw markdown"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>

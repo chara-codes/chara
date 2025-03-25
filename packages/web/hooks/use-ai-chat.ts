@@ -1,4 +1,4 @@
-export const useAIChat = <Input>(url: string) => {
+export const useAIChat = <Input>(url: string, streamObject = false) => {
   const stream = async (input: Input, signal: AbortSignal) => {
     const params: Record<string, string | number> = {
       batch: 1,
@@ -12,15 +12,18 @@ export const useAIChat = <Input>(url: string) => {
       )
       .join("&");
 
-    const response = await fetch(`${url}/chat.streamText?${query}`, {
-      signal,
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "trpc-accept": "application/jsonl",
-        "transfer-encoding": "chunked",
+    const response = await fetch(
+      `${url}/chat.${streamObject ? "streamObject" : "streamText"}?${query}`,
+      {
+        signal,
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "trpc-accept": "application/jsonl",
+          "transfer-encoding": "chunked",
+        },
       },
-    });
+    );
 
     return {
       async *[Symbol.asyncIterator]() {
@@ -33,9 +36,7 @@ export const useAIChat = <Input>(url: string) => {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-
-            const text = decoder.decode(value);
-            yield text;
+            yield decoder.decode(value);
           }
         } finally {
           reader.releaseLock();
