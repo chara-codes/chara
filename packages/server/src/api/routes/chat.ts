@@ -23,6 +23,7 @@ export const messageSchema = z.object({
   commands: z
     .array(
       z.object({
+        id: z.string().describe("Id command, use incremental numbers"),
         command: z.string().describe("Command to execute"),
         description: z.string().optional(),
       }),
