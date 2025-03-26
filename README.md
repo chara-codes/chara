@@ -166,7 +166,7 @@ See individual package READMEs for detailed configuration options.
 
 ## Technical depts
 
- - [ ] Implement object streaming in tRPC
+ - [x] Implement object streaming in tRPC
  - [ ] Add support for multiple AI providers
  - [ ] Add history and undo/redo functionality
  - [ ] Implement MCP servers integration
