@@ -1,3 +1,8 @@
+import JSONL from "jsonl-parse-stringify";
+
+/**
+ * Parser for the Chara stream formats (object-stream and text-stream)
+ */
 /**
  * Parser for the Chara stream formats (object-stream and text-stream)
  */
@@ -5,7 +10,6 @@
 // Type definitions for parsing the stream data
 
 type StreamToken = [number, number, any[]];
-type InitToken = { "0": [number[], [null, number, number]] };
 
 interface ObjectStreamContent {
   content?: string;
@@ -32,8 +36,6 @@ export interface ParsedTextStream {
  * @returns Parsed object stream data
  */
 export function parseObjectStream(jsonlContent: string): ParsedObjectStream {
-  const lines = jsonlContent.trim().split(/\r?\n/);
-
   // Initialize the result object
   const result: ParsedObjectStream = {
     result: 0,
@@ -41,13 +43,13 @@ export function parseObjectStream(jsonlContent: string): ParsedObjectStream {
     streamContent: [],
   };
 
-  // Parse the initialization object
-  const initObject: InitToken = JSON.parse(lines[0]);
+  try {
+    // Parse the JSONL content
+    const tokens = JSONL.parse(jsonlContent);
 
-  // Process each line of the JSONL file
-  for (let i = 1; i < lines.length; i++) {
-    try {
-      const token: StreamToken = JSON.parse(lines[i]);
+    // Skip the initialization object (first line)
+    for (let i = 1; i < tokens.length; i++) {
+      const token = tokens[i] as StreamToken;
       const [index, level, data] = token;
 
       if (level === 0) {
@@ -68,9 +70,9 @@ export function parseObjectStream(jsonlContent: string): ParsedObjectStream {
           }
         }
       }
-    } catch (error) {
-      console.error(`Error parsing line ${i}:`, error);
     }
+  } catch (error) {
+    console.error("Error parsing object stream:", error);
   }
 
   return result;
@@ -82,8 +84,6 @@ export function parseObjectStream(jsonlContent: string): ParsedObjectStream {
  * @returns Parsed text stream data
  */
 export function parseTextStream(jsonlContent: string): ParsedTextStream {
-  const lines = jsonlContent.trim().split(/\r?\n/);
-
   // Initialize the result object
   const result: ParsedTextStream = {
     result: 0,
@@ -91,13 +91,13 @@ export function parseTextStream(jsonlContent: string): ParsedTextStream {
     streamContent: "",
   };
 
-  // Parse the initialization object
-  const initObject: InitToken = JSON.parse(lines[0]);
+  try {
+    // Parse the JSONL content
+    const tokens = JSONL.parse(jsonlContent);
 
-  // Process each line of the JSONL file
-  for (let i = 1; i < lines.length; i++) {
-    try {
-      const token: StreamToken = JSON.parse(lines[i]);
+    // Skip the initialization object (first line)
+    for (let i = 1; i < tokens.length; i++) {
+      const token = tokens[i] as StreamToken;
       const [index, level, data] = token;
 
       if (level === 0) {
@@ -116,9 +116,9 @@ export function parseTextStream(jsonlContent: string): ParsedTextStream {
           }
         }
       }
-    } catch (error) {
-      console.error(`Error parsing line ${i}:`, error);
     }
+  } catch (error) {
+    console.error("Error parsing text stream:", error);
   }
 
   return result;
@@ -134,9 +134,14 @@ export function parseStream(
   jsonlContent: string,
   format: "object" | "text",
 ): ObjectStreamContent[] | string {
-  if (format === "object") {
-    return parseObjectStream(jsonlContent).streamContent;
-  } else {
-    return parseTextStream(jsonlContent).streamContent;
+  try {
+    if (format === "object") {
+      return parseObjectStream(jsonlContent).streamContent;
+    } else {
+      return parseTextStream(jsonlContent).streamContent;
+    }
+  } catch (error) {
+    console.error(`Error parsing ${format} stream:`, error);
+    return format === "object" ? [] : "";
   }
 }
