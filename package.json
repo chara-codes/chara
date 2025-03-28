@@ -3,10 +3,12 @@
   "private": "true",
   "module": "index.ts",
   "type": "module",
+  "packageManager": "bun@1.2.6",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
+    "dev": "turbo run dev",
     "clean": "rm -rf node_modules packages/*/node_modules bun.lockb packages/*/bun.lockb"
   },
   "devDependencies": {
@@ -15,5 +17,8 @@
   "trustedDependencies": [
     "@swc/core",
     "protobufjs"
-  ]
+  ],
+  "dependencies": {
+    "turbo": "^2.4.4"
+  }
 }

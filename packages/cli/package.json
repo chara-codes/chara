@@ -1,5 +1,5 @@
 {
-  "name": "chara",
+  "name": "@chara/cli",
   "version": "1.0.0",
   "module": "src/index.ts",
   "bin": {
@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "bun build ./src/index.ts --outfile ./dist/chara --compile",
-    "dev": "bun ./src/index.ts",
+    "dev": "bun ./src/index.ts dev",
     "start": "./dist/chara"
   },
   "type": "module",
