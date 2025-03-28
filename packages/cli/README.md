@@ -25,7 +25,7 @@ bun install -g chara
 ```bash
 # In your project
 npm install --save-dev chara
-# or 
+# or
 bun add -d chara
 ```
 
@@ -76,7 +76,7 @@ Create a `.chara.json` file in your project root:
 bun install
 
 # Run in development mode
-bun dev
+bun d
 
 # Build the CLI
 bun build
