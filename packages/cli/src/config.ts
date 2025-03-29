@@ -7,6 +7,8 @@ export interface MCPServer {
   command: string;
   /** Arguments to pass to the command */
   args?: string[];
+  /** Environment variables to pass to the command */
+  env?: Record<string, string>;
 }
 
 /**
