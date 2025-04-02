@@ -97,7 +97,7 @@ graph TD
     Server2 --> MCP
     ServerN --> MCP
 
-    MCP --> CLI
+    CLI --> MCP
     CLI --> Server
     Server --> LLMs
     CLI --> Web
