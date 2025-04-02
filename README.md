@@ -46,10 +46,11 @@ The project is organized as a monorepo with the following packages:
   - SQLite/LibSQL database with Drizzle ORM
   - Streaming response support
 
-- `@chara/cli` - Command line interface
-  - Project management and configuration
-  - Development environment setup
-  - MCP server integration
+- `./automation` - Testing framework
+  - End-to-end testing with Playwright
+  - AI-assisted test generation and validation
+  - Visual regression testing
+  - Streamlined helper patterns
   - Local-remote sync capabilities
 
 ## Getting Started
@@ -146,12 +147,11 @@ See individual package READMEs for detailed configuration options.
 - [Streaming with tRPC](https://trpc.io/docs/server/streaming)
 - [Ollama Integration](https://github.com/ollama/ollama)
 
-### Frontend (@chara/web)
- - [shadcn/ui](https://ui.shadcn.com/)
- - [Next.js](https://nextjs.org/docs)
- - [React](https://react.dev/learn)
- - [TailwindCSS](https://tailwindcss.com/docs)
- - [AI SDK](https://sdk.vercel.ai/docs)
+### Automation Testing (@chara/automation)
+ - [Playwright](https://playwright.dev/)
+ - [AI SDK](https://ai-sdk.dev/)
+ - [Visual Testing](https://playwright.dev/docs/test-snapshots)
+ - [Test Fixtures](https://playwright.dev/docs/test-fixtures)
  - [React Markdown](https://remarkjs.github.io/react-markdown/)
  - [lucide-react](https://lucide.dev/guide/packages/lucide-react)
 
