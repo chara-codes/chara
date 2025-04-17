@@ -1,7 +1,4 @@
-import {
-  createTRPCProxyClient,
-  unstable_httpBatchStreamLink,
-} from "@trpc/client";
+import { createTRPCProxyClient, httpBatchStreamLink } from "@trpc/client";
 import type { AppRouter } from "../src/server";
 
 async function delay(ms: number) {
@@ -14,7 +11,7 @@ async function main() {
   const url = "http://localhost:3030/trpc/";
 
   const proxy = createTRPCProxyClient<AppRouter>({
-    links: [unstable_httpBatchStreamLink({ url })],
+    links: [httpBatchStreamLink({ url })],
   });
 
   const answers = await proxy.messages.ask.query({
