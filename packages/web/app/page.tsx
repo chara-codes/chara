@@ -6,6 +6,29 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { ChatPanel } from "../components/chat-panel"
 import { PreviewPanel } from "../components/preview-panel"
 import { initialMessages } from "../mocks/messages"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { DropdownMenu } from "@radix-ui/react-dropdown-menu"
+import StackCard from "@/components/stack-card"
+
+const STACK_DESCRIPTION = `# React + Next.js + Tailwind CSS
+
+This stack combines React, Next.js, and Tailwind CSS for a powerful and efficient frontend development experience.
+
+## Getting Started
+
+1. Install dependencies:
+   \`\`\`bash
+   npm install
+2. Run the development server:
+   \`\`\`bash
+   npm run dev
+3. Open <http://localhost:3000> in your browser.
+## Learn More
+
+- [React Documentation](http://example.com)
+- [Next.js Documentation](http://example.com)
+- [Tailwind CSS Documentation](http://example.com)
+`;
 
 export default function SplitInterface() {
   const [leftPanelWidth, setLeftPanelWidth] = useState(30) // Default 30%
@@ -100,8 +123,30 @@ export default function SplitInterface() {
         />
       )}
 
+      <div className="p-6">
+        <StackCard stackName={'React + Next.js + Tailwind CSS'} technologies={[{
+          name: 'React',
+          docLink: 'https://reactjs.org/docs/getting-started.html',
+          // React repo github link
+          codeLink: 'https://github.com/facebook/react',
+        }, {
+          name: 'Next.js',
+          docLink: 'https://nextjs.org/docs/getting-started',
+          // Next.js repo github link
+          codeLink: 'https://github.com/vercel/next.js/'
+        }, {
+          name: 'Tailwind CSS',
+          docLink: 'https://tailwindcss.com/docs/installation',
+          // Tailwind CSS repo github link
+          codeLink: 'https://github.com/tailwindlabs/tailwindcss'
+        }]}
+        category="Frontend"
+        description={STACK_DESCRIPTION}
+        />
+      </div>
+
       {/* Preview Block - Right Panel */}
-      <div
+      {/* <div
         className={`w-full md:flex flex-col transition-all duration-300 ease-in-out ${isFullScreen ? "md:w-full" : ""}`}
         style={{ width: isFullScreen ? "100%" : `${100 - leftPanelWidth}%` }}
       >
@@ -111,7 +156,7 @@ export default function SplitInterface() {
           onToggleFullScreen={toggleFullScreen}
           isFullScreen={isFullScreen}
         />
-      </div>
+      </div> */}
     </div>
   )
 }
