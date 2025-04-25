@@ -17,11 +17,18 @@ export const stackTypes = [
 ] as const;
 export type StackType = (typeof stackTypes)[number];
 
+export interface Technology {
+  name: string;
+  docLink: string;
+  codeLink: string;
+}
+
 export interface TechStack {
   id: string;
   name: string;
   type: StackType;
-  description?: string;
+  description: string;
+  technologies: Technology[];
   icon?: ReactNode;
 }
 
@@ -45,9 +52,45 @@ export const useStacks = () => {
 export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
   // Dummy data
   const [stacks, setStacks] = useState<TechStack[]>([
-    { id: "1", name: "React", type: "frontend" },
-    { id: "2", name: "Next.js", type: "frontend" },
-    { id: "3", name: "PostgreSQL", type: "backend" },
+    {
+      id: "1",
+      name: "React",
+      type: "frontend",
+      description: "Short description",
+      technologies: [
+        {
+          name: "React",
+          docLink: "https://example.com",
+          codeLink: "https://example.com",
+        },
+      ],
+    },
+    {
+      id: "2",
+      name: "Next.js",
+      type: "frontend",
+      description: "Short description",
+      technologies: [
+        {
+          name: "React",
+          docLink: "https://example.com",
+          codeLink: "https://example.com",
+        },
+      ],
+    },
+    {
+      id: "3",
+      name: "PostgreSQL",
+      type: "backend",
+      description: "Short description",
+      technologies: [
+        {
+          name: "React",
+          docLink: "https://example.com",
+          codeLink: "https://example.com",
+        },
+      ],
+    },
   ]);
 
   const [filterType, setFilterType] = useState<StackType>("all");

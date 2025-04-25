@@ -5,9 +5,15 @@ import { StackCard } from "./StackCard";
 export const StackGrid = () => {
   const { filtered } = useStacks();
   return (
-    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+    <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(260px,1fr))]">
       {filtered.map((s) => (
-        <StackCard key={s.id} stack={s} />
+        <StackCard
+          key={s.id}
+          description={s.description}
+          stackName={s.name}
+          category={s.type}
+          technologies={s.technologies}
+        />
       ))}
       {filtered.length === 0 && (
         <p className="col-span-full text-muted-foreground">
