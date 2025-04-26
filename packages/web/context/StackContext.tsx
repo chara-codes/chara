@@ -40,6 +40,7 @@ interface StackCtx {
   search: string;
   setSearch: (q: string) => void;
   addStack: (s: TechStack) => void;
+  updateStack: (s: TechStack) => void;
 }
 
 const StackContext = createContext<StackCtx | null>(null);
@@ -97,6 +98,8 @@ export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [search, setSearch] = useState("");
 
   const addStack = (s: TechStack) => setStacks((prev) => [...prev, s]);
+  const updateStack = (s: TechStack) =>
+    setStacks((prev) => prev.map((stack) => (stack.id === s.id ? s : stack)));
 
   const filtered = useMemo(() => {
     return stacks.filter((s) => {
@@ -116,6 +119,7 @@ export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
     search,
     setSearch,
     addStack,
+    updateStack,
   };
 
   return (

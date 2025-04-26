@@ -1,33 +1,35 @@
 "use client";
-
-import { Button } from "@/components/ui/button";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { ReactNode, useState } from "react";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { stackTypes, useStacks } from "@/context/StackContext";
+
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
+  DialogTrigger,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { PlusCircle, X } from "lucide-react";
-import { Input } from "../ui/input";
-import { Badge } from "../ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "../ui/textarea";
-import { TechBuilder } from "./TechBuilder";
+import { X } from "lucide-react";
+
+import { useStacks, stackTypes, TechStack } from "@/context/StackContext";
+import { Label } from "@/components/ui/label";
+import { TechBuilder } from "@/components/stack/TechBuilder";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export const techSchema = z.object({
   name: z.string().min(1, "Required"),
@@ -47,58 +49,98 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const CreateStackDialog = () => {
-  const { addStack } = useStacks();
+export type StackFormDialogProps =
+  | {
+      mode: "create";
+      trigger?: ReactNode;
+      open?: boolean;
+      onOpenChange?: (o: boolean) => void;
+    }
+  | {
+      mode: "edit";
+      stack: TechStack;
+      trigger?: ReactNode;
+      open?: boolean;
+      onOpenChange?: (o: boolean) => void;
+    };
+
+export const StackFormDialog = (props: StackFormDialogProps) => {
+  const { addStack, updateStack } = useStacks();
+
+  /* ── Controlled vs uncontrolled ── */
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = props.open !== undefined;
+  const open = isControlled ? props.open : internalOpen;
+  const setOpen = isControlled ? props.onOpenChange! : setInternalOpen;
+
+  /* — defaultValues depend on mode — */
+  const defaults: FormValues =
+    props.mode === "edit"
+      ? {
+          name: props.stack.name,
+          type: props.stack.type,
+          description: props.stack.description ?? "",
+          technologies: props.stack.technologies ?? [],
+        }
+      : { name: "", type: "frontend", description: "", technologies: [] };
+
   const {
     register,
     control,
     handleSubmit,
     reset,
-    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      type: "frontend",
-      description: "",
-      technologies: [],
-    },
+    defaultValues: defaults,
   });
 
-  /* dynamic array helpers */
-  const {
-    fields: techFields,
-    append,
-    remove,
-  } = useFieldArray({ control, name: "technologies" });
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "technologies",
+  });
 
-  const onAddTech = (tech: z.infer<typeof techSchema>) => {
-    append(tech);
-  };
+  const [tmpTech, setTmpTech] = useState({
+    name: "",
+    docsUrl: "",
+    codeUrl: "",
+  });
+
+  function onAddTech() {
+    append(tmpTech);
+    setTmpTech({ name: "", docsUrl: "", codeUrl: "" });
+  }
 
   const onSubmit = handleSubmit((data) => {
-    addStack({
-      id: Date.now().toString(),
-      name: data.name,
-      type: data.type,
-      description: data.description || "",
-      technologies: data.technologies,
-    });
-    reset();
+    if (props.mode === "create") {
+      addStack({
+        id: Date.now().toString(),
+        name: data.name,
+        type: data.type,
+        description: data.description || "",
+        technologies: data.technologies,
+      });
+    } else {
+      updateStack({
+        id: props.stack.id,
+        name: data.name,
+        type: data.type,
+        description: data.description || "",
+        technologies: data.technologies,
+      });
+    }
+    reset(defaults);
   });
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button className="w-full !mt-2" variant="default">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New Stack
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={setOpen}>
+      {props.trigger && <DialogTrigger asChild>{props.trigger}</DialogTrigger>}
+
       <DialogContent className="sm:max-w-[700px] overflow-auto">
         <DialogHeader>
-          <DialogTitle>Create New Stack</DialogTitle>
+          <DialogTitle>
+            {props.mode === "create" ? "Create New Stack" : "Edit Stack"}
+          </DialogTitle>
           <DialogDescription>
             Enter the details for your new technology stack. Click save when
             you're done.
@@ -106,7 +148,7 @@ export const CreateStackDialog = () => {
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-6">
-          {/* ── Name ────────────────────────────────────── */}
+          {/* ── Name ── */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
               Name
@@ -125,7 +167,7 @@ export const CreateStackDialog = () => {
             </p>
           )}
 
-          {/* ── Category ────── */}
+          {/* ── Category── */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">Category</Label>
             <Controller
@@ -150,7 +192,7 @@ export const CreateStackDialog = () => {
             />
           </div>
 
-          {/* ── Technologies list builder ──────────────── */}
+          {/* ── Technologies list builder ── */}
           <TechBuilder onAdd={onAddTech} />
           {errors.technologies && (
             <p className="text-destructive text-sm -mt-4 pl-[30%]">
@@ -158,17 +200,17 @@ export const CreateStackDialog = () => {
             </p>
           )}
 
-          {/* Existing tech chips */}
-          {techFields.length > 0 && (
+          {/* existing tech chips */}
+          {fields.length > 0 && (
             <div className="grid grid-cols-4 items-start gap-4">
               <div className="col-span-3 col-start-2">
-                <ScrollArea className="h-[110px] rounded-md border p-4">
+                <ScrollArea className="h-[110px] border rounded-md p-4">
                   <div className="flex flex-wrap gap-2">
-                    {techFields.map((tech, idx) => (
+                    {fields.map((tech, idx) => (
                       <Badge
                         key={tech.id}
-                        className="flex items-center gap-1"
                         variant="secondary"
+                        className="flex items-center gap-1"
                       >
                         {tech.name}
                         <Button
@@ -188,7 +230,7 @@ export const CreateStackDialog = () => {
             </div>
           )}
 
-          {/* ── Description ────────────────────────────── */}
+          {/* ── Description ── */}
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="description" className="text-right">
               Description
@@ -201,9 +243,11 @@ export const CreateStackDialog = () => {
             />
           </div>
 
-          {/* ── Submit ─────────────────────────────────── */}
+          {/* ── Submit ── */}
           <DialogFooter>
-            <Button type="submit">Save Stack</Button>
+            <Button type="submit">
+              {props.mode === "create" ? "Save Stack" : "Update Stack"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

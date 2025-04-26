@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Label } from "@/components/ui/label";
 import { Input } from "../ui/input";
-import { techSchema } from "./CreateStackDialog";
+import { techSchema } from "./StackFormDialog";
 
 type TechBuilderProps = {
   onAdd: (tech: z.infer<typeof techSchema>) => void;

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import {
   EllipsisVertical,
   ExternalLink,
@@ -34,29 +34,43 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { DialogHeader } from "../ui/dialog";
-import { Technology } from "@/context";
+import { TechStack } from "@/context";
+import { StackFormDialog } from "./StackFormDialog";
 
-const CardActions = () => {
+const CardActions = ({ stack }: { stack: TechStack }) => {
+  const [editOpen, setEditOpen] = useState(false);
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className="!mt-0 border-none outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0">
-          <EllipsisVertical />
-        </button>
-      </DropdownMenuTrigger>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="!mt-0 border-none outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0">
+            <EllipsisVertical />
+          </button>
+        </DropdownMenuTrigger>
 
-      <DropdownMenuPortal>
-        <DropdownMenuContent side="bottom" align="end" sideOffset={10}>
-          <div className="px-2 py-1 text-md font-semibold">Actions</div>
-          <DropdownMenuItem>Edit stack</DropdownMenuItem>
-          <DropdownMenuItem>Duplicate stack</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive hover:!text-destructive">
-            Delete Stack
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenuPortal>
-    </DropdownMenu>
+        <DropdownMenuPortal>
+          <DropdownMenuContent side="bottom" align="end" sideOffset={10}>
+            <div className="px-2 py-1 text-md font-semibold">Actions</div>
+            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+              Edit stack
+            </DropdownMenuItem>
+            <DropdownMenuItem>Duplicate stack</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive hover:!text-destructive">
+              Delete Stack
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenuPortal>
+      </DropdownMenu>
+
+      <StackFormDialog
+        mode="edit"
+        stack={stack}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+    </>
   );
 };
 
@@ -94,22 +108,13 @@ const CardChipWithLink = ({
   );
 };
 
-export const StackCard = ({
-  stackName,
-  technologies,
-  category,
-  description,
-}: {
-  stackName: string;
-  technologies: Technology[];
-  category: string;
-  description: string;
-}) => {
+export const StackCard = ({ stack }: { stack: TechStack }) => {
+  const { name, type, description, technologies } = stack;
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className="flex-row justify-between items-start space-x-6">
-        <CardTitle className="text-xl font-medium">{stackName}</CardTitle>
-        <CardActions />
+        <CardTitle className="text-xl font-medium">{name}</CardTitle>
+        <CardActions stack={stack} />
       </CardHeader>
       <CardContent>
         <CardDescription className="mb-4">
@@ -130,7 +135,7 @@ export const StackCard = ({
       <CardFooter className="flex flex-wrap justify-between items-center gap-3">
         <div className="flex items-center gap-2 text-muted-foreground min-w-0">
           <Layers />
-          <div className="text-md truncate">{category}</div>
+          <div className="text-md truncate">{type}</div>
         </div>
         <Dialog>
           <DialogTrigger asChild>
@@ -144,12 +149,12 @@ export const StackCard = ({
           </DialogTrigger>
           <DialogContent className="w-full max-w-xl">
             <DialogHeader>
-              <DialogTitle>{stackName}</DialogTitle>
+              <DialogTitle>{name}</DialogTitle>
               <DialogDescription>Full stack information</DialogDescription>
             </DialogHeader>
             <section className="mt-2 mb-2">
               <h3 className="text-lg font-semibold mb-1">Category:</h3>
-              <p>{category}</p>
+              <p>{type}</p>
             </section>
             <section className="mb-2">
               <h3 className="text-lg font-semibold mb-2">Technologies:</h3>
