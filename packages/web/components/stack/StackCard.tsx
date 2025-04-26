@@ -6,7 +6,6 @@ import {
   Code,
   Layers,
   Info,
-  X,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
@@ -35,6 +34,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { DialogHeader } from "../ui/dialog";
+import { Technology } from "@/context";
 
 const CardActions = () => {
   return (
@@ -46,10 +46,10 @@ const CardActions = () => {
       </DropdownMenuTrigger>
 
       <DropdownMenuPortal>
-        <DropdownMenuContent side="top" align="end" sideOffset={10}>
+        <DropdownMenuContent side="bottom" align="end" sideOffset={10}>
           <div className="px-2 py-1 text-md font-semibold">Actions</div>
           <DropdownMenuItem>Edit stack</DropdownMenuItem>
-          <DropdownMenuItem>Dublicate stack</DropdownMenuItem>
+          <DropdownMenuItem>Duplicate stack</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="text-destructive hover:!text-destructive">
             Delete Stack
@@ -101,7 +101,7 @@ export const StackCard = ({
   description,
 }: {
   stackName: string;
-  technologies: { name: string; docLink: string; codeLink: string }[];
+  technologies: Technology[];
   category: string;
   description: string;
 }) => {
@@ -117,12 +117,12 @@ export const StackCard = ({
         </CardDescription>
         {/* max number of chips in the line should be 3 use grid to wrap them if there are more than 3*/}
         <div className="flex flex-wrap gap-x-2 gap-y-3 pr-8">
-          {technologies.map(({ name, docLink, codeLink }) => (
+          {technologies.map(({ name, docsUrl, codeUrl }) => (
             <CardChipWithLink
               key={name}
               label={name}
-              link={docLink}
-              codeLink={codeLink}
+              link={docsUrl || ""}
+              codeLink={codeUrl || ""}
             />
           ))}
         </div>

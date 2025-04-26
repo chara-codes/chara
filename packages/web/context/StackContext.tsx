@@ -19,8 +19,8 @@ export type StackType = (typeof stackTypes)[number];
 
 export interface Technology {
   name: string;
-  docLink: string;
-  codeLink: string;
+  docsUrl?: string;
+  codeUrl?: string;
 }
 
 export interface TechStack {
@@ -60,8 +60,8 @@ export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
       technologies: [
         {
           name: "React",
-          docLink: "https://example.com",
-          codeLink: "https://example.com",
+          docsUrl: "https://example.com",
+          codeUrl: "https://example.com",
         },
       ],
     },
@@ -73,8 +73,8 @@ export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
       technologies: [
         {
           name: "React",
-          docLink: "https://example.com",
-          codeLink: "https://example.com",
+          docsUrl: "https://example.com",
+          codeUrl: "https://example.com",
         },
       ],
     },
@@ -86,8 +86,8 @@ export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
       technologies: [
         {
           name: "React",
-          docLink: "https://example.com",
-          codeLink: "https://example.com",
+          docsUrl: "https://example.com",
+          codeUrl: "https://example.com",
         },
       ],
     },
