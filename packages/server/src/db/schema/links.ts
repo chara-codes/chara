@@ -30,5 +30,5 @@ export const links = sqliteTable("links", {
   /** Foreign key reference to the stack this link belongs to */
   stackId: int()
     .notNull()
-    .references(() => stacks.id),
+    .references(() => stacks.id, { onDelete: "cascade" }),
 });

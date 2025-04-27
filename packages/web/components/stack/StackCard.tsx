@@ -34,10 +34,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { DialogHeader } from "../ui/dialog";
-import { TechStack } from "@/context";
+import { TechStack, useStacks } from "@/context";
 import { StackFormDialog } from "./StackFormDialog";
 
 const CardActions = ({ stack }: { stack: TechStack }) => {
+  const { deleteStack, duplicateStack } = useStacks();
   const [editOpen, setEditOpen] = useState(false);
 
   return (
@@ -55,9 +56,14 @@ const CardActions = ({ stack }: { stack: TechStack }) => {
             <DropdownMenuItem onSelect={() => setEditOpen(true)}>
               Edit stack
             </DropdownMenuItem>
-            <DropdownMenuItem>Duplicate stack</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => duplicateStack(stack.id)}>
+              Duplicate stack
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive hover:!text-destructive">
+            <DropdownMenuItem
+              onSelect={() => deleteStack(stack.id)}
+              className="text-destructive hover:!text-destructive"
+            >
               Delete Stack
             </DropdownMenuItem>
           </DropdownMenuContent>

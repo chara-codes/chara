@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Label } from "@/components/ui/label";
 import { Input } from "../ui/input";
 import { techSchema } from "./StackFormDialog";
+import { FormEvent } from 'react';
 
 type TechBuilderProps = {
   onAdd: (tech: z.infer<typeof techSchema>) => void;
@@ -29,7 +30,7 @@ export const TechBuilder = ({ onAdd }: TechBuilderProps) => {
   });
 
   function handleSubmit(cb: (data: any) => void) {
-    return (e: React.FormEvent) => {
+    return (e: FormEvent) => {
       e.preventDefault();
       cb(getValues());
     };

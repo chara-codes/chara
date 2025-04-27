@@ -1,4 +1,5 @@
 "use client";
+import { trpc } from "@/utils";
 import {
   createContext,
   FC,
@@ -39,9 +40,35 @@ interface StackCtx {
   setFilterType: (t: StackType) => void;
   search: string;
   setSearch: (q: string) => void;
-  addStack: (s: TechStack) => void;
+  createStack: (s: TechStack) => void;
   updateStack: (s: TechStack) => void;
+  deleteStack: (id: string) => void;
+  duplicateStack: (id: string) => void;
 }
+
+const serverToClient = (row: {
+  id: number;
+  title: string;
+  description: string | null;
+}) =>
+  ({
+    id: String(row.id),
+    name: row.title,
+    description: row.description ?? "",
+    type: "others",
+    technologies: [],
+  }) satisfies TechStack;
+
+const clientToInsert = (s: Omit<TechStack, "id">) => ({
+  title: s.name,
+  description: s.description,
+});
+
+const clientToUpdate = (s: TechStack) => ({
+  id: Number(s.id),
+  title: s.name,
+  description: s.description,
+});
 
 const StackContext = createContext<StackCtx | null>(null);
 export const useStacks = () => {
@@ -51,55 +78,18 @@ export const useStacks = () => {
 };
 
 export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  // Dummy data
-  const [stacks, setStacks] = useState<TechStack[]>([
-    {
-      id: "1",
-      name: "React",
-      type: "frontend",
-      description: "Short description",
-      technologies: [
-        {
-          name: "React",
-          docsUrl: "https://example.com",
-          codeUrl: "https://example.com",
-        },
-      ],
-    },
-    {
-      id: "2",
-      name: "Next.js",
-      type: "frontend",
-      description: "Short description",
-      technologies: [
-        {
-          name: "React",
-          docsUrl: "https://example.com",
-          codeUrl: "https://example.com",
-        },
-      ],
-    },
-    {
-      id: "3",
-      name: "PostgreSQL",
-      type: "backend",
-      description: "Short description",
-      technologies: [
-        {
-          name: "React",
-          docsUrl: "https://example.com",
-          codeUrl: "https://example.com",
-        },
-      ],
-    },
-  ]);
+  const utils = trpc.useUtils();
 
+  const [stacks, setStacks] = useState<TechStack[]>([]);
   const [filterType, setFilterType] = useState<StackType>("all");
   const [search, setSearch] = useState("");
 
-  const addStack = (s: TechStack) => setStacks((prev) => [...prev, s]);
-  const updateStack = (s: TechStack) =>
-    setStacks((prev) => prev.map((stack) => (stack.id === s.id ? s : stack)));
+  const { data: rows = [] } = trpc.stacks.list.useQuery(undefined, {
+    onSettled: (data: TechStack[] | undefined) => {
+      if (data) setStacks(data.map(serverToClient));
+    },
+    staleTime: 60_000,
+  });
 
   const filtered = useMemo(() => {
     return stacks.filter((s) => {
@@ -111,6 +101,48 @@ export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
     });
   }, [stacks, filterType, search]);
 
+  const createStackMut = trpc.stacks.create.useMutation({
+    onSuccess: (row) => {
+      setStacks((s) => [...s, serverToClient(row)]);
+      utils.stacks.list.invalidate();
+    },
+  });
+
+  const updateStackMut = trpc.stacks.update.useMutation({
+    onSuccess: (row) => {
+      setStacks((s) =>
+        s.map((st) => (st.id === String(row.id) ? serverToClient(row) : st)),
+      );
+      utils.stacks.list.invalidate();
+    },
+  });
+
+  const deleteStackMut = trpc.stacks.remove.useMutation({
+    onSuccess: ({ id }) => {
+      setStacks((s) => s.filter((st) => st.id !== String(id)));
+      utils.stacks.list.invalidate();
+    },
+  });
+
+  const duplicateStackMut = trpc.stacks.duplicate.useMutation({
+    onSuccess: (row) => {
+      setStacks((s) => [...s, serverToClient(row)]);
+      utils.stacks.list.invalidate();
+    },
+  });
+
+  /* public actions */
+
+  const createStack = (s: Omit<TechStack, "id">) =>
+    createStackMut.mutate(clientToInsert(s));
+
+  const updateStack = (s: TechStack) =>
+    updateStackMut.mutate(clientToUpdate(s));
+
+  const deleteStack = (id: string) => deleteStackMut.mutate(Number(id));
+
+  const duplicateStack = (id: string) => duplicateStackMut.mutate(Number(id));
+
   const value: StackCtx = {
     stacks,
     filtered,
@@ -118,8 +150,10 @@ export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setFilterType,
     search,
     setSearch,
-    addStack,
+    createStack,
     updateStack,
+    deleteStack,
+    duplicateStack,
   };
 
   return (

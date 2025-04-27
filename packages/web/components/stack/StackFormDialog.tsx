@@ -1,5 +1,5 @@
 "use client";
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -65,7 +65,7 @@ export type StackFormDialogProps =
     };
 
 export const StackFormDialog = (props: StackFormDialogProps) => {
-  const { addStack, updateStack } = useStacks();
+  const { createStack, updateStack } = useStacks();
 
   /* ── Controlled vs uncontrolled ── */
   const [internalOpen, setInternalOpen] = useState(false);
@@ -89,9 +89,12 @@ export const StackFormDialog = (props: StackFormDialogProps) => {
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    getValues,
+    formState: { errors, isValid, isDirty, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
+    criteriaMode: "all",
     defaultValues: defaults,
   });
 
@@ -106,14 +109,17 @@ export const StackFormDialog = (props: StackFormDialogProps) => {
     codeUrl: "",
   });
 
-  function onAddTech() {
-    append(tmpTech);
+  function onAddTech(data: z.infer<typeof techSchema>) {
+    append(data);
     setTmpTech({ name: "", docsUrl: "", codeUrl: "" });
   }
 
   const onSubmit = handleSubmit((data) => {
+    console.log("SUBMIT");
+    console.log(data);
+    debugger;
     if (props.mode === "create") {
-      addStack({
+      createStack({
         id: Date.now().toString(),
         name: data.name,
         type: data.type,
@@ -131,6 +137,14 @@ export const StackFormDialog = (props: StackFormDialogProps) => {
     }
     reset(defaults);
   });
+
+  useEffect(() => {
+    console.log(getValues());
+    console.log(errors);
+    console.log(
+      `isValid: ${isValid} isDirty: ${isDirty} isSubmitting: ${isSubmitting}`,
+    );
+  }, [errors, getValues, isValid, isDirty, isSubmitting]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -245,7 +259,10 @@ export const StackFormDialog = (props: StackFormDialogProps) => {
 
           {/* ── Submit ── */}
           <DialogFooter>
-            <Button type="submit">
+            <Button
+              type="submit"
+              disabled={!isDirty || !isValid || isSubmitting}
+            >
               {props.mode === "create" ? "Save Stack" : "Update Stack"}
             </Button>
           </DialogFooter>
