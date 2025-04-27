@@ -1,5 +1,5 @@
 "use client";
-import { StackType, stackTypes, useStacks } from "@/context/StackContext";
+import { useStacks } from "@/context/StackContext";
 import {
   Select,
   SelectContent,
@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { stackTypes, StackType } from "@chara/server";
 
 export const StackFilter = () => {
   const { filterType, setFilterType } = useStacks();

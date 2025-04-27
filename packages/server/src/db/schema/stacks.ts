@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { stackTypes } from "../../types.ts";
 
 /**
  * Represents technology stacks used in projects.
@@ -14,6 +15,8 @@ export const stacks = sqliteTable("stacks", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   /** Name of the technology stack (e.g.\, \`MERN\`, \`LAMP\`, \`JAMstack\`) */
   title: text("title").notNull(),
+  /** Stack type (e.g.\, \`frontend\`, \`backend\`, \`mobile\`) */
+  type: text("type", { enum: stackTypes }).notNull().default("others"),
   /** Detailed description of the technology stack and its components */
   description: text("description"),
   /** Timestamp when the stack entry was created */

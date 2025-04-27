@@ -1,6 +1,6 @@
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { stacks } from "./stacks";
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 /**
  * Represents web links/URLs that have been saved to stacks.
@@ -32,3 +32,13 @@ export const links = sqliteTable("links", {
     .notNull()
     .references(() => stacks.id, { onDelete: "cascade" }),
 });
+
+export const stacksRelations = relations(stacks, ({ many }) => ({
+  links: many(links),
+}));
+export const linksRelations = relations(links, ({ one }) => ({
+  stack: one(stacks, {
+    fields: [links.stackId],
+    references: [stacks.id],
+  }),
+}));

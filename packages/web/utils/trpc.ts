@@ -9,7 +9,7 @@ export function createTrpcClient() {
     links: [
       httpBatchLink({
         url: "http://localhost:3030/trpc",
-        // transformer: superjson,
+        transformer: superjson,
       }),
     ],
   });

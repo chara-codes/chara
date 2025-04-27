@@ -25,11 +25,12 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X } from "lucide-react";
 
-import { useStacks, stackTypes, TechStack } from "@/context/StackContext";
+import { useStacks, TechStack } from "@/context/StackContext";
 import { Label } from "@/components/ui/label";
 import { TechBuilder } from "@/components/stack/TechBuilder";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { stackTypes } from "@chara/server";
 
 export const techSchema = z.object({
   name: z.string().min(1, "Required"),
@@ -89,7 +90,6 @@ export const StackFormDialog = (props: StackFormDialogProps) => {
     control,
     handleSubmit,
     reset,
-    getValues,
     formState: { errors, isValid, isDirty, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -115,9 +115,6 @@ export const StackFormDialog = (props: StackFormDialogProps) => {
   }
 
   const onSubmit = handleSubmit((data) => {
-    console.log("SUBMIT");
-    console.log(data);
-    debugger;
     if (props.mode === "create") {
       createStack({
         id: Date.now().toString(),
@@ -137,14 +134,6 @@ export const StackFormDialog = (props: StackFormDialogProps) => {
     }
     reset(defaults);
   });
-
-  useEffect(() => {
-    console.log(getValues());
-    console.log(errors);
-    console.log(
-      `isValid: ${isValid} isDirty: ${isDirty} isSubmitting: ${isSubmitting}`,
-    );
-  }, [errors, getValues, isValid, isDirty, isSubmitting]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

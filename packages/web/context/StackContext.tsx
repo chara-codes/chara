@@ -1,22 +1,15 @@
 "use client";
 import { trpc } from "@/utils";
+import { StackType } from "@chara/server";
 import {
   createContext,
   FC,
   ReactNode,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
-
-export const stackTypes = [
-  "all",
-  "frontend",
-  "backend",
-  "mobile",
-  "others",
-] as const;
-export type StackType = (typeof stackTypes)[number];
 
 export interface Technology {
   name: string;
@@ -50,24 +43,29 @@ const serverToClient = (row: {
   id: number;
   title: string;
   description: string | null;
-}) =>
-  ({
-    id: String(row.id),
-    name: row.title,
-    description: row.description ?? "",
-    type: "others",
-    technologies: [],
-  }) satisfies TechStack;
+  technologies: Technology[];
+  type: StackType;
+}) => ({
+  id: String(row.id),
+  name: row.title,
+  description: row.description ?? "",
+  type: row.type,
+  technologies: row.technologies,
+});
 
 const clientToInsert = (s: Omit<TechStack, "id">) => ({
   title: s.name,
   description: s.description,
+  type: s.type,
+  technologies: s.technologies,
 });
 
 const clientToUpdate = (s: TechStack) => ({
   id: Number(s.id),
   title: s.name,
   description: s.description,
+  type: s.type,
+  technologies: s.technologies,
 });
 
 const StackContext = createContext<StackCtx | null>(null);
@@ -85,11 +83,15 @@ export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [search, setSearch] = useState("");
 
   const { data: rows = [] } = trpc.stacks.list.useQuery(undefined, {
-    onSettled: (data: TechStack[] | undefined) => {
-      if (data) setStacks(data.map(serverToClient));
+    select: (rows) => {
+      return rows.map(serverToClient);
     },
-    staleTime: 60_000,
+    initialData: [],
   });
+
+  useEffect(() => {
+    setStacks(rows);
+  }, [rows]);
 
   const filtered = useMemo(() => {
     return stacks.filter((s) => {
