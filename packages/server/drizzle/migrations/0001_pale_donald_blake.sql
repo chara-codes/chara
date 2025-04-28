@@ -19,7 +19,6 @@ CREATE TABLE `links` (
 	FOREIGN KEY (`stackId`) REFERENCES `stacks`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `links_url_unique` ON `links` (`url`);--> statement-breakpoint
 CREATE TABLE `mcp` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`serverConfig` text NOT NULL,

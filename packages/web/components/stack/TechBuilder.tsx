@@ -1,40 +1,47 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useFormContext } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { Input } from "../ui/input";
-import { techSchema } from "./StackFormDialog";
-import { FormEvent } from 'react';
+import { FormValues, techSchema, TechSchemaType } from "./utils";
 
 type TechBuilderProps = {
-  onAdd: (tech: z.infer<typeof techSchema>) => void;
+  append: (tech: TechSchemaType) => void;
 };
 
-export const TechBuilder = ({ onAdd }: TechBuilderProps) => {
+export const TechBuilder = ({ append }: TechBuilderProps) => {
   const {
     register,
-    reset,
     getValues,
-    formState: { errors },
-  } = useForm<z.infer<typeof techSchema>>({
-    resolver: zodResolver(techSchema),
-    defaultValues: { name: "", docsUrl: "", codeUrl: "" },
-  });
+    setValue,
+    clearErrors,
+    setError,
+    watch,
+    formState: { errors, isValid, isDirty, isSubmitting },
+  } = useFormContext<FormValues>();
 
-  const handleAdd = handleSubmit((data) => {
-    onAdd(data);
-    reset();
-  });
+  const handleAdd = () => {
+    const draft = getValues("techDraft");
+    const parsed = techSchema.safeParse(draft);
+    if (!parsed.success) {
+      const flat = parsed.error.flatten().fieldErrors;
+      if (flat.name) setError("techDraft.name", { message: flat.name[0] });
+      if (flat.docsUrl)
+        setError("techDraft.docsUrl", { message: flat.docsUrl[0] });
+      if (flat.codeUrl)
+        setError("techDraft.codeUrl", { message: flat.codeUrl[0] });
+      return;
+    }
+    append(parsed.data);
+    setValue("techDraft", { name: "", docsUrl: "", codeUrl: "" });
+    clearErrors("techDraft");
+    clearErrors("technologies");
+  };
 
-  function handleSubmit(cb: (data: any) => void) {
-    return (e: FormEvent) => {
-      e.preventDefault();
-      cb(getValues());
-    };
-  }
+  const draftErr = (errors.techDraft as any) || {};
+  const draft = watch("techDraft");
+  const isDraftValid = techSchema.safeParse(draft).success;
 
   return (
     <div className="space-y-4">
@@ -43,22 +50,26 @@ export const TechBuilder = ({ onAdd }: TechBuilderProps) => {
 
         <div className="col-span-3 space-y-2">
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Input placeholder="Name" {...register("name")} />
-            <Input placeholder="Docs URL" {...register("docsUrl")} />
-            <Input placeholder="Code URL" {...register("codeUrl")} />
+            <Input placeholder="Name" {...register("techDraft.name")} />
+            <Input placeholder="Docs URL" {...register("techDraft.docsUrl")} />
+            <Input placeholder="Code URL" {...register("techDraft.codeUrl")} />
           </div>
 
-          <Button type="button" onClick={handleAdd} className="w-full">
+          <Button
+            type="button"
+            onClick={handleAdd}
+            className="w-full"
+            disabled={!isDraftValid}
+          >
             Add Technology
           </Button>
 
-          {/* Inline errors (optional) */}
-          {errors.name && (
-            <p className="text-destructive text-xs">{errors.name.message}</p>
+          {draftErr?.name?.message && (
+            <p className="text-destructive text-xs">{draftErr.name.message}</p>
           )}
-          {(errors.docsUrl || errors.codeUrl) && (
+          {(draftErr?.docsUrl?.message || draftErr?.codeUrl?.message) && (
             <p className="text-destructive text-xs">
-              {errors.docsUrl?.message || errors.codeUrl?.message}
+              {draftErr.docsUrl?.message || draftErr.codeUrl?.message}
             </p>
           )}
         </div>

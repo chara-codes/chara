@@ -1,8 +1,12 @@
 "use client";
-import { ReactNode, useEffect, useState } from "react";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { useState } from "react";
+import {
+  useForm,
+  Controller,
+  useFieldArray,
+  FormProvider,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 
 import {
   Dialog,
@@ -31,51 +35,22 @@ import { TechBuilder } from "@/components/stack/TechBuilder";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { stackTypes } from "@chara/server";
-import { TechStack } from '@/types';
-
-export const techSchema = z.object({
-  name: z.string().min(1, "Required"),
-  docsUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
-  codeUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
-});
-
-const formSchema = z.object({
-  name: z.string().min(2, "Name is too short"),
-  type: z.enum(stackTypes),
-  description: z.string().optional(),
-  technologies: z
-    .array(techSchema)
-    .min(1, "Add at least one technology")
-    .max(10, "Too many"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
-
-export type StackFormDialogProps =
-  | {
-      mode: "create";
-      trigger?: ReactNode;
-      open?: boolean;
-      onOpenChange?: (o: boolean) => void;
-    }
-  | {
-      mode: "edit";
-      stack: TechStack;
-      trigger?: ReactNode;
-      open?: boolean;
-      onOpenChange?: (o: boolean) => void;
-    };
+import {
+  StackFormDialogProps,
+  FormValues,
+  formSchema,
+  TechSchemaType,
+} from "./utils";
 
 export const StackFormDialog = (props: StackFormDialogProps) => {
   const { createStack, updateStack } = useStacks();
 
-  /* ── Controlled vs uncontrolled ── */
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = props.open !== undefined;
   const open = isControlled ? props.open : internalOpen;
   const setOpen = isControlled ? props.onOpenChange! : setInternalOpen;
 
-  /* — defaultValues depend on mode — */
+  /* defaultValues depend on mode */
   const defaults: FormValues =
     props.mode === "edit"
       ? {
@@ -83,37 +58,36 @@ export const StackFormDialog = (props: StackFormDialogProps) => {
           type: props.stack.type,
           description: props.stack.description ?? "",
           technologies: props.stack.technologies ?? [],
+          techDraft: { name: "", docsUrl: "", codeUrl: "" },
         }
-      : { name: "", type: "frontend", description: "", technologies: [] };
+      : {
+          name: "",
+          type: "frontend",
+          description: "",
+          technologies: [],
+          techDraft: { name: "", docsUrl: "", codeUrl: "" },
+        };
 
-  const {
-    register,
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors, isValid, isDirty, isSubmitting },
-  } = useForm<FormValues>({
+  const methods = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     mode: "onChange",
     criteriaMode: "all",
     defaultValues: defaults,
   });
 
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors, isValid, isDirty, isSubmitting },
+  } = methods;
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: "technologies",
   });
-
-  const [tmpTech, setTmpTech] = useState({
-    name: "",
-    docsUrl: "",
-    codeUrl: "",
-  });
-
-  function onAddTech(data: z.infer<typeof techSchema>) {
-    append(data);
-    setTmpTech({ name: "", docsUrl: "", codeUrl: "" });
-  }
 
   const onSubmit = handleSubmit((data) => {
     if (props.mode === "create") {
@@ -134,6 +108,7 @@ export const StackFormDialog = (props: StackFormDialogProps) => {
       });
     }
     reset(defaults);
+    isControlled ? setOpen(false) : setInternalOpen(false);
   });
 
   return (
@@ -151,112 +126,116 @@ export const StackFormDialog = (props: StackFormDialogProps) => {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="space-y-6">
-          {/* ── Name ── */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input
-              id="name"
-              autoFocus
-              placeholder="e.g., MERN Stack"
-              {...register("name")}
-              className="col-span-3"
-            />
-          </div>
-          {errors.name && (
-            <p className="text-destructive text-sm -mt-4 pl-[30%]">
-              {errors.name.message}
-            </p>
-          )}
-
-          {/* ── Category── */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">Category</Label>
-            <Controller
-              control={control}
-              name="type"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stackTypes
-                      .filter((t) => t !== "all")
-                      .map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-
-          {/* ── Technologies list builder ── */}
-          <TechBuilder onAdd={onAddTech} />
-          {errors.technologies && (
-            <p className="text-destructive text-sm -mt-4 pl-[30%]">
-              {errors.technologies.message as string}
-            </p>
-          )}
-
-          {/* existing tech chips */}
-          {fields.length > 0 && (
-            <div className="grid grid-cols-4 items-start gap-4">
-              <div className="col-span-3 col-start-2">
-                <ScrollArea className="h-[110px] border rounded-md p-4">
-                  <div className="flex flex-wrap gap-2">
-                    {fields.map((tech, idx) => (
-                      <Badge
-                        key={tech.id}
-                        variant="secondary"
-                        className="flex items-center gap-1"
-                      >
-                        {tech.name}
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="h-4 w-4 p-0"
-                          onClick={() => remove(idx)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
+        <FormProvider {...methods}>
+          <form onSubmit={onSubmit} className="space-y-6">
+            {/* ── Name ── */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                autoFocus
+                placeholder="e.g., MERN Stack"
+                {...register("name")}
+                className="col-span-3"
+              />
             </div>
-          )}
+            {errors.name && (
+              <p className="text-destructive text-sm -mt-4 pl-[30%]">
+                {errors.name.message}
+              </p>
+            )}
 
-          {/* ── Description ── */}
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="description" className="text-right">
-              Description
-            </Label>
-            <Textarea
-              id="description"
-              placeholder="Markdown supported…"
-              className="col-span-3 h-[300px] font-mono"
-              {...register("description")}
-            />
-          </div>
+            {/* ── Category── */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Category</Label>
+              <Controller
+                control={control}
+                name="type"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stackTypes
+                        .filter((t) => t !== "all")
+                        .map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
 
-          {/* ── Submit ── */}
-          <DialogFooter>
-            <Button
-              type="submit"
-              disabled={!isDirty || !isValid || isSubmitting}
-            >
-              {props.mode === "create" ? "Save Stack" : "Update Stack"}
-            </Button>
-          </DialogFooter>
-        </form>
+            {/* ── Technologies list builder ── */}
+            <TechBuilder append={append} />
+            {(errors.technologies?.root?.message ||
+              errors.technologies?.message) && (
+              <p className="text-destructive text-sm -mt-4 pl-[30%]">
+                {errors.technologies?.root?.message ||
+                  errors.technologies?.message}
+              </p>
+            )}
+
+            {/* existing tech chips */}
+            {fields.length > 0 && (
+              <div className="grid grid-cols-4 items-start gap-4">
+                <div className="col-span-3 col-start-2">
+                  <ScrollArea className="h-[110px] border rounded-md p-4">
+                    <div className="flex flex-wrap gap-2">
+                      {fields.map((tech, idx) => (
+                        <Badge
+                          key={tech.id}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {tech.name}
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-4 w-4 p-0"
+                            onClick={() => remove(idx)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
+            )}
+
+            {/* ── Description ── */}
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                placeholder="Markdown supported…"
+                className="col-span-3 h-[300px] font-mono"
+                {...register("description")}
+              />
+            </div>
+
+            {/* ── Submit ── */}
+            <DialogFooter>
+              <Button
+                type="submit"
+                disabled={!isDirty || !isValid || isSubmitting}
+              >
+                {props.mode === "create" ? "Save Stack" : "Update Stack"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </FormProvider>
       </DialogContent>
     </Dialog>
   );

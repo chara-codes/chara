@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "7e8083d3-4e1f-47ca-a8d0-f0490f9ebf15",
+  "id": "005c7433-241e-49cb-8f04-62188044dc34",
   "prevId": "01dc6270-d07f-45d3-a0c2-5eb090dc003b",
   "tables": {
     "chats": {
@@ -198,15 +198,7 @@
           "autoincrement": false
         }
       },
-      "indexes": {
-        "links_url_unique": {
-          "name": "links_url_unique",
-          "columns": [
-            "url"
-          ],
-          "isUnique": true
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "links_stackId_stacks_id_fk": {
           "name": "links_stackId_stacks_id_fk",

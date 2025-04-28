@@ -21,7 +21,7 @@ export const links = sqliteTable("links", {
   /** Display title for the linked content */
   title: text("title").notNull(),
   /** The complete URL pointing to the linked content */
-  url: text("url").unique().notNull(),
+  url: text("url").notNull(),
   /** Link type */
   kind: text("kind", { enum: linkTypes }).notNull(),
   /** Timestamp when this link was created */
