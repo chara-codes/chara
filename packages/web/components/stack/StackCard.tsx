@@ -1,12 +1,6 @@
 "use client";
-import React, { useState } from "react";
-import {
-  EllipsisVertical,
-  ExternalLink,
-  Code,
-  Layers,
-  Info,
-} from "lucide-react";
+import React from "react";
+import { Layers, Info } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 import {
@@ -17,14 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -34,86 +20,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { DialogHeader } from "../ui/dialog";
-import { useStacks } from "@/context";
-import { StackFormDialog } from "./StackFormDialog";
 import { TechStack } from "@/types";
-
-const CardActions = ({ stack }: { stack: TechStack }) => {
-  const { deleteStack, duplicateStack } = useStacks();
-  const [editOpen, setEditOpen] = useState(false);
-
-  return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="!mt-0 border-none outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0">
-            <EllipsisVertical />
-          </button>
-        </DropdownMenuTrigger>
-
-        <DropdownMenuPortal>
-          <DropdownMenuContent side="bottom" align="end" sideOffset={10}>
-            <div className="px-2 py-1 text-md font-semibold">Actions</div>
-            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-              Edit stack
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => duplicateStack(stack.id)}>
-              Duplicate stack
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onSelect={() => deleteStack(stack.id)}
-              className="text-destructive hover:!text-destructive"
-            >
-              Delete Stack
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenuPortal>
-      </DropdownMenu>
-
-      <StackFormDialog
-        mode="edit"
-        stack={stack}
-        open={editOpen}
-        onOpenChange={setEditOpen}
-      />
-    </>
-  );
-};
-
-const CardChipWithLink = ({
-  label,
-  link,
-  codeLink,
-}: {
-  label: string;
-  link: string;
-  codeLink: string;
-}) => {
-  return (
-    <div className="inline-flex items-center gap-2 border border-border px-3 py-1 rounded-full text-sm font-bold text-foreground hover:bg-muted transition">
-      <span>{label}</span>
-      <a
-        href={link}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-primary hover:underline"
-        aria-label={`${label} documentation`}
-      >
-        <ExternalLink size={16} />
-      </a>
-      <a
-        href={codeLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-green-500 hover:underline"
-        aria-label={`${label} source code`}
-      >
-        <Code size={16} />
-      </a>
-    </div>
-  );
-};
+import { CardActions } from "./CardActions";
+import { CardChipWithLink } from "./CardChipWithLink";
 
 export const StackCard = ({ stack }: { stack: TechStack }) => {
   const { name, type, description, technologies } = stack;
@@ -133,8 +42,8 @@ export const StackCard = ({ stack }: { stack: TechStack }) => {
             <CardChipWithLink
               key={name}
               label={name}
-              link={docsUrl || ""}
-              codeLink={codeUrl || ""}
+              docsUrl={docsUrl || ""}
+              codeUrl={codeUrl || ""}
             />
           ))}
         </div>
