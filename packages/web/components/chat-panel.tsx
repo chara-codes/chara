@@ -12,6 +12,8 @@ import { Send, Paperclip, X, Loader2 } from "lucide-react";
 import type { Message, FileAttachment } from "../types";
 import { MessageItem } from "./message-item";
 import { useChat } from "@/hooks/use-chat";
+import { useProject } from "@/contexts/project-context";
+import { ProjectSelector } from "@/components/project-selector";
 
 interface ChatPanelProps {
   initialMessages: Message[];
@@ -20,8 +22,13 @@ interface ChatPanelProps {
 export function ChatPanel({ initialMessages }: ChatPanelProps) {
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const { selectedProject, setSelectedProject } = useProject();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleProjectSelect = (projectId: string, projectName: string) => {
+    setSelectedProject({ id: projectId, name: projectName });
+  };
 
   const { messages, input, handleInputChange, handleSubmit, error, status } =
     useChat(true);
@@ -68,6 +75,12 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
 
   return (
     <div className="flex flex-col h-full">
+      <div className="p-4 border-b">
+        <ProjectSelector
+          onProjectSelect={handleProjectSelect}
+          selectedProject={selectedProject}
+        />
+      </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
           <MessageItem

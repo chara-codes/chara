@@ -1,5 +1,12 @@
-export const useAIChat = <Input>(url: string, streamObject = false) => {
+import { ProjectInformation } from "@/contexts/project-context";
+
+export const useAIChat = <Input>(
+  url: string,
+  streamObject = true,
+  project?: ProjectInformation | null,
+) => {
   const stream = async (input: Input, signal: AbortSignal) => {
+    input.project = project;
     const params: Record<string, string | number> = {
       batch: 1,
       input: JSON.stringify({ 0: input }),
