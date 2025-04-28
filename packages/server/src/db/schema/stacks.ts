@@ -13,9 +13,9 @@ import { stackTypes } from "../../types.ts";
 export const stacks = sqliteTable("stacks", {
   /** Unique identifier for the technology stack */
   id: integer("id").primaryKey({ autoIncrement: true }),
-  /** Name of the technology stack (e.g.\, \`MERN\`, \`LAMP\`, \`JAMstack\`) */
+  /** Name of the technology stack */
   title: text("title").notNull(),
-  /** Stack type (e.g.\, \`frontend\`, \`backend\`, \`mobile\`) */
+  /** Stack type */
   type: text("type", { enum: stackTypes }).notNull().default("others"),
   /** Detailed description of the technology stack and its components */
   description: text("description"),

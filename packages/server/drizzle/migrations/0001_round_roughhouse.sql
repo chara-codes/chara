@@ -12,8 +12,9 @@ CREATE TABLE `links` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`title` text NOT NULL,
 	`url` text NOT NULL,
-	`createdAt` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	`scannedAt` integer,
+	`kind` text NOT NULL,
+	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`scanned_at` integer,
 	`stackId` integer NOT NULL,
 	FOREIGN KEY (`stackId`) REFERENCES `stacks`(`id`) ON UPDATE no action ON DELETE cascade
 );
@@ -48,6 +49,7 @@ CREATE TABLE `projects` (
 CREATE TABLE `stacks` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`title` text NOT NULL,
+	`type` text DEFAULT 'others' NOT NULL,
 	`description` text,
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	`updated_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL

@@ -1,1 +1,0 @@
-ALTER TABLE `stacks` ADD `type` text DEFAULT 'others' NOT NULL;
