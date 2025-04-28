@@ -25,12 +25,13 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X } from "lucide-react";
 
-import { useStacks, TechStack } from "@/context/StackContext";
+import { useStacks } from "@/context/StackContext";
 import { Label } from "@/components/ui/label";
 import { TechBuilder } from "@/components/stack/TechBuilder";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { stackTypes } from "@chara/server";
+import { TechStack } from '@/types';
 
 export const techSchema = z.object({
   name: z.string().min(1, "Required"),

@@ -34,8 +34,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { DialogHeader } from "../ui/dialog";
-import { TechStack, useStacks } from "@/context";
+import { useStacks } from "@/context";
 import { StackFormDialog } from "./StackFormDialog";
+import { TechStack } from "@/types";
 
 const CardActions = ({ stack }: { stack: TechStack }) => {
   const { deleteStack, duplicateStack } = useStacks();
