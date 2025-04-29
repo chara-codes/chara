@@ -6,8 +6,8 @@
     "tunnel": "./dist/tunnel"
   },
   "scripts": {
-    "build": "bun build ./src/index.ts --outfile ./dist/tunnel --compile",
-    "d": "bun ./src/index.ts",
+    "build": "bun build ./src/cli.ts --outfile ./dist/tunnel --compile",
+    "d": "bun ./src/cli.ts",
     "start": "./dist/tunnel"
   },
   "devDependencies": {

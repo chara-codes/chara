@@ -1,13 +1,6 @@
 import WebSocket from "ws";
 import { logger } from "./utils/logger";
-
-export interface TunnelClientOptions {
-  port: number;
-  host: string;
-  remoteHost: string;
-  secure: boolean;
-  subdomain?: string;
-}
+import type { TunnelClientOptions } from "./types/client.types";
 
 export class TunnelClient {
   private ws: WebSocket | null = null;

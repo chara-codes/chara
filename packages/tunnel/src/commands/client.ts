@@ -1,14 +1,9 @@
 import type { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
 import { TunnelClient } from "../client";
+import type { TunnelClientOptions } from "../types/client.types";
 
-interface ClientCommandArgs {
-  port: number;
-  host: string;
-  remoteHost: string;
-  secure: boolean;
-  subdomain?: string;
-}
+interface ClientCommandArgs extends TunnelClientOptions {}
 
 export const clientCommand: CommandModule<{}, ClientCommandArgs> = {
   command: "client",
