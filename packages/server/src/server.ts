@@ -10,8 +10,9 @@ import { createBunWSHandler } from "./utils/create-bun-ws-handler";
 import { myLogger as logger } from "./utils/logger";
 import { chatRouter } from "./api/routes/chat";
 import { subscription } from "./api/routes/subscription";
+import superjson from "superjson";
 
-const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().create({ transformer: superjson });
 
 const publicProcedure = t.procedure;
 const router = t.router;
