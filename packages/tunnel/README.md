@@ -14,13 +14,13 @@ Chara Tunnel is a lightweight, easy-to-use tunneling service that exposes your l
 
 ```bash
 # Install globally
-bun install -g @chara/tunnel
+bun add -g @chara/tunnel
 
 # Or use with bunx
 bunx @chara/tunnel [command]
 
 # Or install locally
-bun install @chara/tunnel
+bun add @chara/tunnel
 ```
 
 ## Usage
@@ -30,16 +30,31 @@ Chara Tunnel consists of two parts: a server component that receives internet tr
 ### Start a tunnel server
 
 ```bash
-tunnel server --port 1337 --domain example.com --controlDomain control.example.com
+tunnel server --port 1337 --domain chara-ai.dev --controlDomain control.chara-ai.dev
 ```
 
 ### Connect a local server
 
 ```bash
-tunnel client --port 3000 --host localhost --remoteHost control.example.com --subdomain myapp
+tunnel client --port 3000 --host localhost --remoteHost control.chara-ai.dev --subdomain myapp.chara-ai.dev
 ```
 
-After connecting, your local server will be accessible at `myapp.example.com`.
+This will make your local server available at `myapp.chara-ai.dev`.
+
+### Using a random domain
+
+If you don't specify a subdomain when connecting a client, the server will generate a random one for you:
+
+```bash
+tunnel client --port 3000 --host localhost --remoteHost control.chara-ai.dev
+```
+
+You'll receive output similar to:
+```
+✓ Connected to tunnel server!
+✓ Tunnel established! Your local server is now available at:
+  https://random-words-123456.chara-ai.dev
+```
 
 ## Command Options
 
@@ -116,8 +131,8 @@ import { TunnelClient, startServer } from '@chara/tunnel';
 const client = new TunnelClient({
   port: 3000,
   host: 'localhost',
-  remoteHost: 'control.example.com',
-  subdomain: 'myapp'
+  remoteHost: 'control.chara-ai.dev',
+  subdomain: 'test.chara-ai.dev'
 });
 
 await client.connect();
@@ -125,8 +140,8 @@ await client.connect();
 // Start a server
 startServer({
   port: 1337,
-  domain: 'example.com',
-  controlDomain: 'control.example.com',
+  domain: 'chara-ai.dev',
+  controlDomain: 'control.chara-ai.dev',
   replacements: [
     { pattern: '</body>', replacement: '<script>console.log("Hello");</script></body>' }
   ]
