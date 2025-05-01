@@ -2,6 +2,8 @@ import type { ServerWebSocket, Server } from "bun";
 import { logger } from "./utils/logger";
 import { randomUUID } from "crypto";
 import { allocateSubdomain } from "./utils/subdomain";
+import { isTextResponse } from "./utils/content-type";
+import { applyReplacements } from "./utils/replacements";
 import type {
   PendingRequest,
   ClientData,
@@ -16,6 +18,17 @@ export function startServer(config: ServerConfig): Server {
   logger.debug(`Server configuration: ${JSON.stringify(config, null, 2)}`);
 
   // Store client connections with their assigned subdomains
+
+  if (config.replacements && config.replacements.length > 0) {
+    logger.debug(
+      `Text replacements configured: ${config.replacements.length} patterns`,
+    );
+    config.replacements.forEach((replacement, index) => {
+      logger.debug(
+        `  ${index + 1}: ${replacement.pattern} → ${replacement.replacement}`,
+      );
+    });
+  }
   const clients = new Map<string, ServerWebSocket<ClientData>>();
 
   const server = Bun.serve({
@@ -286,6 +299,15 @@ export function startServer(config: ServerConfig): Server {
 
             if (pendingRequest) {
               const { resolver } = pendingRequest;
+              const responseHeaders =
+                pendingRequest.headers || new Headers(data.headers || {});
+              const status = pendingRequest.status || data.status || 200;
+
+              // Check if this is a text/html response that should have replacements applied
+              const shouldApplyReplacements =
+                config.replacements &&
+                config.replacements.length > 0 &&
+                isTextResponse(responseHeaders);
 
               // For streaming responses, use the stream as the body
               if (pendingRequest.stream && pendingRequest.streamController) {
@@ -302,17 +324,85 @@ export function startServer(config: ServerConfig): Server {
                     logger.error(`Error adding final chunk to stream: ${e}`);
                   }
                 }
+
                 // Close the stream
                 pendingRequest.streamController.close();
                 logger.debug(`Closed stream for request ${data.id}`);
+
+                // If we need to apply text replacements, we'll collect the stream chunks,
+                // apply replacements, and create a new response
+                if (shouldApplyReplacements && config.replacements) {
+                  logger.debug(
+                    `Applying text replacements to response for request ${data.id}`,
+                  );
+
+                  // Read the entire stream and apply replacements
+                  const reader = pendingRequest.stream.getReader();
+                  let chunks: Uint8Array[] = [];
+
+                  // Create a new response with the modified content
+                  const modifiedResponse = new Response(
+                    new ReadableStream({
+                      async start(controller) {
+                        try {
+                          while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            chunks.push(value);
+                          }
+
+                          // Combine chunks and convert to text
+                          const concatenated = new Uint8Array(
+                            chunks.reduce(
+                              (acc, chunk) => acc + chunk.length,
+                              0,
+                            ),
+                          );
+                          let offset = 0;
+                          for (const chunk of chunks) {
+                            concatenated.set(chunk, offset);
+                            offset += chunk.length;
+                          }
+
+                          const text = new TextDecoder().decode(concatenated);
+
+                          // Apply replacements
+                          const modifiedText = applyReplacements(
+                            text,
+                            config.replacements!, // Added non-null assertion
+                          );
+
+                          // Send the modified text
+                          controller.enqueue(
+                            new TextEncoder().encode(modifiedText),
+                          );
+                          controller.close();
+                        } catch (e) {
+                          logger.error(
+                            `Error applying text replacements: ${e}`,
+                          );
+                          controller.error(e);
+                        }
+                      },
+                    }),
+                    {
+                      status,
+                      headers: responseHeaders,
+                    },
+                  );
+
+                  resolver(modifiedResponse);
+                } else {
+                  // For non-text responses or when no replacements are needed,
+                  // use the original stream
+                  resolver(
+                    new Response(pendingRequest.stream, {
+                      status,
+                      headers: responseHeaders,
+                    }),
+                  );
+                }
               }
-              resolver(
-                new Response(pendingRequest.stream, {
-                  status: pendingRequest.status || data.status || 200,
-                  headers:
-                    pendingRequest.headers || new Headers(data.headers || {}),
-                }),
-              );
 
               // Clean up the pending request
               typedWs.data.requests?.delete(data.id);

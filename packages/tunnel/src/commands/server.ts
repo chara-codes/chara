@@ -1,10 +1,13 @@
+import * as path from "path";
 import type { CommandModule } from "yargs";
 import { startServer } from "../server";
 import type { ServerConfig } from "../types/server.types";
 import { LogLevel } from "../types/logger.types";
 import { logger } from "../utils/logger";
 
-interface ServerCommandArgs extends ServerConfig {}
+interface ServerCommandArgs extends ServerConfig {
+  configFile?: string;
+}
 
 export const serverCommand: CommandModule<{}, ServerCommandArgs> = {
   command: "server",
@@ -33,14 +36,48 @@ export const serverCommand: CommandModule<{}, ServerCommandArgs> = {
         type: "boolean",
         description: "Enable debug logging",
         default: false,
+      })
+      .option("configFile", {
+        alias: "c",
+        type: "string",
+        description: "Path to a JSON configuration file for replacements",
       }),
   handler: async (argv) => {
     logger.setLevel(argv.debug ? LogLevel.DEBUG : LogLevel.INFO);
+
+    let replacements = [];
+    if (argv.configFile) {
+      try {
+        const configFilePath = path.resolve(argv.configFile);
+        const file = Bun.file(configFilePath);
+        const configFileJson = await file.json();
+
+        if (
+          configFileJson.replacements &&
+          Array.isArray(configFileJson.replacements)
+        ) {
+          replacements = configFileJson.replacements;
+          logger.info(
+            `Loaded replacements from config file: ${configFilePath}`,
+          );
+        } else {
+          logger.warning(
+            "Config file does not contain a valid replacements array",
+          );
+        }
+      } catch (error) {
+        logger.error(
+          `Failed to read or parse config file: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    }
 
     const config: ServerConfig = {
       port: argv.port,
       domain: argv.domain,
       controlDomain: argv.controlDomain,
+      replacements,
     };
 
     startServer(config);

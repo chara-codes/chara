@@ -16,8 +16,14 @@ export interface ClientData {
   requests?: Map<string, PendingRequest>;
 }
 
+export interface TextReplacement {
+  pattern: string | RegExp;
+  replacement: string;
+}
+
 export interface ServerConfig {
   port: number;
   domain: string;
   controlDomain: string;
+  replacements?: TextReplacement[];
 }
