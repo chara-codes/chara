@@ -26,6 +26,8 @@ services:
     image: charatunnel:latest
     container_name: charatunnel
     restart: unless-stopped
+    volumes:
+      - ./config.json:/config.json
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.charatunnel.entrypoints=websecure"
