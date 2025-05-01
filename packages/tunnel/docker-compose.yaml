@@ -12,18 +12,31 @@ services:
       - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
     ports:
       - "80:80"
       - "443:443"
+    networks:
+      - shared_network
     volumes:
       - "./traefik/dynamic:/etc/traefik/dynamic:ro"
       - "./certs:/certs:ro"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.chara-ai.dev`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
 
   charatunnel:
     build:
       context: . # Build your forked charatunnel server
     restart: unless-stopped
+    container_name: charatunnel
+    networks:
+      - shared_network
     volumes:
       - ./config.json:/config.json
     labels:
@@ -32,3 +45,7 @@ services:
       - "traefik.http.routers.charatunnel.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
       - "traefik.http.routers.charatunnel.tls=true"
       - "traefik.http.services.charatunnel.loadbalancer.server.port=1337"
+
+networks:
+  shared_network:
+    driver: bridge

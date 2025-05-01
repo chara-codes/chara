@@ -10,7 +10,7 @@ export class TunnelClient {
     this.options = {
       port: options.port ?? 3000,
       host: options.host ?? "localhost",
-      remoteHost: options.remoteHost ?? "control.localhost:1337",
+      remoteHost: options.remoteHost ?? "control.chara-ai.dev",
       secure: options.secure ?? true,
       subdomain: options.subdomain,
     };

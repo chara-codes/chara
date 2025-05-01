@@ -21,13 +21,13 @@ export const clientCommand: CommandModule<{}, ClientCommandArgs> = {
         alias: "h",
         type: "string",
         description: "Local host to forward",
-        default: "localhost",
+        default: "chara-ai.dev",
       })
       .option("remoteHost", {
         alias: "r",
         type: "string",
         description: "Remote tunnel server host",
-        default: "control.localhost:1337",
+        default: "control.chara-ai.dev",
       })
       .option("secure", {
         alias: "s",
