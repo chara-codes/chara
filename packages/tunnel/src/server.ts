@@ -33,6 +33,7 @@ export function startServer(config: ServerConfig): Server {
 
   const server = Bun.serve({
     port,
+    hostname: "0.0.0.0",
     routes: {
       "/_chara/connect": (req) => {
         const url = new URL(req.url);
@@ -470,7 +471,7 @@ export function startServer(config: ServerConfig): Server {
     },
   });
 
-  logger.server(`Server running at http://${controlDomain}:${server.port}`);
+  logger.server(`Server running at ${server.url}`);
 
   return server;
 }
