@@ -23,8 +23,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    networks:
-      - shared_network
     volumes:
       - "./traefik/dynamic:/etc/traefik/dynamic:ro"
       - "./certs:/certs:ro"
@@ -42,20 +40,14 @@ services:
       context: . # Build your forked charatunnel server
     restart: unless-stopped
     container_name: charatunnel
-    networks:
-      - shared_network
+    expose:
+      - "1337"
     volumes:
       - ./config.json:/config.json
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.charatunnel-secure.entrypoints=websecure"
-      - "traefik.http.routers.charatunnel-secure.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
-      - "traefik.http.routers.charatunnel-secure.tls=true"
-      - "traefik.http.routers.charatunnel-secure.priority=100"
+      - "traefik.http.routers.charatunnel.entrypoints=websecure"
+      - "traefik.http.routers.charatunnel.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
+      - "traefik.http.routers.charatunnel.tls=true"
+      - "traefik.http.routers.charatunnel.priority=100"
       - "traefik.http.services.charatunnel.loadbalancer.server.port=1337"
-      - "traefik.http.routers.charatunnel-http.entrypoints=web"
-      - "traefik.http.routers.charatunnel-http.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
-
-networks:
-  shared_network:
-    driver: bridge
