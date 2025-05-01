@@ -1,6 +1,8 @@
 import type { CommandModule } from "yargs";
 import { startServer } from "../server";
 import type { ServerConfig } from "../types/server.types";
+import { LogLevel } from "../types/logger.types";
+import { logger } from "../utils/logger";
 
 interface ServerCommandArgs extends ServerConfig {}
 
@@ -25,8 +27,16 @@ export const serverCommand: CommandModule<{}, ServerCommandArgs> = {
         type: "string",
         description: "Control domain for websocket connections",
         default: "control.chara-ai.dev",
+      })
+      .option("debug", {
+        alias: "D",
+        type: "boolean",
+        description: "Enable debug logging",
+        default: false,
       }),
   handler: async (argv) => {
+    logger.setLevel(argv.debug ? LogLevel.DEBUG : LogLevel.INFO);
+
     const config: ServerConfig = {
       port: argv.port,
       domain: argv.domain,

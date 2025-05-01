@@ -1,9 +1,12 @@
-import type { ServerWebSocket } from "bun";
-
 export interface PendingRequest {
-  controller: AbortController;
+  // Stream-related fields
+  streamController?: ReadableStreamDefaultController<Uint8Array>;
   resolver: (response: Response) => void;
   timestamp: number;
+  status?: number;
+  statusText?: string;
+  headers?: Headers;
+  stream?: ReadableStream<Uint8Array>;
 }
 
 export interface ClientData {

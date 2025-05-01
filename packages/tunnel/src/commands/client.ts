@@ -2,6 +2,7 @@ import type { CommandModule } from "yargs";
 import { logger } from "../utils/logger";
 import { TunnelClient } from "../client";
 import type { TunnelClientOptions } from "../types/client.types";
+import { LogLevel } from "../types/logger.types";
 
 interface ClientCommandArgs extends TunnelClientOptions {}
 
@@ -38,9 +39,17 @@ export const clientCommand: CommandModule<{}, ClientCommandArgs> = {
         alias: "d",
         type: "string",
         description: "Desired subdomain",
+      })
+      .option("debug", {
+        alias: "D",
+        type: "boolean",
+        description: "Enable debug logging",
+        default: false,
       }),
   handler: async (argv) => {
-    const { port, host, remoteHost, secure, subdomain } = argv;
+    const { port, host, remoteHost, secure, subdomain, debug } = argv;
+
+    logger.setLevel(debug ? LogLevel.DEBUG : LogLevel.INFO);
 
     const client = new TunnelClient({
       port,

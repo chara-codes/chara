@@ -16,6 +16,54 @@ export function generateSubdomain(): string {
 }
 
 /**
+ * Validates a subdomain string against DNS naming rules
+ *
+ * @param subdomain - The subdomain to validate
+ * @returns An object with validation result and optional reason for failure
+ */
+export function validateSubdomain(subdomain: string): {
+  isValid: boolean;
+  reason?: string;
+} {
+  // Check length constraints
+  if (subdomain.length < 3) {
+    return {
+      isValid: false,
+      reason: "Subdomain must be at least 3 characters long",
+    };
+  }
+
+  if (subdomain.length > 63) {
+    return {
+      isValid: false,
+      reason: "Subdomain must be at most 63 characters long",
+    };
+  }
+
+  // Check for valid characters (lowercase letters, numbers, hyphens)
+  if (!/^[a-z0-9-]+$/.test(subdomain)) {
+    return {
+      isValid: false,
+      reason:
+        "Subdomain can only contain lowercase letters, numbers, and hyphens",
+    };
+  }
+
+  // Check it doesn't start or end with a hyphen
+  if (subdomain.startsWith("-") || subdomain.endsWith("-")) {
+    return {
+      isValid: false,
+      reason: "Subdomain cannot start or end with a hyphen",
+    };
+  }
+
+  return { isValid: true };
+}
+
+/**
+ * Allocate a subdomain for a client
+ *
+/**
  * Allocate a subdomain for a client
  *
  * @param desiredSubdomain - Optional subdomain requested by the client
@@ -31,21 +79,23 @@ export function allocateSubdomain(
 
   if (desiredSubdomain) {
     // Validate the requested subdomain
-    desiredSubdomain = desiredSubdomain.toLowerCase().trim();
-    const isValidSubdomain = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(
-      desiredSubdomain,
-    );
+    const [subdomainToCheck = ""] = desiredSubdomain
+      .toLowerCase()
+      .trim()
+      .split(".");
 
-    if (isValidSubdomain && !clients.has(desiredSubdomain)) {
+    const validationResult = validateSubdomain(subdomainToCheck);
+
+    if (validationResult.isValid && !clients.has(subdomainToCheck)) {
       // Use the requested subdomain if valid and available
-      subdomain = desiredSubdomain;
+      subdomain = subdomainToCheck;
       usedRequestedSubdomain = true;
       logger.info(`Using client-requested subdomain: ${subdomain}`);
     } else {
       // Log why we're not using the requested subdomain
-      if (!isValidSubdomain) {
+      if (!validationResult.isValid) {
         logger.warning(
-          `Requested subdomain "${desiredSubdomain}" is invalid, generating a random one instead`,
+          `Requested subdomain "${desiredSubdomain}" is invalid: ${validationResult.reason}. Generating a random one instead.`,
         );
       } else {
         logger.warning(
