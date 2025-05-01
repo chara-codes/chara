@@ -21,7 +21,7 @@ export const clientCommand: CommandModule<{}, ClientCommandArgs> = {
         alias: "h",
         type: "string",
         description: "Local host to forward",
-        default: "chara-ai.dev",
+        default: "localhost",
       })
       .option("remoteHost", {
         alias: "r",
