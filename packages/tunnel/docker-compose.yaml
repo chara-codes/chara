@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./traefik/dynamic:/etc/traefik/dynamic:ro"
+      - "./certs:/certs:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  charatunnel:
+    build:
+      context: . # Build your forked charatunnel server
+    image: charatunnel:latest
+    container_name: charatunnel
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.charatunnel.entrypoints=websecure"
+      - "traefik.http.routers.charatunnel.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
+      - "traefik.http.routers.charatunnel.tls=true"
+      - "traefik.http.services.charatunnel.loadbalancer.server.port=1337"

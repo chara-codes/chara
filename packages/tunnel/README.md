@@ -26,6 +26,26 @@ bun add @chara/tunnel
 ## Usage
 
 Chara Tunnel consists of two parts: a server component that receives internet traffic and a client component that connects to the server and forwards requests to your local application.
+### Docker Usage
+
+You can run Chara Tunnel server in a Docker container:
+
+```bash
+# Build the Docker image
+docker build -t charatunnel .
+
+# Run the container
+docker run -p 1337:1337 charatunnel
+```
+
+Using docker-compose:
+
+```bash
+# Start using the provided docker-compose.yaml
+docker-compose up -d
+```
+
+The included `docker-compose.yaml` sets up Traefik as a reverse proxy to handle subdomain routing automatically.
 
 ### Start a tunnel server
 
