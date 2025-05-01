@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:2
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--log.level=DEBUG"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=true"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--accesslog=true"
+      - "--metrics.prometheus=true"
+      - "--tracing=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./traefik/dynamic:/etc/traefik/dynamic:ro"
+      - "./certs:/certs:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.chara-ai.dev`)"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls=true"
+      - "traefik.http.routers.traefik-dashboard.priority=200"
+
+  charatunnel:
+    build:
+      context: . # Build your forked charatunnel server
+    restart: unless-stopped
+    container_name: charatunnel
+    ports:
+      - "1337"
+    volumes:
+      - ./config.json:/config.json
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.charatunnel.entrypoints=websecure"
+      - "traefik.http.routers.charatunnel.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
+      - "traefik.http.routers.charatunnel.tls=true"
+      - "traefik.http.routers.charatunnel.priority=100"
+      - "traefik.http.services.charatunnel.loadbalancer.server.port=1337"
