@@ -1,6 +1,7 @@
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { stacks } from "./stacks";
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
+import { linkTypes } from "../../types.ts";
 
 /**
  * Represents web links/URLs that have been saved to stacks.
@@ -14,21 +15,33 @@ import { sql } from "drizzle-orm";
 
 export const links = sqliteTable("links", {
   /** Unique identifier for the link */
-  id: int().primaryKey({
+  id: integer("id").primaryKey({
     autoIncrement: true,
   }),
   /** Display title for the linked content */
-  title: text().notNull(),
+  title: text("title").notNull(),
   /** The complete URL pointing to the linked content */
-  url: text().unique().notNull(),
+  url: text("url").notNull(),
+  /** Link type */
+  kind: text("kind", { enum: linkTypes }).notNull(),
   /** Timestamp when this link was created */
-  createdAt: int({ mode: "timestamp" })
+  createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
   /** Timestamp of when the link was last scanned for content processing */
-  scannedAt: int({ mode: "timestamp" }),
+  scannedAt: integer("scanned_at", { mode: "timestamp" }),
   /** Foreign key reference to the stack this link belongs to */
-  stackId: int()
+  stackId: integer()
     .notNull()
-    .references(() => stacks.id),
+    .references(() => stacks.id, { onDelete: "cascade" }),
 });
+
+export const stacksRelations = relations(stacks, ({ many }) => ({
+  links: many(links),
+}));
+export const linksRelations = relations(links, ({ one }) => ({
+  stack: one(stacks, {
+    fields: [links.stackId],
+    references: [stacks.id],
+  }),
+}));

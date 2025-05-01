@@ -75,7 +75,7 @@ export default function SplitInterface() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col md:flex-row h-screen bg-background"
+      className="flex flex-col md:flex-row h-full bg-background"
       style={{ cursor: isResizing ? "col-resize" : "default" }}
     >
       {/* Chat Messages Section - Left Panel */}
