@@ -19,4 +19,4 @@ EXPOSE 1337
 
 # Set default command to run the server
 # Can be overridden with docker run command-line args
-CMD ["./dist/tunnel", "server", "--configFile", "/config.json"]
+CMD ["./dist/tunnel", "server", "--configFile", "/config.json", "-D"]

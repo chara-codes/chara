@@ -2,10 +2,11 @@ version: "3.8"
 
 services:
   traefik:
-    image: traefik:v3.3
+    image: traefik:2
     container_name: traefik
     restart: unless-stopped
     command:
+      - "--log.level=DEBUG"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=true"
       - "--providers.file.directory=/etc/traefik/dynamic"
@@ -40,7 +41,7 @@ services:
       context: . # Build your forked charatunnel server
     restart: unless-stopped
     container_name: charatunnel
-    expose:
+    ports:
       - "1337"
     volumes:
       - ./config.json:/config.json
