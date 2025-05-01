@@ -116,7 +116,7 @@ export class TunnelClient {
     try {
       logger.info(`Forwarding request: ${method} ${path}`);
       logger.debug(
-        `Request details: ID=${requestId}, Headers=${JSON.stringify(headers)}`,
+        `Request details: ID=${requestId}, Headers=${JSON.stringify(headers, null, 2)}`,
       );
       logger.debug(`Request body size: ${body ? body.length : 0} bytes`);
 
@@ -139,7 +139,7 @@ export class TunnelClient {
         `Received response from local server with status: ${response.status}`,
       );
       logger.debug(
-        `Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`,
+        `Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`,
       );
 
       // Extract headers
@@ -183,8 +183,8 @@ export class TunnelClient {
             // Send each chunk as it arrives
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
               logger.debug(`WebSocket state: ${this.ws?.readyState}`);
-              // Convert Uint8Array to Base64 string for safe JSON transport
-              const base64Chunk = Buffer.from(value).toString("binary");
+              // Convert Uint8Array to Binar string for safe JSON transport
+              const chunk = Buffer.from(value).toString("binary");
 
               logger.debug(
                 `Streaming chunk: ${value.length} bytes for request ${requestId}`,
@@ -194,8 +194,7 @@ export class TunnelClient {
                 JSON.stringify({
                   type: "http_data",
                   id: requestId,
-                  data: base64Chunk,
-                  encoding: "base64",
+                  data: chunk,
                 }),
               );
             } else {
@@ -242,13 +241,12 @@ export class TunnelClient {
         // Send the error message as data
         const errorData = Buffer.from(
           "Bad Gateway: Could not connect to local server",
-        ).toString("base64");
+        ).toString("binary");
         this.ws.send(
           JSON.stringify({
             type: "http_data",
             id: requestId,
             data: errorData,
-            encoding: "base64",
           }),
         );
 
