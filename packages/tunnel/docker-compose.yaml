@@ -7,11 +7,14 @@ services:
     restart: unless-stopped
     command:
       - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.exposedbydefault=true"
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
       - "--api.dashboard=true"
       - "--api.insecure=false"
       - "--accesslog=true"
@@ -28,10 +31,11 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`traefik.chara-ai.dev`)"
-      - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.routers.dashboard.entrypoints=websecure"
-      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.chara-ai.dev`)"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls=true"
+      - "traefik.http.routers.traefik-dashboard.priority=200"
 
   charatunnel:
     build:
@@ -44,10 +48,13 @@ services:
       - ./config.json:/config.json
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.charatunnel.entrypoints=websecure"
-      - "traefik.http.routers.charatunnel.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
-      - "traefik.http.routers.charatunnel.tls=true"
+      - "traefik.http.routers.charatunnel-secure.entrypoints=websecure"
+      - "traefik.http.routers.charatunnel-secure.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
+      - "traefik.http.routers.charatunnel-secure.tls=true"
+      - "traefik.http.routers.charatunnel-secure.priority=100"
       - "traefik.http.services.charatunnel.loadbalancer.server.port=1337"
+      - "traefik.http.routers.charatunnel-http.entrypoints=web"
+      - "traefik.http.routers.charatunnel-http.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
 
 networks:
   shared_network:
