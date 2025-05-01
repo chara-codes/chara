@@ -23,8 +23,6 @@ services:
   charatunnel:
     build:
       context: . # Build your forked charatunnel server
-    image: charatunnel:latest
-    container_name: charatunnel
     restart: unless-stopped
     volumes:
       - ./config.json:/config.json
