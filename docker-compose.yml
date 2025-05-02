@@ -36,7 +36,7 @@ services:
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
       - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
       - "traefik.http.routers.traefik-dashboard.tls=true"
-      - "traefik.http.routers.traefik-dashboard.priority=200"
+      - "traefik.http.routers.traefik-dashboard.priority=100"
 
   charaserver:
     build:
@@ -49,7 +49,7 @@ services:
       - "traefik.http.routers.server.entrypoints=websecure"
       - "traefik.http.routers.server.rule=Host(`server.chara-ai.dev`)"
       - "traefik.http.routers.server.tls=true"
-      - "traefik.http.routers.server.priority=70"
+      - "traefik.http.routers.server.priority=400"
       - "traefik.http.services.server.loadbalancer.server.port=3030"
 
   charaweb:
@@ -62,7 +62,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.web.entrypoints=websecure"
       - "traefik.http.routers.web.rule=Host(`web.chara-ai.dev`)"
-      - "traefik.http.routers.web.priority=80"
+      - "traefik.http.routers.web.priority=300"
       - "traefik.http.routers.web.tls=true"
       - "traefik.http.services.web.loadbalancer.server.port=3000"
 
@@ -79,5 +79,5 @@ services:
       - "traefik.http.routers.charatunnel.entrypoints=websecure"
       - "traefik.http.routers.charatunnel.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
       - "traefik.http.routers.charatunnel.tls=true"
-      - "traefik.http.routers.charatunnel.priority=100"
+      - "traefik.http.routers.charatunnel.priority=200"
       - "traefik.http.services.charatunnel.loadbalancer.server.port=1337"
