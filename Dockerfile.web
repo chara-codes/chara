@@ -3,19 +3,22 @@ FROM oven/bun:1
 WORKDIR /app
 
 # Copy package files first for better layer caching
-COPY package.json ./
-
-# Install dependencies
-RUN bun install --frozen-lockfile
+COPY ./package.json .
+COPY ./bun.lock .
 
 # Copy source files
 COPY . .
 
-# Build the Next.js application
+# Install dependencies
+RUN bun install
+
+# Build the application
 RUN bun run build
 
 # Expose default Next.js port
 EXPOSE 3000
+
+WORKDIR /app/packages/web
 
 # Set default command to run the Next.js server
 CMD ["bun", "run", "start"]
