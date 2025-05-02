@@ -10,7 +10,7 @@ export class TunnelClient {
     this.options = {
       port: options.port ?? 3000,
       host: options.host ?? "localhost",
-      remoteHost: options.remoteHost ?? "control.chara-ai.dev",
+      remoteHost: options.remoteHost ?? "tunnel.chara-ai.dev",
       secure: options.secure ?? true,
       subdomain: options.subdomain,
     };
@@ -80,7 +80,7 @@ export class TunnelClient {
           // Handle subdomain assignment
           if (message.type === "subdomain_assigned") {
             logger.success(
-              `Assigned subdomain: ${message.subdomain}, forwarding traffic from ${message.subdomain} to ${host}:${port}`,
+              `Assigned subdomain: ${message.subdomain}, forwarding traffic from https://${message.subdomain}/ to ${host}:${port}`,
             );
           }
           // Handle HTTP requests that need to be forwarded to local server

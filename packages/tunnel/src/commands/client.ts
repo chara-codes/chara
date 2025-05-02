@@ -27,7 +27,7 @@ export const clientCommand: CommandModule<{}, ClientCommandArgs> = {
         alias: "r",
         type: "string",
         description: "Remote tunnel server host",
-        default: "control.chara-ai.dev",
+        default: "tunnel.chara-ai.dev",
       })
       .option("secure", {
         alias: "s",

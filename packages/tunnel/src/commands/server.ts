@@ -29,7 +29,7 @@ export const serverCommand: CommandModule<{}, ServerCommandArgs> = {
       .option("controlDomain", {
         type: "string",
         description: "Control domain for websocket connections",
-        default: "control.chara-ai.dev",
+        default: "tunnel.chara-ai.dev",
       })
       .option("debug", {
         alias: "D",
