@@ -19,6 +19,10 @@ services:
       - "--accesslog=true"
       - "--metrics.prometheus=true"
       - "--tracing=true"
+    depends_on:
+      - charatunnel
+      - server
+      - web
     ports:
       - "80:80"
       - "443:443"
@@ -36,7 +40,7 @@ services:
 
   charatunnel:
     build:
-      context: . # Build your forked charatunnel server
+      context: ./packages/tunnel
     restart: unless-stopped
     container_name: charatunnel
     ports:
@@ -50,3 +54,29 @@ services:
       - "traefik.http.routers.charatunnel.tls=true"
       - "traefik.http.routers.charatunnel.priority=100"
       - "traefik.http.services.charatunnel.loadbalancer.server.port=1337"
+
+  server:
+    build:
+      context: ./packages/server
+    restart: unless-stopped
+    container_name: chara-server
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.server.entrypoints=websecure"
+      - "traefik.http.routers.server.rule=Host(`server.chara-ai.dev`)"
+      - "traefik.http.routers.server.tls=true"
+      - "traefik.http.routers.priority=70"
+      - "traefik.http.services.server.loadbalancer.server.port=3030"
+
+  web:
+    build:
+      context: ./packages/web
+    restart: unless-stopped
+    container_name: chara-web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.rule=Host(`web.chara-ai.dev`)"
+      - "traefik.http.routers.web.priority=80"
+      - "traefik.http.routers.web.tls=true"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
