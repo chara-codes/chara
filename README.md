@@ -66,6 +66,45 @@ bun install
 bun dev
 ```
 
+## Docker Usage
+
+Chara can be deployed using Docker for production environments. The project includes a `docker-compose.yml` configuration that sets up the following services:
+
+- **traefik**: Reverse proxy/load balancer that handles routing, TLS termination, and provides a dashboard
+- **charaserver**: Backend server application container
+- **charaweb**: Next.js frontend application container
+- **charatunnel**: Connection tunnel service for remote access
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- SSL certificates in the `./certs` directory
+- Traefik dynamic configuration in `./traefik/dynamic`
+- A `config.json` file for the tunnel service
+
+### Running with Docker
+
+```bash
+# Build and start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+### Configuration
+
+The Docker setup uses Traefik as a reverse proxy with automatic HTTPS redirection and is configured to expose services on these domains:
+
+- `web.chara-ai.dev` - Frontend application
+- `server.chara-ai.dev` - Backend API
+- `*.chara-ai.dev` - Dynamic tunnel subdomains
+
+You can modify the domain names and other settings in the `docker-compose.yml` file or through Traefik's dynamic configuration.
+
 ## Architecture
 
 Chara uses a modern stack with:
