@@ -78,7 +78,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.charatunnel.entrypoints=websecure"
-      - "traefik.http.routers.charatunnel.rule=HostRegexp(`{subdomain:[a-z0-9-]+}.chara-ai.dev`)"
+      - "traefik.http.routers.charatunnel.rule=HostRegexp(`{subdomain:chara-[a-z0-9-]+}.chara-ai.dev`) || Host(`control.chara-ai.dev`)"
       - "traefik.http.routers.charatunnel.tls=true"
       - "traefik.http.routers.charatunnel.priority=200"
       - "traefik.http.services.charatunnel.loadbalancer.server.port=1337"
