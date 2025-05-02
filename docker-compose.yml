@@ -44,6 +44,7 @@ services:
       dockerfile: "Dockerfile.server"
     restart: unless-stopped
     container_name: charaserver
+    env_file: ".env"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.server.entrypoints=websecure"
