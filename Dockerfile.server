@@ -8,6 +8,10 @@ COPY ./bun.lock .
 
 # Copy source files
 COPY . .
+
+
+WORKDIR /app/packages/server
+
 # Install dependencies
 RUN bun install
 
@@ -29,4 +33,4 @@ EXPOSE 3030
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 # Set default command to run the server
-CMD ["./packages/server/dist/server"]
+CMD ["./dist/server"]

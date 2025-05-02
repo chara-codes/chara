@@ -8,6 +8,10 @@ COPY ./bun.lock .
 
 # Copy source files
 COPY . .
+
+
+WORKDIR /app/packages/tunnel
+
 # Install dependencies
 RUN bun install
 
@@ -19,4 +23,4 @@ EXPOSE 1337
 
 # Set default command to run the server
 # Can be overridden with docker run command-line args
-CMD ["./packages/tunnel/dist/tunnel", "server", "--configFile", "/config.json"]
+CMD ["./dist/tunnel", "server", "--configFile", "/config.json"]

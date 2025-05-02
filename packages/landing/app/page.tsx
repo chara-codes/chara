@@ -1,25 +1,33 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import { SubscribeForm } from "@/components/subscribe-form"
-import { SparklesIcon, CodeIcon, WandIcon, ZapIcon, ClipboardIcon, CheckIcon } from "lucide-react"
-import { FloatingElements } from "@/components/floating-elements"
-import { MagicButton } from "@/components/magic-button"
-import { GlowingCard } from "@/components/glowing-card"
-import { ParticleBackground } from "@/components/particle-background"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { useState } from "react"
+import Image from "next/image";
+import { SubscribeForm } from "@/components/subscribe-form";
+import {
+  SparklesIcon,
+  CodeIcon,
+  WandIcon,
+  ZapIcon,
+  ClipboardIcon,
+  CheckIcon,
+} from "lucide-react";
+import { FloatingElements } from "@/components/floating-elements";
+import { MagicButton } from "@/components/magic-button";
+import { GlowingCard } from "@/components/glowing-card";
+import { ParticleBackground } from "@/components/particle-background";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { useState } from "react";
 
 export default function Home() {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState(false);
 
   const copyToClipboard = () => {
-    const packageManager = document.getElementById("package-manager")?.textContent?.trim() || "bunx"
-    const command = `${packageManager} chara dev`
-    navigator.clipboard.writeText(command)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    const packageManager =
+      document.getElementById("package-manager")?.textContent?.trim() || "bunx";
+    const command = `${packageManager} chara dev`;
+    navigator.clipboard.writeText(command);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <main className="min-h-screen overflow-hidden bg-white dark:bg-navy-950">
@@ -94,8 +102,9 @@ export default function Home() {
           </h1>
 
           <p className="text-xl md:text-2xl text-navy-700 dark:text-purple-100 mb-8 max-w-3xl mx-auto leading-relaxed">
-            CharaCodes transforms your design dreams into reality with AI wizardry, helping frontend developers conjure
-            production-ready code in seconds.
+            CharaCodes transforms your design dreams into reality with AI
+            wizardry, helping frontend developers conjure production-ready code
+            in seconds.
           </p>
 
           <div className="inline-block relative mb-12 group">
@@ -141,24 +150,39 @@ export default function Home() {
                 <div className="absolute top-0 right-0 z-10 translate-y-[-100%]">
                   <div className="inline-flex p-1 bg-navy-800/50 backdrop-blur-sm rounded-t-lg shadow-lg">
                     {[
-                      { value: "npx", label: "NPM", color: "from-purple-500 to-purple-700" },
-                      { value: "bunx", label: "BUN", color: "from-amber-500 to-amber-600" },
-                      { value: "pnpm dlx", label: "PNPM", color: "from-navy-600 to-navy-800" },
-                      { value: "yarn dlx", label: "YARN", color: "from-blue-500 to-blue-700" },
+                      {
+                        value: "npx",
+                        label: "NPM",
+                        color: "from-purple-500 to-purple-700",
+                      },
+                      {
+                        value: "bunx",
+                        label: "BUN",
+                        color: "from-amber-500 to-amber-600",
+                      },
+                      {
+                        value: "pnpm dlx",
+                        label: "PNPM",
+                        color: "from-navy-600 to-navy-800",
+                      },
                     ].map((option, index) => (
                       <button
                         key={option.value}
                         className={`px-3 py-1.5 text-xs font-medium transition-all duration-300 flex items-center gap-1.5 ${
                           index === 1
-                            ? "bg-gradient-to-r " + option.color + " text-white rounded-md shadow-inner"
+                            ? "bg-gradient-to-r " +
+                              option.color +
+                              " text-white rounded-md shadow-inner"
                             : "text-white/80 hover:text-white hover:bg-white/10 rounded-md"
                         }`}
                         onClick={() => {
-                          const el = document.getElementById("package-manager")
-                          if (el) el.textContent = option.value
+                          const el = document.getElementById("package-manager");
+                          if (el) el.textContent = option.value;
 
                           // Update active state visually
-                          const buttons = document.querySelectorAll("[data-segment-button]")
+                          const buttons = document.querySelectorAll(
+                            "[data-segment-button]",
+                          );
                           buttons.forEach((btn, i) => {
                             if (i === index) {
                               btn.classList.add(
@@ -166,18 +190,24 @@ export default function Home() {
                                 ...option.color.split(" "),
                                 "text-white",
                                 "shadow-inner",
-                              )
-                              btn.classList.remove("text-white/80", "hover:bg-white/10")
+                              );
+                              btn.classList.remove(
+                                "text-white/80",
+                                "hover:bg-white/10",
+                              );
                             } else {
                               btn.classList.remove(
                                 "bg-gradient-to-r",
                                 ...option.color.split(" "),
                                 "text-white",
                                 "shadow-inner",
-                              )
-                              btn.classList.add("text-white/80", "hover:bg-white/10")
+                              );
+                              btn.classList.add(
+                                "text-white/80",
+                                "hover:bg-white/10",
+                              );
                             }
-                          })
+                          });
                         }}
                         data-segment-button
                       >
@@ -220,8 +250,9 @@ export default function Home() {
                 </span>
               </h2>
               <p className="text-lg text-navy-700 dark:text-purple-100 mb-6 leading-relaxed">
-                Our magical AI doesn't just convert pixels to code—it understands design intent, component
-                relationships, and frontend best practices.
+                Our magical AI doesn't just convert pixels to code—it
+                understands design intent, component relationships, and frontend
+                best practices.
               </p>
               <ul className="space-y-4">
                 {[
@@ -243,8 +274,12 @@ export default function Home() {
                   },
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-3">
-                    <div className="mt-1 bg-purple-100 dark:bg-purple-900/50 p-1.5 rounded-full">{item.icon}</div>
-                    <span className="text-navy-800 dark:text-purple-100">{item.text}</span>
+                    <div className="mt-1 bg-purple-100 dark:bg-purple-900/50 p-1.5 rounded-full">
+                      {item.icon}
+                    </div>
+                    <span className="text-navy-800 dark:text-purple-100">
+                      {item.text}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -263,12 +298,22 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="inline-block text-3xl md:text-5xl font-bold text-navy-900 dark:text-white mb-4 relative">
               <span className="relative z-10">Magical Features</span>
-              <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 10" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0,5 Q50,9 100,5 T200,5" fill="none" stroke="#8b5cf6" strokeWidth="2" />
+              <svg
+                className="absolute -bottom-2 left-0 w-full"
+                viewBox="0 0 200 10"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M0,5 Q50,9 100,5 T200,5"
+                  fill="none"
+                  stroke="#8b5cf6"
+                  strokeWidth="2"
+                />
               </svg>
             </h2>
             <p className="text-xl text-navy-700 dark:text-purple-100 max-w-2xl mx-auto">
-              Discover the enchanting capabilities that will transform your frontend development workflow.
+              Discover the enchanting capabilities that will transform your
+              frontend development workflow.
             </p>
           </div>
 
@@ -276,37 +321,43 @@ export default function Home() {
             {[
               {
                 title: "Design to Code",
-                description: "Transform Figma, Sketch, or any design into production-ready React, Vue, or HTML/CSS.",
+                description:
+                  "Transform Figma, Sketch, or any design into production-ready React, Vue, or HTML/CSS.",
                 icon: <CodeIcon className="w-6 h-6 text-white" />,
                 gradient: "from-purple-500 to-purple-700",
               },
               {
                 title: "Component Magic",
-                description: "Automatically identify and extract reusable components from your designs.",
+                description:
+                  "Automatically identify and extract reusable components from your designs.",
                 icon: <WandIcon className="w-6 h-6 text-white" />,
                 gradient: "from-amber-500 to-amber-700",
               },
               {
                 title: "Responsive Spells",
-                description: "Generate fully responsive layouts that work perfectly across all devices.",
+                description:
+                  "Generate fully responsive layouts that work perfectly across all devices.",
                 icon: <ZapIcon className="w-6 h-6 text-white" />,
                 gradient: "from-navy-600 to-navy-800",
               },
               {
                 title: "Animation Potions",
-                description: "Add delightful animations and transitions with our AI-powered suggestions.",
+                description:
+                  "Add delightful animations and transitions with our AI-powered suggestions.",
                 icon: <SparklesIcon className="w-6 h-6 text-white" />,
                 gradient: "from-purple-600 to-navy-700",
               },
               {
                 title: "Accessibility Charms",
-                description: "Ensure your code meets accessibility standards with automatic enhancements.",
+                description:
+                  "Ensure your code meets accessibility standards with automatic enhancements.",
                 icon: <CodeIcon className="w-6 h-6 text-white" />,
                 gradient: "from-amber-600 to-purple-600",
               },
               {
                 title: "Framework Flexibility",
-                description: "Generate code for your preferred framework, from React to Vue and beyond.",
+                description:
+                  "Generate code for your preferred framework, from React to Vue and beyond.",
                 icon: <WandIcon className="w-6 h-6 text-white" />,
                 gradient: "from-navy-700 to-purple-700",
               },
@@ -334,10 +385,13 @@ export default function Home() {
         <div className="container mx-auto px-4 max-w-4xl relative z-10">
           <div className="bg-white/10 backdrop-blur-xl p-8 md:p-12 rounded-2xl shadow-2xl border border-white/20">
             <div className="text-center mb-8">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Join Our Magical Journey</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                Join Our Magical Journey
+              </h2>
               <p className="text-lg text-purple-100 max-w-2xl mx-auto">
-                Be among the first wizards to experience CharaCodes when we launch. Subscribe now for exclusive early
-                access and magical updates.
+                Be among the first wizards to experience CharaCodes when we
+                launch. Subscribe now for exclusive early access and magical
+                updates.
               </p>
             </div>
 
@@ -373,10 +427,12 @@ export default function Home() {
               </span>
             </div>
 
-            <div className="text-purple-300 text-sm">© {new Date().getFullYear()} CharaCodes. Crafting code magic.</div>
+            <div className="text-purple-300 text-sm">
+              © {new Date().getFullYear()} CharaCodes. Crafting code magic.
+            </div>
           </div>
         </div>
       </footer>
     </main>
-  )
+  );
 }

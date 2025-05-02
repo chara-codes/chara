@@ -9,6 +9,8 @@ COPY ./bun.lock .
 # Copy source files
 COPY . .
 
+WORKDIR /app/packages/web
+
 # Install dependencies
 RUN bun install
 
@@ -18,7 +20,6 @@ RUN bun run build
 # Expose default Next.js port
 EXPOSE 3000
 
-WORKDIR /app/packages/web
 
 # Set default command to run the Next.js server
 CMD ["bun", "run", "start"]
