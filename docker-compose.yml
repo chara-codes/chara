@@ -67,6 +67,20 @@ services:
       - "traefik.http.routers.web.tls=true"
       - "traefik.http.services.web.loadbalancer.server.port=3000"
 
+  charalanding:
+    build:
+      context: .
+      dockerfile: Dockerfile.landing
+    restart: unless-stopped
+    container_name: charalanding
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.landing.entrypoints=websecure"
+      - "traefik.http.routers.landing.rule=Host(`chara-ai.dev`) || Host(`www.chara-ai.dev`)"
+      - "traefik.http.routers.landing.priority=350"
+      - "traefik.http.routers.landing.tls=true"
+      - "traefik.http.services.landing.loadbalancer.server.port=3000"
+
   charatunnel:
     build:
       context: .
