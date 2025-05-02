@@ -23,22 +23,22 @@ handle_error() {
 cd "$REPO_DIR" || handle_error "Could not change to repository directory: $REPO_DIR"
 
 # Store the current commit hash
-OLD_COMMIT=$(git rev-parse HEAD)
+OLD_COMMIT=$(sudo -u apk git rev-parse HEAD)
 log "Current commit: $OLD_COMMIT"
 
 # Fetch the latest changes
 log "Fetching latest changes from the repository..."
-git fetch || handle_error "Failed to fetch from the remote repository."
+sudo -u apk git fetch || handle_error "Failed to fetch from the remote repository."
 
 # Check if there are any changes
-if ! git diff --quiet HEAD origin/"$GIT_BRANCH"; then
+if ! sudo -u apk git diff --quiet HEAD origin/"$GIT_BRANCH"; then
     log "Changes detected, updating local repository..."
 
     # Pull the latest changes
-    git pull origin "$GIT_BRANCH" || handle_error "Failed to pull latest changes."
+    sudo -u apk git pull origin "$GIT_BRANCH" || handle_error "Failed to pull latest changes."
 
     # Get the new commit hash
-    NEW_COMMIT=$(git rev-parse HEAD)
+    NEW_COMMIT=$(sudo -u apk git rev-parse HEAD)
     log "Updated to commit: $NEW_COMMIT"
 
     # Check if the Docker Compose file exists
