@@ -3,25 +3,21 @@ FROM oven/bun:latest as build
 
 WORKDIR /app
 
-# Copy package.json and other config files
-COPY packages/widget/package.json ./
-COPY packages/widget/tsconfig*.json ./
-COPY packages/widget/vite.config.ts ./
+# Copy all source code and config files
+COPY . .
+
+WORKDIR /app/packages/widget/
 
 # Install dependencies
 RUN bun install
 
-# Copy all source code and config files
-COPY packages/widget/ ./
-
 # Build the app
-# First build TypeScript then build with Vite (separated for better error handling)
-RUN bun run tsc -b || echo "TypeScript check failed but continuing" && bun run vite build
+RUN bun run build
 
 # Expose port
 EXPOSE 3000
 
-WORKDIR /app/packages/landing/dist
+WORKDIR /app/packages/widget/dist
 # Use Bun's HTML serving capability to serve the static files
 # This launches a simple static file server with the index.html as the entry point
 CMD ["bun", "./index.html"]
