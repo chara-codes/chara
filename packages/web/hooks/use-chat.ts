@@ -2,9 +2,10 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useAIChat } from "@/hooks/use-ai-chat";
 import { parseStream } from "@/lib/parse-stream";
+import { trpc } from '@/utils';
 
 // Custom hook to handle chat with tRPC
-export function useChat(streamObject = false) {
+export function useChat(streamObject = true) {
   const [messages, setMessages] = useState<
     Array<{
       id: string;
@@ -24,6 +25,8 @@ export function useChat(streamObject = false) {
   // Keep track of whether we've cleaned up the current request
   const isCleanedUpRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const utils = trpc.useUtils();
+  const abortRef = useRef<AbortController>();
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
@@ -38,7 +41,7 @@ export function useChat(streamObject = false) {
     };
   }, []);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>, input: string) => {
     e.preventDefault();
     if (!input.trim() || status !== "ready") return;
 
@@ -54,90 +57,116 @@ export function useChat(streamObject = false) {
     setStatus("submitted");
     setError(null);
 
-    const { stream } = useAIChat<{ question: string }>(
-      "http://localhost:3030/trpc",
-      streamObject,
-    );
+    const assistantIdx = messages.length;
+
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+
+    const signal = abortRef.current.signal;
+
+    // TODO: temporary working solution to call the server
     try {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      // Create a new AbortController for this request
-      isCleanedUpRef.current = false;
-      abortControllerRef.current = new AbortController();
-      const signal = abortControllerRef.current.signal;
+      const iterable = await utils.chat.streamObject.fetch({ question: input });
 
-      // Create a temporary message for streaming
-      const tempAssistantMessageId = `assistant-${Date.now()}`;
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: tempAssistantMessageId,
-          content: "",
-          role: "assistant",
-          timestamp: new Date(),
-          regenerations: [],
-          currentRegenerationIndex: 0,
-        },
-      ]);
-      setStatus("streaming");
-
-      const chunks = await stream({ question: input }, signal);
-      let textResponse = "";
-      let objectResponse: any = {};
-
-      for await (const chunk of chunks) {
-        // Check if request was aborted
-        if (signal.aborted) break;
-
-        if (streamObject) {
-          const objectToAdd = parseStream(chunk, "object") as any[];
-          // Only add extracted object to the response
-          if (objectToAdd && objectToAdd.length > 0) {
-            objectResponse = objectToAdd.reduce((acc: any, obj: any) => {
-              return { ...acc, ...obj };
-            }, objectResponse);
-
-            // Update the assistant message with the accumulated response
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === tempAssistantMessageId
-                  ? {
-                      ...msg,
-                      content: objectResponse.content,
-                      context: objectResponse,
-                    }
-                  : msg,
-              ),
-            );
-          }
-        } else {
-          const textToAdd = parseStream(chunk, "text") as string;
-          // Only add extracted text to the response
-          if (textToAdd) {
-            textResponse += textToAdd;
-
-            // Update the assistant message with the accumulated response
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === tempAssistantMessageId
-                  ? { ...msg, content: textResponse }
-                  : msg,
-              ),
-            );
-          }
-        }
-      }
-
-      // Mark as complete when done
-      setStatus("ready");
-    } catch (err) {
-      console.error("Error sending message:", err);
-      setError(err instanceof Error ? err : new Error("Unknown error"));
-      setStatus("ready");
-      abortControllerRef.current = null;
-      isCleanedUpRef.current = true;
+    let buffer = "";
+    for await (const chunk of iterable) {
+      if (signal.aborted) break;
+      buffer += chunk;
+      setMessages((m) =>
+        m.map((msg, i) =>
+          i === assistantIdx ? { ...msg, content: buffer } : msg,
+        ),
+      );
     }
+  } finally {
+    setStatus("ready");
+  }
+
+    // const { stream } = useAIChat<{ question: string }>(
+    //   "http://localhost:3030/trpc",
+    //   streamObject,
+    // );
+    // try {
+    //   if (abortControllerRef.current) {
+    //     abortControllerRef.current.abort();
+    //   }
+    //   // Create a new AbortController for this request
+    //   isCleanedUpRef.current = false;
+    //   abortControllerRef.current = new AbortController();
+    //   const signal = abortControllerRef.current.signal;
+    //
+    //   // Create a temporary message for streaming
+    //   const tempAssistantMessageId = `assistant-${Date.now()}`;
+    //   setMessages((prev) => [
+    //     ...prev,
+    //     {
+    //       id: tempAssistantMessageId,
+    //       content: "",
+    //       role: "assistant",
+    //       timestamp: new Date(),
+    //       regenerations: [],
+    //       currentRegenerationIndex: 0,
+    //     },
+    //   ]);
+    //   setStatus("streaming");
+    //
+    //   const chunks = await stream({ question: input }, signal);
+    //   let textResponse = "";
+    //   let objectResponse: any = {};
+    //
+    //   for await (const chunk of chunks) {
+    //     // Check if request was aborted
+    //     if (signal.aborted) break;
+    //
+    //     if (streamObject) {
+    //       debugger
+    //       const objectToAdd = parseStream(chunk, "object") as any[];
+    //       // Only add extracted object to the response
+    //       if (objectToAdd && objectToAdd.length > 0) {
+    //         objectResponse = objectToAdd.reduce((acc: any, obj: any) => {
+    //           return { ...acc, ...obj };
+    //         }, objectResponse);
+    //
+    //         // Update the assistant message with the accumulated response
+    //         setMessages((prev) =>
+    //           prev.map((msg) =>
+    //             msg.id === tempAssistantMessageId
+    //               ? {
+    //                   ...msg,
+    //                   content: objectResponse.content,
+    //                   context: objectResponse,
+    //                 }
+    //               : msg,
+    //           ),
+    //         );
+    //       }
+    //     } else {
+    //       const textToAdd = parseStream(chunk, "text") as string;
+    //       // Only add extracted text to the response
+    //       if (textToAdd) {
+    //         textResponse += textToAdd;
+    //
+    //         // Update the assistant message with the accumulated response
+    //         setMessages((prev) =>
+    //           prev.map((msg) =>
+    //             msg.id === tempAssistantMessageId
+    //               ? { ...msg, content: textResponse }
+    //               : msg,
+    //           ),
+    //         );
+    //       }
+    //     }
+    //   }
+    //
+    //   // Mark as complete when done
+    //   setStatus("ready");
+    // } catch (err) {
+    //   console.error("Error sending message:", err);
+    //   setError(err instanceof Error ? err : new Error("Unknown error"));
+    //   setStatus("ready");
+    //   abortControllerRef.current = null;
+    //   isCleanedUpRef.current = true;
+    // }
   };
 
   const stop = () => {

@@ -1,26 +1,31 @@
 import { z } from "zod";
-import { streamText } from "ai";
 import { publicProcedure, router } from "../trpc";
+import {
+  DEFAULT_PROJECT_ID,
+  ensureChat,
+  streamTextAndPersist,
+} from "../../repos/chatRepo.ts";
+import { myLogger as logger } from "../../utils/logger";
 
 export const messagesRouter = router({
   ask: publicProcedure
-    .input(z.object({ question: z.string() }))
+    .input(
+      z.object({
+        projectId: z.number().optional(),
+        chatId: z.number().optional(),
+        question: z.string(),
+      }),
+    )
     .query(async function* ({ ctx, input }) {
-      const { textStream } = streamText({
-        messages: [
-          {
-            role: "system",
-            content: "Answer for question in markdown format",
-          },
-          {
-            role: "user",
-            content: input.question,
-          },
-        ],
-        model: ctx.ai(process.env.AI_MODEL || "gpt-4o-mini"),
-      });
-      for await (const textPart of textStream) {
-        yield textPart;
+      try {
+        const projectId = input.projectId ?? DEFAULT_PROJECT_ID;
+        const chatId =
+          input.chatId ??
+          (await ensureChat(projectId, input.question.slice(0, 60)));
+        yield* streamTextAndPersist({ chatId, question: input.question, ctx });
+      } catch (err) {
+        logger.error(JSON.stringify(err), "messages.ask endpoint failed");
+        throw err;
       }
     }),
 });

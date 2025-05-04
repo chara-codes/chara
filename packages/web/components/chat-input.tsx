@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/command";
 
 interface ChatInputProps {
-  onSendMessage: (e: FormEvent<HTMLFormElement>) => void;
+  onSendMessage: (e: FormEvent<HTMLFormElement>, input: string) => void;
   isLoading: boolean;
 }
 
@@ -155,7 +155,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
       }
 
       // Call the parent's onSendMessage function
-      onSendMessage(e);
+      onSendMessage(e, input);
 
       // Clear input, attachments, and contexts
       setInput("");
@@ -229,220 +229,232 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   };
 
   return (
-    <div>
-      {attachments.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-2">
-          {attachments.map((file) => (
-            <div
-              key={file.id}
-              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
-            >
-              <span className="truncate max-w-[150px]">{file.name}</span>
-              <button
-                onClick={() => removeAttachment(file.id)}
-                className="ml-2 text-blue-600 hover:text-blue-800"
+    <form onSubmit={handleSendMessage}>
+      <div>
+        {attachments.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {attachments.map((file) => (
+              <div
+                key={file.id}
+                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
               >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-      {attachedContexts.length > 0 && (
-        <div className="mb-2 flex flex-row flex-wrap gap-2">
-          {attachedContexts.map((ctx, index) => (
-            <div
-              key={index}
-              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
-            >
-              <span className="font-medium">
-                [{ctx.source}:{ctx.component}]
-              </span>
-              <button
-                onClick={() => removeContext(index)}
-                className="ml-2 text-blue-600 hover:text-blue-800 p-0.5 rounded-full hover:bg-blue-100"
+                <span className="truncate max-w-[150px]">{file.name}</span>
+                <button
+                  onClick={() => removeAttachment(file.id)}
+                  className="ml-2 text-blue-600 hover:text-blue-800"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {attachedContexts.length > 0 && (
+          <div className="mb-2 flex flex-row flex-wrap gap-2">
+            {attachedContexts.map((ctx, index) => (
+              <div
+                key={index}
+                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
               >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Input
-            ref={inputRef}
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message... (Type / for context)"
-            disabled={isLoading}
-            className="pr-10"
+                <span className="font-medium">
+                  [{ctx.source}:{ctx.component}]
+                </span>
+                <button
+                  onClick={() => removeContext(index)}
+                  className="ml-2 text-blue-600 hover:text-blue-800 p-0.5 rounded-full hover:bg-blue-100"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Input
+              ref={inputRef}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message... (Type / for context)"
+              disabled={isLoading}
+              className="pr-10"
+            />
+            {showCommandMenu && (
+              <div
+                className="absolute z-50 w-64 bg-white rounded-md shadow-lg border border-gray-200"
+                style={{
+                  bottom: "100%",
+                  left: "0",
+                  marginBottom: "8px",
+                }}
+              >
+                {!selectedSource ? (
+                  <Command>
+                    <CommandInput placeholder="Search context source..." />
+                    <CommandList>
+                      <CommandEmpty>No results found.</CommandEmpty>
+                      <CommandGroup heading="Context Sources">
+                        <CommandItem
+                          onSelect={() => handleSourceSelect("file")}
+                          className={
+                            focusedItemIndex === 0 ? "bg-blue-100" : ""
+                          }
+                        >
+                          <File className="mr-2 h-4 w-4" />
+                          <span>File</span>
+                        </CommandItem>
+                        <CommandItem
+                          onSelect={() => handleSourceSelect("console")}
+                          className={
+                            focusedItemIndex === 1 ? "bg-blue-100" : ""
+                          }
+                        >
+                          <Terminal className="mr-2 h-4 w-4" />
+                          <span>Console</span>
+                        </CommandItem>
+                        <CommandItem
+                          onSelect={() => handleSourceSelect("mcp")}
+                          className={
+                            focusedItemIndex === 2 ? "bg-blue-100" : ""
+                          }
+                        >
+                          <Database className="mr-2 h-4 w-4" />
+                          <span>MCP</span>
+                        </CommandItem>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                ) : (
+                  <Command>
+                    <CommandInput
+                      placeholder={`Search ${selectedSource} components...`}
+                    />
+                    <CommandList>
+                      <CommandEmpty>No results found.</CommandEmpty>
+                      <CommandGroup
+                        heading={`${selectedSource.charAt(0).toUpperCase() + selectedSource.slice(1)} Components`}
+                      >
+                        {selectedSource === "file" && (
+                          <>
+                            <CommandItem
+                              onSelect={() => handleComponentSelect("app.js")}
+                              className={
+                                focusedItemIndex === 0 ? "bg-blue-100" : ""
+                              }
+                            >
+                              <span>app.js</span>
+                            </CommandItem>
+                            <CommandItem
+                              onSelect={() => handleComponentSelect("index.js")}
+                              className={
+                                focusedItemIndex === 1 ? "bg-blue-100" : ""
+                              }
+                            >
+                              <span>index.js</span>
+                            </CommandItem>
+                            <CommandItem
+                              onSelect={() =>
+                                handleComponentSelect("styles.css")
+                              }
+                              className={
+                                focusedItemIndex === 2 ? "bg-blue-100" : ""
+                              }
+                            >
+                              <span>styles.css</span>
+                            </CommandItem>
+                          </>
+                        )}
+                        {selectedSource === "console" && (
+                          <>
+                            <CommandItem
+                              onSelect={() => handleComponentSelect("error")}
+                              className={
+                                focusedItemIndex === 0 ? "bg-blue-100" : ""
+                              }
+                            >
+                              <span>Error Log</span>
+                            </CommandItem>
+                            <CommandItem
+                              onSelect={() => handleComponentSelect("output")}
+                              className={
+                                focusedItemIndex === 1 ? "bg-blue-100" : ""
+                              }
+                            >
+                              <span>Output</span>
+                            </CommandItem>
+                          </>
+                        )}
+                        {selectedSource === "mcp" && (
+                          <>
+                            <CommandItem
+                              onSelect={() =>
+                                handleComponentSelect("dashboard")
+                              }
+                              className={
+                                focusedItemIndex === 0 ? "bg-blue-100" : ""
+                              }
+                            >
+                              <span>Dashboard</span>
+                            </CommandItem>
+                            <CommandItem
+                              onSelect={() => handleComponentSelect("settings")}
+                              className={
+                                focusedItemIndex === 1 ? "bg-blue-100" : ""
+                              }
+                            >
+                              <span>Settings</span>
+                            </CommandItem>
+                            <CommandItem
+                              onSelect={() => handleComponentSelect("users")}
+                              className={
+                                focusedItemIndex === 2 ? "bg-blue-100" : ""
+                              }
+                            >
+                              <span>Users</span>
+                            </CommandItem>
+                          </>
+                        )}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                )}
+              </div>
+            )}
+          </div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            multiple
           />
-          {showCommandMenu && (
-            <div
-              className="absolute z-50 w-64 bg-white rounded-md shadow-lg border border-gray-200"
-              style={{
-                bottom: "100%",
-                left: "0",
-                marginBottom: "8px",
-              }}
-            >
-              {!selectedSource ? (
-                <Command>
-                  <CommandInput placeholder="Search context source..." />
-                  <CommandList>
-                    <CommandEmpty>No results found.</CommandEmpty>
-                    <CommandGroup heading="Context Sources">
-                      <CommandItem
-                        onSelect={() => handleSourceSelect("file")}
-                        className={focusedItemIndex === 0 ? "bg-blue-100" : ""}
-                      >
-                        <File className="mr-2 h-4 w-4" />
-                        <span>File</span>
-                      </CommandItem>
-                      <CommandItem
-                        onSelect={() => handleSourceSelect("console")}
-                        className={focusedItemIndex === 1 ? "bg-blue-100" : ""}
-                      >
-                        <Terminal className="mr-2 h-4 w-4" />
-                        <span>Console</span>
-                      </CommandItem>
-                      <CommandItem
-                        onSelect={() => handleSourceSelect("mcp")}
-                        className={focusedItemIndex === 2 ? "bg-blue-100" : ""}
-                      >
-                        <Database className="mr-2 h-4 w-4" />
-                        <span>MCP</span>
-                      </CommandItem>
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              ) : (
-                <Command>
-                  <CommandInput
-                    placeholder={`Search ${selectedSource} components...`}
-                  />
-                  <CommandList>
-                    <CommandEmpty>No results found.</CommandEmpty>
-                    <CommandGroup
-                      heading={`${selectedSource.charAt(0).toUpperCase() + selectedSource.slice(1)} Components`}
-                    >
-                      {selectedSource === "file" && (
-                        <>
-                          <CommandItem
-                            onSelect={() => handleComponentSelect("app.js")}
-                            className={
-                              focusedItemIndex === 0 ? "bg-blue-100" : ""
-                            }
-                          >
-                            <span>app.js</span>
-                          </CommandItem>
-                          <CommandItem
-                            onSelect={() => handleComponentSelect("index.js")}
-                            className={
-                              focusedItemIndex === 1 ? "bg-blue-100" : ""
-                            }
-                          >
-                            <span>index.js</span>
-                          </CommandItem>
-                          <CommandItem
-                            onSelect={() => handleComponentSelect("styles.css")}
-                            className={
-                              focusedItemIndex === 2 ? "bg-blue-100" : ""
-                            }
-                          >
-                            <span>styles.css</span>
-                          </CommandItem>
-                        </>
-                      )}
-                      {selectedSource === "console" && (
-                        <>
-                          <CommandItem
-                            onSelect={() => handleComponentSelect("error")}
-                            className={
-                              focusedItemIndex === 0 ? "bg-blue-100" : ""
-                            }
-                          >
-                            <span>Error Log</span>
-                          </CommandItem>
-                          <CommandItem
-                            onSelect={() => handleComponentSelect("output")}
-                            className={
-                              focusedItemIndex === 1 ? "bg-blue-100" : ""
-                            }
-                          >
-                            <span>Output</span>
-                          </CommandItem>
-                        </>
-                      )}
-                      {selectedSource === "mcp" && (
-                        <>
-                          <CommandItem
-                            onSelect={() => handleComponentSelect("dashboard")}
-                            className={
-                              focusedItemIndex === 0 ? "bg-blue-100" : ""
-                            }
-                          >
-                            <span>Dashboard</span>
-                          </CommandItem>
-                          <CommandItem
-                            onSelect={() => handleComponentSelect("settings")}
-                            className={
-                              focusedItemIndex === 1 ? "bg-blue-100" : ""
-                            }
-                          >
-                            <span>Settings</span>
-                          </CommandItem>
-                          <CommandItem
-                            onSelect={() => handleComponentSelect("users")}
-                            className={
-                              focusedItemIndex === 2 ? "bg-blue-100" : ""
-                            }
-                          >
-                            <span>Users</span>
-                          </CommandItem>
-                        </>
-                      )}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              )}
-            </div>
-          )}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Attach files</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <Button size="icon" type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
         </div>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          multiple
-        />
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
-              >
-                <Paperclip className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <p>Attach files</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <Button size="icon" type="submit" disabled={isLoading}>
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-        </Button>
       </div>
-    </div>
+    </form>
   );
 }
