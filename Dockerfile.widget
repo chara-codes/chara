@@ -17,6 +17,7 @@ RUN bun run build
 # Expose port
 EXPOSE 3000
 
+WORKDIR /app/packages/widget/dist/
 # Use Bun's HTML serving capability to serve the static files
 # This launches a simple static file server with the index.html as the entry point
-CMD ["bun", "run", "serve"]
+CMD ["bun", "index.html"]
