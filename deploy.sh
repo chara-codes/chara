@@ -24,10 +24,8 @@ cd "$REPO_DIR" || handle_error "Could not change to repository directory: $REPO_
 
 # Store the current commit hash
 OLD_COMMIT=$(sudo -u apk git rev-parse HEAD)
-log "Current commit: $OLD_COMMIT"
 
 # Fetch the latest changes
-log "Fetching latest changes from the repository..."
 sudo -u apk git fetch || handle_error "Failed to fetch from the remote repository."
 
 # Check if there are any changes
@@ -55,8 +53,6 @@ if ! sudo -u apk git diff --quiet HEAD origin/"$GIT_BRANCH"; then
     fi
 
     log "Deployment completed successfully."
-else
-    log "No changes detected, skipping deployment."
 fi
 
 exit 0
