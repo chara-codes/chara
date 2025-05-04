@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, ChevronDown, Search, X } from "lucide-react"
+import { Check, ChevronDown, Search, X, Bot, Sparkles, Brain, Cpu, Layers } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -46,6 +46,23 @@ export function ModelSelector() {
     }
   }, [modelSearchQuery])
 
+  const getProviderIcon = (provider: string) => {
+    switch (provider.toLowerCase()) {
+      case "anthropic":
+        return <Bot className="h-4 w-4 text-purple-500" />
+      case "openai":
+        return <Sparkles className="h-4 w-4 text-green-500" />
+      case "meta":
+        return <Brain className="h-4 w-4 text-blue-500" />
+      case "mistral":
+        return <Cpu className="h-4 w-4 text-amber-500" />
+      case "ollama":
+        return <Layers className="h-4 w-4 text-gray-500" />
+      default:
+        return <Bot className="h-4 w-4 text-gray-500" />
+    }
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -54,11 +71,7 @@ export function ModelSelector() {
           size="sm"
           className="h-6 p-0 text-xs font-normal flex items-center gap-1 hover:bg-gray-100"
         >
-          <img
-            src={`/generic-placeholder-graphic.png?key=${selectedModel.imageKey}`}
-            alt={selectedModel.provider}
-            className="h-4 w-4 rounded-full"
-          />
+          {getProviderIcon(selectedModel.provider)}
           {selectedModel.name}
           <ChevronDown className="h-3 w-3 ml-1 text-gray-400" />
         </Button>
@@ -107,11 +120,7 @@ export function ModelSelector() {
                     }}
                     className="flex items-center gap-2 py-1.5"
                   >
-                    <img
-                      src={`/generic-placeholder-graphic.png?key=${model.imageKey}`}
-                      alt={model.provider}
-                      className="h-4 w-4 rounded-full"
-                    />
+                    {getProviderIcon(model.provider)}
                     <span className="text-xs">{model.name}</span>
                     {selectedModel.name === model.name && <Check className="h-3 w-3 ml-auto" />}
                   </DropdownMenuItem>

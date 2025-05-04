@@ -3,10 +3,11 @@
 import { useRef, useEffect } from "react"
 import { useStore } from "@/lib/store"
 import { Badge } from "@/components/ui/badge"
-import { FileCode, Terminal, BookOpen, FileText } from "lucide-react"
+import { FileCode, Terminal, BookOpen, FileText, Copy } from "lucide-react"
 import { CodeBlock } from "@/components/molecules/code-block"
 import { MessageFeedback } from "@/components/molecules/message-feedback"
 import { EditsSummary } from "@/components/molecules/edits-summary"
+import { Button } from "@/components/ui/button"
 
 export function MessageList() {
   const messages = useStore((state) => state.messages)
@@ -16,6 +17,79 @@ export function MessageList() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
+
+  // Function to format message content and extract command blocks
+  const formatMessageWithCommands = (content: string) => {
+    if (!content) return null
+
+    // Split content by command block patterns
+    // Looking for patterns like:
+    // $ command
+    // > command
+    // \`\`\`bash
+    // command
+    // \`\`\`
+    const parts = content.split(/(\$\s+.*?$|>\s+.*?$|```(bash|sh|cmd|powershell|terminal)[\s\S]*?```)/gm)
+
+    if (parts.length <= 1) {
+      return <div className="text-sm text-gray-800 whitespace-pre-line">{content}</div>
+    }
+
+    return (
+      <div className="text-sm text-gray-800">
+        {parts.map((part, index) => {
+          // Check if this part is a command
+          if (
+            part?.trim().startsWith("$ ") ||
+            part?.trim().startsWith("> ") ||
+            part?.trim().match(/^```(bash|sh|cmd|powershell|terminal)/)
+          ) {
+            // Clean up the command text
+            let commandText = part
+            if (commandText.match(/^```(bash|sh|cmd|powershell|terminal)/)) {
+              commandText = commandText
+                .replace(/^```(bash|sh|cmd|powershell|terminal)/, "")
+                .replace(/```$/, "")
+                .trim()
+            }
+
+            return (
+              <div
+                key={index}
+                className="my-2 bg-gray-900 text-gray-100 p-3 rounded-md font-mono text-sm overflow-x-auto"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center">
+                    <Terminal className="h-4 w-4 mr-2" />
+                    <span className="text-xs font-semibold">Command</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-gray-300 hover:text-white hover:bg-gray-800"
+                    onClick={() => {
+                      navigator.clipboard.writeText(commandText.replace(/^\$\s+|>\s+/, ""))
+                    }}
+                    title="Copy to clipboard"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+                <div className="whitespace-pre">{commandText}</div>
+              </div>
+            )
+          }
+
+          // Regular text
+          return (
+            <div key={index} className="whitespace-pre-line">
+              {part}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 overflow-y-auto p-0">
@@ -65,7 +139,7 @@ export function MessageList() {
             </div>
           ) : (
             <div className="px-4 py-3">
-              <div className="text-sm text-gray-800 whitespace-pre-line">{message.content}</div>
+              {formatMessageWithCommands(message.content)}
 
               {message.codeBlocks &&
                 message.codeBlocks.map((codeBlock) => <CodeBlock key={codeBlock.id} codeBlock={codeBlock} />)}

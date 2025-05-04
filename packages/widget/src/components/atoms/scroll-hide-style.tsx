@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
 export const ScrollbarHideStyles = () => (
-  <style jsx global>{`
+  <style>{`
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -10,4 +10,4 @@ export const ScrollbarHideStyles = () => (
       scrollbar-width: none;
     }
   `}</style>
-)
+);
