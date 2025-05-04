@@ -109,4 +109,4 @@ services:
       - "traefik.http.routers.widget.rule=Host(`widget.chara-ai.dev`)"
       - "traefik.http.routers.widget.priority=400"
       - "traefik.http.routers.widget.tls=true"
-      - "traefik.http.services.widget.loadbalancer.server.port=80"
+      - "traefik.http.services.widget.loadbalancer.server.port=3000"

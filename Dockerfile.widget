@@ -19,9 +19,9 @@ COPY packages/widget/ ./
 RUN bun run tsc -b || echo "TypeScript check failed but continuing" && bun run vite build
 
 # Expose port
-EXPOSE 80
+EXPOSE 3000
 
 WORKDIR /app/packages/landing/dist
 # Use Bun's HTML serving capability to serve the static files
 # This launches a simple static file server with the index.html as the entry point
-CMD ["bun", "--port", "80", "./index.html"]
+CMD ["bun", "./index.html"]
