@@ -1,0 +1,8 @@
+{
+  "replacements": [
+    {
+      "pattern": "</body>",
+      "replacement": "<h2>added text</h2></body>"
+    }
+  ]
+}

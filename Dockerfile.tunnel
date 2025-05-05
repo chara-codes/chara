@@ -1,0 +1,26 @@
+FROM oven/bun:1
+
+WORKDIR /app
+
+# Copy package files first for better layer caching
+COPY ./package.json .
+COPY ./bun.lock .
+
+# Copy source files
+COPY . .
+
+
+WORKDIR /app/packages/tunnel
+
+# Install dependencies
+RUN bun install
+
+# Build the application
+RUN bun run build
+
+# Expose default port
+EXPOSE 1337
+
+# Set default command to run the server
+# Can be overridden with docker run command-line args
+CMD ["./dist/tunnel", "server", "--configFile", "/config.json"]

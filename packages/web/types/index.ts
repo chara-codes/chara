@@ -1,3 +1,7 @@
+import { StackType } from "@chara/server";
+import { ReactNode } from "react";
+
+/** Chat message types */
 export interface FileDiff {
   oldContent: string;
   newContent: string;
@@ -37,4 +41,20 @@ export interface Message {
   fileChanges?: FileChange[];
   commands?: Command[];
   attachments?: FileAttachment[];
+}
+
+/** Technology stack types */
+export interface Technology {
+  name: string;
+  docsUrl?: string;
+  codeUrl?: string;
+}
+
+export interface TechStack {
+  id: string;
+  name: string;
+  type: StackType;
+  description: string;
+  technologies: Technology[];
+  icon?: ReactNode;
 }

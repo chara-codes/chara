@@ -9,16 +9,17 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
-    "clean": "rm -rf node_modules packages/*/node_modules bun.lockb packages/*/bun.lockb"
+    "build": "turbo run build",
+    "clean": "rm -rf node_modules packages/*/node_modules bun.lock packages/*/bun.lock"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.5"
+    "@types/bun": "^1.2.11"
   },
   "trustedDependencies": [
     "@swc/core",
     "protobufjs"
   ],
   "dependencies": {
-    "turbo": "^2.4.4"
+    "turbo": "^2.5.2"
   }
 }

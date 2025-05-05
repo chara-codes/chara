@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "942a2b3c-40c3-46dd-9444-45652505658d",
+  "id": "005c7433-241e-49cb-8f04-62188044dc34",
   "prevId": "01dc6270-d07f-45d3-a0c2-5eb090dc003b",
   "tables": {
     "chats": {
@@ -168,16 +168,23 @@
           "notNull": true,
           "autoincrement": false
         },
-        "createdAt": {
-          "name": "createdAt",
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "CURRENT_TIMESTAMP"
         },
-        "scannedAt": {
-          "name": "scannedAt",
+        "scanned_at": {
+          "name": "scanned_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -191,15 +198,7 @@
           "autoincrement": false
         }
       },
-      "indexes": {
-        "links_url_unique": {
-          "name": "links_url_unique",
-          "columns": [
-            "url"
-          ],
-          "isUnique": true
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "links_stackId_stacks_id_fk": {
           "name": "links_stackId_stacks_id_fk",
@@ -211,7 +210,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -409,15 +408,31 @@
           "notNull": true,
           "autoincrement": false
         },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'others'"
+        },
         "description": {
           "name": "description",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,

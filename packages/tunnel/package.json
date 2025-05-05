@@ -1,0 +1,24 @@
+{
+  "name": "@chara/tunnel",
+  "module": "index.ts",
+  "type": "module",
+  "bin": {
+    "tunnel": "./dist/tunnel"
+  },
+  "scripts": {
+    "build": "bun build ./src/cli.ts --outfile ./dist/tunnel --compile",
+    "d": "bun ./src/cli.ts",
+    "start": "./dist/tunnel"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "human-id": "^4.1.1",
+    "picocolors": "^1.1.1",
+    "yargs": "^17.7.2"
+  }
+}
