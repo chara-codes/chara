@@ -13,7 +13,7 @@ class CharaCodesApp extends HTMLElement {
     // Tailwind styles injected from build
     const style = document.createElement("link");
     style.setAttribute("rel", "stylesheet");
-    style.setAttribute("href", "https://widget.chara-ai.dev/assets/main.css");
+    style.setAttribute("href", "https://widget.chara-ai.dev/main.css");
     shadow.appendChild(style);
 
     ReactDOM.createRoot(mountPoint).render(
