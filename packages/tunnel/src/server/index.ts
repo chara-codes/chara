@@ -1,14 +1,14 @@
-import { TunnelServer } from './server';
-import { handleHttpRequest } from './http-handler';
-import { handleConnection } from './connection-handler';
-import { handleOpen, handleMessage, handleClose } from './handlers';
-import type { 
-  PendingRequest, 
-  ClientData, 
-  ServerConfig, 
-  TextReplacement, 
-  ClientMap 
-} from './types';
+import { TunnelServer } from "./server";
+import { handleOpen, handleMessage, handleClose } from "./handlers";
+import type {
+  PendingRequest,
+  ClientData,
+  ServerConfig,
+  TextReplacement,
+  ClientMap,
+} from "../types/types";
+import { handleConnection } from "./handlers/connection-handler";
+import { handleHttpRequest } from "./handlers/http-handler";
 
 export {
   TunnelServer,
@@ -16,7 +16,7 @@ export {
   handleConnection,
   handleOpen,
   handleMessage,
-  handleClose
+  handleClose,
 };
 
 export type {
@@ -24,7 +24,7 @@ export type {
   ClientData,
   ServerConfig,
   TextReplacement,
-  ClientMap
+  ClientMap,
 };
 
 // Factory function to create a new TunnelServer instance

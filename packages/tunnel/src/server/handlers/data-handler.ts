@@ -1,6 +1,6 @@
 import type { ServerWebSocket } from "bun";
 import { logger } from "../../utils/logger";
-import type { ClientData } from "../types";
+import type { ClientData } from "../../types/server.types";
 
 /**
  * Handles HTTP data chunks sent from the client over WebSocket

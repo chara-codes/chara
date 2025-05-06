@@ -1,14 +1,10 @@
 import type { Server as BunServer } from "bun";
 import type { ServerWebSocket } from "bun";
 import { logger } from "../utils/logger";
-import type { ClientData, ClientMap, ServerConfig } from "./types";
-import { handleHttpRequest } from "./http-handler";
-import { handleConnection } from "./connection-handler";
-import { 
-  handleOpen, 
-  handleMessage, 
-  handleClose 
-} from "./handlers";
+import type { ClientData, ClientMap, ServerConfig } from "../types/server.types";
+import { handleHttpRequest } from "./handlers/http-handler";
+import { handleConnection } from "./handlers/connection-handler";
+import { handleOpen, handleMessage, handleClose } from "./handlers";
 
 /**
  * Tunnel Server that manages WebSocket connections and HTTP tunneling
@@ -32,19 +28,21 @@ export class TunnelServer {
    */
   public start(): BunServer {
     const { port, domain, controlDomain } = this.config;
-    
+
     logger.debug(`Starting tunnel server on port ${port}`);
     logger.debug(`Root domain: ${domain}`);
     logger.debug(`Control domain: ${controlDomain}`);
-    logger.debug(`Server configuration: ${JSON.stringify(this.config, null, 2)}`);
+    logger.debug(
+      `Server configuration: ${JSON.stringify(this.config, null, 2)}`,
+    );
 
     if (this.config.replacements && this.config.replacements.length > 0) {
       logger.debug(
-        `Text replacements configured: ${this.config.replacements.length} patterns`
+        `Text replacements configured: ${this.config.replacements.length} patterns`,
       );
       this.config.replacements.forEach((replacement, index) => {
         logger.debug(
-          `  ${index + 1}: ${replacement.pattern} → ${replacement.replacement}`
+          `  ${index + 1}: ${replacement.pattern} → ${replacement.replacement}`,
         );
       });
     }
@@ -55,11 +53,11 @@ export class TunnelServer {
       fetch: (req) => {
         const url = new URL(req.url);
         const path = url.pathname;
-        
+
         if (path === "/_chara/connect") {
           return handleConnection(req, this.server!, this.config);
         }
-        
+
         return handleHttpRequest(req, this.clients, this.config.controlDomain);
       },
 

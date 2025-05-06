@@ -1,7 +1,7 @@
 import type { ServerWebSocket } from "bun";
 import { logger } from "../../utils/logger";
 import { allocateSubdomain } from "../../utils/subdomain";
-import type { ClientData, ClientMap, ServerConfig } from "../types";
+import type { ClientData, ClientMap, ServerConfig } from "../../types/server.types";
 
 /**
  * Handles a new WebSocket connection, assigning a subdomain to the client

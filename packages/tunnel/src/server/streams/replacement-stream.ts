@@ -1,6 +1,6 @@
-import { logger } from "../logger";
-import { applyReplacements } from "../replacements";
-import type { ServerConfig } from "../../server/types";
+import type { ServerConfig } from "../../types/server.types";
+import { logger } from "../../utils/logger";
+import { applyReplacements } from "../../utils/replacements";
 
 /**
  * Creates a transform stream that applies text replacements to chunks of data

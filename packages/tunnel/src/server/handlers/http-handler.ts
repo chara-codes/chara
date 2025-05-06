@@ -1,12 +1,11 @@
 import { randomUUID } from "crypto";
-import { logger } from "../utils/logger";
-import type { ClientData, ClientMap, PendingRequest } from "./types";
-import type { ServerWebSocket } from "bun";
+import type { ClientMap, PendingRequest } from "../../types/server.types";
+import { logger } from "../../utils/logger";
 
 /**
  * Handles incoming HTTP requests by forwarding them to the appropriate client
  * based on subdomain
- * 
+ *
  * @param req The incoming HTTP request
  * @param clients Map of connected clients by subdomain
  * @param controlDomain The control domain for the tunnel server
@@ -15,7 +14,7 @@ import type { ServerWebSocket } from "bun";
 export async function handleHttpRequest(
   req: Request,
   clients: ClientMap,
-  controlDomain: string
+  controlDomain: string,
 ): Promise<Response> {
   const url = new URL(req.url);
   const host = req.headers.get("host") || "";
@@ -24,7 +23,7 @@ export async function handleHttpRequest(
   const [subdomain] = host.split(".");
   logger.debug(`Incoming HTTP request: ${req.method} ${req.url}`);
   logger.debug(
-    `Request headers: ${JSON.stringify(Object.fromEntries(req.headers.entries()), null, 2)}`
+    `Request headers: ${JSON.stringify(Object.fromEntries(req.headers.entries()), null, 2)}`,
   );
   logger.debug(`Request ${subdomain}: ${req.method} ${req.url}`);
 
@@ -32,7 +31,7 @@ export async function handleHttpRequest(
     const client = clients.get(subdomain)!;
     logger.debug(`Found client for subdomain: ${subdomain}`);
     logger.debug(`Client connection status: ${client.readyState}`);
-    
+
     // Initialize the requests map if it doesn't exist
     if (!client.data.requests) {
       client.data.requests = new Map<string, PendingRequest>();
@@ -83,7 +82,7 @@ export async function handleHttpRequest(
 
         logger.debug(`Preparing to forward request ${requestId} to client`);
         logger.debug(`Request body size: ${body ? body.length : 0} bytes`);
-        
+
         // Send the request to the client over WebSocket
         client.send(
           JSON.stringify({
@@ -94,11 +93,11 @@ export async function handleHttpRequest(
             path: url.pathname + url.search,
             headers,
             body,
-          })
+          }),
         );
-        
+
         logger.debug(
-          `Request ${requestId} sent to client, waiting for response`
+          `Request ${requestId} sent to client, waiting for response`,
         );
 
         // Wait for controller abort (timeout) or resolver to be called
@@ -109,7 +108,7 @@ export async function handleHttpRequest(
           resolve(
             new Response("Request timeout after 30 seconds", {
               status: 504,
-            })
+            }),
           );
         });
 
@@ -120,16 +119,16 @@ export async function handleHttpRequest(
         resolve(
           new Response(`Error processing request: ${error}`, {
             status: 500,
-          })
+          }),
         );
       }
     });
   }
-  
+
   return new Response(
     `Unknown domain. Please connect to ${controlDomain} for a subdomain assignment.`,
     {
       status: 404,
-    }
+    },
   );
 }

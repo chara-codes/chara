@@ -3,7 +3,7 @@ import { logger } from "./utils/logger";
 import { 
   createTunnelServer 
 } from "./server/index";
-import type { ServerConfig } from "./server/types";
+import type { ServerConfig } from "./types/server.types";
 
 /**
  * Starts a tunnel server with the given configuration

@@ -1,9 +1,9 @@
 import type { ServerWebSocket } from "bun";
 import { logger } from "../../utils/logger";
-import type { ClientData, ServerConfig } from "../types";
+import type { ClientData, ServerConfig } from "../../types/server.types";
 import { isTextResponse } from "../../utils/content-type";
-import { getCompressionType } from "../../utils/compression";
-import { processStream } from "../../utils/streams";
+import { getCompressionType } from "../compression";
+import { processStream } from "../streams";
 
 /**
  * Handles HTTP response completion from client

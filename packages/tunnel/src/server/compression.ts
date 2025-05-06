@@ -1,6 +1,6 @@
 import * as zlib from "zlib";
 import { Writable } from "stream";
-import { logger } from "../logger";
+import { logger } from "../utils/logger";
 
 /**
  * Determines the compression type to use based on Content-Encoding header
@@ -107,24 +107,24 @@ export function createCompressionStream(
 }
 
 /**
- * Prepares headers for compression by setting Content-Encoding 
+ * Prepares headers for compression by setting Content-Encoding
  * and removing Content-Length
- * 
+ *
  * @param headers The HTTP response headers to modify
  * @param compressionType The type of compression being applied
  * @returns The modified headers
  */
 export function prepareHeadersForCompression(
   headers: Headers,
-  compressionType: string
+  compressionType: string,
 ): Headers {
   const newHeaders = new Headers(headers);
-  
+
   // Set the Content-Encoding header
   newHeaders.set("content-encoding", compressionType);
-  
+
   // Remove Content-Length header as it will change with compression
   newHeaders.delete("content-length");
-  
+
   return newHeaders;
 }

@@ -1,10 +1,10 @@
 import type { Server } from "bun";
-import { logger } from "../utils/logger";
-import type { ClientData, ServerConfig } from "./types";
+import type { ServerConfig } from "../../types/server.types";
+import { logger } from "../../utils/logger";
 
 /**
  * Handles WebSocket connection upgrade attempts
- * 
+ *
  * @param req The incoming request
  * @param server The Bun server instance
  * @param config Server configuration
@@ -13,7 +13,7 @@ import type { ClientData, ServerConfig } from "./types";
 export function handleConnection(
   req: Request,
   server: Server,
-  config: ServerConfig
+  config: ServerConfig,
 ): Response {
   const url = new URL(req.url);
   const hostname = url.hostname;
@@ -24,12 +24,12 @@ export function handleConnection(
   // Check if this is a connection to the control domain
   if (host.startsWith(controlDomain) || hostname === controlDomain) {
     logger.debug(
-      `WebSocket connection attempt from ${hostname} to control domain ${controlDomain}`
+      `WebSocket connection attempt from ${hostname} to control domain ${controlDomain}`,
     );
     logger.debug(
-      `Host header: ${host}, Desired subdomain: ${desiredSubdomain || "none"}`
+      `Host header: ${host}, Desired subdomain: ${desiredSubdomain || "none"}`,
     );
-    
+
     // Upgrade the request to WebSocket if it's a WebSocket request
     if (
       server.upgrade(req, {
@@ -37,7 +37,7 @@ export function handleConnection(
       })
     ) {
       logger.debug(
-        `Successfully upgraded connection to WebSocket for client requesting subdomain: ${desiredSubdomain || "random"}`
+        `Successfully upgraded connection to WebSocket for client requesting subdomain: ${desiredSubdomain || "random"}`,
       );
       return new Response("", { status: 101 });
     }
@@ -48,9 +48,9 @@ export function handleConnection(
       "Chara Codes Control Server is running. Connect using WebSocket.",
       {
         status: 200,
-      }
+      },
     );
   }
-  
+
   return new Response("Not Found", { status: 404 });
 }

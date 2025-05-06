@@ -1,8 +1,11 @@
-import { logger } from "../logger";
-import { isTextResponse } from "../content-type";
 import { createReplacementStream } from "./replacement-stream";
-import { createCompressionStream, prepareHeadersForCompression } from "../compression";
-import type { ServerConfig } from "../../server/types";
+import {
+  createCompressionStream,
+  prepareHeadersForCompression,
+} from "../compression";
+import type { ServerConfig } from "../../types/server.types";
+import { isTextResponse } from "../../utils/content-type";
+import { logger } from "../../utils/logger";
 
 /**
  * Processes a stream with optional text replacements and compression
@@ -28,14 +31,14 @@ export function processStream(
   let responseHeaders = new Headers(headers);
 
   // Apply text replacements if configured and content type is appropriate
-  const shouldApplyReplacements = 
-    config?.replacements && 
-    config.replacements.length > 0 && 
+  const shouldApplyReplacements =
+    config?.replacements &&
+    config.replacements.length > 0 &&
     isTextResponse(responseHeaders);
-    
+
   if (shouldApplyReplacements) {
     logger.debug(
-      `Applying text replacements to response for request ${requestId}`
+      `Applying text replacements to response for request ${requestId}`,
     );
     processedStream = createReplacementStream(processedStream, config);
   }
@@ -43,28 +46,28 @@ export function processStream(
   // Apply compression if requested
   if (compressionType) {
     logger.debug(
-      `Applying ${compressionType} compression to response for request ${requestId}`
+      `Applying ${compressionType} compression to response for request ${requestId}`,
     );
 
     try {
       // Update headers for compression
       responseHeaders = prepareHeadersForCompression(
         responseHeaders,
-        compressionType
+        compressionType,
       );
 
       // Apply compression
       processedStream = createCompressionStream(
-        processedStream, 
-        compressionType
+        processedStream,
+        compressionType,
       );
 
       logger.debug(
-        `Successfully applied ${compressionType} compression to response`
+        `Successfully applied ${compressionType} compression to response`,
       );
     } catch (error) {
       logger.error(
-        `Error applying ${compressionType} compression: ${error}, skipping compression`
+        `Error applying ${compressionType} compression: ${error}, skipping compression`,
       );
     }
   }
@@ -74,6 +77,6 @@ export function processStream(
     new Response(processedStream, {
       status,
       headers: responseHeaders,
-    })
+    }),
   );
 }
