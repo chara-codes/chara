@@ -1,14 +1,27 @@
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import "./index.css";
-import App from "./App.tsx";
+import ReactDOM from "react-dom/client";
+import App from "./App";
 
-const root = document.getElementById("_chara_block");
+class CharaCodesApp extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: "open" });
 
-if (root) {
-  createRoot(root).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
+    const mountPoint = document.createElement("div");
+    shadow.appendChild(mountPoint);
+
+    // Tailwind styles injected from build
+    const style = document.createElement("link");
+    style.setAttribute("rel", "stylesheet");
+    style.setAttribute("href", "https://widget.chara-ai.dev/assets/main.css");
+    shadow.appendChild(style);
+
+    ReactDOM.createRoot(mountPoint).render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+  }
 }
+
+customElements.define("chara-codes", CharaCodesApp);

@@ -15,4 +15,12 @@ export default defineConfig({
     port: 3000,
     allowedHosts: ["widget.chara-ai.dev"],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: "main.js",
+        assetFileNames: "main.css",
+      },
+    },
+  },
 });
