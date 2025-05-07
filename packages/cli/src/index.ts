@@ -4,10 +4,18 @@ import { devCommand } from "./commands/dev";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
+import { getAndStoreSystemInfo } from "./utils/get-system-info";
+
 // Read version from package.json
 const packageJson = JSON.parse(
   readFileSync(resolve(__dirname, "../package.json"), "utf8"),
 );
+
+try {
+  await getAndStoreSystemInfo();
+} catch (error) {
+  console.error(error);
+}
 
 yargs(hideBin(process.argv))
   .scriptName("chara")

@@ -1,6 +1,7 @@
-import { streamObject, streamText } from "ai";
+import { streamText } from "ai";
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc";
+import { myAgent } from "../../ai/agents/my-agent";
 
 export const messageSchema = z.object({
   content: z
@@ -38,7 +39,12 @@ export type MessageSchema = z.infer<typeof messageSchema>;
 
 export const chatRouter = router({
   streamText: publicProcedure
-    .input(z.object({ question: z.string() }))
+    .input(
+      z.object({
+        question: z.string(),
+        project: z.object({ id: z.string(), name: z.string() }),
+      }),
+    )
     .query(async function* ({ ctx, input }) {
       const { textStream } = streamText({
         messages: [
@@ -54,25 +60,28 @@ export const chatRouter = router({
       }
     }),
   streamObject: publicProcedure
-    .input(z.object({ question: z.string() }))
+    .input(
+      z.object({
+        question: z.string(),
+        project: z.object({ id: z.string(), name: z.string() }),
+      }),
+    )
     .query(async function* ({ ctx, input }) {
-      const { partialObjectStream } = streamObject({
-        model: ctx.ai(process.env.AI_MODEL || "gpt-4o-mini"),
-        schema: messageSchema,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are expirienced software engineer and need to analyze the request and suggest the solution. The solution should include the list of files that should be changed, commands that needs to be executed and the explanation of the changes and actions needed to be execute to implement the task.",
-          },
-          {
-            role: "user",
-            content: input.question,
-          },
-        ],
-      });
-      for await (const partialObject of partialObjectStream) {
-        yield partialObject;
+      console.log(
+        "Chat streamObject called with question:",
+        input.question,
+        input.project,
+      );
+
+      try {
+        const agentStream = myAgent(input.question, input.project);
+
+        for await (const partialObject of agentStream) {
+          yield partialObject;
+        }
+      } catch (error) {
+        console.error("Error in streamObject:", error);
+        throw error;
       }
     }),
 });
