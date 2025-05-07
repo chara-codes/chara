@@ -173,3 +173,12 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.\*
+
+# Ignore all contents of the projects folder
+projects/*
+
+# Allow the projects folder itself to be tracked
+!projects/
+
+# Allow the placeholder file to be tracked
+!projects/.gitkeep

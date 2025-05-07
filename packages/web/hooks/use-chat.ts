@@ -2,9 +2,10 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useAIChat } from "@/hooks/use-ai-chat";
 import { parseStream } from "@/lib/parse-stream";
+import { ProjectInformation, useProject } from "@/contexts/project-context";
 
 // Custom hook to handle chat with tRPC
-export function useChat(streamObject = false) {
+export function useChat(streamObject = true) {
   const [messages, setMessages] = useState<
     Array<{
       id: string;
@@ -20,6 +21,7 @@ export function useChat(streamObject = false) {
   const [status, setStatus] = useState<"ready" | "streaming" | "submitted">(
     "ready",
   );
+  const { selectedProject } = useProject();
   const [error, setError] = useState<Error | null>(null);
   // Keep track of whether we've cleaned up the current request
   const isCleanedUpRef = useRef(false);
@@ -54,10 +56,10 @@ export function useChat(streamObject = false) {
     setStatus("submitted");
     setError(null);
 
-    const { stream } = useAIChat<{ question: string }>(
-      "http://localhost:3030/trpc",
-      streamObject,
-    );
+    const { stream } = useAIChat<{
+      question: string;
+      project: ProjectInformation | null;
+    }>("http://localhost:3030/trpc", streamObject, selectedProject);
     try {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -82,7 +84,10 @@ export function useChat(streamObject = false) {
       ]);
       setStatus("streaming");
 
-      const chunks = await stream({ question: input }, signal);
+      const chunks = await stream(
+        { question: input, project: selectedProject },
+        signal,
+      );
       let textResponse = "";
       let objectResponse: any = {};
 
@@ -104,7 +109,7 @@ export function useChat(streamObject = false) {
                 msg.id === tempAssistantMessageId
                   ? {
                       ...msg,
-                      content: objectResponse.content,
+                      content: objectResponse.summary,
                       context: objectResponse,
                     }
                   : msg,

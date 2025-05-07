@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { selectAIProvider } from "../utils/select-ai-provider";
 import { engineerAgent } from "./agents/engineer";
+import { myAgent } from "./agents/my-agent";
 
 export const aiProvider = selectAIProvider({
   apiKey: String(process.env.AI_KEY),
@@ -8,8 +9,11 @@ export const aiProvider = selectAIProvider({
 });
 
 export const useChat = () => {
-  const stream = async (input: string) => {
-    return engineerAgent(input);
+  const stream = async (
+    input: string,
+    project: { id: string; name: string },
+  ) => {
+    return myAgent(input, project);
   };
 
   return { stream };

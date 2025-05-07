@@ -2,6 +2,7 @@ import type React from "react";
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ProjectProvider } from "@/contexts/project-context";
 import { AppShell } from "@/components/layout";
 import { TrpcProviders } from "@/context";
 import { Toaster } from "@/components/ui/toaster";
@@ -22,10 +23,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <TrpcProviders>
-          <AppShell>{children}</AppShell>
-          <Toaster />
-        </TrpcProviders>
+        <ProjectProvider>
+          <TrpcProviders>
+            <AppShell>{children}</AppShell>
+            <Toaster />
+          </TrpcProviders>
+        </ProjectProvider>
       </body>
     </html>
   );

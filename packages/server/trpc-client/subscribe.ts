@@ -21,7 +21,12 @@ const client = createTRPCClient<AppRouter>({
 
 const res = client.events.subscribe(undefined, {
   onData(data) {
-    console.log("Received data:", data);
+    if (data.type === "server_ping") {
+      console.log("Server ping received:", data.data);
+    } else if (data.type === "instructions_execute") {
+      console.log("Instructions execute event received:", data.data);
+      // Here you can process the instructions
+    }
   },
   onError(err) {
     console.error("Subscription error:", err);
