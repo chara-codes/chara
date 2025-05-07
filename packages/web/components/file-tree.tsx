@@ -4,8 +4,8 @@ import { useState } from "react"
 import { Folder, ChevronDown, ChevronRight, FileText } from "lucide-react"
 
 interface FileTreeProps {
-  files: Array<{ path: string; type: string }>
-  changedFiles: Array<{ path: string; type: string }>
+  files: Array<{ path: string; type: string; name: string; handle?: FileSystemHandle }>
+  changedFiles: Array<{ path: string; type: string | 'add' | 'modify' | 'delete' }>
   selectedFile: string
   onSelectFile: (path: string) => void
 }
@@ -31,7 +31,7 @@ export function FileTree({ files, changedFiles, selectedFile, onSelectFile }: Fi
   }
 
   // Group files by their parent folders
-  const filesByFolder: Record<string, Array<{ path: string; type: string }>> = {}
+  const filesByFolder: Record<string, Array<{ path: string; type: string; name: string; handle?: FileSystemHandle }>> = {}
 
   files.forEach((file) => {
     const parts = file.path.split("/")
@@ -72,14 +72,14 @@ export function FileTree({ files, changedFiles, selectedFile, onSelectFile }: Fi
                 <span className="w-4 mr-1" />
               )}
               <Folder className="h-4 w-4 mr-2 text-blue-400" />
-              <span>{item.path.split("/").pop()}</span>
+              <span>{item.name || item.path.split("/").pop()}</span>
             </div>
 
             {isExpanded && hasChildren && renderFolder(item.path)}
           </div>
         )
       } else {
-        const fileName = item.path.split("/").pop() || ""
+        const fileName = item.name || item.path.split("/").pop() || ""
         const isSelected = selectedFile === item.path
         const changeType = getFileChangeType(item.path)
 

@@ -5,7 +5,30 @@
   "mcpServers": {
     "puppeteer": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ]
+    }
+  },
+  "systemContext": {
+    "operatingSystem": {
+      "platform": "darwin",
+      "release": "24.3.0",
+      "type": "Darwin",
+      "version": "unknown"
+    },
+    "cpu": {
+      "architecture": "arm64",
+      "cores": 10,
+      "model": "Apple M1 Pro"
+    },
+    "environment": {
+      "nodeVersion": "v22.6.0",
+      "runtime": "Bun v1.2.7",
+      "shell": "/bin/zsh",
+      "user": "Adam_Nagy3",
+      "homeDirectory": "/Users/Adam_Nagy3"
     }
   }
 }
