@@ -1,8 +1,8 @@
 "use client";
 import { useState, useRef, useEffect, FormEvent } from "react";
-import type { Message } from "../types";
+import type { FileAttachment, Message } from "../types";
 import { MessageItem } from "./message-item";
-import { useChat } from "@/hooks/use-chat";
+import { useTrpcChat } from "@/hooks/use-trpc-chat";
 import { useProject } from "@/contexts/project-context";
 import { ProjectSelector } from "@/components/project-selector";
 import { ChatInput } from "./chat-input";
@@ -20,8 +20,7 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
     setSelectedProject({ id: projectId, name: projectName });
   };
 
-  const { messages, input, handleInputChange, handleSubmit, error, status } =
-    useChat(true);
+  const { messages, error, status, sendChatMessage } = useTrpcChat();
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -32,6 +31,34 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
     navigator.clipboard.writeText(content);
     setCopiedMessageId(messageId);
     setTimeout(() => setCopiedMessageId(null), 2000); // Reset after 2 seconds
+  };
+
+  const sendMessage = (messageText: string) => {
+    // Call the direct message sending function from useChat hook
+    sendChatMessage(messageText);
+  };
+
+  const handleSendMessage = (
+    inputText: string,
+    attachments: FileAttachment[],
+    contexts: Array<{ source: string; component: string }>,
+  ) => {
+    // Format the message content with attached contexts
+    let messageContent = inputText;
+
+    // Add contexts at the beginning of the message if there are any
+    if (contexts.length > 0) {
+      const contextStrings = contexts.map(
+        (ctx) => `[${ctx.source}:${ctx.component}]`,
+      );
+      messageContent = contextStrings.join("\n") + "\n\n" + messageContent;
+    }
+
+    if (selectedProject) {
+      sendChatMessage(messageContent);
+    } else {
+      console.error("No project selected");
+    }
   };
 
   return (
@@ -63,7 +90,7 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
       </div>
       <div className="p-4 border-t">
         <ChatInput
-          onSendMessage={handleSubmit}
+          onSendMessage={handleSendMessage}
           isLoading={status === "streaming"}
         />
       </div>
