@@ -1,14 +1,14 @@
 import { TunnelServer } from "./server";
 import { handleOpen, handleMessage, handleClose } from "./handlers";
+import { handleConnection } from "./handlers/connection-handler";
+import { handleHttpRequest } from "./handlers/http-handler";
 import type {
   PendingRequest,
   ClientData,
   ServerConfig,
   TextReplacement,
   ClientMap,
-} from "../types/types";
-import { handleConnection } from "./handlers/connection-handler";
-import { handleHttpRequest } from "./handlers/http-handler";
+} from "../types/server.types";
 
 export {
   TunnelServer,

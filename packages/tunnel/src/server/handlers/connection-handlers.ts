@@ -1,5 +1,5 @@
 import type { ServerWebSocket } from "bun";
-import { logger } from "../../utils/logger";
+import { logger } from "@chara/logger";
 import { allocateSubdomain } from "../../utils/subdomain";
 import type { ClientData, ClientMap, ServerConfig } from "../../types/server.types";
 

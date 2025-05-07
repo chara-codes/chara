@@ -1,5 +1,5 @@
 import type { Server } from "bun";
-import { logger } from "./utils/logger";
+import { logger } from "@chara/logger";
 import { 
   createTunnelServer 
 } from "./server/index";

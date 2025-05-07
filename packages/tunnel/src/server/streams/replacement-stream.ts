@@ -1,5 +1,5 @@
 import type { ServerConfig } from "../../types/server.types";
-import { logger } from "../../utils/logger";
+import { logger } from "@chara/logger";
 import { applyReplacements } from "../../utils/replacements";
 
 /**

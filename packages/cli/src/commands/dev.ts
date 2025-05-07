@@ -9,8 +9,8 @@ import {
   loggerLink,
 } from "@trpc/client";
 import { cyan, bold } from "picocolors";
-import { logger } from "../utils/logger";
 import type { AppRouter } from "@chara/server";
+import { logger } from "@chara/logger";
 
 interface DevCommandArgs {
   projectDir?: string;
