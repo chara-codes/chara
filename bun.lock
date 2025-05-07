@@ -20,6 +20,7 @@
         "@chara/server": "workspace:../server",
         "@modelcontextprotocol/sdk": "^1.9.0",
         "picocolors": "^1.0.0",
+        "superjson": "^2.2.2",
         "yargs": "^17.7.2",
       },
       "devDependencies": {

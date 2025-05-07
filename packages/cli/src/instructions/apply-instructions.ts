@@ -12,6 +12,7 @@ import {
 import { logger } from "../utils/logger";
 import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@chara/server";
+import superjson from "superjson";
 
 const execAsync = promisify(exec);
 
@@ -21,6 +22,7 @@ const createApiClient = () => {
     links: [
       httpBatchLink({
         url: "http://localhost:3030/trpc",
+        transformer: superjson
       }),
     ],
   });

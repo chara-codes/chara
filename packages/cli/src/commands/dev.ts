@@ -12,6 +12,7 @@ import { cyan, bold } from "picocolors";
 import { logger } from "../utils/logger";
 import type { AppRouter } from "@chara/server";
 import { applyInstructions } from "../instructions/apply-instructions";
+import superjson from "superjson";
 
 interface DevCommandArgs {
   projectDir?: string;
@@ -31,6 +32,7 @@ async function connectToServerEvents(): Promise<void> {
       loggerLink(),
       wsLink({
         client: wsClient,
+        transformer: superjson
       }),
     ],
   });
@@ -63,6 +65,7 @@ function createApiClient() {
     links: [
       httpBatchLink({
         url: "http://localhost:3030/trpc",
+        transformer: superjson
       }),
     ],
   });
