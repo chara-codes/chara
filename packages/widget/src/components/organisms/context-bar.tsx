@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useEffect, useState } from "react"
+import { useRef, useEffect } from "react"
 import { useStore } from "@/lib/store"
 import { ContextSelector } from "@/components/molecules/context-selector"
 import { FileAttachmentButton } from "@/components/molecules/file-attachment-button"
@@ -17,13 +17,28 @@ export function ContextBar() {
   const setHasContextOverflow = useStore((state) => state.setHasContextOverflow)
   const setIsOpen = useStore((state) => state.setIsOpen)
   const addContext = useStore((state) => state.addContext)
+  const clearContexts = useStore((state) => state.clearContexts)
+  const isGenerating = useStore((state) => state.isGenerating)
+  const messages = useStore((state) => state.messages)
+  const setIsElementSelecting = useStore((state) => state.setIsElementSelecting)
 
-  const [isSelecting, setIsSelecting] = useState(false)
-  const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null)
   const contextContainerRef = useRef<HTMLDivElement>(null)
+  const selectionModeRef = useRef<boolean>(false)
+  const originalCursorRef = useRef<string>("")
 
-  // Store original styles to restore them later
-  const originalStyles = useRef<{ [key: string]: string }>({})
+  // Clear contexts at the start of communication
+  useEffect(() => {
+    if (messages.length === 0) {
+      clearContexts()
+    }
+  }, [messages, clearContexts])
+
+  // Clear contexts after a message is sent (when generation starts)
+  useEffect(() => {
+    if (isGenerating) {
+      clearContexts()
+    }
+  }, [isGenerating, clearContexts])
 
   // Check for context overflow
   useEffect(() => {
@@ -41,149 +56,149 @@ export function ContextBar() {
     return () => window.removeEventListener("resize", checkForOverflow)
   }, [activeContexts, setHasContextOverflow])
 
-  // Handle element selection mode
-  useEffect(() => {
-    if (!isSelecting) return
+  // Simple function to start element selection
+  const startElementSelection = () => {
+    console.log("Starting element selection mode")
+
+    // Set the global element selecting state
+    setIsElementSelecting(true)
 
     // Store original cursor
-    const originalCursor = document.body.style.cursor
+    originalCursorRef.current = document.body.style.cursor || "default"
 
-    // Change cursor to indicate selection mode
-    document.body.style.cursor = "crosshair"
+    // Hide the chat panel
+    setIsOpen(false)
+
+    // Create a notification element
+    const notification = document.createElement("div")
+    notification.id = "selection-notification"
+    notification.style.position = "fixed"
+    notification.style.top = "20px"
+    notification.style.left = "50%"
+    notification.style.transform = "translateX(-50%)"
+    notification.style.backgroundColor = "rgba(0, 0, 0, 0.8)"
+    notification.style.color = "white"
+    notification.style.padding = "10px 20px"
+    notification.style.borderRadius = "5px"
+    notification.style.zIndex = "10000"
+    notification.style.fontFamily = "Arial, sans-serif"
+    notification.style.fontSize = "16px"
+    notification.textContent = "Click on any element to select it, or press ESC to cancel"
+    document.body.appendChild(notification)
+
+    // Create a highlighter element
+    const highlighter = document.createElement("div")
+    highlighter.id = "element-highlighter"
+    highlighter.style.position = "absolute"
+    highlighter.style.border = "3px solid red"
+    highlighter.style.backgroundColor = "rgba(255, 0, 0, 0.2)"
+    highlighter.style.pointerEvents = "none"
+    highlighter.style.zIndex = "9999"
+    highlighter.style.display = "none"
+    document.body.appendChild(highlighter)
+
+    // Set selection mode flag
+    selectionModeRef.current = true
+
+    // Function to handle mouse movement
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!selectionModeRef.current) return
+
+      const target = e.target as HTMLElement
+
+      // Skip if it's our notification or highlighter
+      if (target === notification || target === highlighter) return
+
+      // Skip if it's the html or body
+      if (target.tagName.toLowerCase() === "html" || target.tagName.toLowerCase() === "body") return
+
+      // Get element bounds
+      const rect = target.getBoundingClientRect()
+
+      // Update highlighter
+      highlighter.style.top = `${window.scrollY + rect.top}px`
+      highlighter.style.left = `${window.scrollX + rect.left}px`
+      highlighter.style.width = `${rect.width}px`
+      highlighter.style.height = `${rect.height}px`
+      highlighter.style.display = "block"
+
+      // Update notification
+      const tagName = target.tagName.toLowerCase()
+      const id = target.id ? `#${target.id}` : ""
+      notification.textContent = `Select: ${tagName}${id} (Click to select, ESC to cancel)`
+    }
 
     // Function to handle element selection
-    const handleElementSelect = (e: MouseEvent) => {
+    const handleElementClick = (e: MouseEvent) => {
+      if (!selectionModeRef.current) return
+
+      // Prevent default behavior
       e.preventDefault()
       e.stopPropagation()
 
-      // Get the clicked element
-      const element = e.target as HTMLElement
+      const target = e.target as HTMLElement
+
+      // Skip if it's our notification or highlighter
+      if (target === notification || target === highlighter) return
 
       // Get element info
-      const tagName = element.tagName.toLowerCase()
-      const id = element.id ? `#${element.id}` : ""
-      const classes =
-        element.className && typeof element.className === "string" ? `.${element.className.split(" ")[0]}` : ""
+      const tagName = target.tagName.toLowerCase()
+      const id = target.id ? `#${target.id}` : ""
+      const elementName = `${tagName}${id}`
 
-      // Create a descriptive name for the element
-      const elementName = `${tagName}${id}${classes}`
+      console.log("Element selected:", elementName)
 
-      // Add as context
+      // Add to context
       addContext({ type: "Elements", name: elementName })
 
       // Exit selection mode
-      setIsSelecting(false)
+      exitSelectionMode()
+    }
+
+    // Function to handle escape key
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && selectionModeRef.current) {
+        console.log("Selection cancelled with ESC key")
+        exitSelectionMode()
+      }
+    }
+
+    // Function to exit selection mode
+    const exitSelectionMode = () => {
+      console.log("Exiting selection mode")
+
+      // Reset the global element selecting state
+      setIsElementSelecting(false)
+
+      // Remove notification and highlighter
+      const notificationEl = document.getElementById("selection-notification")
+      const highlighterEl = document.getElementById("element-highlighter")
+
+      if (notificationEl) notificationEl.remove()
+      if (highlighterEl) highlighterEl.remove()
+
+      // Remove event listeners
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("click", handleElementClick, true)
+      document.removeEventListener("keydown", handleKeyDown)
+
+      // Reset selection mode flag
+      selectionModeRef.current = false
+
+      // Restore original cursor
+      document.body.style.cursor = originalCursorRef.current
+
+      // Show chat panel again
       setIsOpen(true)
-
-      // Remove highlight if any
-      removeHighlight()
-
-      // Clean up
-      document.body.style.cursor = originalCursor
-      document.removeEventListener("click", handleElementSelect, true)
-      document.removeEventListener("keydown", handleEscapeKey)
-      document.removeEventListener("mouseover", handleElementHover)
-      document.removeEventListener("mouseout", handleElementLeave)
-    }
-
-    // Function to handle escape key press
-    const handleEscapeKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setIsSelecting(false)
-        setIsOpen(true)
-
-        // Remove highlight if any
-        removeHighlight()
-
-        document.body.style.cursor = originalCursor
-        document.removeEventListener("click", handleElementSelect, true)
-        document.removeEventListener("keydown", handleEscapeKey)
-        document.removeEventListener("mouseover", handleElementHover)
-        document.removeEventListener("mouseout", handleElementLeave)
-      }
-    }
-
-    // Function to handle element hover
-    const handleElementHover = (e: MouseEvent) => {
-      const element = e.target as HTMLElement
-
-      // Skip if it's the same element or body/html
-      if (
-        element === highlightedElement ||
-        element.tagName.toLowerCase() === "html" ||
-        element.tagName.toLowerCase() === "body"
-      ) {
-        return
-      }
-
-      // Remove previous highlight
-      removeHighlight()
-
-      // Store original styles
-      originalStyles.current = {
-        outline: element.style.outline,
-        outlineOffset: element.style.outlineOffset,
-        transition: element.style.transition,
-        position: element.style.position,
-        zIndex: element.style.zIndex,
-      }
-
-      // Apply highlight styles
-      element.style.outline = "2px dashed #3b82f6"
-      element.style.outlineOffset = "2px"
-      element.style.transition = "outline 0.2s ease"
-
-      // Ensure the element is above others for better visibility
-      if (element.style.position === "static") {
-        element.style.position = "relative"
-      }
-      element.style.zIndex = "9999"
-
-      // Update highlighted element reference
-      setHighlightedElement(element)
-    }
-
-    // Function to handle element leave
-    const handleElementLeave = (e: MouseEvent) => {
-      // Only remove if we're not entering a child element
-      if (!e.relatedTarget || !(e.relatedTarget as Node).contains(e.target as Node)) {
-        removeHighlight()
-      }
-    }
-
-    // Function to remove highlight
-    const removeHighlight = () => {
-      if (highlightedElement) {
-        // Restore original styles
-        Object.entries(originalStyles.current).forEach(([key, value]) => {
-          // @ts-ignore - dynamic property assignment
-          highlightedElement.style[key] = value
-        })
-
-        setHighlightedElement(null)
-      }
     }
 
     // Add event listeners
-    document.addEventListener("click", handleElementSelect, true)
-    document.addEventListener("keydown", handleEscapeKey)
-    document.addEventListener("mouseover", handleElementHover)
-    document.addEventListener("mouseout", handleElementLeave)
+    document.addEventListener("mousemove", handleMouseMove)
+    document.addEventListener("click", handleElementClick, true)
+    document.addEventListener("keydown", handleKeyDown)
 
-    // Clean up on unmount or when selection mode ends
-    return () => {
-      document.body.style.cursor = originalCursor
-      document.removeEventListener("click", handleElementSelect, true)
-      document.removeEventListener("keydown", handleEscapeKey)
-      document.removeEventListener("mouseover", handleElementHover)
-      document.removeEventListener("mouseout", handleElementLeave)
-      removeHighlight()
-    }
-  }, [isSelecting, highlightedElement, addContext, setIsOpen])
-
-  const startElementSelection = () => {
-    setIsSelecting(true)
-    setIsOpen(false)
+    // Set cursor
+    document.body.style.cursor = "crosshair"
   }
 
   const scrollContexts = (direction: "left" | "right") => {

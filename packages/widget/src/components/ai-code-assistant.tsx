@@ -6,9 +6,12 @@ import { ChatPanel } from "@/components/templates/chat-panel"
 
 export function AICodeAssistant() {
   const isOpen = useStore((state) => state.isOpen)
+  const isElementSelecting = useStore((state) => state.isElementSelecting)
 
+  // Don't show the trigger button if either the panel is open or we're in element selection mode
   if (!isOpen) {
-    return <ChatTriggerButton />
+    // Only show the trigger button if we're not in element selection mode
+    return !isElementSelecting ? <ChatTriggerButton /> : null
   }
 
   return <ChatPanel />

@@ -19,6 +19,7 @@ interface ChatState {
   activeCategory: string | null
   searchQueries: Record<string, string>
   modelSearchQuery: string
+  isElementSelecting: boolean // Add this state for element selection mode
 
   // Chat State
   messages: Message[]
@@ -51,8 +52,10 @@ interface ChatState {
   updateMessage: (id: string, updates: Partial<Message>) => void
   addContext: (context: ContextItem) => void
   removeContext: (contextName: string) => void
+  clearContexts: () => void
   sendMessage: () => void
   cancelGeneration: () => void
+  setIsElementSelecting: (isSelecting: boolean) => void // Add this action
 }
 
 export const useStore = create<ChatState>()(
@@ -73,6 +76,7 @@ export const useStore = create<ChatState>()(
       activeCategory: null,
       searchQueries: {},
       modelSearchQuery: "",
+      isElementSelecting: false, // Initialize as false
 
       // Chat State
       messages: [
@@ -81,6 +85,7 @@ export const useStore = create<ChatState>()(
           type: "user",
           content: "Beautify messages, fix issues with any types, care about development experience",
           files: ["logger.ts"],
+          contexts: [{ type: "Files", name: "logger.ts" }],
         },
         {
           id: "2",
@@ -128,11 +133,7 @@ export enum LogLevel {
       isGenerating: false,
       chatType: "Write",
       selectedModel: modelGroups[0].models[0],
-      activeContexts: [
-        { type: "Files", name: "logger.ts" },
-        { type: "Documentation", name: "README.md" },
-        { type: "Console", name: "Terminal output" },
-      ],
+      activeContexts: [],
 
       // Actions
       setIsOpen: (isOpen) => set({ isOpen }),
@@ -184,15 +185,20 @@ export enum LogLevel {
         set((state) => ({
           activeContexts: state.activeContexts.filter((context) => context.name !== contextName),
         })),
+      clearContexts: () => set({ activeContexts: [] }),
       sendMessage: () => {
         const { inputValue, activeContexts, isGenerating } = get()
         if (inputValue.trim() === "" || isGenerating) return
+
+        // Create a copy of the current active contexts to store with the message
+        const messageContexts = [...activeContexts]
 
         const newMessage: Message = {
           id: Date.now().toString(),
           content: inputValue,
           type: "user",
           files: activeContexts.filter((context) => context.type === "Files").map((context) => context.name),
+          contexts: messageContexts,
         }
 
         set((state) => ({
@@ -236,6 +242,7 @@ Here's what I can help with:
         }, 1000)
       },
       cancelGeneration: () => set({ isGenerating: false }),
+      setIsElementSelecting: (isSelecting) => set({ isElementSelecting: isSelecting }), // Add this action implementation
     }),
     { name: "ai-chat-store" },
   ),

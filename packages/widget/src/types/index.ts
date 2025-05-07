@@ -5,6 +5,7 @@ export interface Message {
   content: string
   type: "user" | "assistant"
   files?: string[]
+  contexts?: ContextItem[] // Add contexts property to Message interface
   title?: string
   isGenerating?: boolean
   codeBlocks?: CodeBlock[]
