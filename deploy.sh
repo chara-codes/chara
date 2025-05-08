@@ -7,6 +7,7 @@ REPO_DIR="${REPO_DIR:-$(pwd)}"
 DOCKER_COMPOSE_FILE="${DOCKER_COMPOSE_FILE:-docker-compose.yml}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 LOG_FILE="${LOG_FILE:-deploy.log}"
+GIT_USER="${GIT_USER:-$(whoami)}"
 
 # Log function
 log() {
@@ -19,36 +20,37 @@ handle_error() {
     exit 1
 }
 
-# Define service paths mapping
-declare -A SERVICE_PATHS
-SERVICE_PATHS["charaserver"]="Dockerfile.server projects/server/ packages/logger/"
-SERVICE_PATHS["charawidget"]="Dockerfile.widget projects/widget/"
-SERVICE_PATHS["charalanding"]="Dockerfile.landing projects/landing/"
-SERVICE_PATHS["charatunnel"]="Dockerfile.tunnel projects/tunnel/ packages/logger/"
-SERVICE_PATHS["charaweb"]="Dockerfile.web projects/web/"
+# Define service paths mapping - each line is service:path patterns
+SERVICE_PATHS=(
+  "charaserver:Dockerfile.server:packages/server/:packages/logger/"
+  "charawidget:Dockerfile.widget:packages/widget/"
+  "charalanding:Dockerfile.landing:packages/landing/"
+  "charatunnel:Dockerfile.tunnel:packages/tunnel/:packages/logger/"
+  # "charaweb:Dockerfile.web:packages/web/"
+)
 
 # Navigate to the repository directory
 cd "$REPO_DIR" || handle_error "Could not change to repository directory: $REPO_DIR"
 
 # Store the current commit hash
-OLD_COMMIT=$(sudo -u apk git rev-parse HEAD)
+OLD_COMMIT=$(sudo -u "$GIT_USER" git rev-parse HEAD)
 
 # Fetch the latest changes
-sudo -u apk git fetch || handle_error "Failed to fetch from the remote repository."
+sudo -u "$GIT_USER" git fetch || handle_error "Failed to fetch from the remote repository."
 
 # Check if there are any changes
-if ! sudo -u apk git diff --quiet HEAD origin/"$GIT_BRANCH"; then
+if ! sudo -u "$GIT_USER" git diff --quiet HEAD origin/"$GIT_BRANCH"; then
     log "Changes detected, updating local repository..."
 
     # Pull the latest changes
-    sudo -u apk git pull origin "$GIT_BRANCH" || handle_error "Failed to pull latest changes."
+    sudo -u "$GIT_USER" git pull origin "$GIT_BRANCH" || handle_error "Failed to pull latest changes."
 
     # Get the new commit hash
-    NEW_COMMIT=$(sudo -u apk git rev-parse HEAD)
+    NEW_COMMIT=$(sudo -u "$GIT_USER" git rev-parse HEAD)
     log "Updated to commit: $NEW_COMMIT"
 
     # Get the list of changed files between the two commits
-    CHANGED_FILES=$(sudo -u apk git diff --name-only "$OLD_COMMIT" "$NEW_COMMIT")
+    CHANGED_FILES=$(sudo -u "$GIT_USER" git diff --name-only "$OLD_COMMIT" "$NEW_COMMIT")
 
     # Check if the Docker Compose file exists
     if [ ! -f "$DOCKER_COMPOSE_FILE" ]; then
@@ -84,21 +86,32 @@ if ! sudo -u apk git diff --quiet HEAD origin/"$GIT_BRANCH"; then
     fi
 
     # Determine affected services
-    declare -A AFFECTED_SERVICES
+    AFFECTED_SERVICES=""
 
-    for SERVICE in "${!SERVICE_PATHS[@]}"; do
-        PATHS=${SERVICE_PATHS[$SERVICE]}
-        for PATH_PATTERN in $PATHS; do
+    for SERVICE_ENTRY in "${SERVICE_PATHS[@]}"; do
+        # Split the entry by colon
+        IFS=':' read -ra PARTS <<< "$SERVICE_ENTRY"
+        SERVICE="${PARTS[0]}"
+
+        # Check each path pattern for this service
+        for ((i=1; i<${#PARTS[@]}; i++)); do
+            PATH_PATTERN="${PARTS[$i]}"
             if echo "$CHANGED_FILES" | grep -q "$PATH_PATTERN"; then
-                AFFECTED_SERVICES[$SERVICE]=1
-                log "Service $SERVICE needs to be rebuilt due to changes in $PATH_PATTERN"
+                # Add to affected services if not already there
+                if [[ ! "$AFFECTED_SERVICES" =~ (^|[[:space:]])"$SERVICE"($|[[:space:]]) ]]; then
+                    AFFECTED_SERVICES="$AFFECTED_SERVICES $SERVICE"
+                    log "Service $SERVICE needs to be rebuilt due to changes in $PATH_PATTERN"
+                fi
                 break
             fi
         done
     done
 
+    # Trim leading space
+    AFFECTED_SERVICES="${AFFECTED_SERVICES## }"
+
     # No services affected, just restart traefik to pick up any config changes
-    if [ ${#AFFECTED_SERVICES[@]} -eq 0 ]; then
+    if [ -z "$AFFECTED_SERVICES" ]; then
         log "No services affected by the changes. Checking if traefik config changed."
         if echo "$CHANGED_FILES" | grep -q "traefik/"; then
             log "Traefik configuration changed, restarting traefik service."
@@ -108,19 +121,12 @@ if ! sudo -u apk git diff --quiet HEAD origin/"$GIT_BRANCH"; then
         fi
     else
         # Rebuild affected services
-        REBUILD_ARGS=""
-        for SERVICE in "${!AFFECTED_SERVICES[@]}"; do
-            REBUILD_ARGS="$REBUILD_ARGS $SERVICE"
-        done
-
-        log "Rebuilding affected services: $REBUILD_ARGS"
-        docker compose -f "$DOCKER_COMPOSE_FILE" up -d --build $REBUILD_ARGS || handle_error "Failed to rebuild and restart affected services."
+        log "Rebuilding affected services: $AFFECTED_SERVICES"
+        docker compose -f "$DOCKER_COMPOSE_FILE" up -d --build $AFFECTED_SERVICES || handle_error "Failed to rebuild and restart affected services."
         log "Successfully rebuilt and restarted affected services."
     fi
 
     log "Deployment completed successfully."
-else
-    log "No changes detected."
 fi
 
 exit 0
