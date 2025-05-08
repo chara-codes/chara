@@ -118,3 +118,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Ensure chat components have proper text contrast */
+.chat-component {
+  color-scheme: light dark;
+}
+
+.chat-component.light-theme {
+  --chat-bg: 255 255 255;
+  --chat-fg: 23 23 23;
+  --chat-border: 229 231 235;
+  --chat-muted: 249 250 251;
+  --chat-muted-fg: 107 114 128;
+}
+
+.chat-component.dark-theme {
+  --chat-bg: 17 24 39;
+  --chat-fg: 249 250 251;
+  --chat-border: 55 65 81;
+  --chat-muted: 31 41 55;
+  --chat-muted-fg: 156 163 175;
+}
+
+/* Force text colors in chat components */
+.chat-component input,
+.chat-component textarea,
+.chat-component .dropdown-content,
+.chat-component .context-badge,
+.chat-component .message-content {
+  color: rgb(var(--chat-fg) / 1) !important;
+}

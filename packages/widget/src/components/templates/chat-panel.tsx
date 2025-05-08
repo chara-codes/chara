@@ -92,7 +92,7 @@ export function ChatPanel() {
   return (
     <div
       ref={panelRef}
-      className="fixed z-50 flex flex-col bg-gray-50 overflow-hidden rounded-lg shadow-xl border border-gray-200"
+      className="fixed z-50 flex flex-col chat-component light-theme dark:dark-theme bg-white dark:bg-gray-900 overflow-hidden rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
       style={{
         width: `${size.width}px`,
         height: `${size.height}px`,
