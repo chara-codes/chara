@@ -5,7 +5,7 @@ import { Folder, ChevronDown, ChevronRight, FileText } from "lucide-react"
 
 interface FileTreeProps {
   files: Array<{ path: string; type: string }>
-  changedFiles: Array<{ path: string; type: string }>
+  changedFiles: Array<{ path: string; type: "add" | "modify" | "delete" }>
   selectedFile: string
   onSelectFile: (path: string) => void
 }
@@ -29,14 +29,44 @@ export function FileTree({ files, changedFiles, selectedFile, onSelectFile }: Fi
     const changedFile = changedFiles.find((file) => file.path === filePath)
     return changedFile ? changedFile.type : null
   }
+  
+  // Check if there are any files to display
+  const hasFiles = Object.keys(filesByFolder).length > 0
 
   // Group files by their parent folders
   const filesByFolder: Record<string, Array<{ path: string; type: string }>> = {}
+  
+  // Ensure all parent folders exist for proper nesting
+  const ensureParentFolders = (filePath: string) => {
+    const parts = filePath.split("/")
+    
+    // Create virtual folder entries for each parent level
+    for (let i = 0; i < parts.length - 1; i++) {
+      const folderPath = parts.slice(0, i + 1).join("/")
+      const parentPath = i === 0 ? "" : parts.slice(0, i).join("/")
+      
+      // Add this folder to its parent's children if not already there
+      if (!filesByFolder[parentPath]) {
+        filesByFolder[parentPath] = []
+      }
+      
+      const folderExists = filesByFolder[parentPath].some(
+        item => item.path === folderPath && item.type === "folder"
+      )
+      
+      if (!folderExists) {
+        filesByFolder[parentPath].push({ path: folderPath, type: "folder" })
+      }
+    }
+  }
 
   files.forEach((file) => {
     const parts = file.path.split("/")
     const parentPath = parts.length > 1 ? parts.slice(0, -1).join("/") : ""
 
+    // Ensure all parent folders exist
+    ensureParentFolders(file.path)
+    
     if (!filesByFolder[parentPath]) {
       filesByFolder[parentPath] = []
     }
@@ -113,7 +143,10 @@ export function FileTree({ files, changedFiles, selectedFile, onSelectFile }: Fi
             <FileText className={`h-4 w-4 mr-2 ${iconColor}`} />
             <span>{fileName}</span>
             {changeType && (
-              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${statusColor}`}>{statusText}</span>
+              <>
+                <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${statusColor}`}>{statusText}</span>
+                {fileName.endsWith('/') && <span className="ml-1 text-gray-500">(empty)</span>}
+              </>
             )}
           </div>
         )
@@ -121,6 +154,16 @@ export function FileTree({ files, changedFiles, selectedFile, onSelectFile }: Fi
     })
   }
 
-  return <div className="text-sm text-gray-200">{renderFolder()}</div>
+  return (
+    <div className="text-sm text-gray-200">
+      {hasFiles ? (
+        renderFolder()
+      ) : (
+        <div className="p-4 text-gray-400 italic">
+          No files in project
+        </div>
+      )}
+    </div>
+  )
 }
 

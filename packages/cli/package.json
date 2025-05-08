@@ -20,11 +20,13 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@chara/server": "workspace:*",
     "@chara/logger": "workspace:*",
+    "@chara/server": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.9.0",
-    "superjson": "^2.2.2",
+    "@types/chokidar": "^2.1.7",
+    "chokidar": "^4.0.3",
     "picocolors": "^1.0.0",
+    "superjson": "^2.2.2",
     "yargs": "^17.7.2"
   }
 }

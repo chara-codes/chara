@@ -9,7 +9,7 @@ import {
   type InstructionsResult,
   type ActionResult,
 } from "./types";
-import { logger } from "../utils/logger";
+import { logger } from "@chara/logger";
 import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "@chara/server";
 import superjson from "superjson";
@@ -22,7 +22,7 @@ const createApiClient = () => {
     links: [
       httpBatchLink({
         url: "http://localhost:3030/trpc",
-        transformer: superjson
+        transformer: superjson,
       }),
     ],
   });

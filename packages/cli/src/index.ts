@@ -1,6 +1,7 @@
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { devCommand } from "./commands/dev";
+import { syncCommand } from "./commands/sync";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
@@ -23,6 +24,7 @@ yargs(hideBin(process.argv))
   .version(packageJson.version)
   .help()
   .command(devCommand)
+  .command(syncCommand)
   .demandCommand(1, "You need to specify a command")
   .strict()
   .epilogue("For more information, check the documentation")

@@ -13,11 +13,14 @@ import type { AppRouter } from "@chara/server";
 import { logger } from "@chara/logger";
 import { applyInstructions } from "../instructions/apply-instructions";
 import superjson from "superjson";
+import { FileWatcher } from "../utils/file-watcher";
+import { basename } from "path";
 
 interface DevCommandArgs {
   projectDir?: string;
   verbose?: boolean;
   trace?: boolean;
+  projectName?: string;
 }
 
 async function connectToServerEvents(): Promise<void> {
@@ -82,6 +85,11 @@ export const devCommand: CommandModule<{}, DevCommandArgs> = {
         default: process.cwd(),
         alias: "p",
       })
+      .option("projectName", {
+        describe: "Project name (defaults to directory name)",
+        type: "string",
+        alias: "n",
+      })
       .option("verbose", {
         describe: "Enable debug logs",
         type: "boolean",
@@ -131,6 +139,34 @@ export const devCommand: CommandModule<{}, DevCommandArgs> = {
       // Initialize API client
       const apiClient = createApiClient();
       logger.debug("API client initialized");
+      
+      // Initialize file watcher
+      const projectId = Math.random().toString(36).substring(2, 11);
+      const projectName = argv.projectName || basename(projectDir);
+      
+      logger.info(`Registering project: ${projectName} (${projectId})`);
+      
+      // Register project with the server
+      await apiClient.files.setProject.mutate({
+        id: projectId,
+        name: projectName,
+        path: projectDir
+      });
+      
+      // Start file watcher
+      const fileWatcher = new FileWatcher({
+        rootPath: projectDir
+      });
+      
+      // Start watching for changes
+      await fileWatcher.start();
+      
+      // Send initial project structure to server
+      const projectStructure = await fileWatcher.getProjectStructure();
+      await apiClient.files.syncProjectStructure.mutate(projectStructure);
+      
+      logger.info(`File watcher started for ${projectDir}`);
+      logger.success(`Project structure synced (${projectStructure.length} files)`);
 
       logger.success("✓ Chara development environment is ready!");
       logger.debug(`API endpoint: ${bold("http://localhost:3030/trpc")}`);

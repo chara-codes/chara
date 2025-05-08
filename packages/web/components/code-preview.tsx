@@ -1,18 +1,38 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { FileTree } from "./file-tree"
-import { files, changedFiles } from "../mocks/files"
-import { sampleCode, codeSamples } from "../mocks/code-samples"
+import { useProject } from "@/contexts/project-context"
 
 export function CodePreview() {
-  const [selectedFile, setSelectedFile] = useState("src/components/Counter.tsx")
+  const { files, changedFiles, selectedFile, selectFile } = useProject()
   const [isFileTreeVisible, setIsFileTreeVisible] = useState(true)
+  const [fileContent, setFileContent] = useState<string>("")
+
+  // If no file is selected but we have files, select the first one
+  useEffect(() => {
+    if (!selectedFile && files.length > 0) {
+      const firstFile = files.find(f => f.type === "file")
+      if (firstFile) {
+        selectFile(firstFile.path)
+      }
+    }
+  }, [files, selectedFile, selectFile])
+  
+  // Update file content when selected file changes
+  useEffect(() => {
+    if (selectedFile) {
+      const file = files.find(f => f.path === selectedFile)
+      setFileContent(file?.content || "// No content available")
+    } else {
+      setFileContent("// No file selected")
+    }
+  }, [selectedFile, files])
 
   const handleSelectFile = (path: string) => {
-    setSelectedFile(path)
+    selectFile(path)
   }
 
   return (
@@ -32,19 +52,19 @@ export function CodePreview() {
         {isFileTreeVisible && (
           <div className="w-64 bg-gray-800 border-r border-gray-700 overflow-y-auto transition-all duration-300">
             <FileTree
-              files={files}
+              files={files.map(f => ({ path: f.path, type: f.type === "folder" ? "folder" : "file" }))}
               changedFiles={changedFiles}
-              selectedFile={selectedFile}
+              selectedFile={selectedFile || ""}
               onSelectFile={handleSelectFile}
             />
           </div>
         )}
         <div className="flex-1 bg-gray-900 text-gray-50 p-4 overflow-auto">
           <div className="flex items-center text-xs text-gray-400 mb-2 pb-2 border-b border-gray-700">
-            <span>{selectedFile}</span>
+            <span>{selectedFile || "No file selected"}</span>
           </div>
           <pre className="font-mono text-sm">
-            <code>{codeSamples[selectedFile] || sampleCode}</code>
+            <code>{fileContent}</code>
           </pre>
         </div>
       </div>

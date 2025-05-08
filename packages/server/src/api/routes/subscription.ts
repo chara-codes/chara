@@ -19,6 +19,9 @@ export const subscription = publicProcedure.subscription(async function* (opts) 
     instructions: createEventListener("instructions:execute"),
     results: createEventListener("instructions:results"),
     summary: createEventListener("instructions:summary"),
+    fileChange: createEventListener("fileChange"),
+    projectSelected: createEventListener("projectSelected"),
+    projectStructure: createEventListener("projectStructure"),
   };
 
   console.log("Event listeners initialized for all relevant events");
@@ -39,6 +42,18 @@ export const subscription = publicProcedure.subscription(async function* (opts) 
         })),
         eventListeners.summary.next().then((value) => ({
           type: "instructions_summary",
+          value,
+        })),
+        eventListeners.fileChange.next().then((value) => ({
+          type: "file_change",
+          value,
+        })),
+        eventListeners.projectSelected.next().then((value) => ({
+          type: "project_selected",
+          value,
+        })),
+        eventListeners.projectStructure.next().then((value) => ({
+          type: "project_structure",
           value,
         })),
       ]);
@@ -66,6 +81,21 @@ export const subscription = publicProcedure.subscription(async function* (opts) 
         case "instructions_summary":
           console.log(`[SUBSCRIPTION] Summary stream event received (ID: ${data.summaryId})`);
           yield* handleSummaryStream(data, abortController.signal);
+          break;
+
+        case "file_change":
+          console.log("File change event received:", data);
+          yield { type: "file_change", data };
+          break;
+
+        case "project_selected":
+          console.log("Project selected event received:", data);
+          yield { type: "project_selected", data };
+          break;
+
+        case "project_structure":
+          console.log("Project structure event received:", data);
+          yield { type: "project_structure", data };
           break;
 
         default:

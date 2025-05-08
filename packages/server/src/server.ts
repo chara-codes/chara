@@ -11,6 +11,7 @@ import { myLogger as logger } from "./utils/logger";
 import { chatRouter } from "./api/routes/chat";
 import { subscription } from "./api/routes/subscription";
 import { instructionsRouter } from "./api/routes/instructions";
+import { filesRouter } from "./api/routes/files";
 import superjson from "superjson";
 
 const t = initTRPC.context<Context>().create({ transformer: superjson });
@@ -25,6 +26,7 @@ export const appRouter = router({
   chat: chatRouter,
   events: subscription,
   instructions: instructionsRouter,
+  files: filesRouter,
 });
 
 export type AppRouter = typeof appRouter;
