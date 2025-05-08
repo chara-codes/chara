@@ -205,7 +205,19 @@ export function MessageList() {
                             {icon}
                             <span className="text-xs font-medium opacity-70">{context.type || contextType}:</span>
                           </span>
-                          <span>{contextDisplay}</span>
+                          <span>
+                            {context.type === "Elements" &&
+                            context.elementInfo?.componentName === "Unknown Component" &&
+                            context.elementInfo?.parentComponents &&
+                            context.elementInfo.parentComponents.length > 0 ? (
+                              <>
+                                {contextDisplay.split(" ")[0]} in{" "}
+                                <span className="font-medium">{context.elementInfo.parentComponents[0].name}</span>
+                              </>
+                            ) : (
+                              contextDisplay
+                            )}
+                          </span>
                         </Badge>
                       )
                     })}

@@ -35,7 +35,8 @@ export interface ModelGroup {
   models: Model[]
 }
 
-// Update the ContextItem interface to include optional elementInfo
+// Update the ContextItem interface to include the new parentComponents and componentPath properties
+
 export interface ContextItem {
   type: string
   name: string
@@ -52,6 +53,11 @@ export interface ContextItem {
     styles: Record<string, string>
     attributes: Record<string, string>
     textContent: string
+    componentPath?: string
+    parentComponents?: Array<{
+      name: string
+      selector: string
+    }>
   }
 }
 

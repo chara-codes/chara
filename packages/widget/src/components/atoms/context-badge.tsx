@@ -53,10 +53,33 @@ export function ContextBadge({ context }: ContextBadgeProps) {
           <span className="truncate">{context.elementInfo.xpath}</span>
         </div>
 
+        {context.elementInfo.componentPath && (
+          <div className="mt-2">
+            <div className="font-medium">Component Path:</div>
+            <div className="text-xs text-gray-700 bg-gray-100 p-1 rounded mt-1">
+              {context.elementInfo.componentPath}
+            </div>
+          </div>
+        )}
+
+        {context.elementInfo.parentComponents && context.elementInfo.parentComponents.length > 0 && (
+          <div className="mt-2">
+            <div className="font-medium">Parent Components:</div>
+            <ul className="list-disc list-inside text-xs mt-1 space-y-1">
+              {context.elementInfo.parentComponents.map((comp, idx) => (
+                <li key={idx}>
+                  <span className="font-semibold">{comp.name}</span>
+                  <span className="text-gray-500"> ({comp.selector})</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {context.elementInfo.textContent && (
           <>
-            <div className="font-medium mt-1">Content:</div>
-            <div className="truncate">{context.elementInfo.textContent}</div>
+            <div className="font-medium mt-2">Content:</div>
+            <div className="truncate bg-gray-100 p-1 rounded mt-1">{context.elementInfo.textContent}</div>
           </>
         )}
       </div>
@@ -71,7 +94,25 @@ export function ContextBadge({ context }: ContextBadgeProps) {
             <TooltipTrigger asChild>
               <span className="flex items-center gap-1">
                 {getIcon()}
-                <span>{context.name}</span>
+                <span>
+                  {context.elementInfo?.componentName === "Unknown Component" &&
+                  context.elementInfo?.parentComponents &&
+                  context.elementInfo.parentComponents.length > 0 ? (
+                    <>
+                      {context.name.split(" ")[0]} in{" "}
+                      <span className="font-medium">{context.elementInfo.parentComponents[0].name}</span>
+                    </>
+                  ) : (
+                    <>
+                      {context.name}
+                      {context.elementInfo?.parentComponents && context.elementInfo.parentComponents.length > 0 && (
+                        <span className="text-gray-500 ml-1">
+                          in <span className="font-medium">{context.elementInfo.parentComponents[0].name}</span>
+                        </span>
+                      )}
+                    </>
+                  )}
+                </span>
               </span>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="bg-white p-3 shadow-lg border border-gray-200 rounded-md">

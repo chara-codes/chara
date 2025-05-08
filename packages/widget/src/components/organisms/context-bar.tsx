@@ -82,6 +82,47 @@ const getReactComponentName = (element: HTMLElement): string => {
   return "Unknown Component"
 }
 
+// Add these new functions below the existing utility functions (after getReactComponentName)
+
+// Function to find parent components of an element
+const findParentComponents = (element: HTMLElement): Array<{ name: string; element: HTMLElement }> => {
+  const components: Array<{ name: string; element: HTMLElement }> = []
+  let currentEl: HTMLElement | null = element
+
+  // Walk up the DOM tree (up to 10 levels or until we reach body)
+  for (let i = 0; i < 10 && currentEl && currentEl !== document.body; i++) {
+    // Skip the selected element itself (we'll add it separately)
+    if (i > 0) {
+      const componentName = getReactComponentName(currentEl)
+
+      // Only add elements that look like components (not just regular HTML elements)
+      if (componentName !== "Unknown Component") {
+        components.push({
+          name: componentName,
+          element: currentEl,
+        })
+      }
+    }
+
+    currentEl = currentEl.parentElement
+  }
+
+  return components
+}
+
+// Function to generate a component path string
+const getComponentPath = (components: Array<{ name: string; element: HTMLElement }>): string => {
+  if (!components.length) return "No parent components detected"
+
+  return components
+    .map((comp) => comp.name)
+    .reverse()
+    .join(" → ")
+}
+
+// Update the handleElementClick function to include component path information
+// Find the handleElementClick function and replace it with this version:
+
 export function ContextBar() {
   const activeContexts = useStore((state) => state.activeContexts)
   const contextScrollPosition = useStore((state) => state.contextScrollPosition)
@@ -98,6 +139,9 @@ export function ContextBar() {
   const contextContainerRef = useRef<HTMLDivElement>(null)
   const selectionModeRef = useRef<boolean>(false)
   const originalCursorRef = useRef<string>("")
+  let notification: HTMLDivElement | null = null
+  let highlighter: HTMLDivElement | null = null
+  let exitSelectionMode: () => void
 
   // Clear contexts at the start of communication
   useEffect(() => {
@@ -129,6 +173,73 @@ export function ContextBar() {
     return () => window.removeEventListener("resize", checkForOverflow)
   }, [activeContexts, setHasContextOverflow])
 
+  const handleElementClick = (e: MouseEvent) => {
+    if (!selectionModeRef.current) return
+
+    // Prevent default behavior
+    e.preventDefault()
+    e.stopPropagation()
+
+    const target = e.target as HTMLElement
+
+    // Skip if it's our notification or highlighter
+    if (target === notification || target === highlighter) return
+
+    // Get element info
+    const tagName = target.tagName.toLowerCase()
+    const id = target.id ? `#${target.id}` : ""
+    const elementName = `${tagName}${id}`
+
+    // Get additional information
+    const xpath = getXPath(target)
+    const rect = target.getBoundingClientRect()
+    const size = {
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      top: Math.round(rect.top),
+      left: Math.round(rect.left),
+    }
+    const styles = getStylesSummary(target)
+    const attributes = getElementAttributes(target)
+    const componentName = getReactComponentName(target)
+
+    // Find parent components
+    const parentComponents = findParentComponents(target)
+    const componentPath = getComponentPath(parentComponents)
+
+    // Create a detailed element info object
+    const elementInfo = {
+      selector: elementName,
+      xpath,
+      componentName,
+      size,
+      styles,
+      attributes,
+      textContent: target.textContent?.slice(0, 100) || "",
+      componentPath,
+      parentComponents: parentComponents.map((comp) => ({
+        name: comp.name,
+        selector: `${comp.element.tagName.toLowerCase()}${comp.element.id ? `#${comp.element.id}` : ""}`,
+      })),
+    }
+
+    console.log("Element selected:", elementInfo)
+
+    // Add to context with detailed information
+    const contextName = `${elementName} (${componentName})`
+
+    // Add to context with more detailed information
+    addContext({
+      type: "Elements",
+      name: contextName,
+      // Store the detailed info in a property that can be accessed later
+      elementInfo: elementInfo,
+    })
+
+    // Exit selection mode
+    exitSelectionMode()
+  }
+
   // Simple function to start element selection
   const startElementSelection = () => {
     console.log("Starting element selection mode")
@@ -143,7 +254,7 @@ export function ContextBar() {
     setIsOpen(false)
 
     // Create a notification element
-    const notification = document.createElement("div")
+    notification = document.createElement("div")
     notification.id = "selection-notification"
     notification.style.position = "fixed"
     notification.style.top = "20px"
@@ -160,7 +271,7 @@ export function ContextBar() {
     document.body.appendChild(notification)
 
     // Create a highlighter element
-    const highlighter = document.createElement("div")
+    highlighter = document.createElement("div")
     highlighter.id = "element-highlighter"
     highlighter.style.position = "absolute"
     highlighter.style.border = "3px solid red"
@@ -189,77 +300,23 @@ export function ContextBar() {
       const rect = target.getBoundingClientRect()
 
       // Update highlighter
-      highlighter.style.top = `${window.scrollY + rect.top}px`
-      highlighter.style.left = `${window.scrollX + rect.left}px`
-      highlighter.style.width = `${rect.width}px`
-      highlighter.style.height = `${rect.height}px`
-      highlighter.style.display = "block"
+      if (highlighter) {
+        highlighter.style.top = `${window.scrollY + rect.top}px`
+        highlighter.style.left = `${window.scrollX + rect.left}px`
+        highlighter.style.width = `${rect.width}px`
+        highlighter.style.height = `${rect.height}px`
+        highlighter.style.display = "block"
+      }
 
       // Update notification
       const tagName = target.tagName.toLowerCase()
       const id = target.id ? `#${target.id}` : ""
-      notification.textContent = `Select: ${tagName}${id} (Click to select, ESC to cancel)`
+      if (notification) {
+        notification.textContent = `Select: ${tagName}${id} (Click to select, ESC to cancel)`
+      }
     }
 
     // Function to handle element selection
-    const handleElementClick = (e: MouseEvent) => {
-      if (!selectionModeRef.current) return
-
-      // Prevent default behavior
-      e.preventDefault()
-      e.stopPropagation()
-
-      const target = e.target as HTMLElement
-
-      // Skip if it's our notification or highlighter
-      if (target === notification || target === highlighter) return
-
-      // Get element info
-      const tagName = target.tagName.toLowerCase()
-      const id = target.id ? `#${target.id}` : ""
-      const elementName = `${tagName}${id}`
-
-      // Get additional information
-      const xpath = getXPath(target)
-      const rect = target.getBoundingClientRect()
-      const size = {
-        width: Math.round(rect.width),
-        height: Math.round(rect.height),
-        top: Math.round(rect.top),
-        left: Math.round(rect.left),
-      }
-      const styles = getStylesSummary(target)
-      const attributes = getElementAttributes(target)
-      const componentName = getReactComponentName(target)
-
-      // Create a detailed element info object
-      const elementInfo = {
-        selector: elementName,
-        xpath,
-        componentName,
-        size,
-        styles,
-        attributes,
-        textContent: target.textContent?.slice(0, 100) || "",
-      }
-
-      console.log("Element selected:", elementInfo)
-
-      // Add to context with detailed information
-      const contextName = `${elementName} (${componentName})`
-      const contextDescription = JSON.stringify(elementInfo, null, 2)
-
-      // Add to context with more detailed information
-      addContext({
-        type: "Elements",
-        name: contextName,
-        // Store the detailed info in a property that can be accessed later
-        elementInfo: elementInfo,
-      })
-
-      // Exit selection mode
-      exitSelectionMode()
-    }
 
     // Function to handle escape key
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -270,7 +327,7 @@ export function ContextBar() {
     }
 
     // Function to exit selection mode
-    const exitSelectionMode = () => {
+    exitSelectionMode = () => {
       console.log("Exiting selection mode")
 
       // Reset the global element selecting state
