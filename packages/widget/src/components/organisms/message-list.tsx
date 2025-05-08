@@ -182,13 +182,18 @@ export function MessageList() {
             <div className="px-4 py-3 bg-white border-y border-gray-200">
               <p className="text-sm text-gray-800">{message.content}</p>
 
-              {/* Use message.contexts instead of global activeContexts */}
               {message.contexts && message.contexts.length > 0 && (
                 <div className="mt-3 pt-2 border-t border-gray-100">
                   <div className="text-xs font-medium text-gray-500 mb-1.5">Attached contexts:</div>
                   <div className="flex flex-wrap gap-1.5">
                     {message.contexts.map((context: ContextItem) => {
                       const { icon, bgColor, textColor, borderColor, contextType } = getContextStyling(context)
+
+                      // Create a more detailed display for Elements type contexts
+                      let contextDisplay = context.name
+                      if (context.type === "Elements" && context.elementInfo) {
+                        contextDisplay = `${context.name} (${context.elementInfo.size.width}×${context.elementInfo.size.height}px)`
+                      }
 
                       return (
                         <Badge
@@ -200,7 +205,7 @@ export function MessageList() {
                             {icon}
                             <span className="text-xs font-medium opacity-70">{context.type || contextType}:</span>
                           </span>
-                          <span>{context.name}</span>
+                          <span>{contextDisplay}</span>
                         </Badge>
                       )
                     })}

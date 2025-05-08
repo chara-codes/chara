@@ -35,9 +35,24 @@ export interface ModelGroup {
   models: Model[]
 }
 
+// Update the ContextItem interface to include optional elementInfo
 export interface ContextItem {
   type: string
   name: string
+  elementInfo?: {
+    selector: string
+    xpath: string
+    componentName: string
+    size: {
+      width: number
+      height: number
+      top: number
+      left: number
+    }
+    styles: Record<string, string>
+    attributes: Record<string, string>
+    textContent: string
+  }
 }
 
 export interface ChangedFile {

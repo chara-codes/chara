@@ -9,6 +9,79 @@ import { ContextBadge } from "@/components/atoms/context-badge"
 import { Button } from "@/components/ui/button"
 import { Pointer } from "lucide-react"
 
+// Function to get XPath of an element
+const getXPath = (element: HTMLElement): string => {
+  if (!element) return ""
+  if (element === document.body) return "/html/body"
+
+  let xpath = ""
+  const parent = element.parentElement
+
+  if (!parent) return ""
+
+  // Get the tag name and position among siblings of the same type
+  const tagName = element.tagName.toLowerCase()
+  const siblings = Array.from(parent.children).filter((child) => child.tagName.toLowerCase() === tagName)
+
+  const position = siblings.indexOf(element) + 1
+
+  // Build the XPath segment
+  xpath = `/${tagName}[${position}]`
+
+  // Recursively build the full XPath
+  const parentXPath = getXPath(parent)
+  return parentXPath + xpath
+}
+
+// Function to get computed styles summary
+const getStylesSummary = (element: HTMLElement): Record<string, string> => {
+  const computedStyle = window.getComputedStyle(element)
+  return {
+    width: computedStyle.width,
+    height: computedStyle.height,
+    color: computedStyle.color,
+    backgroundColor: computedStyle.backgroundColor,
+    display: computedStyle.display,
+    position: computedStyle.position,
+    fontSize: computedStyle.fontSize,
+  }
+}
+
+// Function to get element attributes
+const getElementAttributes = (element: HTMLElement): Record<string, string> => {
+  const attributes: Record<string, string> = {}
+
+  Array.from(element.attributes).forEach((attr) => {
+    attributes[attr.name] = attr.value
+  })
+
+  return attributes
+}
+
+// Function to get React component name (if possible)
+const getReactComponentName = (element: HTMLElement): string => {
+  // Look for React-specific attributes
+  const reactAttributes = ["data-reactroot", "data-reactid", "data-react-checksum", "data-component", "data-testid"]
+
+  for (const attr of reactAttributes) {
+    if (element.hasAttribute(attr)) {
+      return element.getAttribute(attr) || "React Component"
+    }
+  }
+
+  // Check for className patterns that might indicate component names
+  const className = element.className
+  if (typeof className === "string" && className) {
+    // Look for PascalCase class names which might indicate component names
+    const matches = className.match(/[A-Z][a-z]+(?:[A-Z][a-z]+)*/)
+    if (matches && matches.length > 0) {
+      return matches[0]
+    }
+  }
+
+  return "Unknown Component"
+}
+
 export function ContextBar() {
   const activeContexts = useStore((state) => state.activeContexts)
   const contextScrollPosition = useStore((state) => state.contextScrollPosition)
@@ -146,10 +219,43 @@ export function ContextBar() {
       const id = target.id ? `#${target.id}` : ""
       const elementName = `${tagName}${id}`
 
-      console.log("Element selected:", elementName)
+      // Get additional information
+      const xpath = getXPath(target)
+      const rect = target.getBoundingClientRect()
+      const size = {
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        top: Math.round(rect.top),
+        left: Math.round(rect.left),
+      }
+      const styles = getStylesSummary(target)
+      const attributes = getElementAttributes(target)
+      const componentName = getReactComponentName(target)
 
-      // Add to context
-      addContext({ type: "Elements", name: elementName })
+      // Create a detailed element info object
+      const elementInfo = {
+        selector: elementName,
+        xpath,
+        componentName,
+        size,
+        styles,
+        attributes,
+        textContent: target.textContent?.slice(0, 100) || "",
+      }
+
+      console.log("Element selected:", elementInfo)
+
+      // Add to context with detailed information
+      const contextName = `${elementName} (${componentName})`
+      const contextDescription = JSON.stringify(elementInfo, null, 2)
+
+      // Add to context with more detailed information
+      addContext({
+        type: "Elements",
+        name: contextName,
+        // Store the detailed info in a property that can be accessed later
+        elementInfo: elementInfo,
+      })
 
       // Exit selection mode
       exitSelectionMode()
