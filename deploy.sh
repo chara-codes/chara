@@ -7,7 +7,7 @@ REPO_DIR="${REPO_DIR:-$(pwd)}"
 DOCKER_COMPOSE_FILE="${DOCKER_COMPOSE_FILE:-docker-compose.yml}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 LOG_FILE="${LOG_FILE:-deploy.log}"
-GIT_USER="${GIT_USER:-$(whoami)}"
+GIT_USER="${GIT_USER:-apk}"
 
 # Log function
 log() {
