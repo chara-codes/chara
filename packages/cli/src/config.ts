@@ -1,39 +1,5 @@
 import { join } from "node:path";
-/**
- * MCPServer configuration
- */
-export interface MCPServer {
-  /** Command to execute */
-  command: string;
-  /** Arguments to pass to the command */
-  args?: string[];
-  /** Environment variables to pass to the command */
-  env?: Record<string, string>;
-}
-
-/**
- * Chara CLI configuration
- */
-export interface CharaConfig {
-  /** Host to serve on */
-  host: string;
-  /** Port to serve on */
-  port: number;
-  /** Development command */
-  dev: string;
-  /** Model Context Protocol servers */
-  mcpServers?: Record<string, MCPServer>;
-}
-
-/**
- * Default configuration values
- */
-export const defaultConfig: CharaConfig = {
-  host: "localhost",
-  port: 3000,
-  dev: "bun dev",
-  mcpServers: {},
-};
+import { type CharaConfig, defaultConfig } from "./types/index.ts";
 
 /**
  * Read and parse the Chara configuration file
