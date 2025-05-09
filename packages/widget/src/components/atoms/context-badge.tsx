@@ -87,32 +87,27 @@ export function ContextBadge({ context }: ContextBadgeProps) {
   }
 
   return (
-    <div className="flex items-center gap-1 context-badge bg-gray-100 dark:bg-gray-800 rounded px-2 py-0.5 whitespace-nowrap border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+    <div className="flex items-center gap-1 bg-gray-100 rounded px-2 py-0.5 whitespace-nowrap">
       {context.elementInfo ? (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="flex items-center gap-1">
                 {getIcon()}
-                <span className="text-gray-900 dark:text-gray-100">
+                <span>
                   {context.elementInfo?.componentName === "Unknown Component" &&
                   context.elementInfo?.parentComponents &&
                   context.elementInfo.parentComponents.length > 0 ? (
                     <>
                       {context.name.split(" ")[0]} in{" "}
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {context.elementInfo.parentComponents[0].name}
-                      </span>
+                      <span className="font-medium">{context.elementInfo.parentComponents[0].name}</span>
                     </>
                   ) : (
                     <>
                       {context.name}
                       {context.elementInfo?.parentComponents && context.elementInfo.parentComponents.length > 0 && (
-                        <span className="text-gray-600 dark:text-gray-400 ml-1">
-                          in{" "}
-                          <span className="font-medium text-gray-800 dark:text-gray-200">
-                            {context.elementInfo.parentComponents[0].name}
-                          </span>
+                        <span className="text-gray-500 ml-1">
+                          in <span className="font-medium">{context.elementInfo.parentComponents[0].name}</span>
                         </span>
                       )}
                     </>
@@ -120,10 +115,7 @@ export function ContextBadge({ context }: ContextBadgeProps) {
                 </span>
               </span>
             </TooltipTrigger>
-            <TooltipContent
-              side="bottom"
-              className="bg-white dark:bg-gray-900 p-3 shadow-lg border border-gray-200 dark:border-gray-700 rounded-md"
-            >
+            <TooltipContent side="bottom" className="bg-white p-3 shadow-lg border border-gray-200 rounded-md">
               {formatElementInfo()}
             </TooltipContent>
           </Tooltip>

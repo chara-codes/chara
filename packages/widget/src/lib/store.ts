@@ -3,6 +3,9 @@ import { devtools } from "zustand/middleware"
 import type { Model, Message, ContextItem } from "@/types"
 import { modelGroups } from "@/mocks/data"
 
+// Define the dock position type
+export type DockPosition = "float" | "left" | "right" | "bottom" | "top" | "popup"
+
 interface ChatState {
   // UI State
   isOpen: boolean
@@ -19,7 +22,8 @@ interface ChatState {
   activeCategory: string | null
   searchQueries: Record<string, string>
   modelSearchQuery: string
-  isElementSelecting: boolean // Add this state for element selection mode
+  isElementSelecting: boolean
+  dockPosition: DockPosition // Add dock position state
 
   // Chat State
   messages: Message[]
@@ -55,7 +59,8 @@ interface ChatState {
   clearContexts: () => void
   sendMessage: () => void
   cancelGeneration: () => void
-  setIsElementSelecting: (isSelecting: boolean) => void // Add this action
+  setIsElementSelecting: (isSelecting: boolean) => void
+  setDockPosition: (position: DockPosition) => void // Add dock position action
 }
 
 export const useStore = create<ChatState>()(
@@ -76,7 +81,8 @@ export const useStore = create<ChatState>()(
       activeCategory: null,
       searchQueries: {},
       modelSearchQuery: "",
-      isElementSelecting: false, // Initialize as false
+      isElementSelecting: false,
+      dockPosition: "float", // Default to floating mode
 
       // Chat State
       messages: [
@@ -242,7 +248,8 @@ Here's what I can help with:
         }, 1000)
       },
       cancelGeneration: () => set({ isGenerating: false }),
-      setIsElementSelecting: (isSelecting) => set({ isElementSelecting: isSelecting }), // Add this action implementation
+      setIsElementSelecting: (isSelecting) => set({ isElementSelecting: isSelecting }),
+      setDockPosition: (position) => set({ dockPosition: position }),
     }),
     { name: "ai-chat-store" },
   ),

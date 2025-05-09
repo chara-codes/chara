@@ -380,7 +380,7 @@ export function ContextBar() {
   }
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1 border-t bg-gray-50 dark:bg-gray-900 text-xs relative border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+    <div className="flex items-center gap-1 px-2 py-1 border-t bg-gray-50 text-xs relative">
       <ContextSelector />
       <FileAttachmentButton />
       <Button

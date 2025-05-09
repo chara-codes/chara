@@ -1,17 +1,40 @@
 "use client"
 
-import { Plus, Clock, X, Settings } from "lucide-react"
+import { Plus, Clock, X, Settings, Maximize2, Minimize2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useStore } from "@/lib/store"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import { useStore, type DockPosition } from "@/lib/store"
 
 export function ChatHeader() {
   const toggleChat = useStore((state) => state.toggleChat)
+  const dockPosition = useStore((state) => state.dockPosition)
+  const setDockPosition = useStore((state) => state.setDockPosition)
+  const isMaximized = dockPosition !== "float"
+
+  const handleMaximizeToggle = () => {
+    if (isMaximized) {
+      setDockPosition("float")
+    } else {
+      // Default to right when maximizing from float
+      setDockPosition("right")
+    }
+  }
 
   return (
-    <div className="flex items-center justify-between p-2 border-b bg-gray-50 dark:bg-gray-900 drag-handle cursor-move border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+    <div className="flex items-center justify-between p-2 border-b bg-gray-50 drag-handle cursor-move">
       <div className="flex items-center space-x-2">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Loading Summary...</span>
+        <span className="text-sm font-medium text-gray-700">Loading Summary...</span>
       </div>
       <div className="flex items-center space-x-1">
         <DropdownMenu>
@@ -21,6 +44,25 @@ export function ChatHeader() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <span>Dock Position</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup
+                  value={dockPosition}
+                  onValueChange={(value) => setDockPosition(value as DockPosition)}
+                >
+                  <DropdownMenuRadioItem value="float">Floating</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="left">Left</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="right">Right</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="bottom">Bottom</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="popup">Popup</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuSeparator />
             <DropdownMenuItem>Stacks</DropdownMenuItem>
             <DropdownMenuItem>User Settings</DropdownMenuItem>
             <DropdownMenuItem>Theme</DropdownMenuItem>
@@ -31,6 +73,15 @@ export function ChatHeader() {
         </Button>
         <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500">
           <Clock className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-gray-500"
+          onClick={handleMaximizeToggle}
+          title={isMaximized ? "Float" : "Dock"}
+        >
+          {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </Button>
         <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500" onClick={toggleChat}>
           <X className="h-4 w-4" />
