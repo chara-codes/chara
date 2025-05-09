@@ -17,7 +17,8 @@
         "chara": "./dist/chara",
       },
       "dependencies": {
-        "@chara/server": "workspace:../server",
+        "@chara/logger": "workspace:*",
+        "@chara/server": "workspace:*",
         "@modelcontextprotocol/sdk": "^1.9.0",
         "picocolors": "^1.0.0",
         "superjson": "^2.2.2",
@@ -97,6 +98,19 @@
         "typescript": "^5",
       },
     },
+    "packages/logger": {
+      "name": "@chara/logger",
+      "version": "0.1.0",
+      "dependencies": {
+        "picocolors": "^1.1.1",
+      },
+      "devDependencies": {
+        "typescript": "^5.8.2",
+      },
+      "peerDependencies": {
+        "typescript": "^5.8.2",
+      },
+    },
     "packages/server": {
       "name": "@chara/server",
       "version": "0.1.0",
@@ -143,6 +157,7 @@
         "tunnel": "./dist/tunnel",
       },
       "dependencies": {
+        "@chara/logger": "workspace:*",
         "human-id": "^4.1.1",
         "picocolors": "^1.1.1",
         "yargs": "^17.7.2",
@@ -231,6 +246,7 @@
       "name": "widget",
       "version": "0.0.0",
       "dependencies": {
+        "@r2wc/react-to-web-component": "^2.0.4",
         "@radix-ui/react-slot": "^1.2.0",
         "@tailwindcss/vite": "^4.1.5",
         "class-variance-authority": "^0.7.1",
@@ -407,6 +423,8 @@
     "@chara/cli": ["@chara/cli@workspace:packages/cli"],
 
     "@chara/landing": ["@chara/landing@workspace:packages/landing"],
+
+    "@chara/logger": ["@chara/logger@workspace:packages/logger"],
 
     "@chara/server": ["@chara/server@workspace:packages/server"],
 
@@ -807,6 +825,10 @@
     "@protobufjs/pool": ["@protobufjs/pool@1.1.0", "", {}, "sha512-0kELaGSIDBKvcgS4zkjz1PeddatrjYcmMWOlAuAPwAeccUrPHdUqo/J6LiymHHEiJT5NrF1UVwxY14f+fy4WQw=="],
 
     "@protobufjs/utf8": ["@protobufjs/utf8@1.1.0", "", {}, "sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw=="],
+
+    "@r2wc/core": ["@r2wc/core@1.2.0", "", {}, "sha512-vAfiuS5KywtV54SRzc4maEHcpdgeUyJzln+ATpNCOkO+ArIuOkTXd92b5YauVAd0A8B2rV/y9OeVW19vb73bUQ=="],
+
+    "@r2wc/react-to-web-component": ["@r2wc/react-to-web-component@2.0.4", "", { "dependencies": { "@r2wc/core": "^1.0.0" }, "peerDependencies": { "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" } }, "sha512-g1dtTTEGETNUimYldTW+2hxY3mmJZjzPEca0vqCutUht2GHmpK9mT5r/urmEI7uSbOkn6HaymosgVy26lvU1JQ=="],
 
     "@radix-ui/number": ["@radix-ui/number@1.1.0", "", {}, "sha512-V3gRzhVNU1ldS5XhAPTom1fOIo4ccrjjJgmE+LI2h/WaFpHmx0MQApT+KZHnx8abG6Avtfcz4WoEciMnpFT3HQ=="],
 
