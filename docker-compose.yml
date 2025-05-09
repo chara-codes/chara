@@ -1,0 +1,113 @@
+services:
+  traefik:
+    image: traefik:2
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--log.level=DEBUG"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=true"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--accesslog=true"
+      - "--metrics.prometheus=true"
+      - "--tracing=true"
+    depends_on:
+      - charatunnel
+      - charaserver
+      - charawidget
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./traefik/dynamic:/etc/traefik/dynamic:ro"
+      - "./certs:/certs:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.chara-ai.dev`)"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls=true"
+      - "traefik.http.routers.traefik-dashboard.priority=100"
+
+  charaserver:
+    build:
+      context: .
+      dockerfile: "Dockerfile.server"
+    restart: unless-stopped
+    container_name: charaserver
+    env_file: ".env"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.server.entrypoints=websecure"
+      - "traefik.http.routers.server.rule=Host(`server.chara-ai.dev`)"
+      - "traefik.http.routers.server.tls=true"
+      - "traefik.http.routers.server.priority=500"
+      - "traefik.http.services.server.loadbalancer.server.port=3030"
+
+  # charaweb:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.web
+  #   restart: unless-stopped
+  #   container_name: charaweb
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.web.entrypoints=websecure"
+  #     - "traefik.http.routers.web.rule=Host(`web.chara-ai.dev`)"
+  #     - "traefik.http.routers.web.priority=300"
+  #     - "traefik.http.routers.web.tls=true"
+  #     - "traefik.http.services.web.loadbalancer.server.port=3000"
+
+  charalanding:
+    build:
+      context: .
+      dockerfile: Dockerfile.landing
+    restart: unless-stopped
+    container_name: charalanding
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.landing.entrypoints=websecure"
+      - "traefik.http.routers.landing.rule=Host(`chara-ai.dev`) || Host(`www.chara-ai.dev`)"
+      - "traefik.http.routers.landing.priority=350"
+      - "traefik.http.routers.landing.tls=true"
+      - "traefik.http.services.landing.loadbalancer.server.port=3000"
+
+  charatunnel:
+    build:
+      context: .
+      dockerfile: Dockerfile.tunnel
+    restart: unless-stopped
+    container_name: charatunnel
+    volumes:
+      - ./config.json:/config.json
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.charatunnel.entrypoints=websecure"
+      - "traefik.http.routers.charatunnel.rule=HostRegexp(`{subdomain:chara-[a-z0-9-]+}.chara-ai.dev`) || Host(`tunnel.chara-ai.dev`)"
+      - "traefik.http.routers.charatunnel.tls=true"
+      - "traefik.http.routers.charatunnel.priority=200"
+      - "traefik.http.middlewares.test-compress.compress=true"
+      - "traefik.http.services.charatunnel.loadbalancer.server.port=1337"
+
+  charawidget:
+    build:
+      context: .
+      dockerfile: Dockerfile.widget
+    restart: unless-stopped
+    container_name: charawidget
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.widget.entrypoints=websecure"
+      - "traefik.http.routers.widget.rule=Host(`widget.chara-ai.dev`)"
+      - "traefik.http.routers.widget.priority=400"
+      - "traefik.http.routers.widget.tls=true"
+      - "traefik.http.services.widget.loadbalancer.server.port=3000"

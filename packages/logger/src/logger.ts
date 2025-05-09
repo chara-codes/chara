@@ -8,29 +8,12 @@ import {
   red,
   yellow,
 } from "picocolors";
-
-// Map LogLevel to severity
-// Define LogLevel enum
-export enum LogLevel {
-  TRACE = "TRACE",
-  DEBUG = "DEBUG",
-  INFO = "INFO",
-  SUCCESS = "SUCCESS",
-  WARNING = "WARNING",
-  ERROR = "ERROR",
-  EVENT = "EVENT",
-  SERVER = "SERVER",
-}
-
-// Define LogLevelSeverity enum
-export enum LogLevelSeverity {
-  TRACE = 0,
-  DEBUG = 1,
-  INFO = 2,
-  SUCCESS = 3,
-  WARNING = 4,
-  ERROR = 5,
-}
+import {
+  LogLevel,
+  LogLevelSeverity,
+  type TransportType,
+  type LoggerConfig,
+} from "./types";
 
 // Map LogLevel to severity
 const LOG_LEVEL_SEVERITY: Record<LogLevel, LogLevelSeverity> = {
@@ -43,16 +26,6 @@ const LOG_LEVEL_SEVERITY: Record<LogLevel, LogLevelSeverity> = {
   [LogLevel.EVENT]: LogLevelSeverity.INFO, // Events are INFO level
   [LogLevel.SERVER]: LogLevelSeverity.INFO, // Server logs are INFO level
 };
-
-export interface TransportType {
-  (level: LogLevel, message: string, metadata?: any): void;
-}
-
-export interface LoggerConfig {
-  name: string;
-  levels?: LogLevel[];
-  transports?: Record<LogLevel, TransportType[]>;
-}
 
 // Default console transport with color formatting
 export const coloredConsoleTransport: TransportType = (

@@ -46,10 +46,11 @@ The project is organized as a monorepo with the following packages:
   - SQLite/LibSQL database with Drizzle ORM
   - Streaming response support
 
-- `@chara/cli` - Command line interface
-  - Project management and configuration
-  - Development environment setup
-  - MCP server integration
+- `./automation` - Testing framework
+  - End-to-end testing with Playwright
+  - AI-assisted test generation and validation
+  - Visual regression testing
+  - Streamlined helper patterns
   - Local-remote sync capabilities
 
 ## Getting Started
@@ -64,6 +65,45 @@ bun install
 # Start development servers
 bun dev
 ```
+
+## Docker Usage
+
+Chara can be deployed using Docker for production environments. The project includes a `docker-compose.yml` configuration that sets up the following services:
+
+- **traefik**: Reverse proxy/load balancer that handles routing, TLS termination, and provides a dashboard
+- **charaserver**: Backend server application container
+- **charaweb**: Next.js frontend application container
+- **charatunnel**: Connection tunnel service for remote access
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- SSL certificates in the `./certs` directory
+- Traefik dynamic configuration in `./traefik/dynamic`
+- A `config.json` file for the tunnel service
+
+### Running with Docker
+
+```bash
+# Build and start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+### Configuration
+
+The Docker setup uses Traefik as a reverse proxy with automatic HTTPS redirection and is configured to expose services on these domains:
+
+- `web.chara-ai.dev` - Frontend application
+- `server.chara-ai.dev` - Backend API
+- `*.chara-ai.dev` - Dynamic tunnel subdomains
+
+You can modify the domain names and other settings in the `docker-compose.yml` file or through Traefik's dynamic configuration.
 
 ## Architecture
 
@@ -96,7 +136,7 @@ graph TD
     Server2 --> MCP
     ServerN --> MCP
 
-    MCP --> CLI
+    CLI --> MCP
     CLI --> Server
     Server --> LLMs
     CLI --> Web
@@ -146,12 +186,11 @@ See individual package READMEs for detailed configuration options.
 - [Streaming with tRPC](https://trpc.io/docs/server/streaming)
 - [Ollama Integration](https://github.com/ollama/ollama)
 
-### Frontend (@chara/web)
- - [shadcn/ui](https://ui.shadcn.com/)
- - [Next.js](https://nextjs.org/docs)
- - [React](https://react.dev/learn)
- - [TailwindCSS](https://tailwindcss.com/docs)
- - [AI SDK](https://sdk.vercel.ai/docs)
+### Automation Testing (@chara/automation)
+ - [Playwright](https://playwright.dev/)
+ - [AI SDK](https://ai-sdk.dev/)
+ - [Visual Testing](https://playwright.dev/docs/test-snapshots)
+ - [Test Fixtures](https://playwright.dev/docs/test-fixtures)
  - [React Markdown](https://remarkjs.github.io/react-markdown/)
  - [lucide-react](https://lucide.dev/guide/packages/lucide-react)
 

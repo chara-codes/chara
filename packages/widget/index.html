@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        nav ul {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            gap: 20px;
+        }
+        nav a {
+            text-decoration: none;
+            color: #0066cc;
+            font-weight: bold;
+        }
+        .hero-section {
+            background-color: #e9f5ff;
+            padding: 40px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .image-gallery img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        .testimonial {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-left: 5px solid #0066cc;
+            margin-bottom: 20px;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Dummy Content Page</h1>
+        <nav>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#gallery">Gallery</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero-section">
+        <h2>Welcome to Our Demo Website</h2>
+        <p>This is a comprehensive dummy HTML page showcasing various elements including blocks, tables, text, and images.</p>
+        <button>Learn More</button>
+    </section>
+
+    <main>
+        <section id="about">
+            <h2>About Us</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget felis eget urna malesuada maximus. Sed vitae tortor non quam placerat feugiat. Proin ut nunc ac sapien hendrerit posuere vel id arcu.</p>
+            
+            <p>Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Donec lacinia, nunc eget dignissim posuere, tellus purus convallis tellus, vel ullamcorper nisi lorem id risus.</p>
+            
+            <div class="testimonial">
+                <blockquote>
+                    "This dummy content is absolutely amazing! It has all the elements I need for testing my website layout and design."
+                </blockquote>
+                <cite>— John Doe, Web Developer</cite>
+            </div>
+        </section>
+
+        <section id="services">
+            <h2>Our Services</h2>
+            <div class="card-container">
+                <div class="card">
+                    <h3>Web Design</h3>
+                    <p>Cras tincidunt lobortis feugiat vivamus at augue eget arcu dictum varius duis at consectetur lorem.</p>
+                </div>
+                <div class="card">
+                    <h3>Web Development</h3>
+                    <p>Tellus integer feugiat scelerisque varius morbi enim nunc faucibus a pellentesque sit amet.</p>
+                </div>
+                <div class="card">
+                    <h3>SEO Optimization</h3>
+                    <p>Amet nisl suscipit adipiscing bibendum est ultricies integer quis auctor elit sed vulputate.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="data">
+            <h2>Data Table Example</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Jane Smith</td>
+                        <td>jane.smith@example.com</td>
+                        <td>Marketing</td>
+                        <td>Active</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Robert Johnson</td>
+                        <td>robert.johnson@example.com</td>
+                        <td>Engineering</td>
+                        <td>Active</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Emily Davis</td>
+                        <td>emily.davis@example.com</td>
+                        <td>HR</td>
+                        <td>Inactive</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>Michael Brown</td>
+                        <td>michael.brown@example.com</td>
+                        <td>Finance</td>
+                        <td>Active</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>Sarah Wilson</td>
+                        <td>sarah.wilson@example.com</td>
+                        <td>Sales</td>
+                        <td>Active</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="gallery">
+            <h2>Image Gallery</h2>
+            <div class="image-gallery">
+                <img src="https://via.placeholder.com/300x200?text=Image+1" alt="Placeholder Image 1">
+                <img src="https://via.placeholder.com/300x200?text=Image+2" alt="Placeholder Image 2">
+                <img src="https://via.placeholder.com/300x200?text=Image+3" alt="Placeholder Image 3">
+                <img src="https://via.placeholder.com/300x200?text=Image+4" alt="Placeholder Image 4">
+                <img src="https://via.placeholder.com/300x200?text=Image+5" alt="Placeholder Image 5">
+                <img src="https://via.placeholder.com/300x200?text=Image+6" alt="Placeholder Image 6">
+            </div>
+        </section>
+
+        <section id="features">
+            <h2>Key Features</h2>
+            <ul>
+                <li>Responsive design that works on all devices</li>
+                <li>Clean and modern user interface</li>
+                <li>Fast loading times and optimized performance</li>
+                <li>SEO-friendly structure and markup</li>
+                <li>Easy customization and maintenance</li>
+            </ul>
+        </section>
+
+        <section id="contact">
+            <h2>Contact Us</h2>
+            <form>
+                <div>
+                    <label for="name">Name:</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div>
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div>
+                    <label for="message">Message:</label>
+                    <textarea id="message" name="message" rows="5" required></textarea>
+                </div>
+                <button type="submit">Send Message</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 Dummy Company. All rights reserved.</p>
+        <p>123 Demo Street, Sample City, Test Country</p>
+        <p>Phone: (123) 456-7890 | Email: info@dummycompany.com</p>
+    </footer>
+    
+    <chara-codes></chara-codes>
+    <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
