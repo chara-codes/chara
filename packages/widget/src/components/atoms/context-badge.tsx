@@ -3,11 +3,37 @@
 import { FileCode, Terminal, X, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/lib/store"
-import type { ContextItem } from "@/types"
+import type { ContextItem, ComponentFramework } from "@/types"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface ContextBadgeProps {
   context: ContextItem
+}
+
+// Define a more specific type for elementInfo to help TypeScript
+interface ElementInfo {
+  selector: string
+  xpath: string
+  componentName: string
+  componentFramework?: ComponentFramework
+  relativePath?: string
+  isDirectComponent?: boolean
+  size: {
+    width: number
+    height: number
+    top: number
+    left: number
+  }
+  styles: Record<string, string>
+  attributes: Record<string, string>
+  textContent: string
+  componentPath?: string
+  parentComponents?: Array<{
+    name: string
+    selector: string
+    framework?: ComponentFramework
+    isComponent?: boolean
+  }>
 }
 
 export function ContextBadge({ context }: ContextBadgeProps) {
@@ -95,6 +121,9 @@ export function ContextBadge({ context }: ContextBadgeProps) {
   const formatElementInfo = () => {
     if (!context.elementInfo) return null
 
+    // Cast elementInfo to our more specific type
+    const elementInfo = context.elementInfo as ElementInfo
+
     // Get the styling colors for the context type
     const { textColor, accentColor, lightColor, codeBg } = getContextStyling()
 
@@ -103,40 +132,40 @@ export function ContextBadge({ context }: ContextBadgeProps) {
         <div className={`font-semibold mb-1 ${textColor}`}>Element Details:</div>
         <div className="grid grid-cols-2 gap-x-2 gap-y-1">
           <span className={`font-medium ${textColor}`}>Component:</span>
-          <span className={accentColor}>{context.elementInfo.componentName}</span>
+          <span className={accentColor}>{elementInfo.componentName}</span>
 
           <span className={`font-medium ${textColor}`}>Component Type:</span>
-          <span className={accentColor}>{context.elementInfo.componentFramework || "Unknown"}</span>
+          <span className={accentColor}>{elementInfo.componentFramework || "Unknown"}</span>
 
-          {context.elementInfo.relativePath && (
+          {elementInfo.relativePath && (
             <>
               <span className={`font-medium ${textColor}`}>
-                {context.elementInfo.componentFramework === "Unknown" ? "XPath:" : "Element Path:"}
+                {elementInfo.componentFramework === "Unknown" ? "XPath:" : "Element Path:"}
               </span>
               <span className={`font-mono text-xs ${codeBg} px-1 rounded ${accentColor}`}>
-                {context.elementInfo.relativePath}
+                {elementInfo.relativePath}
               </span>
             </>
           )}
 
           <span className={`font-medium ${textColor}`}>Size:</span>
           <span className={accentColor}>
-            <span className={lightColor}>W:</span> {context.elementInfo.size.width}px{" "}
-            <span className={lightColor}>H:</span> {context.elementInfo.size.height}px
+            <span className={lightColor}>W:</span> {elementInfo.size.width}px <span className={lightColor}>H:</span>{" "}
+            {elementInfo.size.height}px
           </span>
 
           <span className={`font-medium ${textColor}`}>Position:</span>
           <span className={accentColor}>
-            <span className={lightColor}>X:</span> {context.elementInfo.size.left}{" "}
-            <span className={lightColor}>Y:</span> {context.elementInfo.size.top}
+            <span className={lightColor}>X:</span> {elementInfo.size.left} <span className={lightColor}>Y:</span>{" "}
+            {elementInfo.size.top}
           </span>
         </div>
 
-        {context.elementInfo.componentPath && context.elementInfo.componentPath !== "No parent components detected" && (
+        {elementInfo.componentPath && elementInfo.componentPath !== "No parent components detected" && (
           <div className="mt-2">
             <div className={`font-medium ${textColor}`}>Component Path:</div>
             <div className={`text-xs ${accentColor} ${codeBg} p-1 rounded mt-1`}>
-              {context.elementInfo.componentPath.split(" → ").map((comp, idx, arr) => (
+              {elementInfo.componentPath.split(" → ").map((comp, idx, arr) => (
                 <span key={idx}>
                   <span className={accentColor}>{comp}</span>
                   {idx < arr.length - 1 && <span className={lightColor}> → </span>}
@@ -146,11 +175,11 @@ export function ContextBadge({ context }: ContextBadgeProps) {
           </div>
         )}
 
-        {context.elementInfo.parentComponents && context.elementInfo.parentComponents.length > 0 && (
+        {elementInfo.parentComponents && elementInfo.parentComponents.length > 0 && (
           <div className="mt-2">
             <div className={`font-medium ${textColor}`}>Parent Components:</div>
             <ul className="list-disc list-inside text-xs mt-1 space-y-1">
-              {context.elementInfo.parentComponents.map((comp, idx) => (
+              {elementInfo.parentComponents.map((comp, idx) => (
                 <li key={idx}>
                   <span className={`font-semibold ${accentColor}`}>{comp.name}</span>
                   <span className={lightColor}> ({comp.selector})</span>
@@ -167,17 +196,20 @@ export function ContextBadge({ context }: ContextBadgeProps) {
   const getDisplayName = () => {
     if (!context.elementInfo) return context.name
 
+    // Cast elementInfo to our more specific type
+    const elementInfo = context.elementInfo as ElementInfo
+
     // If it's a direct component, just show its name
-    if (context.elementInfo.isDirectComponent) {
+    if (elementInfo.isDirectComponent) {
       return context.name
     }
 
     // If it's an element inside a component, show "element in ComponentName"
-    if (context.elementInfo.parentComponents && context.elementInfo.parentComponents.length > 0) {
+    if (elementInfo.parentComponents && elementInfo.parentComponents.length > 0) {
       const elementType = context.name.split(" ")[0]
       return (
         <>
-          {elementType} in <span className="font-medium">{context.elementInfo.componentName}</span>
+          {elementType} in <span className="font-medium">{elementInfo.componentName}</span>
         </>
       )
     }
@@ -203,14 +235,15 @@ export function ContextBadge({ context }: ContextBadgeProps) {
             >
               {(() => {
                 const { bgColor, textColor, borderColor, accentColor } = getContextStyling()
+                // Cast elementInfo to our more specific type
+                const elementInfo = context.elementInfo as ElementInfo
                 return (
                   <>
                     <div className={`${bgColor} ${textColor} px-3 py-1.5 font-medium border-b ${borderColor}`}>
-                      <span className={accentColor}>{context.elementInfo?.componentName || "Element Details"}</span>
-                      {context.elementInfo?.componentFramework &&
-                        context.elementInfo.componentFramework !== "Unknown" && (
-                          <span className="text-xs ml-1.5 opacity-80">({context.elementInfo.componentFramework})</span>
-                        )}
+                      <span className={accentColor}>{elementInfo.componentName || "Element Details"}</span>
+                      {elementInfo.componentFramework && elementInfo.componentFramework !== "Unknown" && (
+                        <span className="text-xs ml-1.5 opacity-80">({elementInfo.componentFramework})</span>
+                      )}
                     </div>
                     <div className="p-3">{formatElementInfo()}</div>
                   </>

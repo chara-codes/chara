@@ -35,8 +35,10 @@ export interface ModelGroup {
   models: Model[]
 }
 
-// Update the ContextItem interface to include the new parentComponents and componentPath properties
+// Add a new type for component frameworks
+export type ComponentFramework = "React" | "Vue" | "Svelte" | "Angular" | "WebComponent" | "Unknown"
 
+// Update the ContextItem interface to include component framework
 export interface ContextItem {
   type: string
   name: string
@@ -44,6 +46,9 @@ export interface ContextItem {
     selector: string
     xpath: string
     componentName: string
+    componentFramework?: ComponentFramework // Add component framework
+    relativePath?: string // Add relative path from component root
+    isDirectComponent?: boolean // Add flag to indicate if element is a component itself
     size: {
       width: number
       height: number
@@ -57,6 +62,8 @@ export interface ContextItem {
     parentComponents?: Array<{
       name: string
       selector: string
+      framework?: ComponentFramework // Add framework to parent components
+      isComponent?: boolean // Add flag to indicate if parent is a component
     }>
   }
 }

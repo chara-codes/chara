@@ -9,7 +9,9 @@ export const getXPath = (element: HTMLElement): string => {
 
   // Get the tag name and position among siblings of the same type
   const tagName = element.tagName.toLowerCase()
-  const siblings = Array.from(parent.children).filter((child) => child.tagName.toLowerCase() === tagName)
+  const siblings = Array.from(parent.children).filter(
+    (child) => (child as HTMLElement).tagName.toLowerCase() === tagName,
+  )
 
   const position = siblings.indexOf(element) + 1
 
@@ -31,12 +33,15 @@ export const getRelativeXPath = (element: HTMLElement, parentElement: HTMLElemen
 
   while (currentElement && currentElement !== parentElement) {
     const tagName = currentElement.tagName.toLowerCase()
-    const parent = currentElement.parentElement
+    // Fix the parent type issue by explicitly typing it
+    const parent: HTMLElement | null = currentElement.parentElement
 
     if (!parent) break
 
     // Get position among siblings of the same type
-    const siblings = Array.from(parent.children).filter((child) => child.tagName.toLowerCase() === tagName)
+    const siblings = Array.from(parent.children).filter(
+      (child) => (child as HTMLElement).tagName.toLowerCase() === tagName,
+    )
     const position = siblings.length > 1 ? `[${siblings.indexOf(currentElement) + 1}]` : ""
 
     path = `/${tagName}${position}${path}`
@@ -238,8 +243,9 @@ const detectVueComponent = (element: HTMLElement): boolean => {
 
   if (hasVueAttrs) return true
 
-  // Check for Vue instance
-  if (element.__vue__ || element.__vue_app__) return true
+  // Check for Vue instance - use type assertion to avoid TypeScript errors
+  const anyElement = element as any
+  if (anyElement.__vue__ || anyElement.__vue_app__) return true
 
   return false
 }
@@ -291,7 +297,8 @@ const detectSvelteComponent = (element: HTMLElement): boolean => {
 // Function to get Svelte component name
 const getSvelteComponentName = (element: HTMLElement): string => {
   // Try to get component name from svelte-* attribute
-  const svelteAttr = Array.from(element.attributes).find((attr) => attr.name.startsWith("svelte-"))
+  // We don't need to use svelteAttr since we're not using it
+  Array.from(element.attributes).find((attr) => attr.name.startsWith("svelte-"))
 
   // If it's a custom element, it might be a Svelte component
   if (element.tagName.includes("-")) {
