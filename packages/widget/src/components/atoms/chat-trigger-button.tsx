@@ -13,6 +13,7 @@ export function ChatTriggerButton() {
       case "left":
         return "left-0 bottom-8 rounded-r-lg rounded-l-none"
       case "right":
+      case "devtools": // Use the same button position for devtools as right
         return "right-0 bottom-8 rounded-l-lg rounded-r-none"
       case "bottom":
         return "bottom-0 right-8 rounded-t-lg rounded-b-none"

@@ -26,8 +26,8 @@ export function ChatHeader() {
     if (isMaximized) {
       setDockPosition("float")
     } else {
-      // Default to right when maximizing from float
-      setDockPosition("right")
+      // Default to devtools when maximizing from float
+      setDockPosition("devtools")
     }
   }
 
@@ -59,6 +59,7 @@ export function ChatHeader() {
                   <DropdownMenuRadioItem value="bottom">Bottom</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="popup">Popup</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="devtools">DevTools</DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuSubContent>
             </DropdownMenuSub>

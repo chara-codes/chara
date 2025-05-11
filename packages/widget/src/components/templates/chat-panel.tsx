@@ -9,6 +9,7 @@ import { ChatHeader } from "@/components/molecules/chat-header"
 import { MessageList } from "@/components/organisms/message-list"
 import { ContextBar } from "@/components/organisms/context-bar"
 import { ChatInput } from "@/components/molecules/chat-input"
+import { DevtoolsDivider } from "@/components/atoms/devtools-divider"
 
 export function ChatPanel() {
   const position = useStore((state) => state.position)
@@ -92,6 +93,28 @@ export function ChatPanel() {
     }
   }, [isDragging])
 
+  // Add this effect to adjust the main content width when the panel is open in devtools mode
+  useEffect(() => {
+    // Only adjust the main content when in devtools mode
+    if (dockPosition === "devtools") {
+      // Get the panel width
+      const panelWidth = size.width
+
+      // Calculate the new main content width
+      const newMainContentWidth = `calc(100% - ${panelWidth}px)`
+
+      // Set the main content width
+      useStore.getState().setMainContentWidth(newMainContentWidth)
+
+      // Set CSS variable for the main content
+      document.documentElement.style.setProperty("--content-width", newMainContentWidth)
+    } else {
+      // Reset the main content width for other modes
+      useStore.getState().setMainContentWidth("100%")
+      document.documentElement.style.setProperty("--content-width", "100%")
+    }
+  }, [dockPosition, size.width])
+
   // Get panel styles based on dock position
   const getPanelStyles = () => {
     // Base styles
@@ -133,6 +156,22 @@ export function ChatPanel() {
         styles.borderRight = "none"
         styles.borderTop = "none"
         styles.borderBottom = "none"
+        break
+      case "devtools":
+        // Updated devtools styling to ensure it's flush against the content
+        // Use the dynamic width from the store
+        styles.width = `${size.width}px` // Ensure the width is applied from the store
+        styles.height = "100vh"
+        styles.right = 0
+        styles.top = 0
+        styles.bottom = 0
+        styles.left = "auto"
+        styles.borderRadius = "0"
+        styles.borderRight = "none"
+        styles.borderTop = "none"
+        styles.borderBottom = "none"
+        styles.zIndex = 40
+        styles.boxShadow = "-2px 0 5px rgba(0, 0, 0, 0.1)"
         break
       case "bottom":
         styles.width = "100vw"
@@ -212,6 +251,9 @@ export function ChatPanel() {
             <ResizeHandle direction="e" className="absolute right-0 top-3 bottom-3 w-3 cursor-e-resize z-50" />
           </>
         )}
+
+        {/* DevTools divider - only show in devtools mode */}
+        <DevtoolsDivider />
 
         <ChatHeader />
         <MessageList />

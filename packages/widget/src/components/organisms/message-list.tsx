@@ -8,33 +8,7 @@ import { CodeBlock } from "@/components/molecules/code-block"
 import { MessageFeedback } from "@/components/molecules/message-feedback"
 import { EditsSummary } from "@/components/molecules/edits-summary"
 import { Button } from "@/components/ui/button"
-import type { ContextItem, ComponentFramework } from "@/types"
-
-// Define a more specific type for elementInfo to help TypeScript
-interface ElementInfo {
-  selector: string
-  xpath: string
-  componentName: string
-  componentFramework?: ComponentFramework
-  relativePath?: string
-  isDirectComponent?: boolean
-  size: {
-    width: number
-    height: number
-    top: number
-    left: number
-  }
-  styles: Record<string, string>
-  attributes: Record<string, string>
-  textContent: string
-  componentPath?: string
-  parentComponents?: Array<{
-    name: string
-    selector: string
-    framework?: ComponentFramework
-    isComponent?: boolean
-  }>
-}
+import type { ContextItem } from "@/types"
 
 export function MessageList() {
   const messages = useStore((state) => state.messages)
@@ -221,9 +195,6 @@ export function MessageList() {
                         contextDisplay = `${context.name} (${context.elementInfo.size.width}×${context.elementInfo.size.height}px)`
                       }
 
-                      // Cast elementInfo to our more specific type if it exists
-                      const elementInfo = context.elementInfo as ElementInfo | undefined
-
                       return (
                         <Badge
                           key={`${context.type}-${context.name}`}
@@ -236,26 +207,27 @@ export function MessageList() {
                           </span>
                           <span>
                             {context.type === "Elements" &&
-                            elementInfo?.componentName === "Unknown Component" &&
-                            elementInfo?.parentComponents &&
-                            elementInfo.parentComponents.length > 0 ? (
+                            context.elementInfo?.componentName === "Unknown Component" &&
+                            context.elementInfo?.parentComponents &&
+                            context.elementInfo.parentComponents.length > 0 ? (
                               <>
                                 {contextDisplay.split(" ")[0]} in{" "}
-                                <span className="font-medium">{elementInfo.parentComponents[0].name}</span>
+                                <span className="font-medium">{context.elementInfo.parentComponents[0].name}</span>
                               </>
                             ) : (
                               <>
                                 {contextDisplay}
                                 {context.type === "Elements" &&
-                                  elementInfo?.componentFramework &&
-                                  elementInfo.componentFramework !== "Unknown" && (
+                                  context.elementInfo?.componentFramework &&
+                                  context.elementInfo.componentFramework !== "Unknown" && (
                                     <span className="text-xs text-gray-500 ml-1">
-                                      ({elementInfo.componentFramework})
+                                      ({context.elementInfo.componentFramework})
                                     </span>
                                   )}
-                                {context.type === "Elements" && elementInfo?.componentFramework === "Unknown" && (
-                                  <span className="text-xs text-gray-500 ml-1">(XPath available)</span>
-                                )}
+                                {context.type === "Elements" &&
+                                  context.elementInfo?.componentFramework === "Unknown" && (
+                                    <span className="text-xs text-gray-500 ml-1">(XPath available)</span>
+                                  )}
                               </>
                             )}
                           </span>

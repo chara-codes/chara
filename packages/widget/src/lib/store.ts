@@ -3,9 +3,10 @@ import { devtools } from "zustand/middleware"
 import type { Model, Message, ContextItem } from "@/types"
 import { modelGroups } from "@/mocks/data"
 
-// Define the dock position type
-export type DockPosition = "float" | "left" | "right" | "bottom" | "top" | "popup"
+// Update the DockPosition type to include "devtools"
+export type DockPosition = "float" | "left" | "right" | "bottom" | "top" | "popup" | "devtools"
 
+// In the ChatState interface, add a new property to track the main content width
 interface ChatState {
   // UI State
   isOpen: boolean
@@ -24,6 +25,7 @@ interface ChatState {
   modelSearchQuery: string
   isElementSelecting: boolean
   dockPosition: DockPosition // Add dock position state
+  mainContentWidth: string // Add this property to track the main content width
 
   // Chat State
   messages: Message[]
@@ -61,8 +63,10 @@ interface ChatState {
   cancelGeneration: () => void
   setIsElementSelecting: (isSelecting: boolean) => void
   setDockPosition: (position: DockPosition) => void // Add dock position action
+  setMainContentWidth: (width: string) => void // Add this action
 }
 
+// In the store implementation, add the new property and action
 export const useStore = create<ChatState>()(
   devtools(
     (set, get) => ({
@@ -82,7 +86,8 @@ export const useStore = create<ChatState>()(
       searchQueries: {},
       modelSearchQuery: "",
       isElementSelecting: false,
-      dockPosition: "float", // Default to floating mode
+      dockPosition: "devtools", // Changed default to devtools mode
+      mainContentWidth: "calc(100% - 420px)", // Default main content width adjusted for devtools mode
 
       // Chat State
       messages: [
@@ -249,7 +254,19 @@ Here's what I can help with:
       },
       cancelGeneration: () => set({ isGenerating: false }),
       setIsElementSelecting: (isSelecting) => set({ isElementSelecting: isSelecting }),
-      setDockPosition: (position) => set({ dockPosition: position }),
+      setDockPosition: (position) => {
+        set({ dockPosition: position })
+
+        // When changing to devtools mode, immediately adjust the content width
+        if (position === "devtools") {
+          const currentSize = get().size
+          set({ mainContentWidth: `calc(100% - ${currentSize.width}px)` })
+        } else {
+          // Reset the main content width for other modes
+          set({ mainContentWidth: "100%" })
+        }
+      },
+      setMainContentWidth: (width) => set({ mainContentWidth: width }),
     }),
     { name: "ai-chat-store" },
   ),

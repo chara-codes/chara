@@ -17,6 +17,7 @@ export function DockPositionSelector() {
     { value: "bottom", icon: <PanelBottom className="h-4 w-4" />, label: "Bottom" },
     { value: "top", icon: <PanelTop className="h-4 w-4" />, label: "Top" },
     { value: "popup", icon: <Square className="h-4 w-4" />, label: "Popup" },
+    { value: "devtools", icon: <PanelRight className="h-4 w-4" />, label: "DevTools" },
   ]
 
   return (
