@@ -215,7 +215,20 @@ export function MessageList() {
                                 <span className="font-medium">{context.elementInfo.parentComponents[0].name}</span>
                               </>
                             ) : (
-                              contextDisplay
+                              <>
+                                {contextDisplay}
+                                {context.type === "Elements" &&
+                                  context.elementInfo?.componentFramework &&
+                                  context.elementInfo.componentFramework !== "Unknown" && (
+                                    <span className="text-xs text-gray-500 ml-1">
+                                      ({context.elementInfo.componentFramework})
+                                    </span>
+                                  )}
+                                {context.type === "Elements" &&
+                                  context.elementInfo?.componentFramework === "Unknown" && (
+                                    <span className="text-xs text-gray-500 ml-1">(XPath available)</span>
+                                  )}
+                              </>
                             )}
                           </span>
                         </Badge>
