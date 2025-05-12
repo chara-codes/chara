@@ -8,16 +8,49 @@ import { myLogger } from "../../utils/logger";
 import { ee } from "../../utils/event-emitter";
 import { on } from "events";
 
+interface FileSystemEntry {
+  name: string;
+  path: string;
+  type: "file" | "directory";
+  children?: FileSystemEntry[]; // Only present for directories
+}
+
 // Utility to fetch directory contents
-async function getProjectContents(projectName?: string) {
+async function getProjectContents(
+  projectName?: string,
+  currentPath = "",
+): Promise<FileSystemEntry[]> {
   if (!projectName) return [];
-  const projectLocation = resolveProjectPath(projectName);
-  const files = await fs.readdir(projectLocation, { withFileTypes: true });
-  return files.map((file) => ({
-    name: file.name,
-    path: path.join(file.name),
-    type: file.isDirectory() ? "directory" : "file",
-  }));
+
+  const projectLocation = path.join(
+    resolveProjectPath(projectName),
+    currentPath,
+  );
+  const entries = await fs.readdir(projectLocation, { withFileTypes: true });
+
+  const contents: FileSystemEntry[] = await Promise.all(
+    entries.map(async (entry): Promise<FileSystemEntry> => {
+      const entryPath = path.join(currentPath, entry.name);
+      if (entry.isDirectory()) {
+        // Fetch contents recursively for directories
+        return {
+          name: entry.name,
+          path: entryPath,
+          type: "directory",
+          children: await getProjectContents(projectName, entryPath),
+        };
+      } else {
+        // Handle files
+        return {
+          name: entry.name,
+          path: entryPath,
+          type: "file",
+        };
+      }
+    }),
+  );
+
+  return contents;
 }
 
 export const filesRouter = router({
