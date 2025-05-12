@@ -1,69 +1,116 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react"
-import { FileTree } from "./file-tree"
-import { useProject } from "@/contexts/project-context"
-import { 
-  useProjectFiles, 
-  getFileContent, 
-  FileSystemEntry 
-} from "@/utils/file-system"
-import { useFileChanges } from "@/hooks/use-file-changes"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react";
+import { FileTree } from "./file-tree";
+import { useProject } from "@/contexts/project-context";
+import {
+  useProjectFiles,
+  getFileContent,
+  FileSystemEntry,
+} from "@/utils/file-system";
+import { useFileChanges } from "@/hooks/use-file-changes";
+import { trpc } from "@/utils";
+import { myLogger } from "@chara/server/src/utils/logger";
 
 export function CodePreview() {
-  const { selectedProject } = useProject()
-  const [selectedFile, setSelectedFile] = useState<string | null>(null)
-  const [isFileTreeVisible, setIsFileTreeVisible] = useState(true)
-  const [fileContent, setFileContent] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  
-  const { 
-    files, 
-    isLoading: filesLoading, 
-    error: filesError,
-    refresh: refreshFiles
-  } = useProjectFiles(selectedProject?.id, 2000) // Poll every 2 seconds for changes
-  
-  // Track file changes
-  const { changedFiles, resetChanges } = useFileChanges(files)
+  const { selectedProject } = useProject();
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [isFileTreeVisible, setIsFileTreeVisible] = useState(true);
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [files, setFiles] = useState<Array<FileSystemEntry>>([]);
 
-  // Fetch file content when a file is selected or changed
+  const {
+    isLoading: filesLoading,
+    error: filesError,
+    refresh: refreshFiles,
+  } = useProjectFiles(selectedProject?.id);
+
+  // Track file changes
+  const { changedFiles, resetChanges } = useFileChanges(files);
+  const {
+    data,
+    error,
+    refetch: getProjectContents,
+  } = trpc.files.getProjectContents.useQuery({
+    projectName: selectedProject?.name,
+  });
+
   useEffect(() => {
-    async function loadFileContent() {
-      if (!selectedProject?.id || !selectedFile) {
-        setFileContent(null)
-        return
-      }
-      
-      setIsLoading(true)
-      try {
-        const content = await getFileContent(selectedProject.id, selectedFile)
-        setFileContent(content)
-      } catch (error) {
-        console.error("Error loading file content:", error)
-        setFileContent(null)
-      } finally {
-        setIsLoading(false)
-      }
+    myLogger.info("Received project data", data);
+    myLogger.error("Error during getting project files", error?.message);
+    if (data) {
+      setFiles(data);
     }
-    
-    loadFileContent()
-  }, [selectedProject?.id, selectedFile, 
-      // Reload when changes are detected
-      changedFiles.find(change => change.path === selectedFile)
-  ])
+  }, [data, error]);
+
+  const { data: fileChanges } = trpc.files.watchFileChanges.useSubscription(
+    { projectName: selectedProject?.name || "Project007" },
+    {
+      onData: (change) => {
+        console.log(
+          `Change in ${selectedProject && selectedProject.name} project:`,
+          change,
+        );
+      },
+    },
+  );
+
+  useEffect(() => {
+    getProjectContents();
+  }, [fileChanges]);
+
+  const {
+    data: fileData,
+    error: fileError,
+    refetch: refetchFile,
+    isLoading: fileLoading,
+  } = trpc.files.getFileContent.useQuery(
+    {
+      relativePath: selectedFile,
+      projectName: selectedProject?.name || "",
+    },
+    {
+      enabled: !!selectedFile && !!selectedProject?.name,
+    },
+  );
+
+  useEffect(() => {
+    if (fileData !== undefined || fileData !== null) {
+      setFileContent(fileData);
+    }
+  }, [fileData]);
+
+  useEffect(() => {
+    myLogger.error(
+      fileError?.message || "Something went wrong reading:",
+      selectedFile,
+    );
+  }, [fileError]);
+
+  useEffect(() => {
+    setIsLoading(fileLoading);
+  }, [fileLoading]);
+
+  useEffect(() => {
+    if (selectedFile) {
+      refetchFile();
+    }
+  }, [selectedFile, refetchFile]);
 
   const handleSelectFile = (path: string) => {
-    setSelectedFile(path)
-  }
+    setSelectedFile(path);
+  };
 
   return (
     <div className="flex flex-col h-full rounded-md overflow-hidden">
       <div className="flex items-center justify-between bg-gray-800 px-3 py-2 border-b border-gray-700">
         <div className="text-sm text-gray-300">
-          {selectedProject ? `Code Explorer: ${selectedProject.name}` : 'Code Explorer'}
+          {selectedProject
+            ? `Code Explorer: ${selectedProject.name}`
+            : "Code Explorer"}
         </div>
         <div className="flex items-center space-x-1">
           <Button
@@ -81,7 +128,11 @@ export function CodePreview() {
             onClick={() => setIsFileTreeVisible(!isFileTreeVisible)}
             className="h-7 text-gray-300 hover:text-white"
           >
-            {isFileTreeVisible ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            {isFileTreeVisible ? (
+              <ChevronLeft className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
@@ -119,7 +170,9 @@ export function CodePreview() {
           {!selectedProject ? (
             <div className="text-gray-400">Select a project to view files</div>
           ) : !selectedFile ? (
-            <div className="text-gray-400">Select a file to view its content</div>
+            <div className="text-gray-400">
+              Select a file to view its content
+            </div>
           ) : isLoading ? (
             <div className="flex items-center text-gray-400">
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -131,13 +184,12 @@ export function CodePreview() {
                 <span>{selectedFile}</span>
               </div>
               <pre className="font-mono text-sm">
-                <code>{fileContent || 'Unable to load file content'}</code>
+                <code>{fileContent || "Unable to load file content"}</code>
               </pre>
             </>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }
-

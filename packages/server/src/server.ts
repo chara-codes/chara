@@ -11,7 +11,9 @@ import { myLogger as logger } from "./utils/logger";
 import { chatRouter } from "./api/routes/chat";
 import { subscription } from "./api/routes/subscription";
 import { instructionsRouter } from "./api/routes/instructions";
+import { filesRouter } from "./api/routes/files";
 import superjson from "superjson";
+import { previewRouter } from "./api/routes/preview";
 
 const t = initTRPC.context<Context>().create({ transformer: superjson });
 
@@ -25,6 +27,8 @@ export const appRouter = router({
   chat: chatRouter,
   events: subscription,
   instructions: instructionsRouter,
+  files: filesRouter,
+  preview: previewRouter,
 });
 
 export type AppRouter = typeof appRouter;
@@ -44,8 +48,8 @@ const server = serve({
   port: 3030,
   async fetch(request): Promise<Response | undefined> {
     const url = new URL(request.url);
-    logger.request(request.method, request.url);
-    logger.info(`Headers: ${JSON.stringify(request.headers, null, 2)}`);
+    // logger.request(request.method, request.url);
+    // logger.info(`Headers: ${JSON.stringify(request.headers, null, 2)}`);
     // Only used for start-server-and-test package that
     // expects a 200 OK to start testing the server
     if (request.method === "HEAD" || request.method === "OPTIONS") {

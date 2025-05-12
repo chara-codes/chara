@@ -3,7 +3,8 @@ import { aiProvider } from "../ai";
 import { z } from "zod";
 import { systemPrompt } from "./propmts/my-agent-propmt";
 import { ee } from "../../utils/event-emitter";
-import path from "node:path";
+import { resolveProjectPath } from "../../utils/project-path";
+import { getProjectContext } from "../../utils/get-project-context";
 
 export const messageSchema = z.object({
   projectRoot: z.string().nonempty("Project root path should not be empty"),
@@ -50,6 +51,8 @@ export const myAgent = async function* (
   task: string,
   project: { id: string; name: string },
 ): Promise<AgentResponse> {
+  const projectRoot = resolveProjectPath(project.name);
+  const projectContext = await getProjectContext(projectRoot);
   try {
     const { partialObjectStream } = streamObject({
       model: aiProvider(process.env.AI_MODEL || "gpt-4o-mini"),
@@ -57,7 +60,7 @@ export const myAgent = async function* (
       messages: [
         {
           role: "system",
-          content: systemPrompt,
+          content: systemPrompt + projectContext,
         },
         {
           role: "user",
@@ -80,9 +83,7 @@ export const myAgent = async function* (
         "DEBUG: Streaming complete, emitting final object for execution",
       );
 
-      // Set the project root path
-      const projectDir = path.resolve(__dirname, "../../../../../");
-      lastObject.projectRoot = path.join(projectDir, "projects", project.name);
+      lastObject.projectRoot = projectRoot;
 
       // Emit the 'instructions:execute' event with the complete object
       ee.emit("instructions:execute", lastObject);
