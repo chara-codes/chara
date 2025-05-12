@@ -4,12 +4,12 @@ import type React from "react"
 
 import { useRef, useEffect } from "react"
 import { useStore } from "@/lib/store"
-import { ScrollbarHideStyles } from "@/components/atoms/scroll-hide-style"
 import { ResizeHandle } from "@/components/atoms/resize-handle"
 import { ChatHeader } from "@/components/molecules/chat-header"
 import { MessageList } from "@/components/organisms/message-list"
 import { ContextBar } from "@/components/organisms/context-bar"
 import { ChatInput } from "@/components/molecules/chat-input"
+import { DevtoolsDivider } from "@/components/atoms/devtools-divider"
 
 export function ChatPanel() {
   const position = useStore((state) => state.position)
@@ -17,10 +17,14 @@ export function ChatPanel() {
   const isDragging = useStore((state) => state.isDragging)
   const setIsDragging = useStore((state) => state.setIsDragging)
   const setDragOffset = useStore((state) => state.setDragOffset)
+  const dockPosition = useStore((state) => state.dockPosition)
 
   const panelRef = useRef<HTMLDivElement>(null)
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Only allow dragging in float mode
+    if (dockPosition !== "float") return
+
     if (panelRef.current && e.target === panelRef.current.querySelector(".drag-handle")) {
       setIsDragging(true)
       setDragOffset({
@@ -89,36 +93,173 @@ export function ChatPanel() {
     }
   }, [isDragging])
 
+  // Add this effect to adjust the main content width when the panel is open in devtools mode
+  useEffect(() => {
+    // Only adjust the main content when in devtools mode
+    if (dockPosition === "devtools") {
+      // Get the panel width
+      const panelWidth = size.width
+
+      // Calculate the new main content width
+      const newMainContentWidth = `calc(100% - ${panelWidth}px)`
+
+      // Set the main content width
+      useStore.getState().setMainContentWidth(newMainContentWidth)
+
+      // Set CSS variable for the main content
+      document.documentElement.style.setProperty("--content-width", newMainContentWidth)
+    } else {
+      // Reset the main content width for other modes
+      useStore.getState().setMainContentWidth("100%")
+      document.documentElement.style.setProperty("--content-width", "100%")
+    }
+  }, [dockPosition, size.width])
+
+  // Get panel styles based on dock position
+  const getPanelStyles = () => {
+    // Base styles
+    const styles: React.CSSProperties = {
+      width: `${size.width}px`,
+      height: `${size.height}px`,
+    }
+
+    // Apply styles based on dock position
+    switch (dockPosition) {
+      case "float":
+        styles.width = `${size.width}px`
+        styles.height = `${size.height}px`
+        styles.left = position.x || "auto"
+        styles.right = position.x ? "auto" : "1rem"
+        styles.top = position.y || "auto"
+        styles.bottom = position.y ? "auto" : "1rem"
+        break
+      case "left":
+        styles.width = "350px"
+        styles.height = "100vh"
+        styles.left = 0
+        styles.top = 0
+        styles.bottom = 0
+        styles.right = "auto"
+        styles.borderRadius = "0"
+        styles.borderLeft = "none"
+        styles.borderTop = "none"
+        styles.borderBottom = "none"
+        break
+      case "right":
+        styles.width = "350px"
+        styles.height = "100vh"
+        styles.right = 0
+        styles.top = 0
+        styles.bottom = 0
+        styles.left = "auto"
+        styles.borderRadius = "0"
+        styles.borderRight = "none"
+        styles.borderTop = "none"
+        styles.borderBottom = "none"
+        break
+      case "devtools":
+        // Updated devtools styling to ensure it's flush against the content
+        // Use the dynamic width from the store
+        styles.width = `${size.width}px` // Ensure the width is applied from the store
+        styles.height = "100vh"
+        styles.right = 0
+        styles.top = 0
+        styles.bottom = 0
+        styles.left = "auto"
+        styles.borderRadius = "0"
+        styles.borderRight = "none"
+        styles.borderTop = "none"
+        styles.borderBottom = "none"
+        styles.zIndex = 40
+        styles.boxShadow = "-2px 0 5px rgba(0, 0, 0, 0.1)"
+        break
+      case "bottom":
+        styles.width = "100vw"
+        styles.height = "300px"
+        styles.bottom = 0
+        styles.left = 0
+        styles.right = 0
+        styles.top = "auto"
+        styles.borderRadius = "0"
+        styles.borderLeft = "none"
+        styles.borderRight = "none"
+        styles.borderBottom = "none"
+        break
+      case "top":
+        styles.width = "100vw"
+        styles.height = "300px"
+        styles.top = 0
+        styles.left = 0
+        styles.right = 0
+        styles.bottom = "auto"
+        styles.borderRadius = "0"
+        styles.borderLeft = "none"
+        styles.borderRight = "none"
+        styles.borderTop = "none"
+        break
+      case "popup":
+        // Center in the middle of the screen with a fixed size
+        styles.width = "600px"
+        styles.height = "500px"
+        styles.top = "50%"
+        styles.left = "50%"
+        styles.transform = "translate(-50%, -50%)"
+        styles.borderRadius = "8px"
+        // Add a backdrop shadow for popup mode
+        styles.boxShadow = "0 0 0 100vmax rgba(0, 0, 0, 0.3)"
+        break
+    }
+
+    return styles
+  }
+
+  // Determine if resize handles should be shown
+  const showResizeHandles = dockPosition === "float"
+
+  // Add overlay for popup mode
+  const renderOverlay = () => {
+    if (dockPosition === "popup") {
+      return (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 z-40"
+          onClick={() => useStore.getState().setDockPosition("float")}
+        />
+      )
+    }
+    return null
+  }
+
   return (
-    <div
-      ref={panelRef}
-      className="fixed z-50 flex flex-col bg-gray-50 overflow-hidden rounded-lg shadow-xl border border-gray-200"
-      style={{
-        width: `${size.width}px`,
-        height: `${size.height}px`,
-        left: position.x || "auto",
-        right: position.x ? "auto" : "1rem",
-        top: position.y || "auto",
-        bottom: position.y ? "auto" : "1rem",
-      }}
-      onMouseDown={handleMouseDown}
-    >
-      <ScrollbarHideStyles />
+    <>
+      {renderOverlay()}
+      <div
+        ref={panelRef}
+        className="fixed z-50 flex flex-col bg-gray-50 overflow-hidden shadow-xl border border-gray-200"
+        style={getPanelStyles()}
+        onMouseDown={handleMouseDown}
+      >
+        {/* Resize handles - only show in float mode */}
+        {showResizeHandles && (
+          <>
+            <ResizeHandle direction="nw" className="absolute top-0 left-0 w-3 h-3 cursor-nw-resize z-50" />
+            <ResizeHandle direction="ne" className="absolute top-0 right-0 w-3 h-3 cursor-ne-resize z-50" />
+            <ResizeHandle direction="sw" className="absolute bottom-0 left-0 w-3 h-3 cursor-sw-resize z-50" />
+            <ResizeHandle direction="se" className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize z-50" />
+            <ResizeHandle direction="n" className="absolute top-0 left-3 right-3 h-3 cursor-n-resize z-50" />
+            <ResizeHandle direction="s" className="absolute bottom-0 left-3 right-3 h-3 cursor-s-resize z-50" />
+            <ResizeHandle direction="w" className="absolute left-0 top-3 bottom-3 w-3 cursor-w-resize z-50" />
+            <ResizeHandle direction="e" className="absolute right-0 top-3 bottom-3 w-3 cursor-e-resize z-50" />
+          </>
+        )}
 
-      {/* Resize handles */}
-      <ResizeHandle direction="nw" className="absolute top-0 left-0 w-3 h-3 cursor-nw-resize z-50" />
-      <ResizeHandle direction="ne" className="absolute top-0 right-0 w-3 h-3 cursor-ne-resize z-50" />
-      <ResizeHandle direction="sw" className="absolute bottom-0 left-0 w-3 h-3 cursor-sw-resize z-50" />
-      <ResizeHandle direction="se" className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize z-50" />
-      <ResizeHandle direction="n" className="absolute top-0 left-3 right-3 h-3 cursor-n-resize z-50" />
-      <ResizeHandle direction="s" className="absolute bottom-0 left-3 right-3 h-3 cursor-s-resize z-50" />
-      <ResizeHandle direction="w" className="absolute left-0 top-3 bottom-3 w-3 cursor-w-resize z-50" />
-      <ResizeHandle direction="e" className="absolute right-0 top-3 bottom-3 w-3 cursor-e-resize z-50" />
+        {/* DevTools divider - only show in devtools mode */}
+        <DevtoolsDivider />
 
-      <ChatHeader />
-      <MessageList />
-      <ContextBar />
-      <ChatInput />
-    </div>
+        <ChatHeader />
+        <MessageList />
+        <ContextBar />
+        <ChatInput />
+      </div>
+    </>
   )
 }

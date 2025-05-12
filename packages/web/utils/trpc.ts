@@ -11,11 +11,11 @@ import superjson from "superjson";
 
 export const trpc = createTRPCReact<AppRouter>();
 
-const wsClient = createWSClient({
-  url: "ws://localhost:3030/events", // WebSocket endpoint
-});
-
 export function createTrpcClient() {
+  const server = process.env.NEXT_PUBLIC_SERVER || "localhost:3030";
+  const wsClient = createWSClient({
+  url: `ws://${server}/events`, // WebSocket endpoint
+});
   return trpc.createClient({
     links: [
       // Split link to determine the appropriate transport mechanism
@@ -30,12 +30,12 @@ export function createTrpcClient() {
           // Use httpBatchStreamLink for streaming queries/mutations
           condition: (op) => op.type === "query" || op.type === "mutation", // Adjust if needed
           true: httpBatchStreamLink({
-            url: "http://localhost:3030/trpc", // HTTP streaming endpoint
+            url: `http://${server}/trpc`, // HTTP streaming endpoint
             transformer: superjson,
           }),
           // Use httpBatchLink for non-streaming operations
           false: httpBatchLink({
-            url: "http://localhost:3030/trpc", // HTTP endpoint
+            url: `http://${server}/trpc`, // HTTP endpoint
             transformer: superjson,
           }),
         }),

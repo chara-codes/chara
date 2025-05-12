@@ -5,7 +5,7 @@ import {
 } from "../compression";
 import type { ServerConfig } from "../../types/server.types";
 import { isTextResponse } from "../../utils/content-type";
-import { logger } from "../../utils/logger";
+import { logger } from "@chara/logger";
 
 /**
  * Processes a stream with optional text replacements and compression

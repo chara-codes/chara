@@ -1,6 +1,6 @@
 import type { Server } from "bun";
 import type { ServerConfig } from "../../types/server.types";
-import { logger } from "../../utils/logger";
+import { logger } from "@chara/logger";
 
 /**
  * Handles WebSocket connection upgrade attempts

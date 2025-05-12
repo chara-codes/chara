@@ -13,7 +13,7 @@ import {
   LogLevelSeverity,
   type TransportType,
   type LoggerConfig,
-} from "../types/logger.types";
+} from "./types";
 
 // Map LogLevel to severity
 const LOG_LEVEL_SEVERITY: Record<LogLevel, LogLevelSeverity> = {

@@ -1,6 +1,6 @@
 import * as zlib from "zlib";
 import { Writable } from "stream";
-import { logger } from "../utils/logger";
+import { logger } from "@chara/logger";
 
 /**
  * Determines the compression type to use based on Content-Encoding header
@@ -60,7 +60,11 @@ export function createCompressionStream(
 
       // Handle the compressed data coming from the compressor
       compressor.on("data", (chunk) => {
-        controller.enqueue(new Uint8Array(chunk));
+        try {
+          controller.enqueue(new Uint8Array(chunk));
+        } catch (e) {
+          logger.error("Error: ", e);
+        }
       });
 
       compressor.on("end", () => {

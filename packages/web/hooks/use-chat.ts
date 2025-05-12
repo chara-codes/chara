@@ -56,10 +56,12 @@ export function useChat(streamObject = true) {
     setStatus("submitted");
     setError(null);
 
+    const server = process.env.NEXT_PUBLIC_SERVER || "localhost:3030";
+
     const { stream } = useAIChat<{
       question: string;
       project: ProjectInformation | null;
-    }>("http://localhost:3030/trpc", streamObject, selectedProject);
+    }>(`http://${server}/trpc`, streamObject, selectedProject);
     try {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
