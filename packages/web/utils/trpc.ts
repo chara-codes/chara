@@ -10,7 +10,9 @@ import superjson from "superjson";
 export const trpc = createTRPCReact<AppRouter>();
 
 export function createTrpcClient() {
-  const url = "http://localhost:3030/trpc";
+  const server = process.env.NEXT_PUBLIC_SERVER || "localhost:3030";
+  const url = `http://${server}/trpc`;
+
   return trpc.createClient({
     links: [
       splitLink({

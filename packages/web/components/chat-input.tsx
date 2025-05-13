@@ -20,7 +20,7 @@ import {
   Terminal,
   Database,
 } from "lucide-react";
-import type { FileAttachment } from "../types";
+import type { FileAttachment } from "@/types";
 import {
   Command,
   CommandEmpty,
@@ -31,7 +31,11 @@ import {
 } from "@/components/ui/command";
 
 interface ChatInputProps {
-  onSendMessage: (e: FormEvent<HTMLFormElement>, input: string) => void;
+  onSendMessage: (
+    input: string,
+    attachments: FileAttachment[],
+    attachedContexts: Array<{ source: string; component: string }>,
+  ) => void;
   isLoading: boolean;
 }
 
@@ -139,23 +143,13 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   };
 
   const handleSendMessage = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (
       (input.trim() || attachments.length > 0 || attachedContexts.length > 0) &&
       !isLoading
     ) {
-      // Format the message content with attached contexts
-      let messageContent = input;
-
-      // Add contexts at the beginning of the message if there are any
-      if (attachedContexts.length > 0) {
-        const contextStrings = attachedContexts.map(
-          (ctx) => `[${ctx.source}:${ctx.component}]`,
-        );
-        messageContent = contextStrings.join("\n") + "\n\n" + messageContent;
-      }
-
-      // Call the parent's onSendMessage function
-      onSendMessage(e, input);
+      // Call the provided callback with the current state
+      onSendMessage(input, attachments, attachedContexts);
 
       // Clear input, attachments, and contexts
       setInput("");
@@ -229,47 +223,47 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   };
 
   return (
-    <form onSubmit={handleSendMessage}>
+    <div>
+      {attachments.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          {attachments.map((file) => (
+            <div
+              key={file.id}
+              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
+            >
+              <span className="truncate max-w-[150px]">{file.name}</span>
+              <button
+                onClick={() => removeAttachment(file.id)}
+                className="ml-2 text-blue-600 hover:text-blue-800"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {attachedContexts.length > 0 && (
+        <div className="mb-2 flex flex-row flex-wrap gap-2">
+          {attachedContexts.map((ctx, index) => (
+            <div
+              key={index}
+              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
+            >
+              <span className="font-medium">
+                [{ctx.source}:{ctx.component}]
+              </span>
+              <button
+                onClick={() => removeContext(index)}
+                className="ml-2 text-blue-600 hover:text-blue-800 p-0.5 rounded-full hover:bg-blue-100"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       <div>
-        {attachments.length > 0 && (
-          <div className="mb-2 flex flex-wrap gap-2">
-            {attachments.map((file) => (
-              <div
-                key={file.id}
-                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
-              >
-                <span className="truncate max-w-[150px]">{file.name}</span>
-                <button
-                  onClick={() => removeAttachment(file.id)}
-                  className="ml-2 text-blue-600 hover:text-blue-800"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        {attachedContexts.length > 0 && (
-          <div className="mb-2 flex flex-row flex-wrap gap-2">
-            {attachedContexts.map((ctx, index) => (
-              <div
-                key={index}
-                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
-              >
-                <span className="font-medium">
-                  [{ctx.source}:{ctx.component}]
-                </span>
-                <button
-                  onClick={() => removeContext(index)}
-                  className="ml-2 text-blue-600 hover:text-blue-800 p-0.5 rounded-full hover:bg-blue-100"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="flex gap-2">
+        <form onSubmit={handleSendMessage} className="flex gap-2">
           <div className="relative flex-1">
             <Input
               ref={inputRef}
@@ -279,6 +273,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
               placeholder="Type a message... (Type / for context)"
               disabled={isLoading}
               className="pr-10"
+              name="message"
             />
             {showCommandMenu && (
               <div
@@ -453,8 +448,8 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
               <Send className="h-4 w-4" />
             )}
           </Button>
-        </div>
+        </form>
       </div>
-    </form>
+    </div>
   );
 }

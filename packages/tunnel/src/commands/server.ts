@@ -2,8 +2,7 @@ import * as path from "path";
 import type { CommandModule } from "yargs";
 import { startServer } from "../server";
 import type { ServerConfig } from "../types/server.types";
-import { LogLevel } from "../types/logger.types";
-import { logger } from "../utils/logger";
+import { logger, LogLevel } from "@chara/logger";
 
 interface ServerCommandArgs extends ServerConfig {
   configFile?: string;

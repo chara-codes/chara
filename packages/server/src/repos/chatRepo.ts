@@ -1,9 +1,10 @@
-import { streamObject, streamText } from "ai";
+import { streamText } from "ai";
 import { z } from "zod";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../api/db.ts";
 import { chats, messages } from "../db/schema";
 import { myLogger as logger } from "../utils/logger";
+import { myAgent } from "../ai/agents/my-agent.ts";
 
 export const DEFAULT_PROJECT_ID = 1;
 
@@ -91,34 +92,24 @@ export async function* streamTextAndPersist({
 export async function* streamObjectAndPersist({
   chatId,
   question,
+  project,
   ctx,
   schema,
 }: {
   chatId: number;
   question: string;
+  project: { id: number; name: string };
   ctx: any;
   schema: ReturnType<typeof z.object>;
 }) {
   await saveUserMessage(chatId, question);
 
-  const { partialObjectStream } = streamObject({
-    model: ctx.ai(process.env.AI_MODEL || "gpt-4o-mini"),
-    schema,
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are an experienced software engineer. Provide a solution with file list, commands and explanation.",
-      },
-      { role: "user", content: question },
-    ],
-  });
-
+  const agentStream = await myAgent(question, project);
   let assistantObj: Record<string, unknown> = {};
   try {
-    for await (const delta of partialObjectStream) {
-      assistantObj = { ...assistantObj, ...delta };
-      yield delta;
+    for await (const partialObject of agentStream) {
+      assistantObj = { ...assistantObj, ...partialObject };
+      yield partialObject;
     }
   } catch (err) {
     logger.error(JSON.stringify(err), "streamObject failed");

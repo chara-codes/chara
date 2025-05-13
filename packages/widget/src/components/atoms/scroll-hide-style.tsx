@@ -1,13 +1,6 @@
-"use client";
+"use client"
 
-export const ScrollbarHideStyles = () => (
-  <style>{`
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-  `}</style>
-);
+// Using global.css approach instead of inline styles
+export const ScrollbarHideStyles = () => {
+  return null // Component no longer needed as we'll move styles to globals.css
+}

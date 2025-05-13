@@ -3,6 +3,10 @@ import { devtools } from "zustand/middleware"
 import type { Model, Message, ContextItem } from "@/types"
 import { modelGroups } from "@/mocks/data"
 
+// Update the DockPosition type to include "devtools"
+export type DockPosition = "float" | "left" | "right" | "bottom" | "top" | "popup" | "devtools"
+
+// In the ChatState interface, add a new property to track the main content width
 interface ChatState {
   // UI State
   isOpen: boolean
@@ -19,6 +23,9 @@ interface ChatState {
   activeCategory: string | null
   searchQueries: Record<string, string>
   modelSearchQuery: string
+  isElementSelecting: boolean
+  dockPosition: DockPosition // Add dock position state
+  mainContentWidth: string // Add this property to track the main content width
 
   // Chat State
   messages: Message[]
@@ -51,10 +58,15 @@ interface ChatState {
   updateMessage: (id: string, updates: Partial<Message>) => void
   addContext: (context: ContextItem) => void
   removeContext: (contextName: string) => void
+  clearContexts: () => void
   sendMessage: () => void
   cancelGeneration: () => void
+  setIsElementSelecting: (isSelecting: boolean) => void
+  setDockPosition: (position: DockPosition) => void // Add dock position action
+  setMainContentWidth: (width: string) => void // Add this action
 }
 
+// In the store implementation, add the new property and action
 export const useStore = create<ChatState>()(
   devtools(
     (set, get) => ({
@@ -73,6 +85,9 @@ export const useStore = create<ChatState>()(
       activeCategory: null,
       searchQueries: {},
       modelSearchQuery: "",
+      isElementSelecting: false,
+      dockPosition: "devtools", // Changed default to devtools mode
+      mainContentWidth: "calc(100% - 420px)", // Default main content width adjusted for devtools mode
 
       // Chat State
       messages: [
@@ -81,6 +96,7 @@ export const useStore = create<ChatState>()(
           type: "user",
           content: "Beautify messages, fix issues with any types, care about development experience",
           files: ["logger.ts"],
+          contexts: [{ type: "Files", name: "logger.ts" }],
         },
         {
           id: "2",
@@ -128,11 +144,7 @@ export enum LogLevel {
       isGenerating: false,
       chatType: "Write",
       selectedModel: modelGroups[0].models[0],
-      activeContexts: [
-        { type: "Files", name: "logger.ts" },
-        { type: "Documentation", name: "README.md" },
-        { type: "Console", name: "Terminal output" },
-      ],
+      activeContexts: [],
 
       // Actions
       setIsOpen: (isOpen) => set({ isOpen }),
@@ -184,15 +196,20 @@ export enum LogLevel {
         set((state) => ({
           activeContexts: state.activeContexts.filter((context) => context.name !== contextName),
         })),
+      clearContexts: () => set({ activeContexts: [] }),
       sendMessage: () => {
         const { inputValue, activeContexts, isGenerating } = get()
         if (inputValue.trim() === "" || isGenerating) return
+
+        // Create a copy of the current active contexts to store with the message
+        const messageContexts = [...activeContexts]
 
         const newMessage: Message = {
           id: Date.now().toString(),
           content: inputValue,
           type: "user",
           files: activeContexts.filter((context) => context.type === "Files").map((context) => context.name),
+          contexts: messageContexts,
         }
 
         set((state) => ({
@@ -236,6 +253,20 @@ Here's what I can help with:
         }, 1000)
       },
       cancelGeneration: () => set({ isGenerating: false }),
+      setIsElementSelecting: (isSelecting) => set({ isElementSelecting: isSelecting }),
+      setDockPosition: (position) => {
+        set({ dockPosition: position })
+
+        // When changing to devtools mode, immediately adjust the content width
+        if (position === "devtools") {
+          const currentSize = get().size
+          set({ mainContentWidth: `calc(100% - ${currentSize.width}px)` })
+        } else {
+          // Reset the main content width for other modes
+          set({ mainContentWidth: "100%" })
+        }
+      },
+      setMainContentWidth: (width) => set({ mainContentWidth: width }),
     }),
     { name: "ai-chat-store" },
   ),

@@ -9,8 +9,10 @@ import {
   loggerLink,
 } from "@trpc/client";
 import { cyan, bold } from "picocolors";
-import { logger } from "../utils/logger";
 import type { AppRouter } from "@chara/server";
+import { logger } from "@chara/logger";
+import { applyInstructions } from "../instructions/apply-instructions";
+import superjson from "superjson";
 
 interface DevCommandArgs {
   projectDir?: string;
@@ -30,6 +32,7 @@ async function connectToServerEvents(): Promise<void> {
       loggerLink(),
       wsLink({
         client: wsClient,
+        transformer: superjson
       }),
     ],
   });
@@ -37,12 +40,22 @@ async function connectToServerEvents(): Promise<void> {
   client.events.subscribe(undefined, {
     onData(data: any) {
       logger.event("Server event received");
-      logger.event(JSON.stringify(data));
+
+      if (data.type === "instructions_execute") {
+        logger.event("Instructions received");
+        try {
+          applyInstructions(data.data);
+        } catch (e) {
+          logger.error(e as string);
+        }
+      }
     },
     onError(err: any) {
       logger.error("Subscription error", err);
     },
-    onStarted() {},
+    onStarted() {
+      logger.event("CLI WS client started succesfully");
+    },
   });
 }
 
@@ -52,6 +65,7 @@ function createApiClient() {
     links: [
       httpBatchLink({
         url: "http://localhost:3030/trpc",
+        transformer: superjson
       }),
     ],
   });

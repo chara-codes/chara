@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "bun build ./src/index.ts --outfile ./dist/chara --compile",
-    "d": "bun ./src/index.ts dev",
+    "dev": "bun ./src/index.ts dev",
     "start": "./dist/chara"
   },
   "type": "module",
@@ -20,8 +20,10 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@chara/server": "workspace:../server",
+    "@chara/server": "workspace:*",
+    "@chara/logger": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.9.0",
+    "superjson": "^2.2.2",
     "picocolors": "^1.0.0",
     "yargs": "^17.7.2"
   }

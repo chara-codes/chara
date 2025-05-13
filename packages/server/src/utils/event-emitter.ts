@@ -53,6 +53,13 @@ export interface ServerEvents {
   "server:ping": { test: number; timestamp: number };
   "user:login": { userId: string; timestamp: number };
   "user:logout": { userId: string; timestamp: number };
+  "instructions:execute": any;
+  "instructions:results": any;
+  "instructions:summary": {
+    summaryId: string;
+    stream: AsyncIterable<string>;
+    results: any;
+  };
   // Add other events as needed
 }
 

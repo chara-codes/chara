@@ -2,7 +2,9 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { parseStream } from "@/lib/parse-stream";
 import { trpc } from "@/utils";
+import { ProjectInformation, useProject } from "@/contexts/project-context";
 
+// TODO: there is another use-trpc-chat hook which was created in another PR earlier, so probably remove this one
 export function useChat(streamObject = true) {
   const [messages, setMessages] = useState<
     Array<{
@@ -19,6 +21,7 @@ export function useChat(streamObject = true) {
   const [status, setStatus] = useState<"ready" | "streaming" | "submitted">(
     "ready",
   );
+  const { selectedProject } = useProject();
   const [error, setError] = useState<Error | null>(null);
   // Keep track of whether we've cleaned up the current request
   const isCleanedUpRef = useRef(false);
@@ -40,7 +43,8 @@ export function useChat(streamObject = true) {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>, input: string) => {
     e.preventDefault();
-    if (!input.trim() || status !== "ready") return;
+    debugger;
+    if (!input.trim() || status !== "ready" || !selectedProject) return;
 
     const userMessage = {
       id: Date.now().toString(),
@@ -80,7 +84,10 @@ export function useChat(streamObject = true) {
       setStatus("streaming");
 
       // TODO: add projectId and chatId to the request
-      const iterable = await utils.chat.streamObject.fetch({ question: input });
+      const iterable = await utils.chat.streamObject.fetch({
+        question: input,
+        project: selectedProject,
+      });
 
       let textResponse = "";
       let objectResponse: any = {};

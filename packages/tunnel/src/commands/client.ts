@@ -1,8 +1,7 @@
 import type { CommandModule } from "yargs";
-import { logger } from "../utils/logger";
+import { logger, LogLevel } from "@chara/logger";
 import { TunnelClient } from "../client";
 import type { TunnelClientOptions } from "../types/client.types";
-import { LogLevel } from "../types/logger.types";
 
 interface ClientCommandArgs extends TunnelClientOptions {}
 

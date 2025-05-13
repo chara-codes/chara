@@ -1,7 +1,7 @@
 import { humanId } from "human-id";
 import type { ServerWebSocket } from "bun";
 import type { ClientData } from "../types/server.types";
-import { logger } from "./logger";
+import { logger } from "@chara/logger";
 
 /**
  * Generate a unique human-readable subdomain
@@ -60,9 +60,6 @@ export function validateSubdomain(subdomain: string): {
   return { isValid: true };
 }
 
-/**
- * Allocate a subdomain for a client
- *
 /**
  * Allocate a subdomain for a client
  *

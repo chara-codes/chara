@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { logger } from "./utils/logger";
+import { logger } from "@chara/logger";
 import type { TunnelClientOptions } from "./types/client.types";
 
 export class TunnelClient {

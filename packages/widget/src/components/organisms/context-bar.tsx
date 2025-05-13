@@ -6,6 +6,9 @@ import { ContextSelector } from "@/components/molecules/context-selector"
 import { FileAttachmentButton } from "@/components/molecules/file-attachment-button"
 import { ContextScrollButton } from "@/components/molecules/context-scroll-button"
 import { ContextBadge } from "@/components/atoms/context-badge"
+import { Button } from "@/components/ui/button"
+import { Pointer } from "lucide-react"
+import { useElementSelector } from "@/hooks/use-element-selector"
 
 export function ContextBar() {
   const activeContexts = useStore((state) => state.activeContexts)
@@ -13,8 +16,27 @@ export function ContextBar() {
   const hasContextOverflow = useStore((state) => state.hasContextOverflow)
   const setContextScrollPosition = useStore((state) => state.setContextScrollPosition)
   const setHasContextOverflow = useStore((state) => state.setHasContextOverflow)
+  const isGenerating = useStore((state) => state.isGenerating)
+  const messages = useStore((state) => state.messages)
+  const clearContexts = useStore((state) => state.clearContexts)
+  const addContext = useStore((state) => state.addContext)
 
   const contextContainerRef = useRef<HTMLDivElement>(null)
+  const { startElementSelection } = useElementSelector({ onElementSelected: addContext })
+
+  // Clear contexts at the start of communication
+  useEffect(() => {
+    if (messages.length === 0) {
+      clearContexts()
+    }
+  }, [messages, clearContexts])
+
+  // Clear contexts after a message is sent (when generation starts)
+  useEffect(() => {
+    if (isGenerating) {
+      clearContexts()
+    }
+  }, [isGenerating, clearContexts])
 
   // Check for context overflow
   useEffect(() => {
@@ -51,6 +73,15 @@ export function ContextBar() {
     <div className="flex items-center gap-1 px-2 py-1 border-t bg-gray-50 text-xs relative">
       <ContextSelector />
       <FileAttachmentButton />
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6 text-gray-500"
+        title="Select element on page"
+        onClick={startElementSelection}
+      >
+        <Pointer className="h-3 w-3" />
+      </Button>
 
       {hasContextOverflow && contextScrollPosition > 0 && (
         <ContextScrollButton direction="left" onClick={() => scrollContexts("left")} />

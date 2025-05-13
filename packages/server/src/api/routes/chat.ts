@@ -13,14 +13,14 @@ export const chatRouter = router({
   streamText: publicProcedure
     .input(
       z.object({
-        projectId: z.number().optional(),
+        project: z.object({ id: z.number(), name: z.string() }),
         chatId: z.number().optional(),
         question: z.string(),
       }),
     )
     .query(async function* ({ ctx, input }) {
       try {
-        const projectId = input.projectId ?? DEFAULT_PROJECT_ID;
+        const projectId = input?.project?.id ?? DEFAULT_PROJECT_ID;
         const chatId =
           input.chatId ??
           (await ensureChat(projectId, input.question.slice(0, 60)));
@@ -34,19 +34,20 @@ export const chatRouter = router({
   streamObject: publicProcedure
     .input(
       z.object({
-        projectId: z.number().optional(),
+        project: z.object({ id: z.number(), name: z.string() }),
         chatId: z.number().optional(),
         question: z.string(),
       }),
     )
     .query(async function* ({ ctx, input }) {
       try {
-        const projectId = input.projectId ?? DEFAULT_PROJECT_ID;
+        const projectId = input?.project?.id ?? DEFAULT_PROJECT_ID;
         const chatId =
           input.chatId ??
           (await ensureChat(projectId, input.question.slice(0, 60)));
         yield* streamObjectAndPersist({
           chatId,
+          project: input.project,
           question: input.question,
           ctx,
           schema: messageSchema,

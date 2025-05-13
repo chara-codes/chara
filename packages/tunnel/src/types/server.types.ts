@@ -1,3 +1,5 @@
+import type { ServerWebSocket, Server } from "bun";
+
 export interface PendingRequest {
   // Stream-related fields
   streamController?: ReadableStreamDefaultController<Uint8Array>;
@@ -27,3 +29,5 @@ export interface ServerConfig {
   controlDomain: string;
   replacements?: TextReplacement[];
 }
+
+export type ClientMap = Map<string, ServerWebSocket<ClientData>>;

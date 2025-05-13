@@ -1,5 +1,5 @@
 import type { TextReplacement } from "../types/server.types";
-import { logger } from "./logger";
+import { logger } from "@chara/logger";
 
 /**
  * Applies a series of text replacements to a string
