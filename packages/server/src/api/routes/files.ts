@@ -3,7 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import chokidar from "chokidar";
 import { router, publicProcedure } from "../trpc";
-import { resolveProjectPath } from "../../utils/project-path";
+import { resolveProjectPath } from "../../utils/file-utils";
 import { myLogger } from "../../utils/logger";
 import { ee } from "../../utils/event-emitter";
 import { on } from "events";
@@ -147,7 +147,10 @@ export const filesRouter = router({
         fileError: createEventListener("file:error"),
       };
 
-      console.log("File watcher initialized for project:", input.projectName);
+      myLogger.success(
+        "File watcher initialized for project:",
+        input.projectName,
+      );
 
       try {
         // Loop until the subscription is canceled

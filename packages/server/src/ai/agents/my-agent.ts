@@ -3,7 +3,7 @@ import { aiProvider } from "../ai";
 import { z } from "zod";
 import { systemPrompt } from "./propmts/my-agent-propmt";
 import { ee } from "../../utils/event-emitter";
-import { resolveProjectPath } from "../../utils/project-path";
+import { resolveProjectPath } from "../../utils/file-utils";
 import { getProjectContext } from "../../utils/get-project-context";
 
 export const messageSchema = z.object({
@@ -50,7 +50,7 @@ export type AgentResponse = z.infer<typeof messageSchema>;
 export const myAgent = async function* (
   task: string,
   project: { id: string; name: string },
-): Promise<AgentResponse> {
+): AsyncGenerator<AgentResponse, void, undefined> {
   const projectRoot = resolveProjectPath(project.name);
   const projectContext = await getProjectContext(projectRoot);
   try {

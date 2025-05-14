@@ -2,8 +2,7 @@ import { publicProcedure, router } from "../trpc";
 import { z } from "zod";
 import path from "path";
 import { handleProjectPreviewRequest } from "../../utils/preview/preview-manager";
-import { getProjectsRoot } from "../../utils/project-path";
-import { myLogger } from "../../utils/logger";
+import { getProjectsRoot } from "../../utils/file-utils";
 
 export const previewRouter = router({
   start: publicProcedure

@@ -1,6 +1,5 @@
 import { spawn } from "child_process";
-import { detectWebFramework } from "./detect-framework"; // the function above
-import { myLogger } from "../logger";
+import { detectWebFramework } from "./detect-framework";
 
 export function startPreviewServer(
   projectPath: string,

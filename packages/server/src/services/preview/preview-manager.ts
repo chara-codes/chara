@@ -5,12 +5,13 @@ import {
   setPreviewState,
 } from "./preview-state";
 import { startPreviewServer } from "./preview-server";
+import { myLogger } from "../logger";
 
 export async function handleProjectPreviewRequest(
   projectPath: string,
 ): Promise<string> {
   if (!isNonEmptyDirectory(projectPath)) {
-    throw new Error("Selected project is empty or inaccessible.");
+    myLogger.error("Selected project is empty or inaccessible.");
   }
 
   const current = getPreviewState();
@@ -24,7 +25,7 @@ export async function handleProjectPreviewRequest(
   clearPreviewState();
 
   try {
-    const port = 3000 + Math.floor(Math.random() * 1000); // Random port
+    const port = 3002 + Math.floor(Math.random() * 1000); // Random port
     const { process, url } = await startPreviewServer(projectPath, port);
 
     setPreviewState({ process, projectPath, port });
