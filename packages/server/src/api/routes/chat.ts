@@ -1,87 +1,60 @@
-import { streamText } from "ai";
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc";
-import { myAgent } from "../../ai/agents/my-agent";
-
-export const messageSchema = z.object({
-  content: z
-    .string()
-    .describe(
-      "Explanation of the changes and actions needed to be execute to implement the task (in markdown for better formatting)",
-    ),
-  commands: z
-    .array(
-      z.object({
-        id: z.string().describe("Id command, use incremental numbers"),
-        command: z.string().describe("Command to execute"),
-        description: z.string().optional(),
-      }),
-    )
-    .describe(
-      "Array of commands that needs to be executed, ordered by priority",
-    )
-    .optional(),
-  fileChanges: z
-    .array(
-      z.object({
-        id: z.string().describe("File id, should include path and filename"),
-        filename: z.string(),
-        type: z.enum(["add", "delete", "modify"]).describe("Type of changes"),
-        description: z.string().describe("Short description of the chages "),
-        content: z.string().describe("File content that should be saved"),
-      }),
-    )
-    .describe("List of files that should be changed")
-    .optional(),
-});
-
-export type MessageSchema = z.infer<typeof messageSchema>;
+import { messageSchema } from "../../dto/chat.ts";
+import {
+  DEFAULT_PROJECT_ID,
+  ensureChat,
+  streamObjectAndPersist,
+  streamTextAndPersist,
+} from "../../repos/chatRepo.ts";
+import { myLogger as logger } from "../../utils/logger";
 
 export const chatRouter = router({
   streamText: publicProcedure
     .input(
       z.object({
+        project: z.object({ id: z.number(), name: z.string() }),
+        chatId: z.number().optional(),
         question: z.string(),
-        project: z.object({ id: z.string(), name: z.string() }),
       }),
     )
     .query(async function* ({ ctx, input }) {
-      const { textStream } = streamText({
-        messages: [
-          {
-            role: "user",
-            content: input.question,
-          },
-        ],
-        model: ctx.ai(process.env.AI_MODEL || "gpt-4o-mini"),
-      });
-      for await (const textPart of textStream) {
-        yield textPart;
+      try {
+        const projectId = input?.project?.id ?? DEFAULT_PROJECT_ID;
+        const chatId =
+          input.chatId ??
+          (await ensureChat(projectId, input.question.slice(0, 60)));
+        yield* streamTextAndPersist({ chatId, question: input.question, ctx });
+      } catch (err) {
+        logger.error(JSON.stringify(err), "streamText endpoint failed");
+        throw err;
       }
     }),
+
   streamObject: publicProcedure
     .input(
       z.object({
+        project: z.object({ id: z.number(), name: z.string() }),
+        chatId: z.number().optional(),
         question: z.string(),
-        project: z.object({ id: z.string(), name: z.string() }),
       }),
     )
     .query(async function* ({ ctx, input }) {
-      console.log(
-        "Chat streamObject called with question:",
-        input.question,
-        input.project,
-      );
-
       try {
-        const agentStream = myAgent(input.question, input.project);
-
-        for await (const partialObject of agentStream) {
-          yield partialObject;
-        }
-      } catch (error) {
-        console.error("Error in streamObject:", error);
-        throw error;
+        const projectId = input?.project?.id ?? DEFAULT_PROJECT_ID;
+        const chatId =
+          input.chatId ??
+          (await ensureChat(projectId, input.question.slice(0, 60)));
+        yield* streamObjectAndPersist({
+          chatId,
+          project: input.project,
+          question: input.question,
+          ctx,
+          schema: messageSchema,
+        });
+      } catch (err) {
+        logger.error(JSON.stringify(err), "streamObject endpoint failed");
+        throw err;
       }
     }),
 });

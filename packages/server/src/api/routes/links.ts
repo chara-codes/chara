@@ -1,6 +1,6 @@
 import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
 import { publicProcedure, router } from "../trpc";
-import { eq } from "drizzle-orm/expressions";
+import { eq } from "drizzle-orm";
 import { links } from "../../db/schema/links";
 import { z } from "zod";
 

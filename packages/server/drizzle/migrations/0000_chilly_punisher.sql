@@ -1,3 +1,16 @@
+CREATE TABLE `chats` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`title` text NOT NULL,
+	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`projectId` integer NOT NULL,
+	`parentId` integer,
+	FOREIGN KEY (`projectId`) REFERENCES `projects`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`parentId`) REFERENCES `chats`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `idx_chats_project_id` ON `chats` (`projectId`);--> statement-breakpoint
+CREATE INDEX `idx_chats_parent_id` ON `chats` (`parentId`);--> statement-breakpoint
 CREATE TABLE `chunks` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`content` text NOT NULL,
@@ -33,10 +46,12 @@ CREATE TABLE `messages` (
 	`context` text,
 	`role` text NOT NULL,
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`updated_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	`chatId` integer NOT NULL,
-	FOREIGN KEY (`chatId`) REFERENCES `chats`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`chatId`) REFERENCES `chats`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE INDEX `idx_messages_chat_id` ON `messages` (`chatId`);--> statement-breakpoint
 CREATE TABLE `projects` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
@@ -53,8 +68,3 @@ CREATE TABLE `stacks` (
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	`updated_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
---> statement-breakpoint
-ALTER TABLE `chats` ADD `createdAt` integer DEFAULT CURRENT_TIMESTAMP NOT NULL;--> statement-breakpoint
-ALTER TABLE `chats` ADD `projectId` integer NOT NULL REFERENCES projects(id);--> statement-breakpoint
-ALTER TABLE `chats` ADD `parentId` integer REFERENCES chats(id);--> statement-breakpoint
-ALTER TABLE `chats` DROP COLUMN `created_at`;

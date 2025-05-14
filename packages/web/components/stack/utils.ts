@@ -11,6 +11,12 @@ export const techSchema = z.object({
   codeUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
 });
 
+const techDraftSchema = z.object({
+  name: z.string().optional().or(z.literal("")),
+  docsUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+  codeUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+});
+
 export const formSchema = z.object({
   name: z.string().min(2, "Name is too short"),
   type: z.enum(stackTypes),
@@ -19,7 +25,7 @@ export const formSchema = z.object({
     .array(techSchema)
     .min(1, "Add at least one technology")
     .max(10, "Too many"),
-  techDraft: techSchema.default({ name: "", docsUrl: "", codeUrl: "" }),
+  techDraft: techDraftSchema.default({ name: "", docsUrl: "", codeUrl: "" }),
 });
 
 export type FormValues = z.infer<typeof formSchema>;

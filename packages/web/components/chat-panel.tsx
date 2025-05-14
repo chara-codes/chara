@@ -16,7 +16,7 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
   const { selectedProject, setSelectedProject } = useProject();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleProjectSelect = (projectId: string, projectName: string) => {
+  const handleProjectSelect = (projectId: number, projectName: string) => {
     setSelectedProject({ id: projectId, name: projectName });
   };
 
