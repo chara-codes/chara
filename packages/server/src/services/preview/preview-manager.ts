@@ -1,11 +1,11 @@
-import { isNonEmptyDirectory } from "../file-utils";
+import { isNonEmptyDirectory } from "../../utils/file-utils";
 import {
   getPreviewState,
   clearPreviewState,
   setPreviewState,
 } from "./preview-state";
 import { startPreviewServer } from "./preview-server";
-import { myLogger } from "../logger";
+import { myLogger } from "../../utils/logger";
 
 export async function handleProjectPreviewRequest(
   projectPath: string,
