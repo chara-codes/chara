@@ -35,9 +35,9 @@ export const messages = sqliteTable(
       .default(sql`CURRENT_TIMESTAMP`),
 
     /** Timestamp when the message was last updated */
-    // updatedAt: int("updated_at",{ mode: "timestamp" })
-    //   .notNull()
-    //   .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: int("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
 
     /** Foreign key reference to the chat this message belongs to */
     chatId: int()

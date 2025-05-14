@@ -45,11 +45,10 @@ async function saveAssistantMessage(chatId: number, content: string) {
   try {
     await db.transaction(async (tx) => {
       await tx.insert(messages).values({ chatId, role: "assistant", content });
-      // TODO: uncomment when add updatedAt column to chats table
-      // await tx
-      //   .update(chats)
-      //   .set({ updatedAt: sql`CURRENT_TIMESTAMP` })
-      //   .where(eq(chats.id, chatId));
+      await tx
+        .update(chats)
+        .set({ updatedAt: sql`CURRENT_TIMESTAMP` })
+        .where(eq(chats.id, chatId));
     });
   } catch (err) {
     logger.error(JSON.stringify(err), "saveAssistantMessage failed");

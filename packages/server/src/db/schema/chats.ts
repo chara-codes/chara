@@ -24,14 +24,14 @@ export const chats = sqliteTable(
     title: text().notNull(),
 
     /** Timestamp (in milliseconds) when the chat was created */
-    createdAt: int({ mode: "timestamp" })
+    createdAt: int("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
 
     /** Timestamp when the chat was last updated */
-    // updatedAt: int({ mode: "timestamp" })
-    //   .notNull()
-    //   .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: int("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
 
     /** Reference to the project this chat belongs to */
     projectId: int()
