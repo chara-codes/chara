@@ -16,6 +16,7 @@ export default defineConfig({
     allowedHosts: ["widget.chara-ai.dev"],
   },
   build: {
+    cssCodeSplit: false,
     rollupOptions: {
       output: {
         entryFileNames: "main.js",

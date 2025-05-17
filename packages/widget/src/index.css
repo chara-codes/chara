@@ -148,3 +148,35 @@
 .chat-component .message-content {
   color: rgb(var(--chat-fg) / 1) !important;
 }
+
+/* Add styles for the devtools divider */
+.devtools-divider {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background-color: transparent;
+  cursor: col-resize;
+  z-index: 50;
+}
+
+.devtools-divider:hover,
+.devtools-divider.dragging {
+  background-color: #3b82f6; /* blue-500 */
+}
+
+.devtools-divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  background-color: #d1d5db; /* gray-300 */
+}
+
+.devtools-divider:hover::before,
+.devtools-divider.dragging::before {
+  background-color: #3b82f6; /* blue-500 */
+}

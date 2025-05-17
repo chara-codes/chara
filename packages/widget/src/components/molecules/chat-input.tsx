@@ -24,16 +24,16 @@ export function ChatInput() {
   }
 
   return (
-    <div className="border-t p-2 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
-      <div className="flex flex-col gap-2 message-content bg-white dark:bg-gray-900 rounded-md">
+    <div className="border-t p-2 bg-white">
+      <div className="flex flex-col gap-2 bg-white rounded-md">
         <Input
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask anything, @ to mention, ↑ to select"
-          className="flex-1 text-sm border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 !important"
+          className="flex-1 text-sm border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
         />
-        <div className="flex items-center justify-between w-full text-gray-700 dark:text-gray-300">
+        <div className="flex items-center justify-between w-full">
           <ChatTypeSelector />
           <div className="flex items-center gap-1 text-xs text-gray-500 px-2">
             <span className="flex items-center gap-1">

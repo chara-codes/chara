@@ -5,7 +5,7 @@ import { FolderOpen, RefreshCw } from "lucide-react";
 import { generateStringHash } from "@/lib/hash-string";
 
 interface ProjectSelectorProps {
-  onProjectSelect: (projectId: string, projectName: string) => void;
+  onProjectSelect: (projectId: number, projectName: string) => void;
   selectedProject?: { id: string; name: string } | null;
 }
 
@@ -30,7 +30,10 @@ export function ProjectSelector({
 
       const projectName = directoryHandle.name;
 
-      const projectId = generateStringHash(directoryHandle.name);
+      const projectId = parseInt(
+        generateStringHash(directoryHandle.name).substring(0, 8),
+        16,
+      );
 
       await directoryHandle.requestPermission({ mode: "readwrite" });
 

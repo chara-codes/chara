@@ -48,7 +48,7 @@ export type AgentResponse = z.infer<typeof messageSchema>;
 // Replace the entire myAgent function with this streaming version
 export const myAgent = async function* (
   task: string,
-  project: { id: string; name: string },
+  project: { id: number; name: string },
 ): Promise<AgentResponse> {
   try {
     const { partialObjectStream } = streamObject({

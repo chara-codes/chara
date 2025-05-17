@@ -57,7 +57,7 @@ export function MessageList() {
             return (
               <div
                 key={index}
-                className="my-2 bg-gray-900 dark:bg-black text-gray-100 p-3 rounded-md font-mono text-sm overflow-x-auto"
+                className="my-2 bg-gray-900 text-gray-100 p-3 rounded-md font-mono text-sm overflow-x-auto"
               >
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center">
@@ -108,23 +108,23 @@ export function MessageList() {
     switch (contextType) {
       case "Documentation":
         icon = <BookOpen className="h-3 w-3" />
-        bgColor = "bg-blue-50 dark:bg-blue-900/30"
-        textColor = "text-blue-700 dark:text-blue-300"
-        borderColor = "border-blue-200 dark:border-blue-800"
+        bgColor = "bg-blue-50"
+        textColor = "text-blue-700"
+        borderColor = "border-blue-200"
         break
 
       case "Console":
         icon = <Terminal className="h-3 w-3" />
-        bgColor = "bg-amber-50 dark:bg-amber-900/30"
-        textColor = "text-amber-700 dark:text-amber-300"
-        borderColor = "border-amber-200 dark:border-amber-800"
+        bgColor = "bg-amber-50"
+        textColor = "text-amber-700"
+        borderColor = "border-amber-200"
         break
 
       case "Elements":
         icon = <Pointer className="h-3 w-3" />
-        bgColor = "bg-purple-50 dark:bg-purple-900/30"
-        textColor = "text-purple-700 dark:text-purple-300"
-        borderColor = "border-purple-200 dark:border-purple-800"
+        bgColor = "bg-purple-50"
+        textColor = "text-purple-700"
+        borderColor = "border-purple-200"
         break
 
       case "Files":
@@ -141,36 +141,33 @@ export function MessageList() {
           contextName.endsWith(".json")
         ) {
           icon = <FileCode className="h-3 w-3" />
-          bgColor = "bg-emerald-50 dark:bg-emerald-900/30"
-          textColor = "text-emerald-700 dark:text-emerald-300"
-          borderColor = "border-emerald-200 dark:border-emerald-800"
+          bgColor = "bg-emerald-50"
+          textColor = "text-emerald-700"
+          borderColor = "border-emerald-200"
         } else if (contextName.endsWith(".sql") || contextName.includes("database") || contextName.includes("DB")) {
           icon = <Database className="h-3 w-3" />
-          bgColor = "bg-green-50 dark:bg-green-900/30"
-          textColor = "text-green-700 dark:text-green-300"
-          borderColor = "border-green-200 dark:border-green-800"
+          bgColor = "bg-green-50"
+          textColor = "text-green-700"
+          borderColor = "border-green-200"
         } else if (
           contextName.endsWith(".md") ||
           contextName.includes("README") ||
           contextName.includes("Documentation")
         ) {
           icon = <BookOpen className="h-3 w-3" />
-          bgColor = "bg-blue-50 dark:bg-blue-900/30"
-          textColor = "text-blue-700 dark:text-blue-300"
-          borderColor = "border-blue-200 dark:border-blue-800"
+          bgColor = "bg-blue-50"
+          textColor = "text-blue-700"
+          borderColor = "border-blue-200"
         } else {
           icon = <FileText className="h-3 w-3" />
-          bgColor = "bg-gray-100 dark:bg-gray-800"
-          textColor = "text-gray-700 dark:text-gray-300"
-          borderColor = "border-gray-200 dark:border-gray-700"
+          bgColor = "bg-gray-100"
+          textColor = "text-gray-700"
+          borderColor = "border-gray-200"
         }
         break
 
       default:
-        // Keep default styling with dark mode support
-        bgColor = "bg-gray-100 dark:bg-gray-800"
-        textColor = "text-gray-700 dark:text-gray-300"
-        borderColor = "border-gray-200 dark:border-gray-700"
+        // Keep default styling
         break
     }
 
@@ -182,8 +179,8 @@ export function MessageList() {
       {messages.map((message) => (
         <div key={message.id} className="mb-4">
           {message.type === "user" ? (
-            <div className="px-4 py-3 bg-white dark:bg-gray-900 border-y border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200">
-              <p className="text-sm text-gray-800 dark:text-gray-200">{message.content}</p>
+            <div className="px-4 py-3 bg-white border-y border-gray-200">
+              <p className="text-sm text-gray-800">{message.content}</p>
 
               {message.contexts && message.contexts.length > 0 && (
                 <div className="mt-3 pt-2 border-t border-gray-100">
@@ -202,7 +199,7 @@ export function MessageList() {
                         <Badge
                           key={`${context.type}-${context.name}`}
                           variant="outline"
-                          className={`${bgColor} ${textColor} rounded-md flex items-center gap-1.5 text-xs py-1 px-2 border ${borderColor} dark:border-gray-700`}
+                          className={`${bgColor} ${textColor} rounded-md flex items-center gap-1.5 text-xs py-1 px-2 border ${borderColor}`}
                         >
                           <span className="flex items-center gap-1">
                             {icon}
@@ -218,7 +215,20 @@ export function MessageList() {
                                 <span className="font-medium">{context.elementInfo.parentComponents[0].name}</span>
                               </>
                             ) : (
-                              contextDisplay
+                              <>
+                                {contextDisplay}
+                                {context.type === "Elements" &&
+                                  context.elementInfo?.componentFramework &&
+                                  context.elementInfo.componentFramework !== "Unknown" && (
+                                    <span className="text-xs text-gray-500 ml-1">
+                                      ({context.elementInfo.componentFramework})
+                                    </span>
+                                  )}
+                                {context.type === "Elements" &&
+                                  context.elementInfo?.componentFramework === "Unknown" && (
+                                    <span className="text-xs text-gray-500 ml-1">(XPath available)</span>
+                                  )}
+                              </>
                             )}
                           </span>
                         </Badge>
@@ -229,7 +239,7 @@ export function MessageList() {
               )}
             </div>
           ) : (
-            <div className="px-4 py-3 text-gray-800 dark:text-gray-200 !important">
+            <div className="px-4 py-3">
               {formatMessageWithCommands(message.content)}
 
               {message.codeBlocks &&

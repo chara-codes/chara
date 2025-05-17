@@ -20,7 +20,7 @@ import {
   Terminal,
   Database,
 } from "lucide-react";
-import type { FileAttachment } from "../types";
+import type { FileAttachment } from "@/types";
 import {
   Command,
   CommandEmpty,

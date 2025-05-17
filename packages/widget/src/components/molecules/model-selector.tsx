@@ -76,18 +76,15 @@ export function ModelSelector() {
           <ChevronDown className="h-3 w-3 ml-1 text-gray-400" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-56 dropdown-content bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
-      >
-        <div className="p-2 border-b sticky top-0 bg-white dark:bg-gray-900 z-10 border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded-md">
+      <DropdownMenuContent align="end" className="w-56">
+        <div className="p-2 border-b sticky top-0 bg-white z-10">
+          <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded-md">
             <Search className="h-3 w-3 text-gray-500" />
             <input
               ref={modelSearchInputRef}
               type="text"
               placeholder="Search models..."
-              className="bg-transparent border-none text-xs w-full focus-visible:ring-0 focus-visible:ring-offset-0 text-gray-900 dark:text-gray-100 !important"
+              className="bg-transparent border-none text-xs w-full focus-visible:ring-0 focus-visible:ring-offset-0"
               value={modelSearchQuery}
               onChange={(e) => setModelSearchQuery(e.target.value)}
               onClick={(e) => e.stopPropagation()}
@@ -111,7 +108,7 @@ export function ModelSelector() {
           {getFilteredModelGroups().length > 0 ? (
             getFilteredModelGroups().map((group) => (
               <div key={group.provider}>
-                <DropdownMenuLabel className="px-2 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+                <DropdownMenuLabel className="px-2 py-1.5 text-xs font-medium text-gray-500">
                   {group.provider}
                 </DropdownMenuLabel>
                 {group.models.map((model) => (
@@ -132,9 +129,7 @@ export function ModelSelector() {
               </div>
             ))
           ) : (
-            <div className="p-3 text-center text-gray-500 dark:text-gray-400 text-xs">
-              No models found for "{modelSearchQuery}"
-            </div>
+            <div className="p-3 text-center text-gray-500 text-xs">No models found for "{modelSearchQuery}"</div>
           )}
         </div>
       </DropdownMenuContent>

@@ -8,120 +8,7 @@ import { ContextScrollButton } from "@/components/molecules/context-scroll-butto
 import { ContextBadge } from "@/components/atoms/context-badge"
 import { Button } from "@/components/ui/button"
 import { Pointer } from "lucide-react"
-
-// Function to get XPath of an element
-const getXPath = (element: HTMLElement): string => {
-  if (!element) return ""
-  if (element === document.body) return "/html/body"
-
-  let xpath = ""
-  const parent = element.parentElement
-
-  if (!parent) return ""
-
-  // Get the tag name and position among siblings of the same type
-  const tagName = element.tagName.toLowerCase()
-  const siblings = Array.from(parent.children).filter((child) => child.tagName.toLowerCase() === tagName)
-
-  const position = siblings.indexOf(element) + 1
-
-  // Build the XPath segment
-  xpath = `/${tagName}[${position}]`
-
-  // Recursively build the full XPath
-  const parentXPath = getXPath(parent)
-  return parentXPath + xpath
-}
-
-// Function to get computed styles summary
-const getStylesSummary = (element: HTMLElement): Record<string, string> => {
-  const computedStyle = window.getComputedStyle(element)
-  return {
-    width: computedStyle.width,
-    height: computedStyle.height,
-    color: computedStyle.color,
-    backgroundColor: computedStyle.backgroundColor,
-    display: computedStyle.display,
-    position: computedStyle.position,
-    fontSize: computedStyle.fontSize,
-  }
-}
-
-// Function to get element attributes
-const getElementAttributes = (element: HTMLElement): Record<string, string> => {
-  const attributes: Record<string, string> = {}
-
-  Array.from(element.attributes).forEach((attr) => {
-    attributes[attr.name] = attr.value
-  })
-
-  return attributes
-}
-
-// Function to get React component name (if possible)
-const getReactComponentName = (element: HTMLElement): string => {
-  // Look for React-specific attributes
-  const reactAttributes = ["data-reactroot", "data-reactid", "data-react-checksum", "data-component", "data-testid"]
-
-  for (const attr of reactAttributes) {
-    if (element.hasAttribute(attr)) {
-      return element.getAttribute(attr) || "React Component"
-    }
-  }
-
-  // Check for className patterns that might indicate component names
-  const className = element.className
-  if (typeof className === "string" && className) {
-    // Look for PascalCase class names which might indicate component names
-    const matches = className.match(/[A-Z][a-z]+(?:[A-Z][a-z]+)*/)
-    if (matches && matches.length > 0) {
-      return matches[0]
-    }
-  }
-
-  return "Unknown Component"
-}
-
-// Add these new functions below the existing utility functions (after getReactComponentName)
-
-// Function to find parent components of an element
-const findParentComponents = (element: HTMLElement): Array<{ name: string; element: HTMLElement }> => {
-  const components: Array<{ name: string; element: HTMLElement }> = []
-  let currentEl: HTMLElement | null = element
-
-  // Walk up the DOM tree (up to 10 levels or until we reach body)
-  for (let i = 0; i < 10 && currentEl && currentEl !== document.body; i++) {
-    // Skip the selected element itself (we'll add it separately)
-    if (i > 0) {
-      const componentName = getReactComponentName(currentEl)
-
-      // Only add elements that look like components (not just regular HTML elements)
-      if (componentName !== "Unknown Component") {
-        components.push({
-          name: componentName,
-          element: currentEl,
-        })
-      }
-    }
-
-    currentEl = currentEl.parentElement
-  }
-
-  return components
-}
-
-// Function to generate a component path string
-const getComponentPath = (components: Array<{ name: string; element: HTMLElement }>): string => {
-  if (!components.length) return "No parent components detected"
-
-  return components
-    .map((comp) => comp.name)
-    .reverse()
-    .join(" → ")
-}
-
-// Update the handleElementClick function to include component path information
-// Find the handleElementClick function and replace it with this version:
+import { useElementSelector } from "@/hooks/use-element-selector"
 
 export function ContextBar() {
   const activeContexts = useStore((state) => state.activeContexts)
@@ -129,19 +16,13 @@ export function ContextBar() {
   const hasContextOverflow = useStore((state) => state.hasContextOverflow)
   const setContextScrollPosition = useStore((state) => state.setContextScrollPosition)
   const setHasContextOverflow = useStore((state) => state.setHasContextOverflow)
-  const setIsOpen = useStore((state) => state.setIsOpen)
-  const addContext = useStore((state) => state.addContext)
-  const clearContexts = useStore((state) => state.clearContexts)
   const isGenerating = useStore((state) => state.isGenerating)
   const messages = useStore((state) => state.messages)
-  const setIsElementSelecting = useStore((state) => state.setIsElementSelecting)
+  const clearContexts = useStore((state) => state.clearContexts)
+  const addContext = useStore((state) => state.addContext)
 
   const contextContainerRef = useRef<HTMLDivElement>(null)
-  const selectionModeRef = useRef<boolean>(false)
-  const originalCursorRef = useRef<string>("")
-  let notification: HTMLDivElement | null = null
-  let highlighter: HTMLDivElement | null = null
-  let exitSelectionMode: () => void
+  const { startElementSelection } = useElementSelector({ onElementSelected: addContext })
 
   // Clear contexts at the start of communication
   useEffect(() => {
@@ -173,197 +54,6 @@ export function ContextBar() {
     return () => window.removeEventListener("resize", checkForOverflow)
   }, [activeContexts, setHasContextOverflow])
 
-  const handleElementClick = (e: MouseEvent) => {
-    if (!selectionModeRef.current) return
-
-    // Prevent default behavior
-    e.preventDefault()
-    e.stopPropagation()
-
-    const target = e.target as HTMLElement
-
-    // Skip if it's our notification or highlighter
-    if (target === notification || target === highlighter) return
-
-    // Get element info
-    const tagName = target.tagName.toLowerCase()
-    const id = target.id ? `#${target.id}` : ""
-    const elementName = `${tagName}${id}`
-
-    // Get additional information
-    const xpath = getXPath(target)
-    const rect = target.getBoundingClientRect()
-    const size = {
-      width: Math.round(rect.width),
-      height: Math.round(rect.height),
-      top: Math.round(rect.top),
-      left: Math.round(rect.left),
-    }
-    const styles = getStylesSummary(target)
-    const attributes = getElementAttributes(target)
-    const componentName = getReactComponentName(target)
-
-    // Find parent components
-    const parentComponents = findParentComponents(target)
-    const componentPath = getComponentPath(parentComponents)
-
-    // Create a detailed element info object
-    const elementInfo = {
-      selector: elementName,
-      xpath,
-      componentName,
-      size,
-      styles,
-      attributes,
-      textContent: target.textContent?.slice(0, 100) || "",
-      componentPath,
-      parentComponents: parentComponents.map((comp) => ({
-        name: comp.name,
-        selector: `${comp.element.tagName.toLowerCase()}${comp.element.id ? `#${comp.element.id}` : ""}`,
-      })),
-    }
-
-    console.log("Element selected:", elementInfo)
-
-    // Add to context with detailed information
-    const contextName = `${elementName} (${componentName})`
-
-    // Add to context with more detailed information
-    addContext({
-      type: "Elements",
-      name: contextName,
-      // Store the detailed info in a property that can be accessed later
-      elementInfo: elementInfo,
-    })
-
-    // Exit selection mode
-    exitSelectionMode()
-  }
-
-  // Simple function to start element selection
-  const startElementSelection = () => {
-    console.log("Starting element selection mode")
-
-    // Set the global element selecting state
-    setIsElementSelecting(true)
-
-    // Store original cursor
-    originalCursorRef.current = document.body.style.cursor || "default"
-
-    // Hide the chat panel
-    setIsOpen(false)
-
-    // Create a notification element
-    notification = document.createElement("div")
-    notification.id = "selection-notification"
-    notification.style.position = "fixed"
-    notification.style.top = "20px"
-    notification.style.left = "50%"
-    notification.style.transform = "translateX(-50%)"
-    notification.style.backgroundColor = "rgba(0, 0, 0, 0.8)"
-    notification.style.color = "white"
-    notification.style.padding = "10px 20px"
-    notification.style.borderRadius = "5px"
-    notification.style.zIndex = "10000"
-    notification.style.fontFamily = "Arial, sans-serif"
-    notification.style.fontSize = "16px"
-    notification.textContent = "Click on any element to select it, or press ESC to cancel"
-    document.body.appendChild(notification)
-
-    // Create a highlighter element
-    highlighter = document.createElement("div")
-    highlighter.id = "element-highlighter"
-    highlighter.style.position = "absolute"
-    highlighter.style.border = "3px solid red"
-    highlighter.style.backgroundColor = "rgba(255, 0, 0, 0.2)"
-    highlighter.style.pointerEvents = "none"
-    highlighter.style.zIndex = "9999"
-    highlighter.style.display = "none"
-    document.body.appendChild(highlighter)
-
-    // Set selection mode flag
-    selectionModeRef.current = true
-
-    // Function to handle mouse movement
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!selectionModeRef.current) return
-
-      const target = e.target as HTMLElement
-
-      // Skip if it's our notification or highlighter
-      if (target === notification || target === highlighter) return
-
-      // Skip if it's the html or body
-      if (target.tagName.toLowerCase() === "html" || target.tagName.toLowerCase() === "body") return
-
-      // Get element bounds
-      const rect = target.getBoundingClientRect()
-
-      // Update highlighter
-      if (highlighter) {
-        highlighter.style.top = `${window.scrollY + rect.top}px`
-        highlighter.style.left = `${window.scrollX + rect.left}px`
-        highlighter.style.width = `${rect.width}px`
-        highlighter.style.height = `${rect.height}px`
-        highlighter.style.display = "block"
-      }
-
-      // Update notification
-      const tagName = target.tagName.toLowerCase()
-      const id = target.id ? `#${target.id}` : ""
-      if (notification) {
-        notification.textContent = `Select: ${tagName}${id} (Click to select, ESC to cancel)`
-      }
-    }
-
-    // Function to handle element selection
-
-    // Function to handle escape key
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && selectionModeRef.current) {
-        console.log("Selection cancelled with ESC key")
-        exitSelectionMode()
-      }
-    }
-
-    // Function to exit selection mode
-    exitSelectionMode = () => {
-      console.log("Exiting selection mode")
-
-      // Reset the global element selecting state
-      setIsElementSelecting(false)
-
-      // Remove notification and highlighter
-      const notificationEl = document.getElementById("selection-notification")
-      const highlighterEl = document.getElementById("element-highlighter")
-
-      if (notificationEl) notificationEl.remove()
-      if (highlighterEl) highlighterEl.remove()
-
-      // Remove event listeners
-      document.removeEventListener("mousemove", handleMouseMove)
-      document.removeEventListener("click", handleElementClick, true)
-      document.removeEventListener("keydown", handleKeyDown)
-
-      // Reset selection mode flag
-      selectionModeRef.current = false
-
-      // Restore original cursor
-      document.body.style.cursor = originalCursorRef.current
-
-      // Show chat panel again
-      setIsOpen(true)
-    }
-
-    // Add event listeners
-    document.addEventListener("mousemove", handleMouseMove)
-    document.addEventListener("click", handleElementClick, true)
-    document.addEventListener("keydown", handleKeyDown)
-
-    // Set cursor
-    document.body.style.cursor = "crosshair"
-  }
-
   const scrollContexts = (direction: "left" | "right") => {
     if (contextContainerRef.current) {
       const container = contextContainerRef.current
@@ -380,7 +70,7 @@ export function ContextBar() {
   }
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1 border-t bg-gray-50 dark:bg-gray-900 text-xs relative border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+    <div className="flex items-center gap-1 px-2 py-1 border-t bg-gray-50 text-xs relative">
       <ContextSelector />
       <FileAttachmentButton />
       <Button
