@@ -11,6 +11,7 @@ import { myLogger as logger } from "./utils/logger";
 import { chatRouter } from "./api/routes/chat";
 import { subscription } from "./api/routes/subscription";
 import { instructionsRouter } from "./api/routes/instructions";
+import { sessionRouter } from "./api/routes/sessions";
 import superjson from "superjson";
 
 const t = initTRPC.context<Context>().create({ transformer: superjson });
@@ -23,6 +24,7 @@ export const appRouter = router({
   stacks: stacksRouter,
   messages: messagesRouter,
   chat: chatRouter,
+  sessions: sessionRouter,
   events: subscription,
   instructions: instructionsRouter,
 });
