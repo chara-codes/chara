@@ -23,6 +23,7 @@ services:
       - charatunnel
       - charaserver
       - charawidget
+      - charaweb
     ports:
       - "80:80"
       - "443:443"
@@ -53,19 +54,19 @@ services:
       - "traefik.http.routers.server.priority=500"
       - "traefik.http.services.server.loadbalancer.server.port=3030"
 
-  # charaweb:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.web
-  #   restart: unless-stopped
-  #   container_name: charaweb
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.web.entrypoints=websecure"
-  #     - "traefik.http.routers.web.rule=Host(`web.chara-ai.dev`)"
-  #     - "traefik.http.routers.web.priority=300"
-  #     - "traefik.http.routers.web.tls=true"
-  #     - "traefik.http.services.web.loadbalancer.server.port=3000"
+  charaweb:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    container_name: charaweb
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.rule=Host(`web.chara-ai.dev`)"
+      - "traefik.http.routers.web.priority=300"
+      - "traefik.http.routers.web.tls=true"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
 
   charalanding:
     build:
