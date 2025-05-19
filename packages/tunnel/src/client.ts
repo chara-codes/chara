@@ -1,12 +1,16 @@
 import WebSocket from "ws";
 import { logger } from "@chara/logger";
 import type { TunnelClientOptions } from "./types/client.types";
+import EventEmitter from "eventemitter3";
 
-export class TunnelClient {
+export class TunnelClient extends EventEmitter {
   private ws: WebSocket | null = null;
   private options: TunnelClientOptions;
+  private pingInterval: NodeJS.Timeout | null = null;
 
   constructor(options: Partial<TunnelClientOptions> = {}) {
+    super();
+
     this.options = {
       port: options.port ?? 3000,
       host: options.host ?? "localhost",
@@ -14,41 +18,42 @@ export class TunnelClient {
       secure: options.secure ?? true,
       subdomain: options.subdomain,
     };
+
     logger.debug(
       `TunnelClient initialized with options: ${JSON.stringify(this.options, null, 2)}`,
     );
   }
 
-  public connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const { port, host, remoteHost, secure } = this.options;
+  public connect(): void {
+    const { port, host, remoteHost, secure } = this.options;
 
-      logger.info(`Connecting to tunnel server at ${remoteHost}...`);
+    logger.debug(`Connecting to tunnel server at ${remoteHost}...`);
 
-      const protocol = secure ? "wss://" : "ws://";
-      let wsUrl = `${protocol}${remoteHost}/_chara/connect`;
-      if (this.options.subdomain) {
-        wsUrl += `?subdomain=${encodeURIComponent(this.options.subdomain)}`;
-        logger.info(`Requesting subdomain: ${this.options.subdomain}`);
-      }
+    const protocol = secure ? "wss://" : "ws://";
+    let wsUrl = `${protocol}${remoteHost}/_chara/connect`;
+    if (this.options.subdomain) {
+      wsUrl += `?subdomain=${encodeURIComponent(this.options.subdomain)}`;
+      logger.debug(`Requesting subdomain: ${this.options.subdomain}`);
+    }
 
-      logger.debug(`Connecting to WebSocket URL: ${wsUrl}`);
+    logger.debug(`Connecting to WebSocket URL: ${wsUrl}`);
+    logger.debug(
+      `Connection details: protocol=${protocol}, host=${host}, port=${port}, secure=${secure}`,
+    );
+
+    this.ws = new WebSocket(wsUrl);
+
+    this.ws.on("open", () => {
+      logger.debug(`Connected to tunnel server at ${remoteHost}`);
       logger.debug(
-        `Connection details: protocol=${protocol}, host=${host}, port=${port}, secure=${secure}`,
+        `WebSocket connection established (readyState: ${this.ws?.readyState})`,
       );
 
-      this.ws = new WebSocket(wsUrl);
-
-      this.ws.on("open", () => {
-        logger.success(`Connected to tunnel server at ${remoteHost}`);
-        logger.debug(
-          `WebSocket connection established (readyState: ${this.ws?.readyState})`,
-        );
-        resolve();
-      });
+      // Emit open event
+      this.emit("open");
 
       // Set up ping interval to keep the connection alive
-      const pingInterval = setInterval(() => {
+      this.pingInterval = setInterval(() => {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
           logger.debug(`Sending ping to keep connection alive`);
           this.ws.send(JSON.stringify({ type: "ping" }));
@@ -58,49 +63,70 @@ export class TunnelClient {
           );
         }
       }, 30000); // Send ping every 30 seconds
-
-      // Clear interval when connection closes
-      this.ws.on("close", () => {
-        clearInterval(pingInterval);
-      });
-
-      this.ws.on("message", async (data) => {
-        logger.debug(`Received message from server: ${data.toString()}`);
-        const messageStr = data.toString();
-        logger.debug(`Message size: ${messageStr.length} bytes`);
-
-        try {
-          const message = JSON.parse(data.toString());
-          // Log received pong messages
-          if (message.type === "pong") {
-            logger.debug(`Received pong from server`);
-            return;
-          }
-
-          // Handle subdomain assignment
-          if (message.type === "subdomain_assigned") {
-            logger.success(
-              `Assigned subdomain: ${message.subdomain}, forwarding traffic from https://${message.subdomain}/ to ${host}:${port}`,
-            );
-          }
-          // Handle HTTP requests that need to be forwarded to local server
-          else if (message.type === "http_request") {
-            await this.handleHttpRequest(message);
-          }
-        } catch (error) {
-          logger.error(`Failed to parse message: ${error}`);
-        }
-      });
-
-      this.ws.on("error", (error) => {
-        logger.error(`WebSocket error: ${error.message}`);
-        reject(error);
-      });
-
-      this.ws.on("close", (code, reason) => {
-        logger.warning(`Connection closed: ${code} - ${reason}`);
-      });
     });
+
+    this.ws.on("message", async (data) => {
+      logger.debug(`Received message from server: ${data.toString()}`);
+      const messageStr = data.toString();
+      logger.debug(`Message size: ${messageStr.length} bytes`);
+
+      try {
+        const message = JSON.parse(data.toString());
+
+        // Log received pong messages
+        if (message.type === "pong") {
+          logger.debug(`Received pong from server`);
+          this.emit("pong");
+          return;
+        }
+
+        // Handle subdomain assignment
+        if (message.type === "subdomain_assigned") {
+          const { subdomain } = message;
+          logger.debug(
+            `Assigned subdomain: ${subdomain}, forwarding traffic from https://${subdomain}/ to ${host}:${port}`,
+          );
+
+          // Emit specific subdomain_assigned event with relevant data
+          this.emit("subdomain_assigned", {
+            subdomain,
+            url: `https://${subdomain}/`,
+            localServer: `${host}:${port}`,
+          });
+        }
+        // Handle HTTP requests that need to be forwarded to local server
+        else if (message.type === "http_request") {
+          // Emit http_request event with the full message
+          this.emit("http_request", message);
+          this.handleHttpRequest(message);
+        }
+        // Emit event for any other message types
+        else {
+          this.emit(message.type, message);
+        }
+      } catch (error) {
+        logger.error(`Failed to parse message: ${error}`);
+        this.emit("error", new Error(`Failed to parse message: ${error}`));
+      }
+    });
+
+    this.ws.on("error", (error) => {
+      logger.error(`WebSocket error: ${error.message}`);
+      this.emit("error", error);
+    });
+
+    this.ws.on("close", (code, reason) => {
+      logger.warning(`Connection closed: ${code} - ${reason}`);
+      this.cleanupPingInterval();
+      this.emit("close", { code, reason });
+    });
+  }
+
+  private cleanupPingInterval(): void {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
   }
 
   private async handleHttpRequest(message: {
@@ -114,7 +140,7 @@ export class TunnelClient {
     const { host, port } = this.options;
 
     try {
-      logger.info(`Forwarding request: ${method} ${path}`);
+      logger.debug(`Forwarding request: ${method} ${path}`);
       logger.debug(
         `Request details: ID=${requestId}, Headers=${JSON.stringify(headers, null, 2)}`,
       );
@@ -151,6 +177,7 @@ export class TunnelClient {
       // Check if WebSocket is open
       if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
         logger.error("WebSocket connection is not open");
+        this.emit("error", new Error("WebSocket connection is not open"));
         return;
       }
 
@@ -163,6 +190,13 @@ export class TunnelClient {
           headers: responseHeaders,
         }),
       );
+
+      // Emit response start event
+      this.emit("http_response_start", {
+        id: requestId,
+        status: response.status,
+        headers: responseHeaders,
+      });
 
       // Stream the response body
       if (response.body) {
@@ -183,7 +217,7 @@ export class TunnelClient {
             // Send each chunk as it arrives
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
               logger.debug(`WebSocket state: ${this.ws?.readyState}`);
-              // Convert Uint8Array to Binar string for safe JSON transport
+              // Convert Uint8Array to Binary string for safe JSON transport
               const chunk = Buffer.from(value).toString("binary");
 
               logger.debug(
@@ -203,6 +237,7 @@ export class TunnelClient {
           }
         } catch (error) {
           logger.error(`Error streaming response: ${error}`);
+          this.emit("error", new Error(`Error streaming response: ${error}`));
         } finally {
           logger.debug(`Response stream completed for request ${requestId}`);
           // Send end of response signal
@@ -213,11 +248,14 @@ export class TunnelClient {
                 id: requestId,
               }),
             );
+
+            // Emit response end event
+            this.emit("http_response_end", { id: requestId });
           }
         }
       }
 
-      logger.info(
+      logger.debug(
         `Response streamed for ${method} ${path} with status ${response.status}`,
       );
     } catch (error) {
@@ -225,6 +263,8 @@ export class TunnelClient {
       logger.debug(
         `Error details: ${error instanceof Error ? error.stack : String(error)}`,
       );
+
+      this.emit("error", error);
 
       // Send error response back to the tunnel server
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -257,14 +297,23 @@ export class TunnelClient {
             id: requestId,
           }),
         );
+
+        // Emit error response events
+        this.emit("http_error", {
+          id: requestId,
+          status: 502,
+          message: "Bad Gateway: Could not connect to local server",
+        });
       }
     }
   }
+
   public disconnect(): void {
     if (this.ws) {
       logger.debug(`Disconnecting from tunnel server`);
       this.ws.close();
       this.ws = null;
+      this.cleanupPingInterval();
       logger.debug(`Disconnected and cleaned up WebSocket reference`);
     } else {
       logger.debug(
