@@ -23,7 +23,7 @@ services:
       - charatunnel
       - charaserver
       - charawidget
-      - charaweb
+      # - charaweb
     ports:
       - "80:80"
       - "443:443"
