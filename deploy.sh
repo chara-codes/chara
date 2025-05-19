@@ -26,7 +26,7 @@ SERVICE_PATHS=(
   "charawidget:Dockerfile.widget:packages/widget/"
   "charalanding:Dockerfile.landing:packages/landing/"
   "charatunnel:Dockerfile.tunnel:packages/tunnel/:packages/logger/"
-  "charaweb:Dockerfile.web:packages/web/"
+  # "charaweb:Dockerfile.web:packages/web/"
 )
 
 # Navigate to the repository directory
