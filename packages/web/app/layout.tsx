@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 import { ProjectProvider } from "@/contexts/project-context";
 import { AppShell } from "@/components/layout";
 import { TrpcProviders } from "@/context";
+import { SessionProvider } from "@/context/SessionContext";
 import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,12 +24,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ProjectProvider>
-          <TrpcProviders>
-            <AppShell>{children}</AppShell>
-            <Toaster />
-          </TrpcProviders>
-        </ProjectProvider>
+        <TrpcProviders>
+          <SessionProvider>
+            <ProjectProvider>
+              <AppShell>{children}</AppShell>
+              <Toaster />
+            </ProjectProvider>
+          </SessionProvider>
+        </TrpcProviders>
       </body>
     </html>
   );
