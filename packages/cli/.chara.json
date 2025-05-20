@@ -38,22 +38,22 @@
   },
   "systemContext": {
     "operatingSystem": {
-      "platform": "win32",
-      "release": "10.0.19045",
-      "type": "Windows_NT",
-      "version": "Windows 10 Pro"
+      "platform": "darwin",
+      "release": "24.4.0",
+      "type": "Darwin",
+      "version": "unknown"
     },
     "cpu": {
-      "architecture": "x64",
-      "cores": 12,
-      "model": "Intel(R) Core(TM) i7-8700K CPU @ 3.70GHz"
+      "architecture": "arm64",
+      "cores": 10,
+      "model": "Apple M1 Pro"
     },
     "environment": {
       "nodeVersion": "v22.6.0",
-      "runtime": "Bun v1.2.4",
-      "shell": "Unknown",
-      "user": "unknown",
-      "homeDirectory": "C:\\Users\\dev"
+      "runtime": "Bun v1.2.8",
+      "shell": "/bin/bash",
+      "user": "Andrii_Shutov",
+      "homeDirectory": "/Users/Andrii_Shutov"
     }
   }
 }
