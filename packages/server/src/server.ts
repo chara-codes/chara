@@ -14,6 +14,7 @@ import { instructionsRouter } from "./api/routes/instructions";
 import { BunSSEServerTransport } from "./mcp/transport";
 import { mcpClientsSubscriptions, mcpClientsMutations } from "./api/routes/mcpservers";
 import { createServer } from "./mcp/server"
+import { sessionRouter } from "./api/routes/sessions";
 import superjson from "superjson";
 import { parse } from "querystring";
 import {
@@ -32,6 +33,7 @@ export const appRouter = router({
   stacks: stacksRouter,
   messages: messagesRouter,
   chat: chatRouter,
+  sessions: sessionRouter,
   events: subscription,
   instructions: instructionsRouter,
   mcpClientsSubscriptions: mcpClientsSubscriptions,
