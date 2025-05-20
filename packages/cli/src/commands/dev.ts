@@ -13,6 +13,9 @@ import type { AppRouter } from "@chara/server";
 import { logger } from "@chara/logger";
 import { applyInstructions } from "../instructions/apply-instructions";
 import superjson from "superjson";
+import { initMCPClient } from "../mcp/mcpWsclient";
+import type { ActiveClient } from "../types";
+import { prepareClients } from "../mcp/client";
 
 interface DevCommandArgs {
   projectDir?: string;
@@ -122,6 +125,14 @@ export const devCommand: CommandModule<{}, DevCommandArgs> = {
     const config = await readConfig();
     logger.debug("Configuration loaded", config);
 
+    // Connect to MCP servers list
+    let clientsList: ActiveClient[] = [];
+    if (config.mcpServers) {
+      clientsList = await prepareClients(config.mcpServers);
+    }
+    logger.info(`Connected to ${clientsList.length} servers`);
+    
+
     try {
       // Connect to server events via WebSocket
       logger.debug("Connecting to server events...");
@@ -130,6 +141,7 @@ export const devCommand: CommandModule<{}, DevCommandArgs> = {
 
       // Initialize API client
       const apiClient = createApiClient();
+      await initMCPClient();
       logger.debug("API client initialized");
 
       logger.success("✓ Chara development environment is ready!");
