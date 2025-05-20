@@ -1,7 +1,8 @@
 import WebSocket from "ws";
 import { logger } from "@chara/logger";
-import type { TunnelClientOptions } from "./types/client.types";
+import type { TunnelClientOptions, RouteOptions, RouteRequest, RouteReply } from "./types/client.types";
 import EventEmitter from "eventemitter3";
+import { URL } from "url";
 
 // Message type definitions for better type safety
 interface PingMessage {
@@ -62,6 +63,7 @@ export class TunnelClient extends EventEmitter {
   private ws: WebSocket | null = null;
   private options: TunnelClientOptions;
   private pingInterval: NodeJS.Timeout | null = null;
+  private routes: RouteOptions[] = []; // Store custom route handlers
 
   /**
    * Create a new TunnelClient instance
@@ -287,15 +289,24 @@ export class TunnelClient extends EventEmitter {
     const { host, port } = this.options;
 
     try {
-      logger.debug(`Forwarding request: ${method} ${path}`);
-      logger.debug(`Request details: ID=${requestId}, Headers=${JSON.stringify(headers, null, 2)}`);
-      logger.debug(`Request body size: ${body ? body.length : 0} bytes`);
+      logger.debug(`Received request: ${method} ${path}`);
+      
+      // Check if there's a matching custom route handler
+      const routeMatch = this.findMatchingRoute(method, path);
+      
+      if (routeMatch) {
+        logger.debug(`Using custom handler for route: ${method} ${path}`);
+        await this.handleCustomRoute(requestId, routeMatch.route, method, path, headers, body, routeMatch.params);
+      } else {
+        logger.debug(`Forwarding request: ${method} ${path}`);
+        logger.debug(`Request details: ID=${requestId}, Headers=${JSON.stringify(headers, null, 2)}`);
+        logger.debug(`Request body size: ${body ? body.length : 0} bytes`);
 
-      const url = `http://${host}:${port}${path}`;
-      const response = await this.makeLocalRequest(url, method, headers, body);
-      
-      await this.streamResponseToTunnel(requestId, response);
-      
+        const url = `http://${host}:${port}${path}`;
+        const response = await this.makeLocalRequest(url, method, headers, body);
+        
+        await this.streamResponseToTunnel(requestId, response);
+      }
     } catch (error) {
       this.handleRequestError(requestId, error);
     }
@@ -459,6 +470,307 @@ export class TunnelClient extends EventEmitter {
         status: 502,
         message: "Bad Gateway: Could not connect to local server",
       });
+    }
+  }
+
+  /**
+   * Register a custom route handler
+   */
+  public route(options: RouteOptions): void {
+    // Normalize URL to ensure consistent matching
+    let normalizedUrl = options.url.replace(/\/+$/, '');
+    if (!normalizedUrl.startsWith('/')) {
+      normalizedUrl = '/' + normalizedUrl;
+    }
+    
+    const routeConfig = {
+      ...options,
+      url: normalizedUrl,
+      method: options.method.toUpperCase()
+    };
+    
+    const hasOptionalParams = normalizedUrl.includes(':') && normalizedUrl.includes('?');
+    const hasWildcardParams = normalizedUrl.includes(':') && normalizedUrl.includes('*');
+    
+    logger.debug(
+      `Registering custom route handler: ${routeConfig.method} ${routeConfig.url}${
+        routeConfig.url.includes(':') 
+          ? ` (with ${hasOptionalParams ? 'optional ' : ''}${hasWildcardParams ? 'wildcard ' : ''}parameters)`
+          : ''
+      }`
+    );
+    
+    this.routes.push(routeConfig);
+  }
+
+  /**
+   * Find a matching route for the given method and path
+   */
+  private findMatchingRoute(method: string, path: string): { route: RouteOptions; params: Record<string, string> } | null {
+    const upperMethod = method.toUpperCase();
+    
+    // Parse the URL to extract the pathname and query parameters
+    const url = new URL(`http://dummy${path}`);
+    const pathname = url.pathname;
+    
+    // Sort routes by specificity - exact routes first, then routes with fewer parameters
+    const sortedRoutes = [...this.routes]
+      .filter(route => route.method === upperMethod)
+      .sort((a, b) => {
+        const aParamCount = (a.url.match(/:[^\/]+/g) || []).length;
+        const bParamCount = (b.url.match(/:[^\/]+/g) || []).length;
+        return aParamCount - bParamCount;
+      });
+    
+    for (const route of sortedRoutes) {
+      // Check if route matches and extract params
+      const params = this.matchRoutePath(route.url, pathname);
+      if (params !== null) {
+        return { route, params };
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Check if a route segment is an optional parameter (ends with ?)
+   */
+  private isOptionalParam(segment: string): boolean {
+    return segment.startsWith(':') && segment.endsWith('?');
+  }
+
+  /**
+   * Check if a route segment is a wildcard parameter (ends with *)
+   */
+  private isWildcardParam(segment: string): boolean {
+    return segment.startsWith(':') && segment.endsWith('*');
+  }
+
+  /**
+   * Extract parameter name from a route segment
+   */
+  private extractParamName(segment: string): string {
+    if (this.isOptionalParam(segment)) {
+      return segment.slice(1, -1); // Remove : and ?
+    }
+    if (this.isWildcardParam(segment)) {
+      return segment.slice(1, -1); // Remove : and *
+    }
+    return segment.slice(1); // Remove just :
+  }
+
+  /**
+   * Match a route pattern against an actual path and extract parameters
+   * Handles patterns like:
+   * - /users/:id/profile - standard parameter
+   * - /users/:id? - optional parameter
+   * - /files/:path* - wildcard parameter (captures remaining path)
+   */
+  private matchRoutePath(pattern: string, path: string): Record<string, string> | null {
+    // Split both pattern and path into segments
+    const patternSegments = pattern.split('/').filter(segment => segment.length > 0);
+    const pathSegments = path.split('/').filter(segment => segment.length > 0);
+    
+    // Count required segments (non-optional)
+    const requiredSegments = patternSegments.filter(
+      segment => !segment || (!this.isOptionalParam(segment) && !this.isWildcardParam(segment))
+    ).length;
+    
+    // If there aren't enough path segments to match required pattern segments, no match
+    if (pathSegments.length < requiredSegments) {
+      return null;
+    }
+    
+    // If there are too many path segments and no wildcard, no match
+    const hasWildcard = patternSegments.some(segment => segment && this.isWildcardParam(segment));
+    if (pathSegments.length > patternSegments.length && !hasWildcard) {
+      return null;
+    }
+    
+    const params: Record<string, string> = {};
+    let pathIndex = 0;
+    
+    // Check each segment
+    for (let i = 0; i < patternSegments.length; i++) {
+      const patternSegment = patternSegments[i];
+      if (!patternSegment) continue;
+      
+      // If we've gone through all path segments
+      if (pathIndex >= pathSegments.length) {
+        // If this is an optional parameter, it's fine to be missing
+        if (this.isOptionalParam(patternSegment)) {
+          params[this.extractParamName(patternSegment)] = '';
+          continue;
+        }
+        // If it's a wildcard at the end, it can match empty string
+        if (this.isWildcardParam(patternSegment)) {
+          params[this.extractParamName(patternSegment)] = '';
+          continue;
+        }
+        // Otherwise, required segment is missing
+        return null;
+      }
+      
+      // Get current path segment
+      const pathSegment = pathSegments[pathIndex];
+      
+      // Handle parameter segments
+      if (patternSegment.startsWith(':')) {
+        const paramName = this.extractParamName(patternSegment);
+        
+        // Wildcard parameter - captures rest of path
+        if (this.isWildcardParam(patternSegment)) {
+          const remainingPathSegments = pathSegments.slice(pathIndex);
+          params[paramName] = remainingPathSegments.join('/');
+          pathIndex = pathSegments.length; // Move to end
+          continue;
+        }
+        
+        // Regular parameter - store its value and advance path index
+        params[paramName] = pathSegment || '';
+        pathIndex++;
+        continue;
+      }
+      
+      // Static segment - must match exactly
+      if (patternSegment !== pathSegment) {
+        return null;
+      }
+      
+      // Move to next path segment
+      pathIndex++;
+    }
+    
+    // If we didn't consume all path segments, it's not a match 
+    // (unless we had a wildcard parameter which would have consumed all remaining segments)
+    if (pathIndex < pathSegments.length) {
+      return null;
+    }
+    
+    return params;
+  }
+
+  /**
+   * Handle a request with a custom route handler
+   */
+  private async handleCustomRoute(
+    requestId: string,
+    route: RouteOptions,
+    method: string,
+    path: string,
+    headers: Record<string, string>,
+    requestBody: string | null,
+    params: Record<string, string> = {}
+  ): Promise<void> {
+    // Parse URL to get query parameters
+    const url = new URL(`http://dummy${path}`);
+    const query: Record<string, string> = {};
+    url.searchParams.forEach((value, key) => {
+      query[key] = value;
+    });
+    
+    // Parse body if present
+    let parsedBody = null;
+    if (requestBody) {
+      try {
+        parsedBody = JSON.parse(requestBody);
+      } catch (e) {
+        // If not JSON, use the raw body
+        parsedBody = requestBody;
+      }
+    }
+    
+    // Create request object
+    const request: RouteRequest = {
+      method,
+      path,
+      query,
+      headers,
+      body: parsedBody,
+      params: params // Path parameters extracted during route matching
+    };
+    
+    // Prepare response object
+    let statusCode = 200;
+    let responseHeaders: Record<string, string> = {
+      'content-type': 'application/json'
+    };
+    let responseSent = false;
+    
+    const reply: RouteReply = {
+      status: (code: number) => {
+        statusCode = code;
+        return reply;
+      },
+      headers: (newHeaders: Record<string, string>) => {
+        responseHeaders = { ...responseHeaders, ...newHeaders };
+        return reply;
+      },
+      send: async (payload: any) => {
+        if (responseSent) return;
+        responseSent = true;
+        
+        // Start response
+        this.sendMessage({
+          type: "http_response_start",
+          id: requestId,
+          status: statusCode,
+          headers: responseHeaders
+        });
+        
+        // Send response body
+        if (payload !== undefined) {
+          let responseData: string;
+          
+          if (typeof payload === 'string') {
+            responseData = payload;
+          } else {
+            responseData = JSON.stringify(payload);
+          }
+          
+          const chunk = Buffer.from(responseData).toString("binary");
+          this.sendMessage({
+            type: "http_data",
+            id: requestId,
+            data: chunk
+          });
+        }
+        
+        // End response
+        this.sendMessage({
+          type: "http_response_end",
+          id: requestId
+        });
+      }
+    };
+    
+    // Execute preHandler if defined
+    if (route.preHandler) {
+      try {
+        await route.preHandler(request, reply);
+      } catch (error) {
+        logger.error(`Error in preHandler: ${error}`);
+        return this.handleRequestError(requestId, error);
+      }
+    }
+    
+    // If response wasn't sent in preHandler, execute main handler
+    if (!responseSent) {
+      try {
+        const result = await route.handler(request, reply);
+        
+        // If the handler returned a value and didn't call reply.send(),
+        // automatically send the response
+        if (!responseSent && result !== undefined) {
+          reply.send(result);
+        }
+      } catch (error) {
+        logger.error(`Error in route handler: ${error}`);
+        if (!responseSent) {
+          return this.handleRequestError(requestId, error);
+        }
+      }
     }
   }
 }

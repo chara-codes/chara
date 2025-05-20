@@ -1,7 +1,11 @@
 import type { CommandModule } from "yargs";
 import { logger, LogLevel } from "@chara/logger";
 import { TunnelClient } from "../client";
-import type { TunnelClientOptions } from "../types/client.types";
+import type {
+  RouteReply,
+  RouteRequest,
+  TunnelClientOptions,
+} from "../types/client.types";
 import { black, bold, gray, white } from "picocolors";
 
 interface ClientCommandArgs extends TunnelClientOptions {}
@@ -57,6 +61,14 @@ export const clientCommand: CommandModule<{}, ClientCommandArgs> = {
       remoteHost,
       secure,
       subdomain,
+    });
+
+    client.route({
+      method: "GET",
+      url: "/_test/:id*",
+      handler: function (request: RouteRequest): Promise<any> {
+        return Promise.resolve(request);
+      },
     });
 
     client.on("subdomain_assigned", (params) => {
