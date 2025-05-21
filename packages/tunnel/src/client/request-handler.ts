@@ -148,6 +148,87 @@ export class RequestHandler extends EventEmitter {
   }
 
   /**
+   * Handle a route with redirect configuration
+   */
+  private async handleRedirectRoute(
+    requestId: string,
+    route: RouteOptions,
+    method: string,
+    path: string,
+    headers: Record<string, string>,
+    requestBody: string | null,
+    params: Record<string, string> = {}
+  ): Promise<void> {
+    if (!route.redirect) {
+      return this.handleRequestError(requestId, new Error("Redirect configuration is missing"));
+    }
+
+    try {
+      const { url: redirectUrl, headers: redirectHeaders = {} } = route.redirect;
+      
+      // Build the full URL for the redirect
+      let targetUrl = redirectUrl;
+      
+      // If we have a wildcard parameter, append it to the redirect URL
+      if (params && Object.keys(params).length > 0) {
+        const pathParam = params['path'];
+        if (pathParam) {
+          // Ensure we don't duplicate slashes
+          if (targetUrl.endsWith('/') && pathParam.startsWith('/')) {
+            targetUrl += pathParam.substring(1);
+          } else if (!targetUrl.endsWith('/') && !pathParam.startsWith('/')) {
+            targetUrl += '/' + pathParam;
+          } else {
+            targetUrl += pathParam;
+          }
+        }
+      }
+      
+      // Parse the original URL to get query parameters
+      const originalUrl = new URL(`http://dummy${path}`);
+      const searchParams = originalUrl.searchParams.toString();
+      
+      // Append query parameters if any
+      if (searchParams) {
+        targetUrl += (targetUrl.includes('?') ? '&' : '?') + searchParams;
+      }
+      
+      logger.debug(`Redirecting request to: ${targetUrl}`);
+      
+      // Set up headers for the redirect request
+      const mergedHeaders: Record<string, string> = { ...headers };
+      
+      // Remove problematic headers
+      delete mergedHeaders.host;
+      delete mergedHeaders.connection;
+      delete mergedHeaders["content-length"];
+      
+      // Add redirect-specific headers
+      Object.entries(redirectHeaders).forEach(([key, value]) => {
+        mergedHeaders[key] = value;
+      });
+      
+      logger.debug(`Redirect headers: ${JSON.stringify(mergedHeaders, null, 2)}`);
+      
+      // Make the request to the redirect URL
+      const response = await fetch(targetUrl, {
+        method,
+        headers: mergedHeaders,
+        body: requestBody || undefined,
+      });
+      
+      logger.debug(`Received response from redirected request with status: ${response.status}`);
+      
+      // Stream the response back through the tunnel
+      await this.streamResponseToTunnel(requestId, response);
+      
+    } catch (error) {
+      logger.error(`Error in redirect route: ${error}`);
+      return this.handleRequestError(requestId, error);
+    }
+  }
+
+  /**
    * Stream response body from local server to tunnel
    */
   private async streamResponseBody(requestId: string, body: ReadableStream<Uint8Array>): Promise<void> {
@@ -197,6 +278,17 @@ export class RequestHandler extends EventEmitter {
     requestBody: string | null,
     params: Record<string, string> = {}
   ): Promise<void> {
+    // Check if this is a redirect route
+    if (route.redirect) {
+      return this.handleRedirectRoute(requestId, route, method, path, headers, requestBody, params);
+    }
+
+    // This is a normal custom route with a handler
+    if (!route.handler) {
+      logger.error(`Route is missing both handler and redirect configuration`);
+      return this.handleRequestError(requestId, new Error("Route configuration error: missing handler"));
+    }
+
     // Parse URL to get query parameters
     const url = new URL(`http://dummy${path}`);
     const query: Record<string, string> = {};

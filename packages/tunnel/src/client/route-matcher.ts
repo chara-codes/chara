@@ -11,6 +11,12 @@ export class RouteMatcher {
    * Add a route to the matcher
    */
   public addRoute(route: RouteOptions): void {
+    // Validate that the route has either a handler or redirect configuration
+    if (!route.handler && !route.redirect) {
+      logger.error(`Route ${route.method || 'ALL'} ${route.url} is invalid: must provide either handler or redirect configuration`);
+      throw new Error('Route must have either a handler or redirect configuration');
+    }
+    
     // Normalize URL to ensure consistent matching
     let normalizedUrl = route.url.replace(/\/+$/, '');
     if (!normalizedUrl.startsWith('/')) {
@@ -20,18 +26,18 @@ export class RouteMatcher {
     const routeConfig = {
       ...route,
       url: normalizedUrl,
-      method: route.method.toUpperCase()
+      method: route.method ? route.method.toUpperCase() : 'ALL'
     };
     
     const hasOptionalParams = normalizedUrl.includes(':') && normalizedUrl.includes('?');
     const hasWildcardParams = normalizedUrl.includes(':') && normalizedUrl.includes('*');
     
     logger.debug(
-      `Registering route: ${routeConfig.method} ${routeConfig.url}${
+      `Registering route: ${routeConfig.method === 'ALL' ? 'ALL METHODS' : routeConfig.method} ${routeConfig.url}${
         routeConfig.url.includes(':') 
           ? ` (with ${hasOptionalParams ? 'optional ' : ''}${hasWildcardParams ? 'wildcard ' : ''}parameters)`
           : ''
-      }`
+      }${routeConfig.redirect ? ' (redirect)' : ''}`
     );
     
     this.routes.push(routeConfig);
@@ -45,8 +51,13 @@ export class RouteMatcher {
     
     // Sort routes by specificity - exact routes first, then routes with fewer parameters
     const sortedRoutes = [...this.routes]
-      .filter(route => route.method === upperMethod)
+      .filter(route => route.method === upperMethod || route.method === 'ALL')
       .sort((a, b) => {
+        // First prioritize exact method matches over ALL matches
+        if (a.method === upperMethod && b.method === 'ALL') return -1;
+        if (a.method === 'ALL' && b.method === upperMethod) return 1;
+        
+        // Then sort by parameter count
         const aParamCount = (a.url.match(/:[^\/]+/g) || []).length;
         const bParamCount = (b.url.match(/:[^\/]+/g) || []).length;
         return aParamCount - bParamCount;

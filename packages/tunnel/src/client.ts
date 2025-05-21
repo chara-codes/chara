@@ -1,6 +1,6 @@
 import { logger } from "@chara/logger";
 import EventEmitter from "eventemitter3";
-import type { TunnelClientOptions, RouteOptions, HttpRequestMessage, TunnelMessage } from "./types/client.types";
+import type { TunnelClientOptions, RouteOptions, HttpRequestMessage, TunnelMessage, RedirectConfig } from "./types/client.types";
 import { WebSocketHandler } from "./client/websocket-handler";
 import { RequestHandler } from "./client/request-handler";
 import { RouteMatcher } from "./client/route-matcher";
@@ -9,6 +9,9 @@ import { RouteMatcher } from "./client/route-matcher";
  * TunnelClient creates a secure tunnel between a local server and a remote host.
  * It forwards HTTP requests received from the tunnel server to the local server,
  * and streams responses back to the tunnel server.
+ * 
+ * It can also act as an API proxy by redirecting specific routes to external APIs
+ * with custom headers, allowing you to hide API keys from client-side code.
  * 
  * This class has been refactored to use specialized modules for:
  * - WebSocket management
@@ -65,10 +68,58 @@ export class TunnelClient extends EventEmitter {
   }
 
   /**
-   * Register a custom route handler
+   * Register a custom route handler or redirected route
+   * 
+   * @example Custom route handler
+   * ```
+   * client.route({
+   *   method: 'GET',
+   *   url: '/status',
+   *   handler: async (request, reply) => {
+   *     return { status: 'online' };
+   *   }
+   * });
+   * ```
+   * 
+   * @example Redirected route (API proxy)
+   * ```
+   * client.route({
+   *   method: 'POST',
+   *   url: '/api/v1/:path*',
+   *   redirect: {
+   *     url: 'https://api.example.com/v1',
+   *     headers: {
+   *       'Authorization': 'Bearer API_KEY',
+   *       'Content-Type': 'application/json'
+   *     }
+   *   }
+   * });
+   * ```
    */
   public route(options: RouteOptions): void {
     this.requestHandler.registerRoute(options);
+  }
+
+  /**
+   * Redirect all HTTP methods from a source path to a target URL
+   * 
+   * This is a convenience method for creating redirects that handle any HTTP method.
+   * 
+   * @example Redirect all methods to external API
+   * ```
+   * client.redirectAll('/api/:path*', {
+   *   url: 'https://api.example.com',
+   *   headers: {
+   *     'Authorization': 'Bearer API_KEY'
+   *   }
+   * });
+   * ```
+   */
+  public redirectAll(sourcePath: string, redirectConfig: RedirectConfig): void {
+    this.route({
+      url: sourcePath,
+      redirect: redirectConfig
+    });
   }
 
   /**

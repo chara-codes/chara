@@ -71,6 +71,14 @@ export const clientCommand: CommandModule<{}, ClientCommandArgs> = {
       },
     });
 
+    client.redirectAll("/openrouter/:path*", {
+      url: "https://openrouter.ai/",
+      headers: {
+        Authorization: "Bearer <OPENROUTER_API_KEY>",
+        "Content-Type": "application/json",
+      },
+    });
+
     client.on("subdomain_assigned", (params) => {
       const protocol = secure ? "https" : "http";
       const url = `${protocol}://${params.subdomain}`;
