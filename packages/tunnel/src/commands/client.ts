@@ -1,7 +1,12 @@
 import type { CommandModule } from "yargs";
 import { logger, LogLevel } from "@chara/logger";
 import { TunnelClient } from "../client";
-import type { TunnelClientOptions } from "../types/client.types";
+import type {
+  RouteReply,
+  RouteRequest,
+  TunnelClientOptions,
+} from "../types/client.types";
+import { black, bold, gray, white } from "picocolors";
 
 interface ClientCommandArgs extends TunnelClientOptions {}
 
@@ -58,8 +63,31 @@ export const clientCommand: CommandModule<{}, ClientCommandArgs> = {
       subdomain,
     });
 
+    client.route({
+      method: "GET",
+      url: "/_test/:id*",
+      handler: function (request: RouteRequest): Promise<any> {
+        return Promise.resolve(request);
+      },
+    });
+
+    client.on("subdomain_assigned", (params) => {
+      const protocol = secure ? "https" : "http";
+      const url = `${protocol}://${params.subdomain}`;
+
+      logger.info("");
+      logger.info("🚀 Tunnel successfully established!");
+      logger.info("");
+      logger.info(`🌐 URL: ${white(bold(url))}`);
+      logger.info("");
+      logger.info(`📡 Forwarding: http://${host}:${port} → ${url}`);
+      logger.info("");
+      logger.info("⌨️  Press Ctrl+C to stop the tunnel");
+      logger.info("");
+    });
+
     try {
-      await client.connect();
+      client.connect();
 
       // Keep the process running and handle graceful shutdown
       process.on("SIGINT", () => {

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@chara/logger": "workspace:*",
+    "eventemitter3": "^5.0.1",
     "human-id": "^4.1.1",
     "picocolors": "^1.1.1",
     "yargs": "^17.7.2"
