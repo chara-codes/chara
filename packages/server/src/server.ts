@@ -12,8 +12,11 @@ import { chatRouter } from "./api/routes/chat";
 import { subscription } from "./api/routes/subscription";
 import { instructionsRouter } from "./api/routes/instructions";
 import { BunSSEServerTransport } from "./mcp/transport";
-import { mcpClientsSubscriptions, mcpClientsMutations } from "./api/routes/mcpservers";
-import { createServer } from "./mcp/server"
+import {
+  mcpClientsSubscriptions,
+  mcpClientsMutations,
+} from "./api/routes/mcpservers";
+import { createServer } from "./mcp/server";
 import { sessionRouter } from "./api/routes/sessions";
 import superjson from "superjson";
 import { parse } from "querystring";
@@ -22,6 +25,7 @@ import {
   ResourceTemplate,
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { getAgent } from "./ai/agents/mastra-agent";
 
 const t = initTRPC.context<Context>().create({ transformer: superjson });
 
@@ -37,7 +41,7 @@ export const appRouter = router({
   events: subscription,
   instructions: instructionsRouter,
   mcpClientsSubscriptions: mcpClientsSubscriptions,
-  mcpResponses: mcpClientsMutations
+  mcpResponses: mcpClientsMutations,
 });
 
 export type AppRouter = typeof appRouter;
@@ -125,6 +129,68 @@ const server = serve({
         },
       });
     }
+
+    // New endpoint for the Mastra agent
+    if (url.pathname === "/agent") {
+      try {
+        // Get the request body
+        const body = await request.json();
+        const { message } = body;
+
+        if (!message) {
+          return new Response(
+            JSON.stringify({ error: "Message is required" }),
+            {
+              status: 400,
+              headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+              },
+            }
+          );
+        }
+
+        // Get agent instance
+        const agent = await getAgent();
+
+        // Use generate method to process the message
+        const response = await (agent as any).generate(message);
+
+        // Stream the response
+        const agentStream = new ReadableStream({
+          start(controller) {
+            const encoder = new TextEncoder();
+
+            // Send response as a stream
+            controller.enqueue(
+              encoder.encode(response || "No response generated")
+            );
+            controller.close();
+          },
+        });
+
+        return new Response(agentStream, {
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "no-cache",
+          },
+        });
+      } catch (error) {
+        console.error("Error in agent endpoint:", error);
+        return new Response(
+          JSON.stringify({ error: "Internal server error" }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+          }
+        );
+      }
+    }
+
     const response = await fetchRequestHandler({
       endpoint: "/trpc",
       req: request,
@@ -153,57 +219,57 @@ const SSEServer = serve({
     const url = new URL(req.url);
     const pathname = url.pathname;
 
-    if (req.method === 'GET' && pathname === '/sse') {
-      logger.info('Received GET request to /sse');
+    if (req.method === "GET" && pathname === "/sse") {
+      logger.info("Received GET request to /sse");
 
-      const transport = new BunSSEServerTransport('/messages');
+      const transport = new BunSSEServerTransport("/messages");
       const sessionId = transport.sessionId;
       transports[sessionId] = transport;
-    
+
       transport.onclose = () => {
         logger.info(`SSE transport closed for session ${sessionId}`);
         delete transports[sessionId];
       };
-    
+
       await MCPserver.connect(transport);
       logger.info(`Established SSE stream with session ID: ${sessionId}`);
-    
-      return transport.createResponse();;
+
+      return transport.createResponse();
     }
 
-    if (req.method === 'POST' && pathname === '/messages') {
-      logger.info('Received POST request to /messages');
+    if (req.method === "POST" && pathname === "/messages") {
+      logger.info("Received POST request to /messages");
       const query = parse(url.searchParams.toString());
       const sessionId = query.sessionId?.toString();
 
       if (!sessionId) {
-        return new Response('Missing sessionId parameter', { status: 400 });
+        return new Response("Missing sessionId parameter", { status: 400 });
       }
 
       const transport = transports[sessionId];
       if (!transport) {
-        return new Response('Session not found', { status: 404 });
+        return new Response("Session not found", { status: 404 });
       }
 
       try {
         return transports[sessionId].handlePostMessage(req);
       } catch (error) {
-        logger.error('Error handling request:', error);
-        return new Response('Error handling request', { status: 500 });
+        logger.error("Error handling request:", error);
+        return new Response("Error handling request", { status: 500 });
       }
     }
 
-    return new Response('Not found', { status: 404 });
+    return new Response("Not found", { status: 404 });
   },
   async error(err) {
-    logger.error('Server error:', err);
-    return new Response('Internal server error', { status: 500 });
+    logger.error("Server error:", err);
+    return new Response("Internal server error", { status: 500 });
   },
 });
 
 // Shutdown handling
-process.on('SIGINT', async () => {
-  logger.info('Shutting down Bun MCP server...');
+process.on("SIGINT", async () => {
+  logger.info("Shutting down Bun MCP server...");
   for (const sessionId in transports) {
     try {
       await transports[sessionId].close();
@@ -212,7 +278,7 @@ process.on('SIGINT', async () => {
       logger.error(`Error closing transport ${sessionId}`, err);
     }
   }
-  logger.info('Server shutdown complete');
+  logger.info("Server shutdown complete");
   process.exit(0);
 });
 
