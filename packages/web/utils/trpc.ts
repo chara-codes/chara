@@ -13,8 +13,10 @@ export const trpc = createTRPCReact<AppRouter>();
 
 export function createTrpcClient() {
   const server = process.env.NEXT_PUBLIC_SERVER || "localhost:3030";
+  const trpcUrl = `http://${server}/trpc`;
+  const wsUrl = `ws://${server}/events`;
   const wsClient = createWSClient({
-  url: `ws://${server}/events`, // WebSocket endpoint
+  url: wsUrl, // WebSocket endpoint
 });
   return trpc.createClient({
     links: [
@@ -27,15 +29,15 @@ export function createTrpcClient() {
           transformer: superjson,
         }),
         false: splitLink({
-          // Use httpBatchStreamLink for streaming queries/mutations
-          condition: (op) => op.type === "query" || op.type === "mutation", // Adjust if needed
+          // Use httpBatchStreamLink for streaming queries
+          condition: (op) => op.path.startsWith("chat.") && op.type === "query",
           true: httpBatchStreamLink({
-            url: `http://${server}/trpc`, // HTTP streaming endpoint
+            url: trpcUrl, // HTTP streaming endpoint
             transformer: superjson,
           }),
           // Use httpBatchLink for non-streaming operations
           false: httpBatchLink({
-            url: `http://${server}/trpc`, // HTTP endpoint
+            url: trpcUrl, // HTTP endpoint
             transformer: superjson,
           }),
         }),

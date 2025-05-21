@@ -5,7 +5,30 @@
   "mcpServers": {
     "puppeteer": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ]
+    }
+  },
+  "systemContext": {
+    "operatingSystem": {
+      "platform": "win32",
+      "release": "10.0.19045",
+      "type": "Windows_NT",
+      "version": "Windows 10 Pro"
+    },
+    "cpu": {
+      "architecture": "x64",
+      "cores": 12,
+      "model": "Intel(R) Core(TM) i7-8700K CPU @ 3.70GHz"
+    },
+    "environment": {
+      "nodeVersion": "v22.6.0",
+      "runtime": "Bun v1.2.4",
+      "shell": "Unknown",
+      "user": "unknown",
+      "homeDirectory": "C:\\Users\\dev"
     }
   }
 }

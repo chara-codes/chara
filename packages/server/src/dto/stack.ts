@@ -6,8 +6,8 @@ import { stacks, links } from "../db/schema";
 // ——— Input validation schemas ———
 export const techSchema = z.object({
   name: z.string().min(1),
-  docsUrl: z.string().url().optional(),
-  codeUrl: z.string().url().optional(),
+  docsUrl: z.string().url().optional().or(z.literal("")),
+  codeUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export const createStackSchema = z.object({

@@ -6,7 +6,7 @@ import { generateStringHash } from "@/lib/hash-string";
 import { directoryManager } from "@/utils/file-system";
 
 interface ProjectSelectorProps {
-  onProjectSelect: (projectId: string, projectName: string) => void;
+  onProjectSelect: (projectId: number, projectName: string) => void;
   selectedProject?: { id: string; name: string } | null;
 }
 
@@ -31,7 +31,10 @@ export function ProjectSelector({
 
       const projectName = directoryHandle.name;
 
-      const projectId = generateStringHash(directoryHandle.name);
+      const projectId = parseInt(
+        generateStringHash(directoryHandle.name).substring(0, 8),
+        16,
+      );
 
       // Request read/write permission
       const permissionStatus = await directoryHandle.requestPermission({ mode: "readwrite" });

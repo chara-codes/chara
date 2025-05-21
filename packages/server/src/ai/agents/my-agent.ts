@@ -49,10 +49,9 @@ export type AgentResponse = z.infer<typeof messageSchema>;
 // Replace the entire myAgent function with this streaming version
 export const myAgent = async function* (
   task: string,
-  project: { id: string; name: string },
-): AsyncGenerator<AgentResponse, void, undefined> {
+  project: { id: number; name: string },
+): Promise<AgentResponse> {
   const projectRoot = resolveProjectPath(project.name);
-  const projectContext = await getProjectContext(projectRoot);
   try {
     const { partialObjectStream } = streamObject({
       model: aiProvider(process.env.AI_MODEL || "gpt-4o-mini"),
@@ -60,7 +59,7 @@ export const myAgent = async function* (
       messages: [
         {
           role: "system",
-          content: systemPrompt + projectContext,
+          content: systemPrompt,
         },
         {
           role: "user",

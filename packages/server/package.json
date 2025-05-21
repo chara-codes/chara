@@ -9,7 +9,7 @@
     "@types/bun": "latest",
     "@types/chokidar": "^2.1.7",
     "@types/node": "^22.13.13",
-    "drizzle-kit": "^0.30.5",
+    "drizzle-kit": "^0.31.1",
     "mastra": "^0.2.8",
     "tsx": "^4.19.3",
     "vitest": "^3.0.9"
@@ -42,7 +42,7 @@
     "ai": "^4.2.2",
     "chokidar": "^4.0.3",
     "dotenv": "^16.4.7",
-    "drizzle-orm": "^0.39.3",
+    "drizzle-orm": "^0.43.1",
     "drizzle-zod": "^0.7.0",
     "live-server": "^1.2.2",
     "nanoid": "^5.1.5",

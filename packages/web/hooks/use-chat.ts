@@ -1,10 +1,10 @@
 "use client";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
-import { useAIChat } from "@/hooks/use-ai-chat";
 import { parseStream } from "@/lib/parse-stream";
+import { trpc } from "@/utils";
 import { ProjectInformation, useProject } from "@/contexts/project-context";
 
-// Custom hook to handle chat with tRPC
+// TODO: there is another use-trpc-chat hook which was created in another PR earlier, so probably remove this one
 export function useChat(streamObject = true) {
   const [messages, setMessages] = useState<
     Array<{
@@ -26,6 +26,7 @@ export function useChat(streamObject = true) {
   // Keep track of whether we've cleaned up the current request
   const isCleanedUpRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const utils = trpc.useUtils();
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
@@ -40,9 +41,10 @@ export function useChat(streamObject = true) {
     };
   }, []);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>, input: string) => {
     e.preventDefault();
-    if (!input.trim() || status !== "ready") return;
+    debugger;
+    if (!input.trim() || status !== "ready" || !selectedProject) return;
 
     const userMessage = {
       id: Date.now().toString(),
@@ -56,22 +58,17 @@ export function useChat(streamObject = true) {
     setStatus("submitted");
     setError(null);
 
-    const server = process.env.NEXT_PUBLIC_SERVER || "localhost:3030";
-
-    const { stream } = useAIChat<{
-      question: string;
-      project: ProjectInformation | null;
-    }>(`http://${server}/trpc`, streamObject, selectedProject);
     try {
+      // Abort previous if needed
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      // Create a new AbortController for this request
+
       isCleanedUpRef.current = false;
       abortControllerRef.current = new AbortController();
       const signal = abortControllerRef.current.signal;
 
-      // Create a temporary message for streaming
+      // Create a temporary assistant message
       const tempAssistantMessageId = `assistant-${Date.now()}`;
       setMessages((prev) => [
         ...prev,
@@ -86,45 +83,86 @@ export function useChat(streamObject = true) {
       ]);
       setStatus("streaming");
 
-      const chunks = await stream(
-        { question: input, project: selectedProject },
-        signal,
-      );
+      // TODO: add projectId and chatId to the request
+      const iterable = await utils.chat.streamObject.fetch({
+        question: input,
+        project: selectedProject,
+      });
+
       let textResponse = "";
       let objectResponse: any = {};
 
-      for await (const chunk of chunks) {
-        // Check if request was aborted
+      for await (const chunk of iterable) {
         if (signal.aborted) break;
 
         if (streamObject) {
-          const objectToAdd = parseStream(chunk, "object") as any[];
-          // Only add extracted object to the response
-          if (objectToAdd && objectToAdd.length > 0) {
-            objectResponse = objectToAdd.reduce((acc: any, obj: any) => {
-              return { ...acc, ...obj };
-            }, objectResponse);
-
-            // Update the assistant message with the accumulated response
+          const parsedChunk =
+            typeof chunk === "string" ? JSON.parse(chunk) : chunk;
+          if (parsedChunk.content) {
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === tempAssistantMessageId
                   ? {
                       ...msg,
-                      content: objectResponse.summary,
-                      context: objectResponse,
+                      content: parsedChunk.content,
+                      context: {
+                        ...(msg.context || {}),
+                        commands: parsedChunk.commands || [],
+                      },
                     }
                   : msg,
               ),
             );
+          } else {
+            const chunkAsString =
+              typeof chunk === "string" ? chunk : JSON.stringify(chunk);
+            const objectToAdd = parseStream(chunkAsString, "object") as any[];
+
+            if (objectToAdd && objectToAdd.length > 0) {
+              objectResponse = objectToAdd.reduce((acc: any, obj: any) => {
+                return { ...acc, ...obj };
+              }, objectResponse);
+
+              if (objectResponse.error) {
+                console.error("Stream Error:", objectResponse.error);
+
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === tempAssistantMessageId
+                      ? {
+                          ...msg,
+                          content: `Error: ${objectResponse.error.message}`,
+                          context: objectResponse,
+                        }
+                      : msg,
+                  ),
+                );
+
+                setError(new Error(objectResponse.error.message));
+                setStatus("ready");
+                break;
+              }
+
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === tempAssistantMessageId
+                    ? {
+                        ...msg,
+                        content: objectResponse.content || "",
+                        context: objectResponse,
+                      }
+                    : msg,
+                ),
+              );
+            }
           }
         } else {
-          const textToAdd = parseStream(chunk, "text") as string;
-          // Only add extracted text to the response
+          const chunkAsString =
+            typeof chunk === "string" ? chunk : JSON.stringify(chunk);
+          const textToAdd = parseStream(chunkAsString, "text") as string;
           if (textToAdd) {
             textResponse += textToAdd;
 
-            // Update the assistant message with the accumulated response
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === tempAssistantMessageId
@@ -136,7 +174,6 @@ export function useChat(streamObject = true) {
         }
       }
 
-      // Mark as complete when done
       setStatus("ready");
     } catch (err) {
       console.error("Error sending message:", err);

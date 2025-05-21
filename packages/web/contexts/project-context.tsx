@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 
 export interface ProjectInformation {
-  id: string;
+  id: number;
   name: string;
 }
 
@@ -16,7 +16,7 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [selectedProject, setSelectedProject] = useState<{
-    id: string;
+    id: number;
     name: string;
   } | null>(() => {
     // Try to load from localStorage on initial render (client-side only)
@@ -28,7 +28,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   });
 
   const handleSetSelectedProject = (
-    project: { id: string; name: string } | null,
+    project: { id: number; name: string } | null,
   ) => {
     setSelectedProject(project);
 

@@ -52,6 +52,36 @@ The server automatically detects the AI provider based on the API URL:
 - Ollama: `http://localhost:11434/v1` or any URL containing "ollama"
 - DeepInfra: `https://api.deepinfra.com/v1`
 
+## Local AI Development with Ollama in Docker
+
+### Step 1: Install & Run Ollama in Docker
+
+Base command to run ollama in Docker:
+
+```bash
+docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
+```
+
+For further details (e.g. running ollama with GPU), refer to the [Ollama Docker documentation](https://hub.docker.com/r/ollama/ollama).
+
+### Step 2: Pull Models
+
+To pull models, use the following commands:
+
+```bash
+docker exec -it ollama bash
+ollama pull wizardcoder
+```
+
+### Step 3: Use ollama in local development
+
+To use the local ollama instance in your development environment, add the following lines to your `packages/server/.env` file:
+
+```bash
+AI_URL="http://localhost:11434/api"
+AI_MODEL="wizardcoder"
+````
+
 ## Database Setup
 
 This project uses Drizzle ORM with SQLite/LibSQL. To set up the database:
