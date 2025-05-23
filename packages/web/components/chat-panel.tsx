@@ -20,12 +20,21 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
     setSelectedProject({ id: projectId, name: projectName });
   };
 
-  const { messages, error, status, sendChatMessage } = useTrpcChat();
+  const { messages, error, status, sendChatMessage, fetchMoreHistory } =
+    useTrpcChat();
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Handler to fetch more history when scrolled to top
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollTop === 0) {
+      fetchMoreHistory();
+    }
+  };
 
   const copyMessage = (content: string, messageId: string) => {
     navigator.clipboard.writeText(content);
@@ -41,7 +50,7 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
   const handleSendMessage = (
     inputText: string,
     attachments: FileAttachment[],
-    contexts: Array<{ source: string; component: string }>,
+    contexts: Array<{ source: string; component: string }>
   ) => {
     // Format the message content with attached contexts
     let messageContent = inputText;
@@ -49,7 +58,7 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
     // Add contexts at the beginning of the message if there are any
     if (contexts.length > 0) {
       const contextStrings = contexts.map(
-        (ctx) => `[${ctx.source}:${ctx.component}]`,
+        (ctx) => `[${ctx.source}:${ctx.component}]`
       );
       messageContent = contextStrings.join("\n") + "\n\n" + messageContent;
     }
@@ -69,7 +78,10 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
           selectedProject={selectedProject}
         />
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+        onScroll={handleScroll}
+      >
         {messages.map((message) => (
           <MessageItem
             key={message.id}
