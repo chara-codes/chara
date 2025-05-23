@@ -1,0 +1,60 @@
+{
+  "models": [
+    {
+      "id": "claude-3.7-sonnet",
+      "name": "Claude 3.7 Sonnet Thinking",
+      "provider": "Anthropic"
+    },
+    {
+      "id": "claude-3.5-sonnet",
+      "name": "Claude 3.5 Sonnet",
+      "provider": "Anthropic"
+    },
+    {
+      "id": "claude-3-opus",
+      "name": "Claude 3 Opus",
+      "provider": "Anthropic"
+    },
+    {
+      "id": "claude-3-haiku",
+      "name": "Claude 3 Haiku",
+      "provider": "Anthropic"
+    },
+    {
+      "id": "gpt-4o",
+      "name": "GPT-4o",
+      "provider": "OpenAI"
+    },
+    {
+      "id": "gpt-4-turbo",
+      "name": "GPT-4 Turbo",
+      "provider": "OpenAI"
+    },
+    {
+      "id": "gpt-4",
+      "name": "GPT-4",
+      "provider": "OpenAI"
+    },
+    {
+      "id": "gpt-3.5-turbo",
+      "name": "GPT-3.5 Turbo",
+      "provider": "OpenAI"
+    },
+    {
+      "id": "mistral-large",
+      "name": "Mistral Large",
+      "provider": "Mistral AI"
+    },
+    {
+      "id": "mistral-medium",
+      "name": "Mistral Medium",
+      "provider": "Mistral AI"
+    },
+    {
+      "id": "mistral-small",
+      "name": "Mistral Small",
+      "provider": "Mistral AI"
+    }
+  ],
+  "recentModels": ["claude-3.7-sonnet", "gpt-4o"]
+}
