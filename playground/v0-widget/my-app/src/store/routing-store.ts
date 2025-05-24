@@ -103,11 +103,10 @@ export const useRoutingStore = create<RoutingState>()(
 // Selector hooks for common use cases
 export const useCurrentScreen = () => useRoutingStore((state) => state.currentScreen)
 export const usePreviousScreen = () => useRoutingStore((state) => state.previousScreen)
-export const useNavigationActions = () =>
-  useRoutingStore((state) => ({
-    navigateToNewThread: state.navigateToNewThread,
-    navigateToHistory: state.navigateToHistory,
-    navigateToSettings: state.navigateToSettings,
-    navigateToConversation: state.navigateToConversation,
-    navigateBack: state.navigateBack,
-  }))
+
+// Individual action selectors to prevent creating new objects on each render
+export const useNavigateToNewThread = () => useRoutingStore((state) => state.navigateToNewThread)
+export const useNavigateToHistory = () => useRoutingStore((state) => state.navigateToHistory)
+export const useNavigateToSettings = () => useRoutingStore((state) => state.navigateToSettings)
+export const useNavigateToConversation = () => useRoutingStore((state) => state.navigateToConversation)
+export const useNavigateBack = () => useRoutingStore((state) => state.navigateBack)

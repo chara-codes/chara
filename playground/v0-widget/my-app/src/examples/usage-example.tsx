@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client"
-import AIChatWidget from "../components/pages/ai-chat-widget"
+import ChatOverlayPanel from "../components/templates/chat-overlay-panel"
 
 // Example of direct usage in a React app
 const App = () => {
@@ -9,7 +9,7 @@ const App = () => {
       <p>This is my website content</p>
 
       {/* Embed the chat widget directly */}
-      <AIChatWidget apiKey="your-api-key" apiEndpoint="https://api.example.com/chat" widgetTitle="Customer Support" />
+      <ChatOverlayPanel />
     </div>
   )
 }
@@ -23,7 +23,7 @@ root.render(<App />)
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Initialize the widget
-    AIChatWidget.init({
+    ChatOverlayPanel.init({
       apiKey: 'your-api-key',
       apiEndpoint: 'https://api.example.com/chat',
       widgetTitle: 'Customer Support'
@@ -31,11 +31,11 @@ root.render(<App />)
     
     // You can also control the widget programmatically
     document.getElementById('show-chat').addEventListener('click', function() {
-      AIChatWidget.show();
+      ChatOverlayPanel.show();
     });
     
     document.getElementById('hide-chat').addEventListener('click', function() {
-      AIChatWidget.hide();
+      ChatOverlayPanel.hide();
     });
   });
 </script>

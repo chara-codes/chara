@@ -17,7 +17,7 @@ const SuggestionsContainer = styled.div`
   width: 100%;
   margin-top: auto;
   padding: 16px 0 0 0;
-  background-color: ${({ theme }) => (theme as Theme).colors.surface};
+  background-color: ${({ theme }) => (theme as Theme).colors.backgroundSecondary};
   position: relative;
   bottom: 0;
   left: 0;
@@ -69,7 +69,7 @@ const PromptBlock = styled.div`
   height: 36px;
   padding: 0 16px;
   margin-right: 8px;
-  background-color: ${({ theme }) => (theme as Theme).colors.surface};
+  background-color: ${({ theme }) => (theme as Theme).colors.backgroundSecondary};
   border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
   border-radius: 18px;
   cursor: pointer;

@@ -3,7 +3,7 @@
 import type React from "react"
 import styled from "styled-components"
 import type { Chat } from "../../store/types"
-import { useNavigationActions } from "../../store/routing-store"
+import { useNavigateToHistory } from "../../store/routing-store"
 
 interface RecentHistoryProps {
   chats: Chat[]
@@ -77,7 +77,7 @@ const ChatTimestamp = styled.span`
 `
 
 const RecentHistory: React.FC<RecentHistoryProps> = ({ chats, onSelectChat }) => {
-  const { navigateToHistory } = useNavigationActions()
+  const navigateToHistory = useNavigateToHistory()
 
   return (
     <Container>

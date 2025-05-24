@@ -168,7 +168,7 @@ export const useElementSelector = (
     reactKey: string,
     componentInfo: ComponentInfo,
   ): void => {
-    // @ts-ignore - accessing dynamic properties
+    // @ts-expect-error - accessing dynamic properties
     const fiberNode = element[reactKey]
     if (!fiberNode) return
 
@@ -451,6 +451,7 @@ export const useElementSelector = (
 
     // Set up event handlers
     setupSelectionEventHandlers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /**
@@ -693,7 +694,7 @@ export const useElementSelector = (
       currentHighlightedElement = element
 
       // Update tag display
-      updateTagDisplay(element, e)
+      updateTagDisplay(element)
     }
 
     // Store the listeners in refs for cleanup
@@ -715,7 +716,7 @@ export const useElementSelector = (
   /**
    * Updates the tag display that shows element information
    */
-  const updateTagDisplay = (element: HTMLElement, e: MouseEvent) => {
+  const updateTagDisplay = (element: HTMLElement) => {
     const rect = element.getBoundingClientRect()
     const tagDisplay = document.getElementById("element-tag-display")
 
@@ -828,7 +829,7 @@ export const useElementSelector = (
     modal.appendChild(input)
 
     // Create buttons container and buttons
-    const { buttonsContainer, cancelButton, confirmButton } = createModalButtons()
+    const { buttonsContainer, confirmButton } = createModalButtons()
     modal.appendChild(buttonsContainer)
 
     // Assemble the modal
@@ -1004,11 +1005,11 @@ export const useElementSelector = (
     })
 
     // Add Enter key support
-    input.addEventListener("keydown", (e) => {
+    input.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.key === "Enter") {
-        e.preventDefault()
+        // e.preventDefault()
         // The confirmButton will be accessed later
-        document.querySelector("#element-comment-modal button:last-child")?.click()
+        (document.querySelector("#element-comment-modal button:last-child") as HTMLElement)?.click()
       }
     })
 
@@ -1162,13 +1163,14 @@ export const useElementSelector = (
       const componentInfo = detectComponentInfo(element)
 
       // Create modal elements
-      const { backdrop, modal, confirmButton } = createModalElements(element, componentInfo)
+      const { backdrop, confirmButton } = createModalElements(element, componentInfo)
 
       // Add event listeners
       setupModalEventListeners(backdrop, confirmButton, element, componentInfo)
 
       return confirmButton
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [cleanupElementSelectionUI, detectComponentInfo],
   )
 

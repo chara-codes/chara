@@ -58,7 +58,7 @@ const CommandText = styled.span`
   word-break: break-all;
 `
 
-const CommandOutput = styled.div<{ $status: "success" | "error" | "pending" }>`
+const CommandOutput = styled.div<{ $status: string }>`
   padding: 4px 0 4px 16px;
   color: ${(props) => (props.$status === "error" ? "#ef4444" : "#e5e7eb")};
   border-left: 2px solid ${(props) => {

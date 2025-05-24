@@ -587,7 +587,7 @@ export default function HomePage() {
                         ))}
                       </div>
                       <p className="text-muted-foreground italic mb-6">
-                        "{testimonial.quote}"
+                        &quot;{testimonial.quote}&quot;
                       </p>
                       <div className="flex items-center gap-4">
                         <Avatar className="h-12 w-12 border-2 border-background">

@@ -39,7 +39,7 @@ import {
   DeleteButton,
 } from "./styles"
 import { getPreviewContent, calculateTooltipPosition } from "./utils"
-import type { FileDiff } from "@/store/types"
+import type { FileDiff } from "../../../store/types"
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   id,
@@ -106,7 +106,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     if (itemRefs.current.size > 0) {
       const firstItem = itemRefs.current.values().next().value
       if (firstItem) {
-        chatContainerRef.current = findScrollableParent(firstItem)
+        chatContainerRef.current = findScrollableParent(firstItem) as HTMLDivElement | null
       }
     }
   }, [contextItems])

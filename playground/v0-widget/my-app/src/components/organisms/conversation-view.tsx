@@ -44,11 +44,7 @@ const ConversationContent = styled.div`
   flex-direction: column;
 `
 
-interface ConversationViewProps {
-  onNavigateToConversation: () => void
-}
-
-const ConversationView: React.FC<ConversationViewProps> = ({ onNavigateToConversation }) => {
+const ConversationView: React.FC = () => {
   // Use selectors to get only the state we need
   const activeChat = useChatStore((state) => state.activeChat)
   const messages = useChatStore((state) => state.messages)
@@ -156,7 +152,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({ onNavigateToConvers
           )}
         </ChatContent>
         {!activeChat && messages.length === 0 && (
-          <RecentHistory chats={chats} onSelectChat={handleSelectChat} onViewAll={onNavigateToConversation} />
+          <RecentHistory chats={chats} onSelectChat={handleSelectChat} />
         )}
       </ConversationContent>
       <ContextPanel contextItems={contextItems} onRemoveContext={handleRemoveContextItem} />

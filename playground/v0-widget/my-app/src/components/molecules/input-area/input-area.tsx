@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState, useRef, useCallback } from "react"
-import { useChatStore } from "../../../store/chat-store"
 import DropdownMenu from "../dropdown-menu"
 import FileInput from "../file-input"
 import type { InputAreaProps } from "../../../types/input-area"
@@ -54,8 +53,7 @@ const InputArea: React.FC<InputAreaProps> = ({
   // Use our custom element selector hook
   const { startElementSelection } = useElementSelector(onAddContext)
 
-  // Get context items from the store
-  const contextItems = useChatStore((state) => state.contextItems)
+  // const contextItems = useChatStore((state) => state.contextItems)
   // const hasContext = contextItems.length > 0
 
   const beautifyText = useCallback(() => {

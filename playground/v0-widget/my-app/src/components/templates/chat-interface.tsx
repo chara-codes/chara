@@ -9,7 +9,7 @@ import HistoryView from "../organisms/history-view"
 import SettingsView from "../organisms/settings-view"
 import { useChatStore } from "../../store/chat-store"
 import { useModelsStore } from "../../store/models-store"
-import { useRoutingStore, Screen } from "../../store/routing-store"
+import { useRoutingStore, Screen, useNavigateToConversation } from "../../store/routing-store"
 
 const Container = styled.div`
   display: flex;
@@ -80,7 +80,7 @@ const ChatInterface: React.FC = () => {
 
   // Get routing state
   const currentScreen = useRoutingStore((state) => state.currentScreen)
-  const navigateToConversation = useRoutingStore((state) => state.navigateToConversation)
+  const navigateToConversation = useNavigateToConversation()
 
   // Get chat store state
   const chats = useChatStore((state) => state.chats)
@@ -183,7 +183,6 @@ const ChatInterface: React.FC = () => {
           <HistoryView
             chats={chats}
             onSelectChat={handleSelectChatFromHistory}
-            onBackToConversation={navigateToConversation}
           />
         )
 
@@ -193,7 +192,7 @@ const ChatInterface: React.FC = () => {
       case Screen.CONVERSATION:
       case Screen.NEW_THREAD:
       default:
-        return <ConversationView onNavigateToConversation={navigateToConversation} />
+        return <ConversationView />
     }
   }
 

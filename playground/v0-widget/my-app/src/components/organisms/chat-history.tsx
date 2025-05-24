@@ -258,7 +258,7 @@ const groupChatsByDate = (chats: Chat[]) => {
 
   chats.forEach((chat) => {
     // Ensure we have a valid date before processing
-    const chatDate = new Date(chat.lastUpdated || Date.now())
+    const chatDate = new Date(chat.timestamp || Date.now())
 
     // Skip invalid dates
     if (!isValid(chatDate)) return
@@ -313,7 +313,7 @@ const getChatTitle = (chat: Chat) => {
   if (chat.title) return chat.title
 
   if (chat.messages && chat.messages.length > 0) {
-    const firstUserMessage = chat.messages.find((m) => m.role === "user")
+    const firstUserMessage = chat.messages.find((m) => m.isUser)
     if (firstUserMessage) {
       return firstUserMessage.content.substring(0, 30) + (firstUserMessage.content.length > 30 ? "..." : "")
     }
@@ -390,7 +390,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDelete
                         <ChatButton onClick={() => onSelectChat(chat.id)}>
                           <ChatHeader>
                             <ChatTitle>{getChatTitle(chat)}</ChatTitle>
-                            <ChatTime>{formatChatTime(chat.lastUpdated)}</ChatTime>
+                            <ChatTime>{formatChatTime(chat.timestamp)}</ChatTime>
                           </ChatHeader>
                           <ChatPreview>{getChatPreview(chat)}</ChatPreview>
                           <MessageCount>
@@ -417,7 +417,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDelete
                         <ChatButton onClick={() => onSelectChat(chat.id)}>
                           <ChatHeader>
                             <ChatTitle>{getChatTitle(chat)}</ChatTitle>
-                            <ChatTime>{formatChatTime(chat.lastUpdated)}</ChatTime>
+                            <ChatTime>{formatChatTime(chat.timestamp)}</ChatTime>
                           </ChatHeader>
                           <ChatPreview>{getChatPreview(chat)}</ChatPreview>
                           <MessageCount>
@@ -444,7 +444,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDelete
                         <ChatButton onClick={() => onSelectChat(chat.id)}>
                           <ChatHeader>
                             <ChatTitle>{getChatTitle(chat)}</ChatTitle>
-                            <ChatTime>{formatChatTime(chat.lastUpdated)}</ChatTime>
+                            <ChatTime>{formatChatTime(chat.timestamp)}</ChatTime>
                           </ChatHeader>
                           <ChatPreview>{getChatPreview(chat)}</ChatPreview>
                           <MessageCount>

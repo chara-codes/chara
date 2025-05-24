@@ -6,34 +6,7 @@ import type { Chat, ChatMode, ContextItem, Message, ExecutedCommand, FileDiff } 
 import { fetchChats } from "../services/data-service"
 import { mockResponse } from "../data/mock-data" // Import the mock response directly
 
-// Add throttling utility
-const throttle = <T extends (...args: any[]) => void>(func: T, delay: number): ((...args: Parameters<T>) => void) => {
-  let timeoutId: NodeJS.Timeout | null = null
-  let lastExecTime = 0
 
-  return (...args: Parameters<T>) => {
-    const currentTime = Date.now()
-
-    if (currentTime - lastExecTime > delay) {
-      func(...args)
-      lastExecTime = currentTime
-    } else {
-      if (timeoutId) clearTimeout(timeoutId)
-      timeoutId = setTimeout(
-        () => {
-          func(...args)
-          lastExecTime = Date.now()
-        },
-        delay - (currentTime - lastExecTime),
-      )
-    }
-  }
-}
-
-// Use the throttle function somewhere to avoid the unused variable warning
-const throttledSetIsResponding = throttle((isResponding: boolean) => {
-  console.log("Throttled setIsResponding:", isResponding)
-}, 100)
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [

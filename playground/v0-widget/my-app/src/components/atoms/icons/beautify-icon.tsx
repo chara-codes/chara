@@ -1,6 +1,6 @@
 import type React from "react"
 
-interface BeautifyIconProps {
+export interface BeautifyIconProps {
   size?: number
   color?: string
 }

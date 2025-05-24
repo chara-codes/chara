@@ -1,4 +1,4 @@
-import type { DropdownItem } from "./types"
+import type { DropdownItem } from "../../../types/input-area"
 
 // Function to create dropdown items
 export const createDropdownItems = (

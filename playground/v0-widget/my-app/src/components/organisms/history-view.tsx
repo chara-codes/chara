@@ -8,10 +8,9 @@ import type { Chat } from "../../store/types"
 interface HistoryViewProps {
   chats: Chat[]
   onSelectChat: (chatId: string) => void
-  onBackToConversation: () => void
 }
 
-const HistoryView: React.FC<HistoryViewProps> = ({ chats, onSelectChat, onBackToConversation }) => {
+const HistoryView: React.FC<HistoryViewProps> = ({ chats, onSelectChat }) => {
   // Memoize the handlers to prevent unnecessary re-renders
   const handleSelectChat = useCallback(
     (chatId: string) => {
@@ -20,11 +19,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ chats, onSelectChat, onBackTo
     [onSelectChat],
   )
 
-  const handleBackToConversation = useCallback(() => {
-    onBackToConversation()
-  }, [onBackToConversation])
-
-  return <ChatHistory chats={chats} onSelectChat={handleSelectChat} onBackToConversation={handleBackToConversation} />
+  return <ChatHistory chats={chats} onSelectChat={handleSelectChat} />
 }
 
 export default HistoryView

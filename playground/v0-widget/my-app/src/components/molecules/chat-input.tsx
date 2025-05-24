@@ -34,7 +34,7 @@ const ButtonGroup = styled.div`
 `
 
 const BeautifyButton = styled(IconButton)`
-  background-color: ${({ theme }) => (theme as Theme).colors.surface};
+  background-color: ${({ theme }) => (theme as Theme).colors.backgroundSecondary};
   border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
   border-radius: 4px;
   padding: 6px;

@@ -287,6 +287,14 @@ const settingsData = [
   },
 ]
 
+interface SettingsItemWithAction {
+  id: string
+  title: string
+  description: string
+  control: string
+  action: string
+}
+
 interface SettingsViewProps {
   onBack: () => void
 }
@@ -443,19 +451,19 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
                           />
                         </div>
                       )}
-                      {item.control === "shortcut" && item.action && (
+                      {item.control === "shortcut" && (item as SettingsItemWithAction).action && (
                         <ShortcutControls>
                           <ShortcutToggle
-                            $enabled={getShortcutByAction(item.action)?.enabled || false}
-                            onClick={() => toggleShortcutEnabled(item.action)}
+                            $enabled={getShortcutByAction((item as SettingsItemWithAction).action)?.enabled || false}
+                            onClick={() => toggleShortcutEnabled((item as SettingsItemWithAction).action)}
                           />
                           <KeyboardShortcutInput
                             value={
-                              recordingShortcut === item.action
+                              recordingShortcut === (item as SettingsItemWithAction).action
                                 ? "Press key..."
-                                : getShortcutByAction(item.action)?.key || ""
+                                : getShortcutByAction((item as SettingsItemWithAction).action)?.key || ""
                             }
-                            onFocus={() => startRecordingShortcut(item.action)}
+                            onFocus={() => startRecordingShortcut((item as SettingsItemWithAction).action)}
                             readOnly
                             placeholder="Press key"
                           />

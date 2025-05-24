@@ -203,7 +203,7 @@ const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
 
       window.resizeTimeout = setTimeout(() => {
         setIsResizing(false)
-      }, 100)
+      }, 100) as unknown as number
     },
     [setChatOverlayWidth],
   )
@@ -300,7 +300,6 @@ const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
             currentWidth={chatOverlayWidth}
             minWidth={300}
             maxWidth={800}
-            position={position}
           />
 
           <ChatInterfaceWrapper>

@@ -16,7 +16,7 @@ export const getPreviewContent = (item: ContextItem): React.ReactNode => {
     try {
       // Try to stringify the data for display
       return JSON.stringify(item.data, null, 2)
-    } catch (_) {
+    } catch {
       // Fallback if data can't be stringified
       return `[Complex data structure]`
     }

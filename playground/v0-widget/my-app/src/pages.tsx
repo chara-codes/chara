@@ -516,7 +516,7 @@ export default function HomePage() {
                           <Star key={star} className="inline-block h-5 w-5 text-yellow-500 fill-yellow-500" />
                         ))}
                       </div>
-                      <p className="text-muted-foreground italic mb-6">"{testimonial.quote}"</p>
+                      <p className="text-muted-foreground italic mb-6">&quot;{testimonial.quote}&quot;</p>
                       <div className="flex items-center gap-4">
                         <Avatar className="h-12 w-12 border-2 border-background">
                           <AvatarImage src={testimonial.avatar || "/placeholder.svg"} alt={testimonial.author} />

@@ -46,6 +46,76 @@ export const mockResponse = {
     "npm run build",
     "git commit -am 'Update components and add new features'",
   ],
+  fileStructure: {
+    name: "project",
+    path: "/",
+    type: "directory" as const,
+    children: [
+      {
+        name: "src",
+        path: "/src",
+        type: "directory" as const,
+        children: [
+          {
+            name: "components",
+            path: "/src/components",
+            type: "directory" as const,
+            children: [
+              {
+                name: "Header.tsx",
+                path: "/src/components/Header.tsx",
+                type: "file" as const,
+                language: "typescript",
+                hasChanges: true
+              },
+              {
+                name: "Button.tsx",
+                path: "/src/components/Button.tsx",
+                type: "file" as const,
+                language: "typescript",
+                hasChanges: true
+              }
+            ]
+          },
+          {
+            name: "styles",
+            path: "/src/styles",
+            type: "directory" as const,
+            children: [
+              {
+                name: "theme.ts",
+                path: "/src/styles/theme.ts",
+                type: "file" as const,
+                language: "typescript",
+                hasChanges: true
+              }
+            ]
+          },
+          {
+            name: "utils",
+            path: "/src/utils",
+            type: "directory" as const,
+            children: [
+              {
+                name: "helpers.ts",
+                path: "/src/utils/helpers.ts",
+                type: "file" as const,
+                language: "typescript",
+                hasChanges: true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        name: "package.json",
+        path: "/package.json",
+        type: "file" as const,
+        language: "json",
+        hasChanges: true
+      }
+    ]
+  },
   executedCommands: [
     {
       id: "cmd-1",
@@ -77,6 +147,7 @@ export const mockResponse = {
       filePath: "/src/components/Header.tsx",
       fileName: "Header.tsx",
       language: "typescript",
+      status: "pending" as const,
       originalContent:
         'import React from \'react\';\n\nconst Header = () => {\nreturn (\n  <header className="bg-gray-100 p-4">\n    <div className="container mx-auto">\n      <h1 className="text-xl font-bold">My App</h1>\n      <nav>\n        <ul className="flex space-x-4">\n          <li><a href="/">Home</a></li>\n          <li><a href="/about">About</a></li>\n          <li><a href="/contact">Contact</a></li>\n        </ul>\n      </nav>\n    </div>\n  </header>\n);\n};\n\nexport default Header;',
       newContent:
@@ -204,6 +275,7 @@ export const mockResponse = {
       filePath: "/src/utils/helpers.ts",
       fileName: "helpers.ts",
       language: "typescript",
+      status: "pending" as const,
       originalContent: "",
       newContent:
         "/**\n * Utility functions for the application\n */\n\n/**\n * Format a date to a readable string\n * @param date The date to format\n * @returns Formatted date string\n */\nexport function formatDate(date: Date): string {\n  return new Intl.DateTimeFormat('en-US', {\n    year: 'numeric',\n    month: 'long',\n    day: 'numeric'\n  }).format(date);\n}\n\n/**\n * Truncate a string to a maximum length\n * @param str The string to truncate\n * @param maxLength Maximum length of the string\n * @returns Truncated string with ellipsis if needed\n */\nexport function truncateString(str: string, maxLength: number): string {\n  if (str.length <= maxLength) return str;\n  return str.slice(0, maxLength) + '...';\n}\n\n/**\n * Debounce a function call\n * @param func The function to debounce\n * @param wait Wait time in milliseconds\n * @returns Debounced function\n */\nexport function debounce<T extends (...args: any[]) => any>(\n  func: T,\n  wait: number\n): (...args: Parameters<T>) => void {\n  let timeout: NodeJS.Timeout | null = null;\n  \n  return function(...args: Parameters<T>) {\n    const later = () => {\n      timeout = null;\n      func(...args);\n    };\n    \n    if (timeout) clearTimeout(timeout);\n    timeout = setTimeout(later, wait);\n  };\n}",
@@ -304,6 +376,7 @@ export const mockResponse = {
       filePath: "/src/utils/deprecated.ts",
       fileName: "deprecated.ts",
       language: "typescript",
+      status: "pending" as const,
       originalContent:
         "/**\n * @deprecated Use formatDate from helpers.ts instead\n */\nexport function formatDateString(dateStr: string): string {\n  const date = new Date(dateStr);\n  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;\n}\n\n/**\n * @deprecated Use truncateString from helpers.ts instead\n */\nexport function shortenText(text: string, length: number): string {\n  if (text.length <= length) return text;\n  return text.substring(0, length) + '...';\n}\n\n/**\n * @deprecated No longer needed with new API\n */\nexport function convertLegacyFormat(data: any): any {\n  // Convert legacy data format to new format\n  return {\n    id: data.id || data._id,\n    name: data.name || data.title,\n    description: data.description || data.desc || '',\n    createdAt: data.createdAt || data.created_at || new Date().toISOString()\n  };\n}",
       newContent: "",
@@ -399,6 +472,7 @@ export const mockResponse = {
       filePath: "/package.json",
       fileName: "package.json",
       language: "json",
+      status: "pending" as const,
       originalContent:
         '{\n  "name": "project",\n  "version": "1.0.0",\n  "description": "A sample project",\n  "main": "index.js",\n  "scripts": {\n    "dev": "next dev",\n    "build": "next build",\n    "start": "next start"\n  },\n  "dependencies": {\n    "next": "^13.4.7",\n    "react": "^18.2.0",\n    "react-dom": "^18.2.0"\n  },\n  "devDependencies": {\n    "typescript": "^5.1.3",\n    "tailwindcss": "^3.3.2"\n  }\n}',
       newContent:
@@ -455,6 +529,7 @@ export const mockResponse = {
       filePath: "/src/styles/theme.ts",
       fileName: "theme.ts",
       language: "typescript",
+      status: "pending" as const,
       originalContent:
         'export const theme = {\ncolors: {\n  primary: "#3b82f6",\n  secondary: "#64748b",\n  background: "#ffffff",\n  text: "#1e293b",\n},\nfonts: {\n  body: "system-ui, sans-serif",\n  heading: "system-ui, sans-serif",\n},\nfontSizes: {\n  small: "0.875rem",\n  medium: "1rem",\n  large: "1.25rem",\n  xlarge: "1.5rem",\n},\n};\n\nexport default theme;',
       newContent:

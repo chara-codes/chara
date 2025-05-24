@@ -8,7 +8,7 @@ interface ContextItem {
   id: string
   name: string
   type: string
-  data?: any
+  data?: unknown
 }
 
 interface ContextPanelProps {

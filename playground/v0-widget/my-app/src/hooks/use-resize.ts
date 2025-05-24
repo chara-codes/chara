@@ -30,7 +30,7 @@ export function useResize({ minWidth, maxWidth, initialWidth, onWidthChange }: U
 
       window.resizeTimeout = setTimeout(() => {
         setIsResizing(false)
-      }, 100)
+      }, 100) as unknown as number
     },
     [minWidth, maxWidth, onWidthChange],
   )

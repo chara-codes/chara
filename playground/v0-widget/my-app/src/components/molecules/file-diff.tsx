@@ -439,24 +439,24 @@ const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = (
 
                     {expandedHunks.has(hunk.id) &&
                       hunk.changes.map((change, index) => (
-                        <DiffRow key={`${hunk.id}-${index}`} $type={change.type}>
+                        <DiffRow key={`${hunk.id}-${index}`} $type={change.type as "addition" | "deletion" | "context"}>
                           {change.type === "deletion" ? (
                             <>
                               <LineNumber>{change.oldLineNumber}</LineNumber>
                               <EmptyCell />
-                              <LineContent $type={change.type}>{change.content}</LineContent>
+                              <LineContent $type={change.type as "addition" | "deletion" | "context"}>{change.content}</LineContent>
                             </>
                           ) : change.type === "addition" ? (
                             <>
                               <EmptyCell />
                               <LineNumber>{change.newLineNumber}</LineNumber>
-                              <LineContent $type={change.type}>{change.content}</LineContent>
+                              <LineContent $type={change.type as "addition" | "deletion" | "context"}>{change.content}</LineContent>
                             </>
                           ) : (
                             <>
                               <LineNumber>{change.oldLineNumber}</LineNumber>
                               <LineNumber>{change.newLineNumber}</LineNumber>
-                              <LineContent $type={change.type}>{change.content}</LineContent>
+                              <LineContent $type={change.type as "addition" | "deletion" | "context"}>{change.content}</LineContent>
                             </>
                           )}
                         </DiffRow>

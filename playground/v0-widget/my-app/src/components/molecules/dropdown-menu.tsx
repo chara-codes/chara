@@ -174,7 +174,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({ items, isOpen, onClose, pos
       if (item.label.includes("Upload")) {
         return <UploadIcon />
       } else if (item.label.includes("Select Element")) {
-        return <PointerIcon width={16} height={16} />
+        return <PointerIcon width={16} />
       }
     }
     return null
