@@ -1,69 +1,177 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
+import { useState, useCallback, useRef } from "react";
+import styled from "styled-components";
+import type { Theme } from "../../styles/theme";
+import TextInput from "../atoms/text-input";
+import IconButton from "../atoms/icon-button";
+import { SendIcon, BeautifyIcon, UndoIcon } from "../atoms/icons";
+import Tooltip from "../atoms/tooltip";
 
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Square } from "lucide-react"
-import { useStore } from "@/lib/store"
-import { ChatTypeSelector } from "@/components/molecules/chat-type-selector"
-import { ModelSelector } from "@/components/molecules/model-selector"
+interface ChatInputProps {
+  onSendMessage: (message: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}
 
-export function ChatInput() {
-  const inputValue = useStore((state) => state.inputValue)
-  const isGenerating = useStore((state) => state.isGenerating)
-  const setInputValue = useStore((state) => state.setInputValue)
-  const sendMessage = useStore((state) => state.sendMessage)
-  const cancelGeneration = useStore((state) => state.cancelGeneration)
+const Container = styled.div`
+  display: flex;
+  align-items: center;
+  padding: ${({ theme }) => (theme as Theme).spacing.sm};
+  background-color: ${({ theme }) => (theme as Theme).colors.background};
+  border-top: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+`;
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
+const StyledInput = styled(TextInput)`
+  flex: 1;
+  margin-right: ${({ theme }) => (theme as Theme).spacing.sm};
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const BeautifyButton = styled(IconButton)`
+  background-color: ${({ theme }) =>
+    (theme as Theme).colors.backgroundSecondary};
+  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  border-radius: 4px;
+  padding: 6px;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: ${({ theme }) => (theme as Theme).colors.border};
   }
+`;
+
+// Simulated AI beautification function
+const beautifyText = (text: string): string => {
+  // In a real implementation, this would call an AI service
+  // For now, we'll just make some simple transformations
+
+  // Capitalize first letter of sentences
+  const capitalized = text.replace(
+    /(^\s*|[.!?]\s+)([a-z])/g,
+    (_, p1, p2) => p1 + p2.toUpperCase(),
+  );
+
+  // Fix common typos
+  const fixedTypos = capitalized
+    .replace(/\bi\b/g, "I")
+    .replace(/\bdont\b/g, "don't")
+    .replace(/\bim\b/g, "I'm")
+    .replace(/\bcant\b/g, "can't");
+
+  // Add some variety to common words
+  const enhancedText = fixedTypos
+    .replace(/\bgood\b/g, "excellent")
+    .replace(/\bnice\b/g, "wonderful")
+    .replace(/\bbad\b/g, "problematic")
+    .replace(/\bsaid\b/g, "mentioned");
+
+  return enhancedText;
+};
+
+const ChatInput: React.FC<ChatInputProps> = ({
+  onSendMessage,
+  placeholder = "Type a message...",
+  disabled = false,
+}) => {
+  const [message, setMessage] = useState("");
+  const [originalMessage, setOriginalMessage] = useState<string | null>(null);
+  const [isBeautified, setIsBeautified] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (message.trim()) {
+        onSendMessage(message);
+        setMessage("");
+        setOriginalMessage(null);
+        setIsBeautified(false);
+      }
+    },
+    [message, onSendMessage],
+  );
+
+  const handleBeautify = useCallback(() => {
+    if (!message.trim()) return;
+
+    // Save the original message for undo
+    setOriginalMessage(message);
+
+    // Apply the beautification
+    const beautified = beautifyText(message);
+    setMessage(beautified);
+    setIsBeautified(true);
+
+    // Focus the input after transformation
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [message]);
+
+  const handleUndo = useCallback(() => {
+    if (originalMessage !== null) {
+      setMessage(originalMessage);
+      setIsBeautified(false);
+      setOriginalMessage(null);
+
+      // Focus the input after undoing
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }
+  }, [originalMessage]);
 
   return (
-    <div className="border-t p-2 bg-white">
-      <div className="flex flex-col gap-2 bg-white rounded-md">
-        <Input
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask anything, @ to mention, ↑ to select"
-          className="flex-1 text-sm border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-        />
-        <div className="flex items-center justify-between w-full">
-          <ChatTypeSelector />
-          <div className="flex items-center gap-1 text-xs text-gray-500 px-2">
-            <span className="flex items-center gap-1">
-              <ModelSelector />
-              {isGenerating && (
-                <>
-                  {" Thinking"}
-                  <button
-                    onClick={cancelGeneration}
-                    className="flex items-center justify-center h-5 w-5 hover:bg-gray-200 rounded-full ml-1"
-                    title="Cancel generation"
-                  >
-                    <Square className="h-3 w-3 text-red-500 fill-red-500" />
-                  </button>
-                </>
-              )}
-            </span>
-            {!isGenerating && (
-              <Button
-                onClick={sendMessage}
-                disabled={inputValue.trim() === ""}
-                size="sm"
-                className="text-xs bg-gray-800 hover:bg-gray-700 text-white h-7 px-2 py-0"
-              >
-                Send
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+    <Container as="form" onSubmit={handleSubmit}>
+      <StyledInput
+        ref={inputRef}
+        type="text"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="w-full"
+      />
+      <ButtonGroup>
+        {isBeautified ? (
+          <Tooltip text="Undo beautification" position="top" delay={300}>
+            <BeautifyButton
+              type="button"
+              onClick={handleUndo}
+              disabled={disabled || !isBeautified}
+              aria-label="Undo beautification"
+            >
+              <UndoIcon />
+            </BeautifyButton>
+          </Tooltip>
+        ) : (
+          <Tooltip text="Beautify text" position="top" delay={300}>
+            <BeautifyButton
+              type="button"
+              onClick={handleBeautify}
+              disabled={disabled || !message.trim()}
+              aria-label="Beautify text"
+            >
+              <BeautifyIcon />
+            </BeautifyButton>
+          </Tooltip>
+        )}
+        <IconButton
+          type="submit"
+          disabled={!message.trim() || disabled}
+          aria-label="Send message"
+        >
+          <SendIcon />
+        </IconButton>
+      </ButtonGroup>
+    </Container>
+  );
+};
+
+export default ChatInput;
