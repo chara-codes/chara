@@ -9,20 +9,14 @@ export interface CharaWidgetConfig {
   position?: "right" | "left";
 }
 
-// Default configuration
-export const defaultConfig: CharaWidgetConfig = {
-  defaultOpen: false,
-  position: "right",
-};
-
 export const CharaWidgetPanel = (config: CharaWidgetConfig) => {
   return (
     <>
       <UIStoreProvider>
         <ThemeProvider theme={theme}>
           <ChatOverlayPanel
-            defaultOpen={config?.defaultOpen || defaultConfig.defaultOpen}
-            position={config?.position || defaultConfig.position}
+            defaultOpen={config?.defaultOpen}
+            position={config?.position || "right"}
           />
         </ThemeProvider>
       </UIStoreProvider>
