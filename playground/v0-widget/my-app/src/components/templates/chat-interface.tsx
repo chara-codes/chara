@@ -1,31 +1,53 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useCallback } from "react"
-import styled from "styled-components"
-import Header from "../molecules/header"
-import ConversationView from "../organisms/conversation-view"
-import HistoryView from "../organisms/history-view"
-import SettingsView from "../organisms/settings-view"
-import { useChatStore } from "../../store/chat-store"
-import { useModelsStore } from "../../store/models-store"
-import { useRoutingStore, Screen, useNavigateToConversation } from "../../store/routing-store"
+import type React from "react";
+import { useEffect, useCallback } from "react";
+import styled from "styled-components";
+import Header from "../molecules/header";
+import ConversationView from "../organisms/conversation-view";
+import HistoryView from "../organisms/history-view";
+import SettingsView from "../organisms/settings-view";
+import { useChatStore } from "../../store/chat-store";
+import { useModelsStore } from "../../store/models-store";
+import {
+  useRoutingStore,
+  Screen,
+  useNavigateToConversation,
+} from "../../store/routing-store";
+import { Theme } from "@/styles/theme";
 
 const Container = styled.div`
+  all: revert;
+  * {
+    font-family:
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      Oxygen,
+      Ubuntu,
+      Cantarell,
+      "Open Sans",
+      "Helvetica Neue",
+      sans-serif;
+    box-sizing: border-box;
+  }
+
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  background-color: #fff;
-  border: 1px solid #e5e7eb;
-`
+  background-color: ${({ theme }) => (theme as Theme).colors.background};
+  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+`;
 
 const Content = styled.div`
   flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-`
+`;
 
 const LoadingIndicator = styled.div`
   display: flex;
@@ -33,8 +55,8 @@ const LoadingIndicator = styled.div`
   align-items: center;
   height: 100%;
   font-size: 14px;
-  color: #6b7280;
-`
+  color: ${({ theme }) => (theme as Theme).colors.textSecondary};
+`;
 
 const ErrorMessage = styled.div`
   display: flex;
@@ -44,20 +66,20 @@ const ErrorMessage = styled.div`
   height: 100%;
   padding: 20px;
   text-align: center;
-  
+
   h3 {
     font-size: 16px;
     font-weight: 500;
-    color: #ef4444;
+    color: ${({ theme }) => (theme as Theme).colors.error};
     margin-bottom: 8px;
   }
-  
+
   p {
     font-size: 14px;
-    color: #6b7280;
+    color: ${({ theme }) => (theme as Theme).colors.textSecondary};
     max-width: 400px;
   }
-`
+`;
 
 const DebugButton = styled.button`
   margin-top: 16px;
@@ -67,62 +89,64 @@ const DebugButton = styled.button`
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
-  
+
   &:hover {
     background-color: #e5e7eb;
   }
-`
+`;
 
 const ChatInterface: React.FC = () => {
   // Get store initialization functions
-  const initializeChatStore = useChatStore((state) => state.initializeStore)
-  const initializeModelsStore = useModelsStore((state) => state.initializeStore)
+  const initializeChatStore = useChatStore((state) => state.initializeStore);
+  const initializeModelsStore = useModelsStore(
+    (state) => state.initializeStore,
+  );
 
   // Get routing state
-  const currentScreen = useRoutingStore((state) => state.currentScreen)
-  const navigateToConversation = useNavigateToConversation()
+  const currentScreen = useRoutingStore((state) => state.currentScreen);
+  const navigateToConversation = useNavigateToConversation();
 
   // Get chat store state
-  const chats = useChatStore((state) => state.chats)
-  const isChatsLoading = useChatStore((state) => state.isLoading)
-  const chatsLoadError = useChatStore((state) => state.loadError)
+  const chats = useChatStore((state) => state.chats);
+  const isChatsLoading = useChatStore((state) => state.isLoading);
+  const chatsLoadError = useChatStore((state) => state.loadError);
 
   // Get models store state
-  const isModelsLoading = useModelsStore((state) => state.isLoading)
-  const modelsLoadError = useModelsStore((state) => state.loadError)
+  const isModelsLoading = useModelsStore((state) => state.isLoading);
+  const modelsLoadError = useModelsStore((state) => state.loadError);
 
   // Get chat store actions using getState to avoid subscription issues
-  const chatStore = useChatStore.getState()
+  const chatStore = useChatStore.getState();
 
   // Memoize handlers to prevent unnecessary re-renders
   const handleSelectChatFromHistory = useCallback(
     (chatId: string) => {
-      chatStore.setActiveChat(chatId)
-      navigateToConversation()
+      chatStore.setActiveChat(chatId);
+      navigateToConversation();
     },
     [chatStore, navigateToConversation],
-  )
+  );
 
   const handleNewChat = useCallback(() => {
-    chatStore.createNewChat()
-    navigateToConversation()
-  }, [chatStore, navigateToConversation])
+    chatStore.createNewChat();
+    navigateToConversation();
+  }, [chatStore, navigateToConversation]);
 
   // Initialize stores when component mounts
   useEffect(() => {
-    initializeChatStore()
-    initializeModelsStore()
-  }, [initializeChatStore, initializeModelsStore])
+    initializeChatStore();
+    initializeModelsStore();
+  }, [initializeChatStore, initializeModelsStore]);
 
   // Handle new thread navigation
   useEffect(() => {
     if (currentScreen === Screen.NEW_THREAD) {
-      handleNewChat()
+      handleNewChat();
     }
-  }, [currentScreen, handleNewChat])
+  }, [currentScreen, handleNewChat]);
 
-  const isLoading = isChatsLoading || isModelsLoading
-  const hasError = chatsLoadError || modelsLoadError
+  const isLoading = isChatsLoading || isModelsLoading;
+  const hasError = chatsLoadError || modelsLoadError;
 
   // Update the error message section to include a debug button
   if (hasError) {
@@ -139,29 +163,33 @@ const ChatInterface: React.FC = () => {
             </p>
             <DebugButton
               onClick={() => {
-                console.log("Debug info:")
-                console.log("- Window location:", window.location.href)
-                console.log("- Public URL:", process.env.PUBLIC_URL || "Not defined")
-                console.log("- Base URL:", document.baseURI)
-                alert("Debug info logged to console")
+                console.log("Debug info:");
+                console.log("- Window location:", window.location.href);
+                console.log(
+                  "- Public URL:",
+                  process.env.PUBLIC_URL || "Not defined",
+                );
+                console.log("- Base URL:", document.baseURI);
+                alert("Debug info logged to console");
               }}
             >
               Debug Info
             </DebugButton>
-            {typeof window !== "undefined" && window.location.hostname === "localhost" && (
-              <DebugButton
-                onClick={() => {
-                  console.log("Forced reload")
-                  window.location.reload()
-                }}
-              >
-                Force Reload
-              </DebugButton>
-            )}
+            {typeof window !== "undefined" &&
+              window.location.hostname === "localhost" && (
+                <DebugButton
+                  onClick={() => {
+                    console.log("Forced reload");
+                    window.location.reload();
+                  }}
+                >
+                  Force Reload
+                </DebugButton>
+              )}
           </ErrorMessage>
         </Content>
       </Container>
-    )
+    );
   }
 
   if (isLoading) {
@@ -172,7 +200,7 @@ const ChatInterface: React.FC = () => {
           <LoadingIndicator>Loading data...</LoadingIndicator>
         </Content>
       </Container>
-    )
+    );
   }
 
   // Render different screens based on routing state
@@ -184,24 +212,24 @@ const ChatInterface: React.FC = () => {
             chats={chats}
             onSelectChat={handleSelectChatFromHistory}
           />
-        )
+        );
 
       case Screen.SETTINGS:
-        return <SettingsView onBack={navigateToConversation} />
+        return <SettingsView onBack={navigateToConversation} />;
 
       case Screen.CONVERSATION:
       case Screen.NEW_THREAD:
       default:
-        return <ConversationView />
+        return <ConversationView />;
     }
-  }
+  };
 
   return (
     <Container>
       <Header />
       <Content>{renderCurrentScreen()}</Content>
     </Container>
-  )
-}
+  );
+};
 
-export default ChatInterface
+export default ChatInterface;

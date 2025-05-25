@@ -1,9 +1,63 @@
 import styled, { keyframes } from "styled-components"
-import IconButton from "../../atoms/icon-button"
-import TextInput from "../../atoms/text-input"
 
-// Input container styles
-export const InputContainer = styled.div`
+const shimmer = keyframes`
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+`
+
+const pulse = keyframes`
+  0%, 100% {
+    opacity: 0.6;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.2);
+  }
+`
+
+const loadingLineAnimation = keyframes`
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+`
+
+export const LoadingLine = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  z-index: 10;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg, 
+      transparent 0%,
+      #3b82f6 15%,
+      #8b5cf6 30%,
+      #ec4899 50%,
+      #8b5cf6 70%,
+      #3b82f6 85%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+    animation: ${shimmer} 2s infinite linear, ${pulse} 2s infinite ease-in-out;
+  }
+`
+
+export const InputContainer = styled.div<{ isLoading?: boolean }>`
   display: flex;
   align-items: center;
   padding: 12px 16px;
@@ -15,9 +69,25 @@ export const InputContainer = styled.div`
   &:focus-within {
     background-color: #fff;
   }
+  
+  ${(props) =>
+    props.isLoading &&
+    `
+    pointer-events: none;
+    opacity: 0.7;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 5;
+    }
+  `}
 `
 
-// Input wrapper styles
 export const InputWrapper = styled.div<{ hasContext: boolean }>`
   display: flex;
   align-items: center;
@@ -46,7 +116,6 @@ export const InputWrapper = styled.div<{ hasContext: boolean }>`
   `}
 `
 
-// Input controls styles
 export const InputControls = styled.div`
   display: flex;
   flex-direction: column;
@@ -54,7 +123,6 @@ export const InputControls = styled.div`
   gap: 10px;
 `
 
-// Buttons row styles
 export const ButtonsRow = styled.div`
   display: flex;
   align-items: center;
@@ -69,14 +137,12 @@ export const ButtonsContainer = styled.div`
   position: relative;
 `
 
-// Spinner animation
 export const spin = keyframes`
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 `
 
-// Send button styles
-export const SendButton = styled(IconButton)<{ $isResponding?: boolean }>`
+export const SendButton = styled.button<{ $isResponding?: boolean }>`
   margin-left: 12px;
   background-color: ${(props) => (props.$isResponding ? "#ef4444" : "#2563eb")};
   border-radius: 12px;
@@ -84,28 +150,37 @@ export const SendButton = styled(IconButton)<{ $isResponding?: boolean }>`
   height: 40px;
   transition: all 0.2s ease;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
   
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: ${(props) => (props.$isResponding ? "#dc2626" : "#1d4ed8")};
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
   
-  &:active {
+  &:active:not(:disabled) {
     transform: translateY(0);
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
   
   svg {
     transition: transform 0.2s ease;
   }
   
-  &:hover svg {
+  &:hover:not(:disabled) svg {
     transform: ${(props) => (props.$isResponding ? "scale(1.1)" : "translateX(1px) scale(1.1)")};
   }
 `
 
-// Loader styles
 export const LoaderContainer = styled.div`
   position: relative;
   width: 20px;
@@ -124,12 +199,15 @@ export const Loader = styled.div`
   animation: ${spin} 1s linear infinite;
 `
 
-// Input styles
-export const StyledInput = styled(TextInput)`
+export const StyledInput = styled.textarea`
   font-size: 14px;
   padding: 6px 0;
   width: 100%;
   min-height: 24px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
   
   &::placeholder {
     color: #9ca3af;
@@ -139,22 +217,9 @@ export const StyledInput = styled(TextInput)`
   &:focus::placeholder {
     color: #d1d5db;
   }
-`
-
-// Context indicator styles
-export const ContextIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  font-size: 11px;
-  color: #2563eb;
-  gap: 4px;
-  background-color: rgba(37, 99, 235, 0.05);
-  border-radius: 4px;
-  padding: 3px 8px;
-  margin-left: auto;
-  border: 1px solid rgba(37, 99, 235, 0.1);
-`
-
-export const ContextCount = styled.span`
-  font-weight: 500;
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
 `

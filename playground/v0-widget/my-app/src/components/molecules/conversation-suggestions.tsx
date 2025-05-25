@@ -1,30 +1,30 @@
-"use client"
+"use client";
 
-import type React from "react"
-import styled from "styled-components"
-import type { Theme } from "../../styles/theme"
+import type React from "react";
+import styled from "styled-components";
+import type { Theme } from "../../styles/theme";
 
 interface PromptBlockProps {
-  text: string
-  onClick: () => void
+  text: string;
+  onClick: () => void;
 }
 
 interface ConversationSuggestionsProps {
-  onSelectSuggestion: (suggestion: string) => void
+  onSelectSuggestion: (suggestion: string) => void;
 }
 
 const SuggestionsContainer = styled.div`
   width: 100%;
   margin-top: auto;
   padding: 16px 0 0 0;
-  background-color: ${({ theme }) => (theme as Theme).colors.backgroundSecondary};
+  background-color: ${({ theme }) => (theme as Theme).colors.background};
   position: relative;
   bottom: 0;
   left: 0;
   right: 0;
   box-sizing: border-box;
   max-width: none;
-`
+`;
 
 const SuggestionsTitle = styled.h3`
   width: 100%;
@@ -34,7 +34,7 @@ const SuggestionsTitle = styled.h3`
   margin-bottom: 12px;
   padding: 0 8px; /* Reduced horizontal padding */
   box-sizing: border-box;
-`
+`;
 
 const ScrollContainer = styled.div`
   display: flex;
@@ -46,20 +46,20 @@ const ScrollContainer = styled.div`
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
-  
+
   /* Hide scrollbar but keep functionality */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
   &::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
-  
+
   /* Add space after the last item to show there's more content */
   &::after {
-    content: '';
+    content: "";
     padding-right: 8px; /* Adjusted to match new padding */
   }
-`
+`;
 
 const PromptBlock = styled.div`
   display: flex;
@@ -69,23 +69,24 @@ const PromptBlock = styled.div`
   height: 36px;
   padding: 0 16px;
   margin-right: 8px;
-  background-color: ${({ theme }) => (theme as Theme).colors.backgroundSecondary};
+  background-color: ${({ theme }) =>
+    (theme as Theme).colors.backgroundSecondary};
   border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
   border-radius: 18px;
   cursor: pointer;
   transition: all 0.2s ease;
   scroll-snap-align: start;
   flex-shrink: 0; /* Prevent shrinking */
-  
+
   &:hover {
     border-color: ${({ theme }) => (theme as Theme).colors.primary};
     background-color: ${({ theme }) => `${(theme as Theme).colors.primary}05`};
   }
-  
+
   &:last-child {
     margin-right: 0;
   }
-`
+`;
 
 const PromptText = styled.span`
   font-size: 13px;
@@ -94,17 +95,22 @@ const PromptText = styled.span`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-`
+`;
 
-const PromptBlockComponent: React.FC<PromptBlockProps> = ({ text, onClick }) => {
+const PromptBlockComponent: React.FC<PromptBlockProps> = ({
+  text,
+  onClick,
+}) => {
   return (
     <PromptBlock onClick={onClick}>
       <PromptText>{text}</PromptText>
     </PromptBlock>
-  )
-}
+  );
+};
 
-const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({ onSelectSuggestion }) => {
+const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
+  onSelectSuggestion,
+}) => {
   // Define conversation prompts
   const prompts = [
     "Help me brainstorm ideas for...",
@@ -117,7 +123,7 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({ onSel
     "Create a plan for...",
     "Summarize this article...",
     "Compare and contrast...",
-  ]
+  ];
 
   // Define full prompts that will be sent when a block is clicked
   const fullPrompts = [
@@ -131,18 +137,22 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({ onSel
     "Create a plan for launching a new product in the next quarter.",
     "Summarize this article about artificial intelligence trends.",
     "Compare and contrast microservices vs monolithic architecture.",
-  ]
+  ];
 
   return (
     <SuggestionsContainer>
       <SuggestionsTitle>Try asking...</SuggestionsTitle>
       <ScrollContainer>
         {prompts.map((prompt, index) => (
-          <PromptBlockComponent key={index} text={prompt} onClick={() => onSelectSuggestion(fullPrompts[index])} />
+          <PromptBlockComponent
+            key={index}
+            text={prompt}
+            onClick={() => onSelectSuggestion(fullPrompts[index])}
+          />
         ))}
       </ScrollContainer>
     </SuggestionsContainer>
-  )
-}
+  );
+};
 
-export default ConversationSuggestions
+export default ConversationSuggestions;
