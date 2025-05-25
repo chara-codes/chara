@@ -1,33 +1,34 @@
-import type React from "react"
+import type React from "react";
 
 export interface InputAreaProps {
-  onSendMessage: (message: string) => void
-  onAddContext: (item: ContextItem) => void
-  isResponding?: boolean
-  onStopResponse?: () => void
+  onSendMessage: (message: string) => void;
+  onAddContext: (item: ContextItem) => void;
+  isResponding?: boolean;
+  onStopResponse?: () => void;
+  isLoading?: boolean;
 }
 
 export interface ContextItem {
-  name: string
-  type: string
-  data?: unknown
+  name: string;
+  type: string;
+  data?: unknown;
 }
 
 export interface ElementComment {
-  element: HTMLElement
-  comment: string
+  element: HTMLElement;
+  comment: string;
   componentInfo?: {
-    name: string
-    path: string
-    isReactComponent: boolean
-  }
+    name: string;
+    path: string;
+    isReactComponent: boolean;
+  };
 }
 
 export interface DropdownItem {
-  id: string
-  label: string
-  type: string
-  section: string
-  icon?: React.ReactNode
-  action?: () => void
+  id: string;
+  label: string;
+  type: string;
+  section: string;
+  icon?: React.ReactNode;
+  action?: () => void;
 }

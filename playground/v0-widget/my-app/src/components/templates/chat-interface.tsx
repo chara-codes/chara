@@ -14,7 +14,7 @@ import {
   Screen,
   useNavigateToConversation,
 } from "../../store/routing-store";
-import { Theme } from "@/styles/theme";
+import type { Theme } from "../../styles/theme";
 
 const Container = styled.div`
   all: revert;
