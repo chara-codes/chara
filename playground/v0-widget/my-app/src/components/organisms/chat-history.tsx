@@ -6,7 +6,6 @@ import styled from "styled-components"
 import { format, isValid } from "date-fns" // Added isValid import
 import type { Chat } from "../../store/types"
 import { TrashIcon } from "../atoms/icons"
-import HistoryHeader from "../molecules/history-header"
 // Import the routing store
 import { useRoutingStore } from "../../store/routing-store"
 
@@ -323,18 +322,10 @@ const getChatTitle = (chat: Chat) => {
 }
 
 const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDeleteChat }) => {
-  const [searchQuery, setSearchQuery] = useState("")
   const [pendingDeleteChatId, setPendingDeleteChatId] = useState<string | null>(null)
 
-  // Filter chats based on search query
-  const filteredChats =
-    searchQuery.trim() === ""
-      ? chats
-      : chats.filter(
-          (chat) =>
-            getChatTitle(chat).toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (chat.messages && chat.messages.some((m) => m.content.toLowerCase().includes(searchQuery.toLowerCase()))),
-        )
+  // Use chats directly since we no longer filter
+  const filteredChats = chats
 
   // Group chats by date
   const groupedChats = groupChatsByDate(filteredChats)
@@ -361,22 +352,11 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDelete
 
   return (
     <HistoryContainer>
-      <HistoryHeader
-        onBack={navigateToConversation}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        placeholder="Search conversations..."
-      />
-
       <HistoryContent>
         {filteredChats.length === 0 ? (
           <EmptyState>
             <EmptyStateTitle>No conversations found</EmptyStateTitle>
-            <EmptyStateText>
-              {searchQuery.trim() !== ""
-                ? `No results found for "${searchQuery}". Try a different search term.`
-                : "You haven't had any conversations yet. Start a new chat to begin."}
-            </EmptyStateText>
+            <EmptyStateText>You haven't had any conversations yet. Start a new chat to begin.</EmptyStateText>
           </EmptyState>
         ) : (
           <>

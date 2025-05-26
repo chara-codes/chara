@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useCallback, useEffect } from "react"
 import styled from "styled-components"
-import HistoryHeader from "../molecules/history-header"
+import ViewNavigation from "../molecules/view-navigation"
 import { useUIStore, type KeyboardShortcut } from "../../store/ui-store"
 import { ChevronDownIcon } from "../atoms/icons"
 
@@ -403,7 +403,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
 
   return (
     <SettingsContainer>
-      <HistoryHeader
+      <ViewNavigation
         onBack={onBack}
         searchQuery={settingsSearchQuery}
         onSearchChange={handleSearchChange}

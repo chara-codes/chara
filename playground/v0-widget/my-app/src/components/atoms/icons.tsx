@@ -27,6 +27,11 @@ import { ArrowLeftIcon } from "./icons/arrow-left-icon"
 import { ChevronDownIcon } from "./icons/chevron-down-icon"
 import { BeautifyIcon } from "./icons/beautify-icon"
 import { UndoIcon } from "./icons/undo-icon"
+import { LayersIcon } from "./icons/layers-icon"
+import { ServerIcon } from "./icons/server-icon"
+import { DatabaseIcon } from "./icons/database-icon"
+import { GlobeIcon } from "./icons/globe-icon"
+import { EditIcon } from "./icons/edit-icon"
 
 /**
  * Central export file for all icon components
@@ -65,6 +70,12 @@ export {
   ChevronDownIcon,
   BeautifyIcon,
   UndoIcon,
+  // New icons
+  LayersIcon,
+  ServerIcon,
+  DatabaseIcon,
+  GlobeIcon,
+  EditIcon,
 }
 
 // Export types
@@ -97,3 +108,9 @@ export type { ArrowLeftIconProps } from "./icons/arrow-left-icon"
 export type { ChevronDownIconProps } from "./icons/chevron-down-icon"
 export type { BeautifyIconProps } from "./icons/beautify-icon"
 export type { UndoIconProps } from "./icons/undo-icon"
+// New icon types
+export type { LayersIconProps } from "./icons/layers-icon"
+export type { ServerIconProps } from "./icons/server-icon"
+export type { DatabaseIconProps } from "./icons/database-icon"
+export type { GlobeIconProps } from "./icons/globe-icon"
+export type { EditIconProps } from "./icons/edit-icon"

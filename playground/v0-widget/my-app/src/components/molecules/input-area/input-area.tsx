@@ -1,10 +1,10 @@
-"use client";
+"use client"
 
-import type React from "react";
-import { useState, useRef, useCallback } from "react";
-import DropdownMenu from "../dropdown-menu";
-import FileInput from "../file-input";
-import type { InputAreaProps } from "../../../types/input-area";
+import type React from "react"
+import { useState, useRef, useCallback } from "react"
+import DropdownMenu from "../dropdown-menu"
+import FileInput from "../file-input"
+import type { InputAreaProps, ButtonConfig } from "../../../types/input-area"
 import {
   InputContainer,
   InputWrapper,
@@ -14,22 +14,14 @@ import {
   LoaderContainer,
   Loader,
   StyledInput,
-} from "./styles";
-import {
-  PlusIcon,
-  ClipIcon,
-  PointerIcon,
-  SendIcon,
-  StopIcon,
-  BeautifyIcon,
-  UndoIcon,
-} from "../../atoms/input-icons";
-import IconButton from "../../atoms/icon-button";
-import Tooltip from "../../atoms/tooltip";
-import { useElementSelector } from "../../../hooks/use-element-selector";
-import { createDropdownItems } from "./dropdown-items";
-import styled from "styled-components";
-import AnimatedButton from "./animated-button";
+} from "./styles"
+import { PlusIcon, ClipIcon, PointerIcon, SendIcon, StopIcon, BeautifyIcon, UndoIcon } from "../../atoms/input-icons"
+import IconButton from "../../atoms/icon-button"
+import Tooltip from "../../atoms/tooltip"
+import { useElementSelector } from "../../../hooks/use-element-selector"
+import { createDropdownItems } from "./dropdown-items"
+import styled from "styled-components"
+import AnimatedButton from "./animated-button"
 
 const RoundedIconButton = styled(IconButton)`
   border-radius: 8px;
@@ -42,7 +34,7 @@ const RoundedIconButton = styled(IconButton)`
   &:active:not(:disabled) {
     background-color: rgba(0, 0, 0, 0.1);
   }
-`;
+`
 
 const LoadingLine = styled.div`
   position: absolute;
@@ -86,7 +78,14 @@ const LoadingLine = styled.div`
       transform: scaleY(1.2);
     }
   }
-`;
+`
+
+// Default button configuration
+const defaultButtonConfig: ButtonConfig[] = [
+  { id: "add-context", icon: PlusIcon, tooltip: "Add context", enabled: true },
+  { id: "select-element", icon: PointerIcon, tooltip: "Select element", enabled: true },
+  { id: "upload-file", icon: ClipIcon, tooltip: "Upload file", enabled: true },
+]
 
 const InputArea: React.FC<InputAreaProps> = ({
   onSendMessage,
@@ -94,136 +93,134 @@ const InputArea: React.FC<InputAreaProps> = ({
   isResponding = false,
   isLoading = false,
   onStopResponse = () => {},
+  buttonConfig = defaultButtonConfig,
 }) => {
-  const [message, setMessage] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const plusButtonRef = useRef<HTMLDivElement>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<
-    { top: number; left: number } | undefined
-  >(undefined);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [originalText, setOriginalText] = useState<string>("");
-  const [isBeautified, setIsBeautified] = useState(false);
-  const [isBeautifyLoading, setIsBeautifyLoading] = useState(false);
+  const [message, setMessage] = useState("")
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const plusButtonRef = useRef<HTMLDivElement>(null)
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | undefined>(undefined)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [originalText, setOriginalText] = useState<string>("")
+  const [isBeautified, setIsBeautified] = useState(false)
+  const [isBeautifyLoading, setIsBeautifyLoading] = useState(false)
 
   // Use our custom element selector hook
-  const { startElementSelection } = useElementSelector(onAddContext);
+  const { startElementSelection } = useElementSelector(onAddContext)
 
   const beautifyText = useCallback(() => {
-    if (!message.trim()) return;
+    if (!message.trim()) return
 
-    setIsBeautifyLoading(true);
+    setIsBeautifyLoading(true)
 
     // Store original text for undo functionality
-    setOriginalText(message);
+    setOriginalText(message)
 
     // Simulate AI beautification with a delay to show loading
     setTimeout(() => {
       const enhancedText = message
         .split(". ")
         .map((sentence) => {
-          let s = sentence.trim();
+          let s = sentence.trim()
           if (s.length > 0) {
-            s = s.charAt(0).toUpperCase() + s.slice(1);
+            s = s.charAt(0).toUpperCase() + s.slice(1)
           }
-          return s;
+          return s
         })
         .join(". ")
         .replace(/\bi\b/g, "I")
         .replace(/\bdont\b/g, "don't")
         .replace(/\bcant\b/g, "can't")
-        .replace(/\bwont\b/g, "won't");
+        .replace(/\bwont\b/g, "won't")
 
-      setMessage(enhancedText);
-      setIsBeautified(true);
-      setIsBeautifyLoading(false);
-    }, 1000); // 1 second delay to show loading
-  }, [message]);
+      setMessage(enhancedText)
+      setIsBeautified(true)
+      setIsBeautifyLoading(false)
+    }, 1000) // 1 second delay to show loading
+  }, [message])
 
   const handleUndo = useCallback(() => {
-    setMessage(originalText);
-    setIsBeautified(false);
-  }, [originalText]);
+    setMessage(originalText)
+    setIsBeautified(false)
+  }, [originalText])
 
   const handleSend = () => {
     if (message.trim() && !isResponding && !isBeautifyLoading) {
-      onSendMessage(message);
-      setMessage("");
-      setIsBeautified(false);
+      onSendMessage(message)
+      setMessage("")
+      setIsBeautified(false)
     }
-  };
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (
-      e.key === "Enter" &&
-      !e.shiftKey &&
-      !isResponding &&
-      !isLoading &&
-      !isBeautifyLoading
-    ) {
-      e.preventDefault();
-      handleSend();
+    if (e.key === "Enter" && !e.shiftKey && !isResponding && !isLoading && !isBeautifyLoading) {
+      e.preventDefault()
+      handleSend()
     }
-  };
+  }
 
   const handlePlusClick = () => {
     if (plusButtonRef.current && !isLoading && !isBeautifyLoading) {
-      // const rect = plusButtonRef.current.getBoundingClientRect()
       setDropdownPosition({
-        top: -250, // Position higher above the button to allow space for the dropdown
+        top: -250,
         left: 0,
-      });
+      })
     }
     if (!isLoading && !isBeautifyLoading) {
-      setIsDropdownOpen(!isDropdownOpen);
+      setIsDropdownOpen(!isDropdownOpen)
     }
-  };
+  }
 
   const handleDropdownClose = () => {
-    setIsDropdownOpen(false);
-  };
+    setIsDropdownOpen(false)
+  }
 
   const handleFileSelect = (file: File) => {
     onAddContext({
       name: file.name,
       type: "File",
       data: file,
-    });
-    // Close the dropdown after file selection
-    setIsDropdownOpen(false);
-  };
+    })
+    setIsDropdownOpen(false)
+  }
 
   const triggerFileUpload = () => {
     if (fileInputRef.current && !isLoading && !isBeautifyLoading) {
-      fileInputRef.current.click();
+      fileInputRef.current.click()
     }
-  };
+  }
 
   // Create dropdown items
-  const dropdownItems = createDropdownItems(
-    startElementSelection,
-    triggerFileUpload,
-  );
+  const dropdownItems = createDropdownItems(startElementSelection, triggerFileUpload)
 
   const handleDropdownSelect = (item: {
-    id: string;
-    label: string;
-    type: string;
+    id: string
+    label: string
+    type: string
   }) => {
     if (item.id === "upload") {
-      // The upload action is handled by the FileInput component
-      return;
+      return
     }
 
-    // For other items, add them to the context
     onAddContext({
       name: item.label,
-      type: item.type.toLowerCase(), // Use the type directly from the item
-    });
-  };
+      type: item.type.toLowerCase(),
+    })
+  }
 
   // Check if the beautify button should be visible
-  const showBeautifyButton = message.length > 10;
+  const showBeautifyButton = message.length > 10
+
+  // Helper function to check if a button is enabled
+  const isButtonEnabled = (buttonId: string) => {
+    const button = buttonConfig.find((b) => b.id === buttonId)
+    return button ? button.enabled : false
+  }
+
+  // Helper function to get button tooltip
+  const getButtonTooltip = (buttonId: string) => {
+    const button = buttonConfig.find((b) => b.id === buttonId)
+    return button ? button.tooltip : ""
+  }
 
   return (
     <InputContainer
@@ -236,58 +233,53 @@ const InputArea: React.FC<InputAreaProps> = ({
       <InputWrapper hasContext={false}>
         <InputControls>
           <StyledInput
-            placeholder={
-              isResponding ? "AI is responding..." : "Message the agent..."
-            }
+            placeholder={isResponding ? "AI is responding..." : "Message the agent..."}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isResponding || isLoading || isBeautifyLoading}
           />
           <ButtonsRow>
-            <div ref={plusButtonRef}>
-              <Tooltip text="Add context" position="top" delay={500}>
+            {isButtonEnabled("add-context") && (
+              <div ref={plusButtonRef}>
+                <Tooltip text={getButtonTooltip("add-context")} position="top" delay={500}>
+                  <RoundedIconButton
+                    onClick={handlePlusClick}
+                    disabled={isResponding || isLoading || isBeautifyLoading}
+                    aria-label="Add context"
+                  >
+                    <PlusIcon />
+                  </RoundedIconButton>
+                </Tooltip>
+              </div>
+            )}
+            {isButtonEnabled("select-element") && (
+              <Tooltip text={getButtonTooltip("select-element")} position="top" delay={500}>
                 <RoundedIconButton
-                  onClick={handlePlusClick}
+                  onClick={startElementSelection}
                   disabled={isResponding || isLoading || isBeautifyLoading}
-                  aria-label="Add context"
+                  aria-label="Select element"
                 >
-                  <PlusIcon />
+                  <PointerIcon />
                 </RoundedIconButton>
               </Tooltip>
-            </div>
-            <Tooltip text="Select element" position="top" delay={500}>
-              <RoundedIconButton
-                onClick={startElementSelection}
-                disabled={isResponding || isLoading || isBeautifyLoading}
-                aria-label="Select element"
-              >
-                <PointerIcon />
-              </RoundedIconButton>
-            </Tooltip>
-            <Tooltip text="Upload file" position="top" delay={500}>
-              <RoundedIconButton
-                onClick={triggerFileUpload}
-                disabled={isResponding || isLoading || isBeautifyLoading}
-                aria-label="Upload file"
-              >
-                <ClipIcon />
-              </RoundedIconButton>
-            </Tooltip>
+            )}
+            {isButtonEnabled("upload-file") && (
+              <Tooltip text={getButtonTooltip("upload-file")} position="top" delay={500}>
+                <RoundedIconButton
+                  onClick={triggerFileUpload}
+                  disabled={isResponding || isLoading || isBeautifyLoading}
+                  aria-label="Upload file"
+                >
+                  <ClipIcon />
+                </RoundedIconButton>
+              </Tooltip>
+            )}
             <AnimatedButton isVisible={showBeautifyButton}>
-              <Tooltip
-                text={isBeautified ? "Undo beautify" : "Beautify text"}
-                position="top"
-                delay={500}
-              >
+              <Tooltip text={isBeautified ? "Undo beautify" : "Beautify text"} position="top" delay={500}>
                 <RoundedIconButton
                   onClick={isBeautified ? handleUndo : beautifyText}
-                  disabled={
-                    isResponding ||
-                    isLoading ||
-                    isBeautifyLoading ||
-                    (!isBeautified && !message.trim())
-                  }
+                  disabled={isResponding || isLoading || isBeautifyLoading || (!isBeautified && !message.trim())}
                   aria-label={isBeautified ? "Undo beautify" : "Beautify text"}
                 >
                   {isBeautified ? <UndoIcon /> : <BeautifyIcon />}
@@ -296,12 +288,7 @@ const InputArea: React.FC<InputAreaProps> = ({
             </AnimatedButton>
             <DropdownMenu
               items={dropdownItems}
-              isOpen={
-                isDropdownOpen &&
-                !isResponding &&
-                !isLoading &&
-                !isBeautifyLoading
-              }
+              isOpen={isDropdownOpen && !isResponding && !isLoading && !isBeautifyLoading}
               onClose={handleDropdownClose}
               position={dropdownPosition}
               onSelect={handleDropdownSelect}
@@ -310,11 +297,7 @@ const InputArea: React.FC<InputAreaProps> = ({
           </ButtonsRow>
         </InputControls>
       </InputWrapper>
-      <Tooltip
-        text={isResponding ? "Stop response" : "Send message"}
-        position="left"
-        delay={500}
-      >
+      <Tooltip text={isResponding ? "Stop response" : "Send message"} position="left" delay={500}>
         <SendButton
           onClick={isResponding ? onStopResponse : handleSend}
           $isResponding={isResponding}
@@ -334,7 +317,7 @@ const InputArea: React.FC<InputAreaProps> = ({
         </SendButton>
       </Tooltip>
     </InputContainer>
-  );
-};
+  )
+}
 
-export default InputArea;
+export default InputArea

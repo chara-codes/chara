@@ -8,7 +8,7 @@ export interface HistoryIconProps {
   size?: number
 }
 
-export const HistoryIcon: React.FC<HistoryIconProps> = ({ size = 24 }) => (
+export const HistoryIcon: React.FC<HistoryIconProps> = ({ size = 18 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={size}

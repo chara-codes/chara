@@ -1,220 +1,136 @@
-"use client";
+"use client"
 
-import type React from "react";
-import styled from "styled-components";
-import IconButton from "../atoms/icon-button";
-import Tooltip from "../atoms/tooltip";
-import { useRoutingStore, Screen } from "../../store/routing-store";
+import type React from "react"
+import styled from "styled-components"
+import { useCallback } from "react"
+import {
+  HistoryIcon,
+  SettingsIcon,
+  PlusIcon,
+  LayersIcon, // Import the LayersIcon
+} from "../atoms/icons"
+import {
+  useNavigateToHistory,
+  useNavigateToSettings,
+  useNavigateToNewThread,
+  useNavigateToTechStacks, // Import the new navigation hook
+  useCurrentScreen,
+  Screen,
+} from "../../store/routing-store"
+import type { Theme } from "../../styles/theme"
 
 interface HeaderProps {
-  title?: string;
+  title?: string
 }
 
-// Update the header styles to be more compact
 const HeaderContainer = styled.header`
-  all: revert;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #fff;
-`;
+  border-bottom: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  background-color: ${({ theme }) => (theme as Theme).colors.background};
+`
 
 const Title = styled.h1`
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => (theme as Theme).colors.text};
   margin: 0;
-`;
+`
 
-const LeftSection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-`;
-
-const RightSection = styled.div`
+const HeaderActions = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-right: -4px;
-`;
+`
 
-const SettingsButtonWrapper = styled.div`
-  margin-right: 8px;
-  position: relative;
-
-  @media (min-width: 768px) {
-    margin-right: 12px;
-  }
-`;
-
-const RoundedIconButton = styled(IconButton)`
-  border-radius: 8px;
-  overflow: hidden;
-
+const HeaderButton = styled.button<{ $active?: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: none;
+  background-color: ${({ $active, theme }) => ($active ? (theme as Theme).colors.primaryLight : "transparent")};
+  color: ${({ $active, theme }) => ($active ? (theme as Theme).colors.primary : (theme as Theme).colors.textSecondary)};
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  
   &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: ${({ theme }) => (theme as Theme).colors.hover};
+    color: ${({ $active, theme }) => ($active ? (theme as Theme).colors.primary : (theme as Theme).colors.text)};
   }
-
-  &:active {
-    background-color: rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const PlusIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M12 5V19"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M5 12H19"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const DotsIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M19 13C19.5523 13 20 12.5523 20 12C20 11.4477 19.5523 11 19 11C18.4477 11 18 11.4477 18 12C18 12.5523 18.4477 13 19 13Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M5 13C5.55228 13 6 12.5523 6 12C6 11.4477 5.55228 11 5 11C4.44772 11 4 11.4477 4 12C4 12.5523 4.44772 13 5 13Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const HistoryIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M12 8V12L15 15"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M3.05 11C3.27 8.18 4.71 5.62 6.97 3.94C9.24 2.26 12.1 1.65 14.83 2.26C17.56 2.86 19.89 4.62 21.24 7.05C22.59 9.48 22.83 12.36 21.89 14.97C20.95 17.58 18.93 19.63 16.32 20.63C13.71 21.63 10.82 21.47 8.34 20.18C5.86 18.9 4.02 16.61 3.33 13.88C3.11 12.95 3 11.98 3 11"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-// Helper function to get dynamic title based on current screen
-const getScreenTitle = (screen: Screen): string => {
-  switch (screen) {
-    case Screen.CONVERSATION:
-      return "New Thread";
-    case Screen.HISTORY:
-      return "Chat History";
-    case Screen.SETTINGS:
-      return "Settings";
-    case Screen.NEW_THREAD:
-      return "New Thread";
-    default:
-      return "AI Chat";
-  }
-};
+`
 
 const Header: React.FC<HeaderProps> = ({ title }) => {
-  const currentScreen = useRoutingStore((state) => state.currentScreen);
-  const {
-    navigateToNewThread,
-    navigateToHistory,
-    navigateToSettings,
-    navigateToConversation,
-  } = useRoutingStore();
+  // Get navigation actions from routing store
+  const navigateToHistory = useNavigateToHistory()
+  const navigateToSettings = useNavigateToSettings()
+  const navigateToNewThread = useNavigateToNewThread()
+  const navigateToTechStacks = useNavigateToTechStacks() // Get the new navigation action
+  const currentScreen = useCurrentScreen()
 
-  // Use provided title or generate one based on current screen
-  const displayTitle = title || getScreenTitle(currentScreen);
-
-  const handleNewThread = () => {
-    // If we're in history view, first navigate back to conversation, then create new thread
-    if (currentScreen === Screen.HISTORY) {
-      navigateToConversation();
+  // Get title based on current screen
+  const getScreenTitle = () => {
+    switch (currentScreen) {
+      case Screen.CONVERSATION:
+      case Screen.NEW_THREAD:
+        return "Thread"
+      case Screen.HISTORY:
+        return "History"
+      case Screen.TECH_STACKS:
+      case Screen.ADD_TECH_STACK:
+      case Screen.EDIT_TECH_STACK:
+        return "Stacks"
+      case Screen.SETTINGS:
+        return "Settings"
+      default:
+        return "Chat"
     }
-    navigateToNewThread();
-  };
+  }
+
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleHistoryClick = useCallback(() => {
+    navigateToHistory()
+  }, [navigateToHistory])
+
+  const handleSettingsClick = useCallback(() => {
+    navigateToSettings()
+  }, [navigateToSettings])
+
+  const handleNewThreadClick = useCallback(() => {
+    navigateToNewThread()
+  }, [navigateToNewThread])
+
+  const handleTechStacksClick = useCallback(() => {
+    navigateToTechStacks()
+  }, [navigateToTechStacks])
 
   return (
     <HeaderContainer>
-      <LeftSection>
-        <Title>{displayTitle}</Title>
-      </LeftSection>
-      <RightSection>
-        <Tooltip text="New Chat" position="bottom" delay={500}>
-          <RoundedIconButton onClick={handleNewThread} aria-label="New Chat">
-            <PlusIcon />
-          </RoundedIconButton>
-        </Tooltip>
-
-        <Tooltip text="Chat History" position="bottom" delay={500}>
-          <RoundedIconButton
-            onClick={navigateToHistory}
-            aria-label="Chat History"
-          >
-            <HistoryIcon />
-          </RoundedIconButton>
-        </Tooltip>
-
-        <SettingsButtonWrapper>
-          <Tooltip text="Settings" position="bottom" delay={500}>
-            <RoundedIconButton
-              onClick={navigateToSettings}
-              aria-label="Settings"
-            >
-              <DotsIcon />
-            </RoundedIconButton>
-          </Tooltip>
-        </SettingsButtonWrapper>
-      </RightSection>
+      <Title>{title || getScreenTitle()}</Title>
+      <HeaderActions>
+        <HeaderButton onClick={handleNewThreadClick} title="New Thread">
+          <PlusIcon width={16} height={16} />
+        </HeaderButton>
+        <HeaderButton onClick={handleHistoryClick} title="History" $active={currentScreen === Screen.HISTORY}>
+          <HistoryIcon width={16} height={16} />
+        </HeaderButton>
+        <HeaderButton
+          onClick={handleTechStacksClick}
+          title="Tech Stacks"
+          $active={currentScreen === Screen.TECH_STACKS}
+        >
+          <LayersIcon width={16} height={16} />
+        </HeaderButton>
+        <HeaderButton onClick={handleSettingsClick} title="Settings" $active={currentScreen === Screen.SETTINGS}>
+          <SettingsIcon width={16} height={16} />
+        </HeaderButton>
+      </HeaderActions>
     </HeaderContainer>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header
