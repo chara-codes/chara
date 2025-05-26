@@ -11,11 +11,11 @@ const packageJson = JSON.parse(
   readFileSync(resolve(__dirname, "../package.json"), "utf8"),
 );
 
-try {
+/*try {
   await getAndStoreSystemInfo();
 } catch (error) {
   console.error(error);
-}
+}*/
 
 yargs(hideBin(process.argv))
   .scriptName("chara")

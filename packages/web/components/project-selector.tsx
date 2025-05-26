@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { FolderOpen, RefreshCw } from "lucide-react";
 import { generateStringHash } from "@/lib/hash-string";
+import { directoryManager } from "@/utils/file-system";
 
 interface ProjectSelectorProps {
   onProjectSelect: (projectId: number, projectName: string) => void;
@@ -35,7 +36,15 @@ export function ProjectSelector({
         16,
       );
 
-      await directoryHandle.requestPermission({ mode: "readwrite" });
+      // Request read/write permission
+      const permissionStatus = await directoryHandle.requestPermission({ mode: "readwrite" });
+      
+      if (permissionStatus !== "granted") {
+        throw new Error("Permission denied for directory access");
+      }
+
+      // Store the directory handle for future access
+      directoryManager.setDirectoryHandle(projectId, directoryHandle);
 
       // Update the selected project in the parent component
       onProjectSelect(projectId, projectName);
