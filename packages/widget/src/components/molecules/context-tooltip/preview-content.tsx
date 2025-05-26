@@ -9,6 +9,63 @@ export const getPreviewContent = (item: ContextItem): React.ReactNode => {
 
   // If the item has data, use it for the preview
   if (item.data) {
+    // Special handling for Element type with comment
+    if (lowerType === "element" && typeof item.data === "object") {
+      const elementData = item.data as any
+      const comment = elementData.comment || ""
+
+      // Format the element data with the comment prominently displayed
+      return (
+        <>
+          {comment && (
+            <div
+              style={{
+                marginBottom: "12px",
+                padding: "8px 12px",
+                backgroundColor: "#f0f9ff",
+                borderLeft: "3px solid #2563eb",
+                borderRadius: "4px",
+                fontStyle: "italic",
+              }}
+            >
+              <strong>Comment:</strong> {comment}
+            </div>
+          )}
+          <div>
+            <strong>Element:</strong> {elementData.tagName?.toLowerCase() || "unknown"}
+            {elementData.id && (
+              <span>
+                {" "}
+                #<code>{elementData.id}</code>
+              </span>
+            )}
+            {elementData.className && (
+              <span>
+                {" "}
+                .<code>{elementData.className.split(" ").join(".")}</code>
+              </span>
+            )}
+          </div>
+          {elementData.component?.name && (
+            <div style={{ marginTop: "8px" }}>
+              <strong>Component:</strong> {elementData.component.name}
+              {elementData.component.path && (
+                <div>
+                  <small>Path: {elementData.component.path}</small>
+                </div>
+              )}
+            </div>
+          )}
+          {elementData.textContent && (
+            <div style={{ marginTop: "8px", opacity: 0.8 }}>
+              <strong>Content:</strong> {elementData.textContent.substring(0, 100)}
+              {elementData.textContent.length > 100 ? "..." : ""}
+            </div>
+          )}
+        </>
+      )
+    }
+
     if (typeof item.data === "string") {
       return item.data
     }

@@ -1,20 +1,24 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useCallback } from "react"
-import styled from "styled-components"
-import Header from "../molecules/header"
-import ConversationView from "../organisms/conversation-view"
-import HistoryView from "../organisms/history-view"
-import SettingsView from "../organisms/settings-view"
-import TechStacksView from "../organisms/tech-stacks-view"
-import AddTechStackView from "../organisms/add-tech-stack-view"
-import EditTechStackView from "../organisms/edit-tech-stack-view"
-import { useChatStore } from "../../store/chat-store"
-import { useModelsStore } from "../../store/models-store"
-import { useRoutingStore, Screen, useNavigateToConversation } from "../../store/routing-store"
-import type { Theme } from "../../styles/theme"
-import type { ButtonConfig } from "../../types/input-area"
+import type React from "react";
+import { useEffect, useCallback } from "react";
+import styled from "styled-components";
+import Header from "../molecules/header";
+import ConversationView from "../organisms/conversation-view";
+import HistoryView from "../organisms/history-view";
+import SettingsView from "../organisms/settings-view";
+import TechStacksView from "../organisms/tech-stacks-view";
+import AddTechStackView from "../organisms/add-tech-stack-view";
+import EditTechStackView from "../organisms/edit-tech-stack-view";
+import { useChatStore } from "../../store/chat-store";
+import { useModelsStore } from "../../store/models-store";
+import {
+  useRoutingStore,
+  Screen,
+  useNavigateToConversation,
+} from "../../store/routing-store";
+import type { Theme } from "../../styles/theme";
+import type { ButtonConfig } from "../../types/input-area";
 
 const Container = styled.div`
   all: revert;
@@ -40,14 +44,14 @@ const Container = styled.div`
   width: 100%;
   background-color: ${({ theme }) => (theme as Theme).colors.background};
   border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
-`
+`;
 
 const Content = styled.div`
   flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-`
+`;
 
 const LoadingIndicator = styled.div`
   display: flex;
@@ -56,7 +60,7 @@ const LoadingIndicator = styled.div`
   height: 100%;
   font-size: 14px;
   color: ${({ theme }) => (theme as Theme).colors.textSecondary};
-`
+`;
 
 const ErrorMessage = styled.div`
   display: flex;
@@ -79,7 +83,7 @@ const ErrorMessage = styled.div`
     color: ${({ theme }) => (theme as Theme).colors.textSecondary};
     max-width: 400px;
   }
-`
+`;
 
 const DebugButton = styled.button`
   margin-top: 16px;
@@ -93,62 +97,64 @@ const DebugButton = styled.button`
   &:hover {
     background-color: #e5e7eb;
   }
-`
+`;
 
 interface ChatInterfaceProps {
-  buttonConfig?: ButtonConfig[]
+  buttonConfig?: ButtonConfig[];
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ buttonConfig }) => {
   // Get store initialization functions
-  const initializeChatStore = useChatStore((state) => state.initializeStore)
-  const initializeModelsStore = useModelsStore((state) => state.initializeStore)
+  const initializeChatStore = useChatStore((state) => state.initializeStore);
+  const initializeModelsStore = useModelsStore(
+    (state) => state.initializeStore,
+  );
 
   // Get routing state
-  const currentScreen = useRoutingStore((state) => state.currentScreen)
-  const navigateToConversation = useNavigateToConversation()
+  const currentScreen = useRoutingStore((state) => state.currentScreen);
+  const navigateToConversation = useNavigateToConversation();
 
   // Get chat store state
-  const chats = useChatStore((state) => state.chats)
-  const isChatsLoading = useChatStore((state) => state.isLoading)
-  const chatsLoadError = useChatStore((state) => state.loadError)
+  const chats = useChatStore((state) => state.chats);
+  const isChatsLoading = useChatStore((state) => state.isLoading);
+  const chatsLoadError = useChatStore((state) => state.loadError);
 
   // Get models store state
-  const isModelsLoading = useModelsStore((state) => state.isLoading)
-  const modelsLoadError = useModelsStore((state) => state.loadError)
+  const isModelsLoading = useModelsStore((state) => state.isLoading);
+  const modelsLoadError = useModelsStore((state) => state.loadError);
 
   // Get chat store actions using getState to avoid subscription issues
-  const chatStore = useChatStore.getState()
+  const chatStore = useChatStore.getState();
 
   // Memoize handlers to prevent unnecessary re-renders
   const handleSelectChatFromHistory = useCallback(
     (chatId: string) => {
-      chatStore.setActiveChat(chatId)
-      navigateToConversation()
+      chatStore.setActiveChat(chatId);
+      navigateToConversation();
     },
     [chatStore, navigateToConversation],
-  )
+  );
 
   const handleNewChat = useCallback(() => {
-    chatStore.createNewChat()
-    navigateToConversation()
-  }, [chatStore, navigateToConversation])
+    chatStore.createNewChat();
+    navigateToConversation();
+  }, [chatStore, navigateToConversation]);
 
   // Initialize stores when component mounts
   useEffect(() => {
-    initializeChatStore()
-    initializeModelsStore()
-  }, [initializeChatStore, initializeModelsStore])
+    initializeChatStore();
+    initializeModelsStore();
+  }, [initializeChatStore, initializeModelsStore]);
 
   // Handle new thread navigation
   useEffect(() => {
     if (currentScreen === Screen.NEW_THREAD) {
-      handleNewChat()
+      handleNewChat();
     }
-  }, [currentScreen, handleNewChat])
+  }, [currentScreen, handleNewChat]);
 
-  const isLoading = isChatsLoading || isModelsLoading
-  const hasError = chatsLoadError || modelsLoadError
+  const isLoading = isChatsLoading || isModelsLoading;
+  const hasError = chatsLoadError || modelsLoadError;
 
   // Update the error message section to include a debug button
   if (hasError) {
@@ -165,29 +171,33 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ buttonConfig }) => {
             </p>
             <DebugButton
               onClick={() => {
-                console.log("Debug info:")
-                console.log("- Window location:", window.location.href)
-                console.log("- Public URL:", process.env.PUBLIC_URL || "Not defined")
-                console.log("- Base URL:", document.baseURI)
-                alert("Debug info logged to console")
+                console.log("Debug info:");
+                console.log("- Window location:", window.location.href);
+                console.log(
+                  "- Public URL:",
+                  process.env.PUBLIC_URL || "Not defined",
+                );
+                console.log("- Base URL:", document.baseURI);
+                alert("Debug info logged to console");
               }}
             >
               Debug Info
             </DebugButton>
-            {typeof window !== "undefined" && window.location.hostname === "localhost" && (
-              <DebugButton
-                onClick={() => {
-                  console.log("Forced reload")
-                  window.location.reload()
-                }}
-              >
-                Force Reload
-              </DebugButton>
-            )}
+            {typeof window !== "undefined" &&
+              window.location.hostname === "localhost" && (
+                <DebugButton
+                  onClick={() => {
+                    console.log("Forced reload");
+                    window.location.reload();
+                  }}
+                >
+                  Force Reload
+                </DebugButton>
+              )}
           </ErrorMessage>
         </Content>
       </Container>
-    )
+    );
   }
 
   if (isLoading) {
@@ -198,40 +208,46 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ buttonConfig }) => {
           <LoadingIndicator>Loading data...</LoadingIndicator>
         </Content>
       </Container>
-    )
+    );
   }
 
   // Render different screens based on routing state
   const renderCurrentScreen = () => {
     switch (currentScreen) {
       case Screen.HISTORY:
-        return <HistoryView chats={chats} onSelectChat={handleSelectChatFromHistory} />
+        return (
+          <HistoryView
+            onBack={navigateToConversation}
+            chats={chats}
+            onSelectChat={handleSelectChatFromHistory}
+          />
+        );
 
       case Screen.SETTINGS:
-        return <SettingsView onBack={navigateToConversation} />
+        return <SettingsView onBack={navigateToConversation} />;
 
       case Screen.TECH_STACKS:
-        return <TechStacksView />
+        return <TechStacksView />;
 
       case Screen.ADD_TECH_STACK:
-        return <AddTechStackView />
+        return <AddTechStackView />;
 
       case Screen.EDIT_TECH_STACK:
-        return <EditTechStackView />
+        return <EditTechStackView />;
 
       case Screen.CONVERSATION:
       case Screen.NEW_THREAD:
       default:
-        return <ConversationView buttonConfig={buttonConfig} />
+        return <ConversationView />;
     }
-  }
+  };
 
   return (
     <Container>
       <Header />
       <Content>{renderCurrentScreen()}</Content>
     </Container>
-  )
-}
+  );
+};
 
-export default ChatInterface
+export default ChatInterface;

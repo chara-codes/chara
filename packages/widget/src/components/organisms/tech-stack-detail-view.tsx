@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
 import styled from "styled-components";
 import { ArrowLeftIcon, ExternalLinkIcon } from "../atoms/icons";
 import Button from "../atoms/button";
@@ -268,8 +267,6 @@ const TechStackDetailView: React.FC<TechStackDetailViewProps> = ({
   techStack,
   onBack,
 }) => {
-  const [activeTab, setActiveTab] = useState("overview");
-
   return (
     <DetailContainer>
       <DetailHeader>

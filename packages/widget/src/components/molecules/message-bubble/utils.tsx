@@ -1,10 +1,10 @@
-import type React from "react"
+import type React from "react";
 export const getPreviewContent = (item: any): React.ReactNode => {
   if (!item || !item.data) {
-    return "No preview available"
+    return "No preview available";
   }
 
-  const { type, data } = item
+  const { type, data } = item;
 
   switch (type.toLowerCase()) {
     case "element":
@@ -20,7 +20,8 @@ export const getPreviewContent = (item: any): React.ReactNode => {
           </div>
           {data.component && data.component.name !== "Unknown" && (
             <div>
-              <strong>Component:</strong> {data.component.name} ({data.component.path})
+              <strong>Component:</strong> {data.component.name} (
+              {data.component.path})
             </div>
           )}
           <div style={{ marginTop: "8px" }}>
@@ -40,7 +41,7 @@ export const getPreviewContent = (item: any): React.ReactNode => {
             {data.html}
           </pre>
         </>
-      )
+      );
     case "file":
       return (
         <>
@@ -56,19 +57,19 @@ export const getPreviewContent = (item: any): React.ReactNode => {
             </div>
           )}
         </>
-      )
+      );
     case "text":
     case "link":
     case "documentation":
     case "terminal":
     default:
-      return JSON.stringify(data, null, 2)
+      return JSON.stringify(data, null, 2);
   }
-}
+};
 
 // Helper function to format file size
 const formatFileSize = (bytes: number): string => {
-  if (bytes < 1024) return bytes + " B"
-  else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB"
-  else return (bytes / 1048576).toFixed(1) + " MB"
-}
+  if (bytes < 1024) return bytes + " B";
+  else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+  else return (bytes / 1048576).toFixed(1) + " MB";
+};

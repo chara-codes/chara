@@ -9,6 +9,9 @@ export enum Screen {
   HISTORY = "history",
   SETTINGS = "settings",
   NEW_THREAD = "new_thread",
+  TECH_STACKS = "tech_stacks",
+  ADD_TECH_STACK = "add_tech_stack", // New screen for adding tech stacks
+  EDIT_TECH_STACK = "edit_tech_stack", // New screen for editing tech stacks
 }
 
 // Define the routing state interface
@@ -22,12 +25,18 @@ interface RoutingState {
   // Navigation history stack
   navigationHistory: Screen[]
 
+  // Selected tech stack ID for editing
+  selectedTechStackId: string | null
+
   // Actions
   navigateToScreen: (screen: Screen) => void
   navigateBack: () => void
   navigateToNewThread: () => void
   navigateToHistory: () => void
   navigateToSettings: () => void
+  navigateToTechStacks: () => void
+  navigateToAddTechStack: () => void
+  navigateToEditTechStack: (techStackId: string) => void
   navigateToConversation: () => void
   resetNavigation: () => void
 }
@@ -39,6 +48,7 @@ export const useRoutingStore = create<RoutingState>()(
       currentScreen: Screen.CONVERSATION,
       previousScreen: null,
       navigationHistory: [Screen.CONVERSATION],
+      selectedTechStackId: null,
 
       // Generic navigation action
       navigateToScreen: (screen: Screen) => {
@@ -64,6 +74,8 @@ export const useRoutingStore = create<RoutingState>()(
             currentScreen: previousScreen,
             previousScreen: currentState.currentScreen,
             navigationHistory: newHistory,
+            // Clear selected tech stack ID when navigating back
+            selectedTechStackId: null,
           })
         }
       },
@@ -81,6 +93,21 @@ export const useRoutingStore = create<RoutingState>()(
         get().navigateToScreen(Screen.SETTINGS)
       },
 
+      navigateToTechStacks: () => {
+        get().navigateToScreen(Screen.TECH_STACKS)
+      },
+
+      navigateToAddTechStack: () => {
+        get().navigateToScreen(Screen.ADD_TECH_STACK)
+      },
+
+      navigateToEditTechStack: (techStackId: string) => {
+        set({
+          selectedTechStackId: techStackId,
+        })
+        get().navigateToScreen(Screen.EDIT_TECH_STACK)
+      },
+
       navigateToConversation: () => {
         get().navigateToScreen(Screen.CONVERSATION)
       },
@@ -91,6 +118,7 @@ export const useRoutingStore = create<RoutingState>()(
           currentScreen: Screen.CONVERSATION,
           previousScreen: null,
           navigationHistory: [Screen.CONVERSATION],
+          selectedTechStackId: null,
         })
       },
     }),
@@ -103,10 +131,14 @@ export const useRoutingStore = create<RoutingState>()(
 // Selector hooks for common use cases
 export const useCurrentScreen = () => useRoutingStore((state) => state.currentScreen)
 export const usePreviousScreen = () => useRoutingStore((state) => state.previousScreen)
+export const useSelectedTechStackId = () => useRoutingStore((state) => state.selectedTechStackId)
 
 // Individual action selectors to prevent creating new objects on each render
 export const useNavigateToNewThread = () => useRoutingStore((state) => state.navigateToNewThread)
 export const useNavigateToHistory = () => useRoutingStore((state) => state.navigateToHistory)
 export const useNavigateToSettings = () => useRoutingStore((state) => state.navigateToSettings)
+export const useNavigateToTechStacks = () => useRoutingStore((state) => state.navigateToTechStacks)
+export const useNavigateToAddTechStack = () => useRoutingStore((state) => state.navigateToAddTechStack)
+export const useNavigateToEditTechStack = () => useRoutingStore((state) => state.navigateToEditTechStack)
 export const useNavigateToConversation = () => useRoutingStore((state) => state.navigateToConversation)
 export const useNavigateBack = () => useRoutingStore((state) => state.navigateBack)

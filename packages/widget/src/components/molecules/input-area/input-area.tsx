@@ -4,7 +4,7 @@ import type React from "react";
 import { useState, useRef, useCallback } from "react";
 import DropdownMenu from "../dropdown-menu";
 import FileInput from "../file-input";
-import type { InputAreaProps } from "../../../types/input-area";
+import type { ButtonConfig, InputAreaProps } from "../../../types/input-area";
 import {
   InputContainer,
   InputWrapper,
@@ -88,12 +88,25 @@ const LoadingLine = styled.div`
   }
 `;
 
+// Default button configuration
+const defaultButtonConfig: ButtonConfig[] = [
+  { id: "add-context", icon: PlusIcon, tooltip: "Add context", enabled: true },
+  {
+    id: "select-element",
+    icon: PointerIcon,
+    tooltip: "Select element",
+    enabled: true,
+  },
+  { id: "upload-file", icon: ClipIcon, tooltip: "Upload file", enabled: true },
+];
+
 const InputArea: React.FC<InputAreaProps> = ({
   onSendMessage,
   onAddContext,
   isResponding = false,
   isLoading = false,
   onStopResponse = () => {},
+  buttonConfig = defaultButtonConfig,
 }) => {
   const [message, setMessage] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -168,9 +181,8 @@ const InputArea: React.FC<InputAreaProps> = ({
 
   const handlePlusClick = () => {
     if (plusButtonRef.current && !isLoading && !isBeautifyLoading) {
-      // const rect = plusButtonRef.current.getBoundingClientRect()
       setDropdownPosition({
-        top: -250, // Position higher above the button to allow space for the dropdown
+        top: -250,
         left: 0,
       });
     }
@@ -189,7 +201,6 @@ const InputArea: React.FC<InputAreaProps> = ({
       type: "File",
       data: file,
     });
-    // Close the dropdown after file selection
     setIsDropdownOpen(false);
   };
 
@@ -211,19 +222,29 @@ const InputArea: React.FC<InputAreaProps> = ({
     type: string;
   }) => {
     if (item.id === "upload") {
-      // The upload action is handled by the FileInput component
       return;
     }
 
-    // For other items, add them to the context
     onAddContext({
       name: item.label,
-      type: item.type.toLowerCase(), // Use the type directly from the item
+      type: item.type.toLowerCase(),
     });
   };
 
   // Check if the beautify button should be visible
   const showBeautifyButton = message.length > 10;
+
+  // Helper function to check if a button is enabled
+  const isButtonEnabled = (buttonId: string) => {
+    const button = buttonConfig.find((b) => b.id === buttonId);
+    return button ? button.enabled : false;
+  };
+
+  // Helper function to get button tooltip
+  const getButtonTooltip = (buttonId: string) => {
+    const button = buttonConfig.find((b) => b.id === buttonId);
+    return button ? (button.tooltip as string) : "";
+  };
 
   return (
     <InputContainer
@@ -245,35 +266,53 @@ const InputArea: React.FC<InputAreaProps> = ({
             disabled={isResponding || isLoading || isBeautifyLoading}
           />
           <ButtonsRow>
-            <div ref={plusButtonRef}>
-              <Tooltip text="Add context" position="top" delay={500}>
-                <RoundedIconButton
-                  onClick={handlePlusClick}
-                  disabled={isResponding || isLoading || isBeautifyLoading}
-                  aria-label="Add context"
+            {isButtonEnabled("add-context") && (
+              <div ref={plusButtonRef}>
+                <Tooltip
+                  text={getButtonTooltip("add-context")}
+                  position="top"
+                  delay={500}
                 >
-                  <PlusIcon />
+                  <RoundedIconButton
+                    onClick={handlePlusClick}
+                    disabled={isResponding || isLoading || isBeautifyLoading}
+                    aria-label="Add context"
+                  >
+                    <PlusIcon />
+                  </RoundedIconButton>
+                </Tooltip>
+              </div>
+            )}
+            {isButtonEnabled("select-element") && (
+              <Tooltip
+                text={getButtonTooltip("select-element")}
+                position="top"
+                delay={500}
+              >
+                <RoundedIconButton
+                  onClick={startElementSelection}
+                  disabled={isResponding || isLoading || isBeautifyLoading}
+                  aria-label="Select element"
+                >
+                  <PointerIcon />
                 </RoundedIconButton>
               </Tooltip>
-            </div>
-            <Tooltip text="Select element" position="top" delay={500}>
-              <RoundedIconButton
-                onClick={startElementSelection}
-                disabled={isResponding || isLoading || isBeautifyLoading}
-                aria-label="Select element"
+            )}
+            {isButtonEnabled("upload-file") && (
+              <Tooltip
+                text={getButtonTooltip("upload-file")}
+                position="top"
+                delay={500}
               >
-                <PointerIcon />
-              </RoundedIconButton>
-            </Tooltip>
-            <Tooltip text="Upload file" position="top" delay={500}>
-              <RoundedIconButton
-                onClick={triggerFileUpload}
-                disabled={isResponding || isLoading || isBeautifyLoading}
-                aria-label="Upload file"
-              >
-                <ClipIcon />
-              </RoundedIconButton>
-            </Tooltip>
+                <RoundedIconButton
+                  onClick={triggerFileUpload}
+                  disabled={isResponding || isLoading || isBeautifyLoading}
+                  aria-label="Upload file"
+                >
+                  <ClipIcon />
+                </RoundedIconButton>
+              </Tooltip>
+            )}
             <AnimatedButton isVisible={showBeautifyButton}>
               <Tooltip
                 text={isBeautified ? "Undo beautify" : "Beautify text"}

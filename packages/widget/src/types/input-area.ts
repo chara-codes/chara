@@ -1,4 +1,5 @@
 import type React from "react";
+import type { FC } from "react";
 
 export interface InputAreaProps {
   onSendMessage: (message: string) => void;
@@ -6,6 +7,7 @@ export interface InputAreaProps {
   isResponding?: boolean;
   onStopResponse?: () => void;
   isLoading?: boolean;
+  buttonConfig?: ButtonConfig[];
 }
 
 export interface ContextItem {
@@ -31,4 +33,11 @@ export interface DropdownItem {
   section: string;
   icon?: React.ReactNode;
   action?: () => void;
+}
+
+export interface ButtonConfig {
+  enabled?: boolean;
+  id?: string;
+  icon?: FC;
+  tooltip?: string;
 }

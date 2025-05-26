@@ -7,6 +7,9 @@ import Header from "../molecules/header";
 import ConversationView from "../organisms/conversation-view";
 import HistoryView from "../organisms/history-view";
 import SettingsView from "../organisms/settings-view";
+import TechStacksView from "../organisms/tech-stacks-view";
+import AddTechStackView from "../organisms/add-tech-stack-view";
+import EditTechStackView from "../organisms/edit-tech-stack-view";
 import { useChatStore } from "../../store/chat-store";
 import { useModelsStore } from "../../store/models-store";
 import {
@@ -14,7 +17,8 @@ import {
   Screen,
   useNavigateToConversation,
 } from "../../store/routing-store";
-import { Theme } from "@/styles/theme";
+import type { Theme } from "../../styles/theme";
+import type { ButtonConfig } from "../../types/input-area";
 
 const Container = styled.div`
   all: revert;
@@ -95,7 +99,11 @@ const DebugButton = styled.button`
   }
 `;
 
-const ChatInterface: React.FC = () => {
+interface ChatInterfaceProps {
+  buttonConfig?: ButtonConfig[];
+}
+
+const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   // Get store initialization functions
   const initializeChatStore = useChatStore((state) => state.initializeStore);
   const initializeModelsStore = useModelsStore(
@@ -209,6 +217,7 @@ const ChatInterface: React.FC = () => {
       case Screen.HISTORY:
         return (
           <HistoryView
+            onBack={navigateToConversation}
             chats={chats}
             onSelectChat={handleSelectChatFromHistory}
           />
@@ -216,6 +225,15 @@ const ChatInterface: React.FC = () => {
 
       case Screen.SETTINGS:
         return <SettingsView onBack={navigateToConversation} />;
+
+      case Screen.TECH_STACKS:
+        return <TechStacksView />;
+
+      case Screen.ADD_TECH_STACK:
+        return <AddTechStackView />;
+
+      case Screen.EDIT_TECH_STACK:
+        return <EditTechStackView />;
 
       case Screen.CONVERSATION:
       case Screen.NEW_THREAD:

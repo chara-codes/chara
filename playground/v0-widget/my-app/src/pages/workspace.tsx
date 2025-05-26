@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 
-import type React from "react"
-import { useState, useCallback, useRef, useEffect } from "react"
-import styled from "styled-components"
-import ChatInterface from "../components/templates/chat-interface"
-import PreviewToolbar from "../components/molecules/preview-toolbar"
-import type { Theme } from "../styles/theme"
+import type React from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import styled from "styled-components";
+import ChatInterface from "../components/templates/chat-interface";
+import PreviewToolbar from "../components/molecules/preview-toolbar";
+import type { Theme } from "../styles/theme";
 
 // Define the different preview types
 export enum PreviewType {
@@ -24,16 +24,16 @@ const WorkspaceContainer = styled.div`
   width: 100%;
   height: 100vh;
   overflow: hidden;
-`
+`;
 
 const ChatColumn = styled.div<{ $width: number }>`
   width: ${({ $width }) => $width}px;
   min-width: 280px;
   max-width: 600px;
   height: 100%;
-  border-right: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  border-right: 1px solid ${({ theme }) => (theme as Theme).colors?.border};
   position: relative;
-`
+`;
 
 const ResizeHandle = styled.div`
   width: 8px;
@@ -42,7 +42,7 @@ const ResizeHandle = styled.div`
   background-color: transparent;
   position: relative;
   z-index: 10;
-  
+
   &:hover::after,
   &:active::after {
     content: "";
@@ -54,11 +54,11 @@ const ResizeHandle = styled.div`
     background-color: ${({ theme }) => (theme as Theme).colors.primary};
     opacity: 0.6;
   }
-  
+
   &:active::after {
     opacity: 1;
   }
-`
+`;
 
 const PreviewColumn = styled.div`
   flex: 1;
@@ -66,23 +66,23 @@ const PreviewColumn = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-`
+`;
 
 const PreviewContent = styled.div`
   flex: 1;
   padding: 24px;
   overflow: auto;
-`
+`;
 
 const ToolbarColumn = styled.div`
   width: 56px;
   height: 100%;
   padding: 16px 8px;
-  border-left: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  border-left: 1px solid ${({ theme }) => (theme as Theme).colors?.border};
   display: flex;
   flex-direction: column;
   align-items: center;
-`
+`;
 
 const AppPreview = styled.div`
   width: 100%;
@@ -90,21 +90,21 @@ const AppPreview = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: ${({ theme }) => (theme as Theme).colors.background};
+  background-color: ${({ theme }) => (theme as Theme).colors?.background};
   border-radius: 8px;
-  border: 1px dashed ${({ theme }) => (theme as Theme).colors.border};
-`
+  border: 1px dashed ${({ theme }) => (theme as Theme).colors?.border};
+`;
 
 const CodePreview = styled.div`
   width: 100%;
   height: 100%;
-  background-color: ${({ theme }) => (theme as Theme).colors.codeBackground};
+  background-color: ${({ theme }) => (theme as Theme).colors?.background};
   border-radius: 8px;
   padding: 16px;
   font-family: monospace;
-  color: ${({ theme }) => (theme as Theme).colors.code};
+  color: ${({ theme }) => (theme as Theme).colors.text};
   overflow: auto;
-`
+`;
 
 const TestsPreview = styled.div`
   width: 100%;
@@ -112,91 +112,98 @@ const TestsPreview = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-`
+`;
 
 const TestItem = styled.div<{ $passed: boolean }>`
   padding: 12px 16px;
   border-radius: 8px;
   background-color: ${({ $passed, theme }) =>
-    $passed ? (theme as Theme).colors.success + "15" : (theme as Theme).colors.error + "15"};
-  border: 1px solid ${({ $passed, theme }) =>
-    $passed ? (theme as Theme).colors.success : (theme as Theme).colors.error};
+    $passed
+      ? (theme as Theme).colors.success + "15"
+      : (theme as Theme).colors.error + "15"};
+  border: 1px solid
+    ${({ $passed, theme }) =>
+      $passed
+        ? (theme as Theme).colors.success
+        : (theme as Theme).colors.error};
   color: ${({ theme }) => (theme as Theme).colors.text};
-`
+`;
 
 const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
   width: 100%;
-`
+`;
 
 const StatCard = styled.div`
   padding: 16px;
   border-radius: 8px;
-  background-color: ${({ theme }) => (theme as Theme).colors.cardBackground};
-  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
-  
+  background-color: ${({ theme }) => (theme as Theme).colors?.background};
+  border: 1px solid ${({ theme }) => (theme as Theme).colors?.border};
+
   h3 {
     margin: 0 0 8px 0;
     font-size: 14px;
     color: ${({ theme }) => (theme as Theme).colors.textSecondary};
   }
-  
+
   p {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
     color: ${({ theme }) => (theme as Theme).colors.text};
   }
-`
+`;
 
 const DocsSection = styled.div`
   margin-bottom: 24px;
-  
+
   h2 {
     margin: 0 0 16px 0;
     font-size: 18px;
-    color: ${({ theme }) => (theme as Theme).colors.text};
+    color: ${({ theme }) => (theme as Theme).colors?.text};
   }
-  
+
   p {
     margin: 0 0 16px 0;
     font-size: 14px;
-    color: ${({ theme }) => (theme as Theme).colors.textSecondary};
+    color: ${({ theme }) => (theme as Theme).colors?.textSecondary};
     line-height: 1.5;
   }
-  
+
   code {
-    background-color: ${({ theme }) => (theme as Theme).colors.codeBackground};
+    background-color: ${({ theme }) => (theme as Theme).colors?.background};
     padding: 2px 4px;
     border-radius: 4px;
     font-family: monospace;
     font-size: 13px;
   }
-`
+`;
 
 const DeploymentItem = styled.div`
   padding: 16px;
   border-radius: 8px;
-  background-color: ${({ theme }) => (theme as Theme).colors.cardBackground};
-  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  background-color: ${({ theme }) => (theme as Theme).colors?.background};
+  border: 1px solid ${({ theme }) => (theme as Theme).colors?.border};
   margin-bottom: 16px;
-  
+
   h3 {
     margin: 0 0 8px 0;
     font-size: 16px;
     color: ${({ theme }) => (theme as Theme).colors.text};
   }
-  
+
   p {
     margin: 0;
     font-size: 14px;
     color: ${({ theme }) => (theme as Theme).colors.textSecondary};
   }
-`
+`;
 
-const StatusBadge = styled.span<{ $status: "success" | "warning" | "error" | "info" }>`
+const StatusBadge = styled.span<{
+  $status: "success" | "warning" | "error" | "info";
+}>`
   display: inline-block;
   padding: 4px 8px;
   border-radius: 4px;
@@ -206,28 +213,28 @@ const StatusBadge = styled.span<{ $status: "success" | "warning" | "error" | "in
   background-color: ${({ $status, theme }) => {
     switch ($status) {
       case "success":
-        return (theme as Theme).colors.success + "20"
+        return (theme as Theme).colors.success + "20";
       case "warning":
-        return (theme as Theme).colors.warning + "20"
+        return (theme as Theme).colors.warning + "20";
       case "error":
-        return (theme as Theme).colors.error + "20"
+        return (theme as Theme).colors.error + "20";
       case "info":
-        return (theme as Theme).colors.info + "20"
+        return (theme as Theme).colors.info + "20";
     }
   }};
   color: ${({ $status, theme }) => {
     switch ($status) {
       case "success":
-        return (theme as Theme).colors.success
+        return (theme as Theme).colors.success;
       case "warning":
-        return (theme as Theme).colors.warning
+        return (theme as Theme).colors.warning;
       case "error":
-        return (theme as Theme).colors.error
+        return (theme as Theme).colors.error;
       case "info":
-        return (theme as Theme).colors.info
+        return (theme as Theme).colors.info;
     }
   }};
-`
+`;
 
 // Overlay to prevent interactions during resize
 const ResizeOverlay = styled.div<{ $active: boolean }>`
@@ -239,77 +246,88 @@ const ResizeOverlay = styled.div<{ $active: boolean }>`
   z-index: 9;
   cursor: col-resize;
   display: ${({ $active }) => ($active ? "block" : "none")};
-`
+`;
 
 const WorkspacePage: React.FC = () => {
   // Calculate default width (30% of viewport with constraints)
-  const defaultWidth = Math.max(280, Math.min(600, typeof window !== "undefined" ? window.innerWidth * 0.3 : 320))
+  const defaultWidth = Math.max(
+    280,
+    Math.min(
+      600,
+      typeof window !== "undefined" ? window.innerWidth * 0.3 : 320,
+    ),
+  );
 
   // State for chat panel width
-  const [chatWidth, setChatWidth] = useState(defaultWidth)
+  const [chatWidth, setChatWidth] = useState(defaultWidth);
 
   // State for active preview type
-  const [activePreviewType, setActivePreviewType] = useState<PreviewType>(PreviewType.APP)
+  const [activePreviewType, setActivePreviewType] = useState<PreviewType>(
+    PreviewType.APP,
+  );
 
   // State to track if we're currently resizing
-  const [isResizing, setIsResizing] = useState(false)
+  const [isResizing, setIsResizing] = useState(false);
 
   // Store the initial mouse position and panel width when resizing starts
-  const resizeInfo = useRef({ startX: 0, startWidth: 0 })
+  const resizeInfo = useRef({ startX: 0, startWidth: 0 });
 
   // Handle mouse down on resize handle
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
-      e.preventDefault()
-      setIsResizing(true)
+      e.preventDefault();
+      setIsResizing(true);
       resizeInfo.current = {
         startX: e.clientX,
         startWidth: chatWidth,
-      }
-      document.body.style.cursor = "col-resize"
+      };
+      document.body.style.cursor = "col-resize";
     },
     [chatWidth],
-  )
+  );
 
   // Handle mouse move during resize
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return
+      if (!isResizing) return;
 
-      const deltaX = e.clientX - resizeInfo.current.startX
-      const newWidth = Math.max(280, Math.min(600, resizeInfo.current.startWidth + deltaX))
-      setChatWidth(newWidth)
-    }
+      const deltaX = e.clientX - resizeInfo.current.startX;
+      const newWidth = Math.max(
+        280,
+        Math.min(600, resizeInfo.current.startWidth + deltaX),
+      );
+      setChatWidth(newWidth);
+    };
 
     const handleMouseUp = () => {
       if (isResizing) {
-        setIsResizing(false)
-        document.body.style.cursor = ""
+        setIsResizing(false);
+        document.body.style.cursor = "";
       }
-    }
+    };
 
     if (isResizing) {
-      document.addEventListener("mousemove", handleMouseMove)
-      document.addEventListener("mouseup", handleMouseUp)
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove)
-      document.removeEventListener("mouseup", handleMouseUp)
-    }
-  }, [isResizing])
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
 
   // Handle window resize
   useEffect(() => {
     const handleWindowResize = () => {
       if (chatWidth > window.innerWidth * 0.5) {
-        setChatWidth(Math.max(280, window.innerWidth * 0.3))
+        setChatWidth(Math.max(280, window.innerWidth * 0.3));
       }
-    }
+    };
 
-    window.addEventListener("resize", handleWindowResize)
-    return () => window.removeEventListener("resize", handleWindowResize)
-  }, [chatWidth])
+    window.addEventListener("resize", handleWindowResize);
+    return () => window.removeEventListener("resize", handleWindowResize);
+  }, [chatWidth]);
 
   const renderPreviewContent = () => {
     switch (activePreviewType) {
@@ -318,7 +336,7 @@ const WorkspacePage: React.FC = () => {
           <AppPreview>
             <p>App preview will be displayed here</p>
           </AppPreview>
-        )
+        );
       case PreviewType.CODE:
         return (
           <CodePreview>
@@ -335,16 +353,24 @@ export default function HomePage() {
   );
 }`}
           </CodePreview>
-        )
+        );
       case PreviewType.TESTS:
         return (
           <TestsPreview>
-            <TestItem $passed={true}>✓ Button component renders correctly</TestItem>
-            <TestItem $passed={true}>✓ Navigation links work as expected</TestItem>
-            <TestItem $passed={false}>✗ Form validation handles empty fields</TestItem>
-            <TestItem $passed={true}>✓ API endpoints return correct data</TestItem>
+            <TestItem $passed={true}>
+              ✓ Button component renders correctly
+            </TestItem>
+            <TestItem $passed={true}>
+              ✓ Navigation links work as expected
+            </TestItem>
+            <TestItem $passed={false}>
+              ✗ Form validation handles empty fields
+            </TestItem>
+            <TestItem $passed={true}>
+              ✓ API endpoints return correct data
+            </TestItem>
           </TestsPreview>
-        )
+        );
       case PreviewType.STATISTICS:
         return (
           <StatsGrid>
@@ -373,31 +399,32 @@ export default function HomePage() {
               <p>18</p>
             </StatCard>
           </StatsGrid>
-        )
+        );
       case PreviewType.DOCUMENTATION:
         return (
           <>
             <DocsSection>
               <h2>Getting Started</h2>
               <p>
-                This application uses Next.js with the App Router. To run the application locally, use the following
-                command:
+                This application uses Next.js with the App Router. To run the
+                application locally, use the following command:
               </p>
               <code>npm run dev</code>
             </DocsSection>
             <DocsSection>
               <h2>API Reference</h2>
               <p>
-                The API endpoints are available under <code>/api</code>. Authentication is required for most endpoints.
+                The API endpoints are available under <code>/api</code>.
+                Authentication is required for most endpoints.
               </p>
             </DocsSection>
             <DocsSection>
               <h2>Component Usage</h2>
               <p>Import components from the UI library:</p>
-              <code>import {Button} from '@/components/ui/button';</code>
+              <code>import but from '@/components/ui/button';</code>
             </DocsSection>
           </>
-        )
+        );
       case PreviewType.DEPLOYMENT:
         return (
           <>
@@ -415,16 +442,17 @@ export default function HomePage() {
             </DeploymentItem>
             <DeploymentItem>
               <h3>
-                Development <StatusBadge $status="warning">Needs Attention</StatusBadge>
+                Development{" "}
+                <StatusBadge $status="warning">Needs Attention</StatusBadge>
               </h3>
               <p>Build warnings detected</p>
             </DeploymentItem>
           </>
-        )
+        );
       default:
-        return <div>Select a preview type</div>
+        return <div>Select a preview type</div>;
     }
-  }
+  };
 
   return (
     <WorkspaceContainer>
@@ -434,7 +462,11 @@ export default function HomePage() {
       </ChatColumn>
 
       {/* Resize Handle */}
-      <ResizeHandle onMouseDown={handleResizeStart} title="Drag to resize" aria-label="Resize panel" />
+      <ResizeHandle
+        onMouseDown={handleResizeStart}
+        title="Drag to resize"
+        aria-label="Resize panel"
+      />
 
       {/* Preview Column */}
       <PreviewColumn>
@@ -443,13 +475,16 @@ export default function HomePage() {
 
       {/* Toolbar Column */}
       <ToolbarColumn>
-        <PreviewToolbar activeType={activePreviewType} onTypeChange={setActivePreviewType} />
+        <PreviewToolbar
+          activeType={activePreviewType}
+          onTypeChange={setActivePreviewType}
+        />
       </ToolbarColumn>
 
       {/* Overlay to prevent interactions during resize */}
       <ResizeOverlay $active={isResizing} />
     </WorkspaceContainer>
-  )
-}
+  );
+};
 
-export default WorkspacePage
+export default WorkspacePage;

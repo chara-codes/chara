@@ -92,6 +92,9 @@ export const useElementSelector = (
     handleMouseMove?: (e: MouseEvent) => void
   }>({})
 
+  // Reference to store the input element for direct access
+  const commentInputRef = useRef<HTMLInputElement | null>(null)
+
   /**
    * Detects component information from a DOM element by analyzing
    * React internals, data attributes, class names, and other properties.
@@ -429,6 +432,9 @@ export const useElementSelector = (
     setSelectedElement(null)
     setShowCommentModal(false)
     setElementComment("")
+
+    // Clear input ref
+    commentInputRef.current = null
   }, [cleanupElementSelectionUI])
 
   // Fix the useCallback dependencies
@@ -838,7 +844,9 @@ export const useElementSelector = (
 
     // Focus the input
     setTimeout(() => {
-      input.focus()
+      if (commentInputRef.current) {
+        commentInputRef.current.focus()
+      }
     }, 100)
 
     return { backdrop, modal, confirmButton, styleElement }
@@ -973,24 +981,53 @@ export const useElementSelector = (
    * Creates the comment input field
    */
   const createCommentInput = () => {
+    const inputContainer = document.createElement("div")
+    Object.assign(inputContainer.style, {
+      marginBottom: "12px",
+    })
+
+    const label = document.createElement("label")
+    label.textContent = "Comment"
+    label.htmlFor = "element-comment-input"
+    Object.assign(label.style, {
+      display: "block",
+      marginBottom: "6px",
+      fontSize: "13px",
+      fontWeight: "500",
+      color: "#374151",
+    })
+
+    inputContainer.appendChild(label)
+
     const input = document.createElement("input")
     input.type = "text"
-    input.placeholder = "Add your comment here..."
+    input.id = "element-comment-input"
+    input.placeholder = "Add your comment about this element..."
     Object.assign(input.style, {
       width: "100%",
       padding: "10px 12px",
       fontSize: "13px",
       border: "1px solid #d1d5db",
       borderRadius: "6px",
-      marginBottom: "12px",
       boxSizing: "border-box",
       height: "40px",
       fontFamily: "system-ui, -apple-system, sans-serif",
       transition: "border-color 0.2s ease",
     })
 
+    // Store the input element in the ref for direct access
+    commentInputRef.current = input
+
+    // Set initial value from state if available
+    if (elementComment) {
+      input.value = elementComment
+    }
+
+    // Update state when input changes
     input.addEventListener("input", (e) => {
-      setElementComment((e.target as HTMLInputElement).value)
+      const newComment = (e.target as HTMLInputElement).value
+      console.log("Input changed, new comment:", newComment)
+      setElementComment(newComment)
     })
 
     input.addEventListener("focus", () => {
@@ -1007,13 +1044,17 @@ export const useElementSelector = (
     // Add Enter key support
     input.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.key === "Enter") {
-        // e.preventDefault()
-        // The confirmButton will be accessed later
-        (document.querySelector("#element-comment-modal button:last-child") as HTMLElement)?.click()
+        e.preventDefault()
+        // Find and click the confirm button
+        const confirmButton = document.querySelector("#element-comment-modal button:last-child") as HTMLElement
+        if (confirmButton) {
+          confirmButton.click()
+        }
       }
     })
 
-    return input
+    inputContainer.appendChild(input)
+    return inputContainer
   }
 
   /**
@@ -1059,6 +1100,7 @@ export const useElementSelector = (
     // Create confirm button
     const confirmButton = document.createElement("button")
     confirmButton.textContent = "Add"
+    confirmButton.id = "element-comment-confirm"
     Object.assign(confirmButton.style, {
       padding: "6px 14px",
       backgroundColor: uiConfigRef.current.primaryColor,
@@ -1113,7 +1155,16 @@ export const useElementSelector = (
     confirmButton.addEventListener("click", () => {
       console.log("Add button clicked, element:", element)
 
-      const comment = elementComment.trim()
+      // Get the comment directly from the input element to ensure we have the latest value
+      let comment = ""
+      if (commentInputRef.current) {
+        comment = commentInputRef.current.value.trim()
+        console.log("Comment from input element:", comment)
+      } else {
+        // Fallback to state if input element is not available
+        comment = elementComment.trim()
+        console.log("Comment from state:", comment)
+      }
 
       // Add the element to context with comment and component information
       const elementInfo = {
@@ -1125,7 +1176,7 @@ export const useElementSelector = (
           className: element.className || "",
           textContent: element.textContent?.trim().substring(0, 100) || "",
           html: element.outerHTML.substring(0, 500),
-          comment: comment || "No comment",
+          comment: comment, // Use the comment from the input
           component: {
             name: componentInfo.componentName,
             path: componentInfo.componentPath,
@@ -1135,6 +1186,8 @@ export const useElementSelector = (
       }
 
       console.log("Adding element to context:", elementInfo)
+
+      // Call the onAddContext function with the element info
       onAddContext(elementInfo)
 
       // Clean up
