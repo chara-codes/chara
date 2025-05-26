@@ -52,6 +52,7 @@ export const myAgent = async function* (
   project: { id: number; name: string },
 ): Promise<AgentResponse> {
   const projectRoot = resolveProjectPath(project.name);
+  const projectContext = await getProjectContext(projectRoot);
   try {
     const { partialObjectStream } = streamObject({
       model: aiProvider(process.env.AI_MODEL || "gpt-4o-mini"),
@@ -59,7 +60,7 @@ export const myAgent = async function* (
       messages: [
         {
           role: "system",
-          content: systemPrompt,
+          content: systemPrompt + projectContext,
         },
         {
           role: "user",

@@ -15,8 +15,11 @@ import { filesRouter } from "./api/routes/files";
 import superjson from "superjson";
 import { previewRouter } from "./api/routes/preview";
 import { BunSSEServerTransport } from "./mcp/transport";
-import { mcpClientsSubscriptions, mcpClientsMutations } from "./api/routes/mcpservers";
-import { createServer } from "./mcp/server"
+import {
+  mcpClientsSubscriptions,
+  mcpClientsMutations,
+} from "./api/routes/mcpservers";
+import { createServer } from "./mcp/server";
 import { sessionRouter } from "./api/routes/sessions";
 import { parse } from "querystring";
 import {
@@ -38,13 +41,10 @@ export const appRouter = router({
   sessions: sessionRouter,
   events: subscription,
   instructions: instructionsRouter,
-<<<<<<< HEAD
   files: filesRouter,
   preview: previewRouter,
-=======
   mcpClientsSubscriptions: mcpClientsSubscriptions,
-  mcpResponses: mcpClientsMutations
->>>>>>> dda10b78bb72d388b625cb71332ea0c295c0ed3e
+  mcpResponses: mcpClientsMutations,
 });
 
 export type AppRouter = typeof appRouter;
@@ -160,57 +160,57 @@ const SSEServer = serve({
     const url = new URL(req.url);
     const pathname = url.pathname;
 
-    if (req.method === 'GET' && pathname === '/sse') {
-      logger.info('Received GET request to /sse');
+    if (req.method === "GET" && pathname === "/sse") {
+      logger.info("Received GET request to /sse");
 
-      const transport = new BunSSEServerTransport('/messages');
+      const transport = new BunSSEServerTransport("/messages");
       const sessionId = transport.sessionId;
       transports[sessionId] = transport;
-    
+
       transport.onclose = () => {
         logger.info(`SSE transport closed for session ${sessionId}`);
         delete transports[sessionId];
       };
-    
+
       await MCPserver.connect(transport);
       logger.info(`Established SSE stream with session ID: ${sessionId}`);
-    
-      return transport.createResponse();;
+
+      return transport.createResponse();
     }
 
-    if (req.method === 'POST' && pathname === '/messages') {
-      logger.info('Received POST request to /messages');
+    if (req.method === "POST" && pathname === "/messages") {
+      logger.info("Received POST request to /messages");
       const query = parse(url.searchParams.toString());
       const sessionId = query.sessionId?.toString();
 
       if (!sessionId) {
-        return new Response('Missing sessionId parameter', { status: 400 });
+        return new Response("Missing sessionId parameter", { status: 400 });
       }
 
       const transport = transports[sessionId];
       if (!transport) {
-        return new Response('Session not found', { status: 404 });
+        return new Response("Session not found", { status: 404 });
       }
 
       try {
         return transports[sessionId].handlePostMessage(req);
       } catch (error) {
-        logger.error('Error handling request:', error);
-        return new Response('Error handling request', { status: 500 });
+        logger.error("Error handling request:", error);
+        return new Response("Error handling request", { status: 500 });
       }
     }
 
-    return new Response('Not found', { status: 404 });
+    return new Response("Not found", { status: 404 });
   },
   async error(err) {
-    logger.error('Server error:', err);
-    return new Response('Internal server error', { status: 500 });
+    logger.error("Server error:", err);
+    return new Response("Internal server error", { status: 500 });
   },
 });
 
 // Shutdown handling
-process.on('SIGINT', async () => {
-  logger.info('Shutting down Bun MCP server...');
+process.on("SIGINT", async () => {
+  logger.info("Shutting down Bun MCP server...");
   for (const sessionId in transports) {
     try {
       await transports[sessionId].close();
@@ -219,7 +219,7 @@ process.on('SIGINT', async () => {
       logger.error(`Error closing transport ${sessionId}`, err);
     }
   }
-  logger.info('Server shutdown complete');
+  logger.info("Server shutdown complete");
   process.exit(0);
 });
 
