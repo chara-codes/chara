@@ -3,10 +3,40 @@ import { z } from "zod";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../api/db.ts";
 import { chats, messages, projects, stacks } from "../db/schema";
-import { myLogger as logger, myLogger } from "../utils/logger";
+import { myLogger as logger } from "../utils/logger";
 import { myAgent } from "../ai/agents/my-agent.ts";
 
 export const DEFAULT_PROJECT_ID = 1;
+export const DEFAULT_PROJECT_NAME = "new project";
+export const DEFAULT_STACK_ID = "1";
+
+/** Ensure a project exists in the database, or create it if it doesn't. */
+export async function ensureProjectExists({
+  projectId,
+  projectName,
+  stackId,
+}: {
+  projectId: number;
+  projectName: string;
+  stackId: number;
+}): Promise<void> {
+  try {
+    const [existing] = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    if (existing) return;
+
+    await db
+      .insert(projects)
+      .values({ id: projectId, name: projectName, stackId });
+  } catch (err) {
+    logger.error(JSON.stringify(err), "ensureProjectExists failed");
+    throw err;
+  }
+}
 
 /** Check if a chat exists for the given project. */
 export async function findExistingChat(

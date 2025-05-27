@@ -3,6 +3,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ProjectProvider } from "@/contexts/project-context";
+import { StacksProvider } from "@/context";
 import { AppShell } from "@/components/layout";
 import { TrpcProviders } from "@/context";
 import { SessionProvider } from "@/context/SessionContext";
@@ -24,17 +25,22 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <TrpcProviders>
-          <SessionProvider>
-            <ProjectProvider>
-              <AppShell>{children}</AppShell>
-              <Toaster />
-            </ProjectProvider>
-          </SessionProvider>
-        </TrpcProviders>
+          <ProjectProvider>
+            <StackProvider>
+              <TrpcProviders>
+                <SessionProvider>
+                  <StacksProvider>
+                    <AppShell>{children}</AppShell>
+                    <Toaster />
+                  </StacksProvider>
+                </SessionProvider>
+              </TrpcProviders>
+            </StackProvider>
+          </ProjectProvider>
       </body>
     </html>
   );
 }
 
-import "./globals.css";
+import "./globals.css";import { StackProvider } from "@/contexts/stack-context";
+

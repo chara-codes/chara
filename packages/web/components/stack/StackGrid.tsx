@@ -1,5 +1,5 @@
 "use client";
-import { useStacks } from "@/context/StackContext";
+import { useStacks } from "@/context/StacksContext";
 import { StackCard } from "./StackCard";
 
 export const StackGrid = () => {
