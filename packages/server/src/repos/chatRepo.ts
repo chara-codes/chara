@@ -9,7 +9,9 @@ import { myAgent } from "../ai/agents/my-agent.ts";
 export const DEFAULT_PROJECT_ID = 1;
 
 /** Check if a chat exists for the given project. */
-export async function findExistingChat(projectId: number): Promise<number | null> {
+export async function findExistingChat(
+  projectId: number,
+): Promise<number | null> {
   try {
     const [existing] = await db
       .select({ id: chats.id })
@@ -41,10 +43,10 @@ export async function createChat(projectId: number, titleSuggestion: string) {
 /** Create (or reuse) a chat inside the given project. */
 export async function ensureChat(projectId: number, titleSuggestion: string) {
   const existingId = await findExistingChat(projectId);
-  
+
   if (existingId) {
-    return existingId
-  };
+    return existingId;
+  }
 
   return await createChat(projectId, titleSuggestion);
 }
@@ -77,7 +79,7 @@ async function saveAssistantMessage(chatId: number, content: string) {
 
 async function getChatMessages(
   chatId: number,
-  options?: { lastMessageId: number | null; limit?: number }
+  options?: { lastMessageId: number | null; limit?: number },
 ) {
   const { lastMessageId, limit = 20 } = options || {};
 
@@ -91,9 +93,8 @@ async function getChatMessages(
         .where(eq(messages.id, lastMessageId))
         .limit(1);
 
-
-      if (lastMsg?.createdAt) {
-        whereCondition = sql`${messages.chatId} = ${chatId} AND ${messages.createdAt} < ${lastMsg.createdAt}`;
+      if (lastMsg.id) {
+        whereCondition = sql`${messages.chatId} = ${chatId} AND ${messages.id} < ${lastMessageId}`;
       }
     }
 
@@ -101,11 +102,10 @@ async function getChatMessages(
       .select()
       .from(messages)
       .where(whereCondition)
-      .orderBy(sql`${messages.createdAt} desc`)
+      .orderBy(sql`${messages.id} desc`)
       .limit(limit + 1); // fetch one extra to check for more
 
     const result = await query;
-
     const hasMore = result.length > limit;
 
     const messagesResult = hasMore ? result.slice(0, limit) : result;
@@ -200,11 +200,14 @@ export async function getHistoryAndPersist({
 
     return {
       messages: history.messages.map((msg: any) => ({
-      id: msg.id,
-      message: msg.content,
-      role: msg.role,
-      timestamp: msg.createdAt instanceof Date ? msg.createdAt.getTime() : msg.createdAt,
-      context: msg.context ?? undefined,
+        id: msg.id,
+        message: msg.content,
+        role: msg.role,
+        timestamp:
+          msg.createdAt instanceof Date
+            ? msg.createdAt.getTime()
+            : msg.createdAt,
+        context: msg.context ?? undefined,
       })),
       hasMore: history.hasMore,
     };
