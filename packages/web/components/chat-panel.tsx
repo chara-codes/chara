@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect, FormEvent } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { FileAttachment, Message, TechStack } from "../types";
 import { MessageItem } from "./message-item";
 import { useTrpcChat } from "@/hooks/use-trpc-chat";
@@ -7,8 +7,6 @@ import { useProject } from "@/contexts/project-context";
 import { ProjectSelector } from "@/components/project-selector";
 import { ChatInput } from "./chat-input";
 import { useStack } from "@/contexts/stack-context";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { useStacks } from "@/context";
 import { StackSelectDialog } from "./stack-select-dialog";
 import usePrevious from "@/hooks/usePrevious";
 
@@ -22,6 +20,9 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
   const prevSelectedProject = usePrevious(selectedProject);
   const { selectedStack, setSelectedStack } = useStack();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMsgIdRef = useRef<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const isLoadingHistory = useRef(false);
 
   const [stackDialogOpen, setStackDialogOpen] = useState(false);
 
@@ -34,20 +35,47 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
     setStackDialogOpen(false);
   };
 
-  const { messages, error, status, sendChatMessage } = useTrpcChat();
-  
   const handleOpenDialog = () => setStackDialogOpen(true);
+
+  const { messages, error, status, sendChatMessage, fetchMoreHistory } =
+    useTrpcChat();
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const lastId = messages[messages.length - 1]?.id;
+
+    // scroll only if the bottom message changed
+    if (lastMsgIdRef.current !== lastId) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    lastMsgIdRef.current = lastId;
   }, [messages]);
 
   useEffect(() => {
-    if (!prevSelectedProject && selectedProject  && !selectedStack) {
+    if (!prevSelectedProject && selectedProject && !selectedStack) {
       setStackDialogOpen(true);
     }
-  }, [selectedProject, prevSelectedProject, selectedStack])
+  }, [selectedProject, prevSelectedProject, selectedStack]);
+
+  // Handler to fetch more history when scrolled to top
+  const handleScroll = async (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (el.scrollTop === 0 && !isLoadingHistory.current) {
+      isLoadingHistory.current = true;
+
+      const prevHeight = el.scrollHeight;
+
+      await fetchMoreHistory();
+
+      requestAnimationFrame(() => {
+        if (listRef.current) {
+          const newHeight = listRef.current.scrollHeight;
+          listRef.current.scrollTop = newHeight - prevHeight;
+        }
+        isLoadingHistory.current = false;
+      });
+    }
+  };
 
   const copyMessage = (content: string, messageId: string) => {
     navigator.clipboard.writeText(content);
@@ -93,7 +121,11 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
           selectedProject={selectedProject}
         />
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div
+        ref={listRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+        onScroll={handleScroll}
+      >
         {messages.map((message) => (
           <MessageItem
             key={message.id}
@@ -121,7 +153,7 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
       <StackSelectDialog
         open={stackDialogOpen}
         handleOpen={handleOpenDialog}
-        selectedId={selectedStack?.id || ''}
+        selectedId={selectedStack?.id || ""}
         handleSelect={handleSelect}
       />
     </div>

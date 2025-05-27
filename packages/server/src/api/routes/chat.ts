@@ -6,9 +6,11 @@ import {
   DEFAULT_PROJECT_NAME,
   DEFAULT_STACK_ID,
   ensureChat,
+  findExistingChat,
   ensureProjectExists,
   streamObjectAndPersist,
   streamTextAndPersist,
+  getHistoryAndPersist,
 } from "../../repos/chatRepo.ts";
 import { myLogger as logger } from "../../utils/logger";
 
@@ -32,7 +34,7 @@ export const chatRouter = router({
         await ensureProjectExists({
           projectId,
           projectName,
-          stackId: Number(stackId)
+          stackId: Number(stackId),
         });
 
         const chatId =
@@ -64,9 +66,8 @@ export const chatRouter = router({
         await ensureProjectExists({
           projectId,
           projectName,
-          stackId: Number(stackId)
+          stackId: Number(stackId),
         });
-
 
         const chatId =
           input.chatId ??
@@ -81,6 +82,55 @@ export const chatRouter = router({
         });
       } catch (err) {
         logger.error(JSON.stringify(err), "streamObject endpoint failed");
+        throw err;
+      }
+    }),
+
+  getHistory: publicProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        chatId: z.number().optional(),
+        lastMessageId: z.string().nullable().optional(),
+        limit: z.number().optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      try {
+        const projectId = input?.projectId ?? DEFAULT_PROJECT_ID;
+
+        const chatId = input.chatId ?? (await findExistingChat(projectId));
+
+        if (!chatId) {
+          return {
+            projectId: input.projectId,
+            chatId: null,
+            history: [],
+          };
+        }
+
+        const lastMessageId = input?.lastMessageId
+          ? parseInt(input.lastMessageId)
+          : null;
+
+        if (lastMessageId && isNaN(lastMessageId)) {
+          throw new Error("Invalid lastMessageId");
+        }
+
+        const history = await getHistoryAndPersist({
+          chatId,
+          lastMessageId,
+          limit: input.limit,
+        });
+
+        return {
+          projectId: input.projectId,
+          chatId: chatId,
+          history: history.messages,
+          hasMore: history.hasMore,
+        };
+      } catch (err) {
+        logger.error(JSON.stringify(err), "getHistory endpoint failed");
         throw err;
       }
     }),

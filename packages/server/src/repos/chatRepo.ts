@@ -38,6 +38,38 @@ export async function ensureProjectExists({
   }
 }
 
+/** Check if a chat exists for the given project. */
+export async function findExistingChat(
+  projectId: number,
+): Promise<number | null> {
+  try {
+    const [existing] = await db
+      .select({ id: chats.id })
+      .from(chats)
+      .where(eq(chats.projectId, projectId))
+      .orderBy(sql`${chats.createdAt} desc`)
+      .limit(1);
+    return existing?.id ?? null;
+  } catch (err) {
+    logger.error(JSON.stringify(err), "findExistingChat failed");
+    throw err;
+  }
+}
+
+/** Create a new chat for the given project. */
+export async function createChat(projectId: number, titleSuggestion: string) {
+  try {
+    const [row] = await db
+      .insert(chats)
+      .values({ projectId, title: titleSuggestion })
+      .returning({ id: chats.id });
+    return row.id;
+  } catch (err) {
+    logger.error(JSON.stringify(err), "createChat failed");
+    throw err;
+  }
+}
+
 /** Create (or reuse) a chat inside the given project. */
 export async function ensureChat(
   projectId: number,
@@ -136,6 +168,49 @@ async function saveAssistantMessage(chatId: number, content: string) {
   }
 }
 
+async function getChatMessages(
+  chatId: number,
+  options?: { lastMessageId: number | null; limit?: number },
+) {
+  const { lastMessageId, limit = 20 } = options || {};
+
+  try {
+    let whereCondition = eq(messages.chatId, chatId);
+
+    if (lastMessageId) {
+      const [lastMsg] = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.id, lastMessageId))
+        .limit(1);
+
+      if (lastMsg.id) {
+        whereCondition = sql`${messages.chatId} = ${chatId} AND ${messages.id} < ${lastMessageId}`;
+      }
+    }
+
+    const query = db
+      .select()
+      .from(messages)
+      .where(whereCondition)
+      .orderBy(sql`${messages.id} desc`)
+      .limit(limit + 1); // fetch one extra to check for more
+
+    const result = await query;
+    const hasMore = result.length > limit;
+
+    const messagesResult = hasMore ? result.slice(0, limit) : result;
+
+    return {
+      messages: messagesResult.reverse(),
+      hasMore,
+    };
+  } catch (err) {
+    logger.error(JSON.stringify(err), "getChatMessages failed");
+    throw err;
+  }
+}
+
 /** Stream plain‑text answer and persist history. */
 export async function* streamTextAndPersist({
   chatId,
@@ -196,4 +271,39 @@ export async function* streamObjectAndPersist({
   }
 
   await saveAssistantMessage(chatId, JSON.stringify(assistantObj));
+}
+
+/** Get chat history and persist access if needed. */
+export async function getHistoryAndPersist({
+  chatId,
+  lastMessageId,
+  limit,
+}: {
+  chatId: number;
+  lastMessageId: number | null;
+  limit?: number;
+}) {
+  try {
+    const history = await getChatMessages(chatId, {
+      lastMessageId,
+      limit,
+    });
+
+    return {
+      messages: history.messages.map((msg: any) => ({
+        id: msg.id,
+        message: msg.content,
+        role: msg.role,
+        timestamp:
+          msg.createdAt instanceof Date
+            ? msg.createdAt.getTime()
+            : msg.createdAt,
+        context: msg.context ?? undefined,
+      })),
+      hasMore: history.hasMore,
+    };
+  } catch (err) {
+    logger.error(JSON.stringify(err), "getHistoryAndPersist failed");
+    throw err;
+  }
 }
