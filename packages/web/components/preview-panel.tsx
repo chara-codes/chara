@@ -1,16 +1,54 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { URLBar } from "./url-bar"
-import { CodePreview } from "./code-preview"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { URLBar } from "./url-bar";
+import { CodePreview } from "./code-preview";
+import { useProject } from "@/contexts/project-context";
+import { trpc } from "@/utils";
+import { useEffect, useState } from "react";
+import { myLogger } from "@chara/server/src/utils/logger";
 
 interface PreviewPanelProps {
-  previewUrl: string
-  onReload: () => void
-  onToggleFullScreen: () => void
-  isFullScreen: boolean
+  previewUrl: string;
+  onReload: () => void;
+  onToggleFullScreen: () => void;
+  isFullScreen: boolean;
 }
 
-export function PreviewPanel({ previewUrl, onReload, onToggleFullScreen, isFullScreen }: PreviewPanelProps) {
+export function PreviewPanel({
+  onReload,
+  onToggleFullScreen,
+  isFullScreen,
+}: PreviewPanelProps) {
+  const [previewUrl, setPreviewUrl] = useState("null");
+  const { selectedProject } = useProject();
+  const {
+    data,
+    error,
+    mutate: startPreviewMutation,
+  } = trpc.preview.start.useMutation();
+
+  useEffect(() => {
+    if (selectedProject) {
+      startPreviewMutation({ projectName: selectedProject.name });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedProject) {
+      startPreviewMutation({ projectName: selectedProject.name });
+    }
+  }, [selectedProject]);
+
+  useEffect(() => {
+    myLogger.info("Setting preview url:", data?.url || "");
+    if (data?.url) {
+      setPreviewUrl(data?.url);
+    }
+    if (error) {
+      myLogger.error(error.message);
+    }
+  }, [data, error]);
+
   return (
     <div className="flex-1 p-6 overflow-auto">
       <URLBar
@@ -32,28 +70,24 @@ export function PreviewPanel({ previewUrl, onReload, onToggleFullScreen, isFullS
             <TabsContent value="code" className="mt-0 h-[calc(100vh-12rem)]">
               <CodePreview />
             </TabsContent>
-            <TabsContent value="preview" className="mt-0">
-              <div className="space-y-4">
-                <div className="h-64 bg-muted rounded-lg flex items-center justify-center">
-                  <p className="text-muted-foreground">Preview content will appear here</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="h-32 bg-muted rounded-lg flex items-center justify-center">
-                    <p className="text-muted-foreground">Section 1</p>
+            <TabsContent value="preview" className="mt-0 h-[calc(100vh-12rem)]">
+              <div className="border rounded-lg h-full w-full overflow-hidden">
+                {previewUrl ? (
+                  <iframe
+                    src={previewUrl}
+                    className="w-full h-full"
+                    sandbox="allow-scripts allow-same-origin allow-forms"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    Waiting for preview URL...
                   </div>
-                  <div className="h-32 bg-muted rounded-lg flex items-center justify-center">
-                    <p className="text-muted-foreground">Section 2</p>
-                  </div>
-                </div>
-                <div className="h-48 bg-muted rounded-lg flex items-center justify-center">
-                  <p className="text-muted-foreground">Additional content</p>
-                </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-

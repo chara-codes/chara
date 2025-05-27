@@ -2,8 +2,8 @@ import { streamText } from "ai";
 import { z } from "zod";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../api/db.ts";
-import { chats, messages } from "../db/schema";
-import { myLogger as logger } from "../utils/logger";
+import { chats, messages, projects, stacks } from "../db/schema";
+import { myLogger as logger, myLogger } from "../utils/logger";
 import { myAgent } from "../ai/agents/my-agent.ts";
 
 export const DEFAULT_PROJECT_ID = 1;
@@ -26,6 +26,17 @@ export async function findExistingChat(
   }
 }
 
+/** Create (or reuse) a chat inside the given project. */
+export async function ensureChat(projectId: number, titleSuggestion: string) {
+  const existingId = await findExistingChat(projectId);
+
+  if (existingId) {
+    return existingId;
+  }
+
+  return await createChat(projectId, titleSuggestion);
+}
+
 /** Create a new chat for the given project. */
 export async function createChat(projectId: number, titleSuggestion: string) {
   try {
@@ -38,17 +49,6 @@ export async function createChat(projectId: number, titleSuggestion: string) {
     logger.error(JSON.stringify(err), "createChat failed");
     throw err;
   }
-}
-
-/** Create (or reuse) a chat inside the given project. */
-export async function ensureChat(projectId: number, titleSuggestion: string) {
-  const existingId = await findExistingChat(projectId);
-
-  if (existingId) {
-    return existingId;
-  }
-
-  return await createChat(projectId, titleSuggestion);
 }
 
 /** Persist the user message straight away. */
