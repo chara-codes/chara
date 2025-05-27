@@ -1,5 +1,4 @@
 "use client";
-import { StackProvider } from "@/context";
 import {
   StackFilter,
   CreateStackButton,
@@ -12,7 +11,6 @@ export default function StackPage() {
   const { leftVisible } = useLayout();
 
   return (
-    <StackProvider>
       <div className="flex h-full">
         {/* Left rail */}
         {leftVisible && (
@@ -28,6 +26,5 @@ export default function StackPage() {
           <StackGrid />
         </main>
       </div>
-    </StackProvider>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, FormEvent, ChangeEvent } from "react";
 import { useProject } from "@/contexts/project-context";
 import { trpc } from "@/utils/trpc";
 import { toast } from "@/hooks/use-toast";
+import { useStack } from "@/contexts/stack-context";
 
 export function useTrpcChat() {
   const [messages, setMessages] = useState<
@@ -24,6 +25,7 @@ export function useTrpcChat() {
   const [error, setError] = useState<Error | null>(null);
   const [tempAiMessageId, setTempAiMessageId] = useState<string | null>(null);
   const { selectedProject } = useProject();
+  const { selectedStack } = useStack();
 
   // References to manage streaming and cleanup
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -31,6 +33,7 @@ export function useTrpcChat() {
   const [streamParams, setStreamParams] = useState<{
     question: string;
     project: any;
+    stack: any;
   } | null>(null);
 
   // Set up the query
@@ -40,7 +43,7 @@ export function useTrpcChat() {
     error: queryError,
     refetch,
   } = trpc.chat.streamObject.useQuery(
-    streamParams ?? { question: "", project: null },
+    streamParams ?? { question: "", project: null, stack: null },
     {
       enabled: false, // Don't run automatically
       retry: false,
@@ -157,6 +160,7 @@ export function useTrpcChat() {
     setStreamParams({
       question: messageText,
       project: selectedProject,
+      stack: selectedStack
     });
   };
 

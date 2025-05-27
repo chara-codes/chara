@@ -1,11 +1,16 @@
 "use client";
 import { useState, useRef, useEffect, FormEvent } from "react";
-import type { FileAttachment, Message } from "../types";
+import type { FileAttachment, Message, TechStack } from "../types";
 import { MessageItem } from "./message-item";
 import { useTrpcChat } from "@/hooks/use-trpc-chat";
 import { useProject } from "@/contexts/project-context";
 import { ProjectSelector } from "@/components/project-selector";
 import { ChatInput } from "./chat-input";
+import { useStack } from "@/contexts/stack-context";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { useStacks } from "@/context";
+import { StackSelectDialog } from "./stack-select-dialog";
+import usePrevious from "@/hooks/usePrevious";
 
 interface ChatPanelProps {
   initialMessages: Message[];
@@ -14,18 +19,35 @@ interface ChatPanelProps {
 export function ChatPanel({ initialMessages }: ChatPanelProps) {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const { selectedProject, setSelectedProject } = useProject();
+  const prevSelectedProject = usePrevious(selectedProject);
+  const { selectedStack, setSelectedStack } = useStack();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [stackDialogOpen, setStackDialogOpen] = useState(false);
 
   const handleProjectSelect = (projectId: number, projectName: string) => {
     setSelectedProject({ id: projectId, name: projectName });
   };
 
+  const handleSelect = (stack: TechStack) => {
+    setSelectedStack({ id: stack.id, name: stack.name });
+    setStackDialogOpen(false);
+  };
+
   const { messages, error, status, sendChatMessage } = useTrpcChat();
+  
+  const handleOpenDialog = () => setStackDialogOpen(true);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!prevSelectedProject && selectedProject  && !selectedStack) {
+      setStackDialogOpen(true);
+    }
+  }, [selectedProject, prevSelectedProject, selectedStack])
 
   const copyMessage = (content: string, messageId: string) => {
     navigator.clipboard.writeText(content);
@@ -54,10 +76,12 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
       messageContent = contextStrings.join("\n") + "\n\n" + messageContent;
     }
 
-    if (selectedProject) {
+    if (selectedProject && selectedStack) {
       sendChatMessage(messageContent);
-    } else {
+    } else if (!selectedProject) {
       console.error("No project selected");
+    } else if (!selectedStack) {
+      console.error("No stack selected");
     }
   };
 
@@ -94,6 +118,12 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
           isLoading={status === "streaming"}
         />
       </div>
+      <StackSelectDialog
+        open={stackDialogOpen}
+        handleOpen={handleOpenDialog}
+        selectedId={selectedStack?.id || ''}
+        handleSelect={handleSelect}
+      />
     </div>
   );
 }
