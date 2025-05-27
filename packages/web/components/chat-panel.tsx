@@ -15,17 +15,47 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const { selectedProject, setSelectedProject } = useProject();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMsgIdRef = useRef<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const isLoadingHistory = useRef(false);
 
   const handleProjectSelect = (projectId: number, projectName: string) => {
     setSelectedProject({ id: projectId, name: projectName });
   };
 
-  const { messages, error, status, sendChatMessage } = useTrpcChat();
+  const { messages, error, status, sendChatMessage, fetchMoreHistory } =
+    useTrpcChat();
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const lastId = messages[messages.length - 1]?.id;
+
+    // scroll only if the bottom message changed
+    if (lastMsgIdRef.current !== lastId) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    lastMsgIdRef.current = lastId;
   }, [messages]);
+
+  // Handler to fetch more history when scrolled to top
+  const handleScroll = async (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (el.scrollTop === 0 && !isLoadingHistory.current) {
+      isLoadingHistory.current = true;
+
+      const prevHeight = el.scrollHeight;
+
+      await fetchMoreHistory();
+
+      requestAnimationFrame(() => {
+        if (listRef.current) {
+          const newHeight = listRef.current.scrollHeight;
+          listRef.current.scrollTop = newHeight - prevHeight;
+        }
+        isLoadingHistory.current = false;
+      });
+    }
+  };
 
   const copyMessage = (content: string, messageId: string) => {
     navigator.clipboard.writeText(content);
@@ -69,7 +99,11 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
           selectedProject={selectedProject}
         />
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div
+        ref={listRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+        onScroll={handleScroll}
+      >
         {messages.map((message) => (
           <MessageItem
             key={message.id}

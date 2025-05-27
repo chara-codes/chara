@@ -1,0 +1,1 @@
+export const MESSAGE_HISTORY_PAGE_SIZE = 10;

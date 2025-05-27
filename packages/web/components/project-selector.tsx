@@ -7,7 +7,7 @@ import { directoryManager } from "@/utils/file-system";
 
 interface ProjectSelectorProps {
   onProjectSelect: (projectId: number, projectName: string) => void;
-  selectedProject?: { id: string; name: string } | null;
+  selectedProject?: { id: number; name: string } | null;
 }
 
 export function ProjectSelector({
@@ -33,7 +33,7 @@ export function ProjectSelector({
 
       const projectId = parseInt(
         generateStringHash(directoryHandle.name).substring(0, 8),
-        16,
+        16
       );
 
       // Request read/write permission
