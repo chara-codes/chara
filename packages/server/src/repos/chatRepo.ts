@@ -26,17 +26,6 @@ export async function findExistingChat(
   }
 }
 
-/** Create (or reuse) a chat inside the given project. */
-export async function ensureChat(projectId: number, titleSuggestion: string) {
-  const existingId = await findExistingChat(projectId);
-
-  if (existingId) {
-    return existingId;
-  }
-
-  return await createChat(projectId, titleSuggestion);
-}
-
 /** Create a new chat for the given project. */
 export async function createChat(projectId: number, titleSuggestion: string) {
   try {
@@ -47,6 +36,78 @@ export async function createChat(projectId: number, titleSuggestion: string) {
     return row.id;
   } catch (err) {
     logger.error(JSON.stringify(err), "createChat failed");
+    throw err;
+  }
+}
+
+/** Create (or reuse) a chat inside the given project. */
+export async function ensureChat(
+  projectId: number,
+  titleSuggestion: string,
+): Promise<number> {
+  try {
+    const defaultStack = {
+      id: 1, // Default stack ID
+      title: "Default Stack",
+      type: "others" as const,
+      createdAt: sql`CURRENT_TIMESTAMP`,
+      updatedAt: sql`CURRENT_TIMESTAMP`,
+    };
+
+    // Ensure the default stack exists
+    const [existingStack] = await db
+      .select({ id: stacks.id })
+      .from(stacks)
+      .where(eq(stacks.id, defaultStack.id))
+      .limit(1);
+
+    if (!existingStack) {
+      logger.info(`Default stack does not exist. Creating it.`);
+      await db.insert(stacks).values(defaultStack).onConflictDoNothing();
+    }
+    // Check if the project exists in the `projects` table
+    const [existingProject] = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    if (!existingProject) {
+      logger.info(`Project with ID ${projectId} does not exist. Creating it.`);
+      try {
+        const [newProject] = await db
+          .insert(projects)
+          .values({ id: projectId, name: `Project ${projectId}`, stackId: 1 })
+          .returning({ id: projects.id });
+
+        if (!newProject) {
+          throw new Error(`Failed to create project with ID ${projectId}`);
+        }
+      } catch (err) {
+        logger.error(JSON.stringify(err), "Failed to create project");
+        throw err;
+      }
+    }
+
+    // Check for an existing chat in the `chats` table
+    const [existingChat] = await db
+      .select({ id: chats.id })
+      .from(chats)
+      .where(eq(chats.projectId, projectId))
+      .orderBy(sql`${chats.createdAt} desc`)
+      .limit(1);
+
+    if (existingChat) return existingChat.id;
+
+    // Create a new chat if one doesn't exist
+    const [newChat] = await db
+      .insert(chats)
+      .values({ projectId, title: titleSuggestion })
+      .returning({ id: chats.id });
+
+    return newChat.id;
+  } catch (err) {
+    logger.error(JSON.stringify(err), "ensureChat failed");
     throw err;
   }
 }
