@@ -15,6 +15,9 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const { selectedProject, setSelectedProject } = useProject();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMsgIdRef = useRef<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const isLoadingHistory = useRef(false);
 
   const handleProjectSelect = (projectId: number, projectName: string) => {
     setSelectedProject({ id: projectId, name: projectName });
@@ -25,14 +28,32 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const lastId = messages[messages.length - 1]?.id;
+
+    // scroll only if the bottom message changed
+    if (lastMsgIdRef.current !== lastId) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    lastMsgIdRef.current = lastId;
   }, [messages]);
 
   // Handler to fetch more history when scrolled to top
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    if (target.scrollTop === 0) {
-      fetchMoreHistory();
+  const handleScroll = async (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (el.scrollTop === 0 && !isLoadingHistory.current) {
+      isLoadingHistory.current = true;
+
+      const prevHeight = el.scrollHeight;
+
+      await fetchMoreHistory();
+
+      requestAnimationFrame(() => {
+        if (listRef.current) {
+          const newHeight = listRef.current.scrollHeight;
+          listRef.current.scrollTop = newHeight - prevHeight;
+        }
+        isLoadingHistory.current = false;
+      });
     }
   };
 
@@ -50,7 +71,7 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
   const handleSendMessage = (
     inputText: string,
     attachments: FileAttachment[],
-    contexts: Array<{ source: string; component: string }>
+    contexts: Array<{ source: string; component: string }>,
   ) => {
     // Format the message content with attached contexts
     let messageContent = inputText;
@@ -58,7 +79,7 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
     // Add contexts at the beginning of the message if there are any
     if (contexts.length > 0) {
       const contextStrings = contexts.map(
-        (ctx) => `[${ctx.source}:${ctx.component}]`
+        (ctx) => `[${ctx.source}:${ctx.component}]`,
       );
       messageContent = contextStrings.join("\n") + "\n\n" + messageContent;
     }
@@ -79,6 +100,7 @@ export function ChatPanel({ initialMessages }: ChatPanelProps) {
         />
       </div>
       <div
+        ref={listRef}
         className="flex-1 overflow-y-auto p-4 space-y-4"
         onScroll={handleScroll}
       >
