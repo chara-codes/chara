@@ -23,12 +23,13 @@ export interface TechStackDetail {
     url: string;
     description?: string;
   }[];
+  /** Management Control Panel server configurations */
   mcpServers?: {
     name: string;
     configuration: {
       command: string;
       args: string[];
-      [key: string]: any;
+      [key: string]: string | string[] | number | boolean | Record<string, unknown>;
     };
   }[];
 }
@@ -345,6 +346,7 @@ const TechStackDetailView: React.FC<TechStackDetailViewProps> = ({
                     </ServerHeader>
                     <ServerContent>
                       <JsonConfig
+                        // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                         dangerouslySetInnerHTML={{
                           __html: highlightJson(
                             JSON.stringify(server.configuration, null, 2),
