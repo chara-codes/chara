@@ -1,5 +1,5 @@
 "use client";
-import { useStacks } from "@/context/StackContext";
+import { useStacks } from "@/context/StacksContext";
 import { StackSearch } from "@/components/stack/StackSearch";
 
 export const StackTopBar = () => {

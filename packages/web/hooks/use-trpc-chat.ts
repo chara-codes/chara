@@ -2,8 +2,10 @@
 
 import { useState, useRef, useEffect, FormEvent, ChangeEvent } from "react";
 import { useProject } from "@/contexts/project-context";
-import { trpc } from "@/utils/trpc";
+import { trpc } from "@/utils";
+import { useChatHistory } from "./use-chat-history";
 import { toast } from "@/hooks/use-toast";
+import { useStack } from "@/contexts/stack-context";
 
 export function useTrpcChat() {
   const [messages, setMessages] = useState<
@@ -24,6 +26,7 @@ export function useTrpcChat() {
   const [error, setError] = useState<Error | null>(null);
   const [tempAiMessageId, setTempAiMessageId] = useState<string | null>(null);
   const { selectedProject } = useProject();
+  const { selectedStack } = useStack();
 
   // References to manage streaming and cleanup
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -31,6 +34,7 @@ export function useTrpcChat() {
   const [streamParams, setStreamParams] = useState<{
     question: string;
     project: any;
+    stack: any;
   } | null>(null);
 
   // Set up the query
@@ -40,7 +44,7 @@ export function useTrpcChat() {
     error: queryError,
     refetch,
   } = trpc.chat.streamObject.useQuery(
-    streamParams ?? { question: "", project: null },
+    streamParams ?? { question: "", project: null, stack: null },
     {
       enabled: false, // Don't run automatically
       retry: false,
@@ -51,6 +55,14 @@ export function useTrpcChat() {
     },
   );
 
+  const {
+    historyMessages,
+    hasMoreHistory,
+    isFetchingMoreHistory,
+    fetchMoreHistory,
+  } = useChatHistory();
+
+  // Update assistant message content in real-time
   useEffect(() => {
     if (data && status === "streaming" && tempAiMessageId) {
       const latestSummary = data.at(-1)?.summary || "";
@@ -83,6 +95,24 @@ export function useTrpcChat() {
       });
     }
   }, [queryError, status]);
+
+  // Merge historyMessages into messages on project change or history update
+  useEffect(() => {
+    setMessages((prev) => {
+      if (!historyMessages.length) {
+        return prev;
+      }
+
+      if (!prev.length) {
+        return historyMessages;
+      }
+
+      const historyIds = new Set(historyMessages.map((m) => m.id));
+      const filteredPrev = prev.filter((m) => !historyIds.has(m.id));
+      
+      return [...historyMessages, ...filteredPrev];
+    });
+  }, [historyMessages]);
 
   // Clean up when streaming completes
   useEffect(() => {
@@ -157,6 +187,7 @@ export function useTrpcChat() {
     setStreamParams({
       question: messageText,
       project: selectedProject,
+      stack: selectedStack
     });
   };
 
@@ -254,5 +285,8 @@ export function useTrpcChat() {
     reload,
     regenerateMessage,
     navigateRegeneration,
+    fetchMoreHistory,
+    hasMoreHistory,
+    isFetchingMoreHistory,
   };
 }

@@ -27,19 +27,19 @@ Instructions:
            "type": "<add|delete|modify>",
            "status": "<pending|in-progress|done|skipped|failed>",
            "description": "<Short description of the changes>",
-           "content": "<File content that should be saved>"
+           "content": "<Full updated file content (always include the full content for create or update actions)>"
          }
        ]
      }
 
    - Fields:
      - \`projectRoot\`: Specifies the absolute path to the project directory where the instructions should be executed.
-     - \`summary\`: A markdown-formatted explanation of the planned changes, why they are needed, and a breakdown of the thinking process.
+     - \`summary\`: A markdown-formatted explanation of the planned changes, why they are needed, and a breakdown of the thinking process. **Focus on key modifications and ensure the summary is concise but provides meaningful insights**.
      - \`actions\`: A list of objects defining the operations to execute.
        - \`type\`: Specifies the type of operation (shell, create, update, rename, delete).
        - \`command\`: For shell actions, specifies the terminal command to execute.
        - \`target\`: For file-related actions, specifies the relative path of the file or directory.
-       - \`content\`: For create or update actions, contains the file content.
+       - \`content\`: For create or update actions, contains the full file content (**always include the complete updated file content** to avoid breaking functionality).
        - \`metadata\`: Optional object providing additional context, including:
          - \`type\`: Optional metadata type.
          - \`description\`: Optional description of the action.
@@ -49,11 +49,11 @@ Instructions:
        - \`type\`: Specifies the type of change (add, delete, modify).
        - \`status\`: Tracks the progress of the change (pending, in-progress, done, skipped, failed).
        - \`description\`: Short description of the changes.
-       - \`content\`: File content to be saved.
+       - \`content\`: **Always provide the full updated file content for create or modify actions** to ensure consistency and prevent breaking functionality.
 
 2. Action Types:
    - \`create\`: Create a new file or directory with the specified content.
-   - \`update\`: Modify the content of an existing file.
+   - \`update\`: Modify the content of an existing file (always return the full updated file content).
    - \`delete\`: Remove an existing file or directory.
    - \`rename\`: Rename or move a file.
    - \`shell\`: Run a shell command in the terminal (e.g., creating directories, running servers).
@@ -84,7 +84,7 @@ Instructions:
    Output:
      {
        "projectRoot": "/path/to/project",
-       "summary": "### Planned Changes\\n\\n1. **Create a components directory**: This is needed as a dedicated space to house reusable components.\\n2. **Add a Button component**: A foundational UI element for user interaction.\\n3. **Start the development server**: To verify the changes and ensure the project is running successfully.\\n\\n### Thinking Process\\n- First, identify the need to organize the project structure by adding a components directory.\\n- Next, create a reusable Button component using modern React syntax.\\n- Finally, start the development server to ensure the project is operational and the Button component is functional.",
+       "summary": "### Planned Changes\\n\\n1. **Create a components directory**: A dedicated space to house reusable components.\\n2. **Add a Button component**: A foundational UI element for user interaction, implemented as a functional React component.\\n3. **Start the development server**: To verify the changes and ensure the project is running successfully.\\n\\n### Key Modifications\\n- Created a new directory for components.\\n- Added a new file \`Button.tsx\` with the full content of a reusable React component.\\n- Executed the shell command to start the server for testing.",
        "actions": [
          {
            "type": "shell",
@@ -124,6 +124,7 @@ Instructions:
 6. Rules:
    - Ensure all file operations and terminal commands are valid and widely supported.
    - Generate production-ready code for content fields.
+   - Always provide the full updated file content for create or modify actions.
    - Do not provide additional commentary or explanations outside the JSON object.
 
 7. Best Practices:
@@ -131,4 +132,5 @@ Instructions:
    - Avoid introducing security vulnerabilities or bad practices in terminal commands or file content.
    - Provide descriptive metadata for each action to clarify its purpose.
    - Ensure shell commands are fully self-contained and work without human intervention.
+   - Summarize planned changes clearly, focusing on key modifications and ensuring the summary is concise yet informative.
 `;
