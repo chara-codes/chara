@@ -3,9 +3,14 @@ import { router, publicProcedure } from "../trpc";
 import { messageSchema } from "../../dto/chat.ts";
 import {
   DEFAULT_PROJECT_ID,
+  DEFAULT_PROJECT_NAME,
+  DEFAULT_STACK_ID,
   ensureChat,
+  findExistingChat,
+  ensureProjectExists,
   streamObjectAndPersist,
   streamTextAndPersist,
+  getHistoryAndPersist,
 } from "../../repos/chatRepo.ts";
 import { myLogger as logger } from "../../utils/logger";
 
@@ -14,6 +19,7 @@ export const chatRouter = router({
     .input(
       z.object({
         project: z.object({ id: z.number(), name: z.string() }),
+        stack: z.object({ id: z.string(), name: z.string() }),
         chatId: z.number().optional(),
         question: z.string(),
       }),
@@ -21,6 +27,16 @@ export const chatRouter = router({
     .query(async function* ({ ctx, input }) {
       try {
         const projectId = input?.project?.id ?? DEFAULT_PROJECT_ID;
+        const projectName = input?.project?.name ?? DEFAULT_PROJECT_NAME;
+        const stackId = input?.stack?.id ?? DEFAULT_STACK_ID;
+
+        // Ensure the project exists or create it
+        await ensureProjectExists({
+          projectId,
+          projectName,
+          stackId: Number(stackId),
+        });
+
         const chatId =
           input.chatId ??
           (await ensureChat(projectId, input.question.slice(0, 60)));
@@ -35,6 +51,7 @@ export const chatRouter = router({
     .input(
       z.object({
         project: z.object({ id: z.number(), name: z.string() }),
+        stack: z.object({ id: z.string(), name: z.string() }),
         chatId: z.number().optional(),
         question: z.string(),
       }),
@@ -42,9 +59,20 @@ export const chatRouter = router({
     .query(async function* ({ ctx, input }) {
       try {
         const projectId = input?.project?.id ?? DEFAULT_PROJECT_ID;
+        const projectName = input?.project?.name ?? DEFAULT_PROJECT_NAME;
+        const stackId = input?.stack?.id ?? DEFAULT_STACK_ID;
+
+        // Ensure the project exists or create it
+        await ensureProjectExists({
+          projectId,
+          projectName,
+          stackId: Number(stackId),
+        });
+
         const chatId =
           input.chatId ??
           (await ensureChat(projectId, input.question.slice(0, 60)));
+
         yield* streamObjectAndPersist({
           chatId,
           project: input.project,
@@ -54,6 +82,55 @@ export const chatRouter = router({
         });
       } catch (err) {
         logger.error(JSON.stringify(err), "streamObject endpoint failed");
+        throw err;
+      }
+    }),
+
+  getHistory: publicProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        chatId: z.number().optional(),
+        lastMessageId: z.string().nullable().optional(),
+        limit: z.number().optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      try {
+        const projectId = input?.projectId ?? DEFAULT_PROJECT_ID;
+
+        const chatId = input.chatId ?? (await findExistingChat(projectId));
+
+        if (!chatId) {
+          return {
+            projectId: input.projectId,
+            chatId: null,
+            history: [],
+          };
+        }
+
+        const lastMessageId = input?.lastMessageId
+          ? parseInt(input.lastMessageId)
+          : null;
+
+        if (lastMessageId && isNaN(lastMessageId)) {
+          throw new Error("Invalid lastMessageId");
+        }
+
+        const history = await getHistoryAndPersist({
+          chatId,
+          lastMessageId,
+          limit: input.limit,
+        });
+
+        return {
+          projectId: input.projectId,
+          chatId: chatId,
+          history: history.messages,
+          hasMore: history.hasMore,
+        };
+      } catch (err) {
+        logger.error(JSON.stringify(err), "getHistory endpoint failed");
         throw err;
       }
     }),

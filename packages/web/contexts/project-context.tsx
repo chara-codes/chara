@@ -28,7 +28,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   });
 
   const handleSetSelectedProject = (
-    project: { id: number; name: string } | null,
+    project: { id: number; name: string } | null
   ) => {
     setSelectedProject(project);
 

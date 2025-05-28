@@ -1,2 +1,2 @@
-export * from './StackContext'
+export * from './StacksContext'
 export * from './TrpcProviders'

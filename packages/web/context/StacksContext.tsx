@@ -14,12 +14,13 @@ import {
 import { useStacksService } from "@/hooks/useStackService";
 import { useDebounce } from "@/hooks/useDebounce";
 
-interface StackCtx {
+interface StacksCtx {
   stacks: TechStack[];
   filtered: TechStack[];
   filterType: StackType;
   setFilterType: (t: StackType) => void;
   search: string;
+  isLoading: boolean;
   setSearch: (q: string) => void;
   createStack: (s: TechStack) => void;
   updateStack: (s: TechStack) => void;
@@ -27,20 +28,20 @@ interface StackCtx {
   duplicateStack: (id: string) => void;
 }
 
-const StackContext = createContext<StackCtx | null>(null);
+const StacksContext = createContext<StacksCtx | null>(null);
 export const useStacks = () => {
-  const ctx = useContext(StackContext);
+  const ctx = useContext(StacksContext);
   if (!ctx) throw new Error("useStacks must be inside StackProvider");
   return ctx;
 };
 
-export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
+export const StacksProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [stacks, setStacks] = useState<TechStack[]>([]);
   const [filterType, setFilterType] = useState<StackType>("all");
   const [searchRaw, setSearchRaw] = useState("");
   const search = useDebounce(searchRaw, 250);
 
-  const { data: serverStacks = [] } = trpc.stacks.list.useQuery(undefined, {
+  const { data: serverStacks = [], isFetching } = trpc.stacks.list.useQuery(undefined, {
     select: (rows) => rows.map(serverToClient),
     initialData: [],
   });
@@ -56,7 +57,7 @@ export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
     setStacks(serverStacks);
   }, [serverStacks]);
 
-  const value = useMemo<StackCtx>(
+  const value = useMemo<StacksCtx>(
     () => ({
       stacks,
       filtered,
@@ -64,12 +65,13 @@ export const StackProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setFilterType,
       search: searchRaw,
       setSearch: setSearchRaw,
+      isLoading: isFetching,
       ...svc,
     }),
     [stacks, filtered, filterType, searchRaw, svc],
   );
 
   return (
-    <StackContext.Provider value={value}>{children}</StackContext.Provider>
+    <StacksContext.Provider value={value}>{children}</StacksContext.Provider>
   );
 };

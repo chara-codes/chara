@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X } from "lucide-react";
 
-import { useStacks } from "@/context/StackContext";
+import { useStacks } from "@/context/StacksContext";
 import { Label } from "@/components/ui/label";
 import { TechBuilder } from "@/components/stack/TechBuilder";
 import { Input } from "@/components/ui/input";
