@@ -9,6 +9,7 @@ const CharaCodesWidget = r2wc(CharaWidgetPanel, React, ReactDOM, {
   props: {
     defaultOpen: "boolean",
     position: "string",
+    enabledInputButtons: "string",
   },
 });
 
