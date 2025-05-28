@@ -1,13 +1,12 @@
-"use client"
+"use client";
 
-import { ThemeProvider } from "styled-components"
-import { UIStoreProvider } from "../src/store/ui-store"
-import ChatOverlayPanel from "../src/components/templates/chat-overlay-panel"
-import GlobalStyles from "../src/styles/global-styles"
-import { theme } from "../src/styles/theme"
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import styled from "styled-components"
+import { ThemeProvider } from "styled-components";
+import { UIStoreProvider } from "../src/store/ui-store";
+import ChatOverlayPanel from "../src/components/templates/chat-overlay-panel";
+import { theme } from "../src/styles/theme";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import styled from "styled-components";
 
 // Configuration for the chat overlay panel
 const chatConfig = {
@@ -17,7 +16,7 @@ const chatConfig = {
     bottom: 20,
     right: 20,
   },
-}
+};
 
 // Styled components for the workspace link - using inline styles instead of theme
 const WorkspaceLinkContainer = styled.div`
@@ -30,7 +29,7 @@ const WorkspaceLinkContainer = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 16px;
-`
+`;
 
 const WorkspaceButton = styled.a`
   display: flex;
@@ -52,32 +51,32 @@ const WorkspaceButton = styled.a`
     transform: translateY(-2px);
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
   }
-`
+`;
 
 const WorkspaceDescription = styled.p`
   font-size: 16px;
   color: #333333;
   text-align: center;
   max-width: 400px;
-`
+`;
 
 export default function HomePage() {
   // Use state to handle client-side rendering
-  const [isMounted, setIsMounted] = useState(false)
-  const [darkMode] = useState(false)
-  const [, setScrollPosition] = useState(0)
+  const [isMounted, setIsMounted] = useState(false);
+  const [darkMode] = useState(false);
+  const [, setScrollPosition] = useState(0);
 
   // Only render the chat panel on the client side
   useEffect(() => {
-    setIsMounted(true)
+    setIsMounted(true);
 
     const handleScroll = () => {
-      setScrollPosition(window.scrollY)
-    }
+      setScrollPosition(window.scrollY);
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <div className={`min-h-screen ${darkMode ? "dark" : ""}`}>
@@ -86,7 +85,8 @@ export default function HomePage() {
         {isMounted && (
           <WorkspaceLinkContainer>
             <WorkspaceDescription>
-              Try our new workspace interface with resizable panels and multiple preview options
+              Try our new workspace interface with resizable panels and multiple
+              preview options
             </WorkspaceDescription>
             <Link href="/workspace" passHref legacyBehavior>
               <WorkspaceButton>Open Workspace</WorkspaceButton>
@@ -98,7 +98,6 @@ export default function HomePage() {
         {isMounted && (
           <UIStoreProvider>
             <ThemeProvider theme={theme}>
-              <GlobalStyles />
               <ChatOverlayPanel
                 defaultOpen={chatConfig.defaultOpen}
                 position={chatConfig.position}
@@ -109,5 +108,5 @@ export default function HomePage() {
         )}
       </div>
     </div>
-  )
+  );
 }

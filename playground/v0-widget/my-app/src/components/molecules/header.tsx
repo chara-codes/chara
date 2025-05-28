@@ -24,6 +24,7 @@ interface HeaderProps {
 }
 
 const HeaderContainer = styled.header`
+  all: revert;
   display: flex;
   align-items: center;
   justify-content: space-between;

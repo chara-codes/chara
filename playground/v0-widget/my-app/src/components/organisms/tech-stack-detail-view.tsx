@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
 import styled from "styled-components";
 import { ArrowLeftIcon, ExternalLinkIcon } from "../atoms/icons";
 import Button from "../atoms/button";
@@ -268,8 +267,6 @@ const TechStackDetailView: React.FC<TechStackDetailViewProps> = ({
   techStack,
   onBack,
 }) => {
-  const [activeTab, setActiveTab] = useState("overview");
-
   return (
     <DetailContainer>
       <DetailHeader>
@@ -312,7 +309,7 @@ const TechStackDetailView: React.FC<TechStackDetailViewProps> = ({
               <SectionContent>
                 <LinksList>
                   {techStack.documentationLinks.map((link, index) => (
-                    <LinkItem key={index}>
+                    <LinkItem key={`link-${link.url}-${index}`}>
                       <LinkTitle>
                         <ExternalLink
                           href={link.url}
@@ -341,8 +338,8 @@ const TechStackDetailView: React.FC<TechStackDetailViewProps> = ({
             </SectionHeader>
             <SectionContent>
               <ServerList>
-                {techStack.mcpServers.map((server, index) => (
-                  <ServerItem key={index}>
+                {techStack.mcpServers.map((server) => (
+                  <ServerItem key={server.name}>
                     <ServerHeader>
                       <ServerName>{server.name}</ServerName>
                     </ServerHeader>

@@ -235,8 +235,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       case Screen.EDIT_TECH_STACK:
         return <EditTechStackView />;
 
-      case Screen.CONVERSATION:
-      case Screen.NEW_THREAD:
       default:
         return <ConversationView />;
     }

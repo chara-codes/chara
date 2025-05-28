@@ -3,6 +3,7 @@
 export interface Theme {
   colors: {
     primary: string
+    primaryLight: string
     primaryHover: string
     primaryActive: string
     secondary: string
@@ -13,7 +14,10 @@ export interface Theme {
     text: string
     textSecondary: string
     border: string
+    borderHover: string
     error: string
+    errorHover: string
+    errorLight: string
     success: string
     warning: string
     info: string
@@ -36,6 +40,7 @@ export interface Theme {
     sm: string
     md: string
     lg: string
+    focus: string
   }
   typography: {
     fontFamily: string
@@ -49,6 +54,7 @@ export interface Theme {
     fontWeight: {
       regular: number
       medium: number
+      semibold: number
       bold: number
     }
     lineHeight: {
@@ -65,6 +71,7 @@ export interface Theme {
     widget: number
   }
   breakpoints: {
+    xs: string
     sm: string
     md: string
     lg: string
@@ -80,6 +87,7 @@ export interface Theme {
 export const theme: Theme = {
   colors: {
     primary: "#2563eb",
+    primaryLight: "rgba(59, 130, 246, 0.2)",
     primaryHover: "#1d4ed8",
     primaryActive: "#1e40af",
     secondary: "#6b7280",
@@ -90,7 +98,10 @@ export const theme: Theme = {
     text: "#111827",
     textSecondary: "#6b7280",
     border: "#e5e7eb",
+    borderHover: "#D1D5DB",
     error: "#ef4444",
+    errorHover: "#DC2626",
+    errorLight: "rgba(239, 68, 68, 0.2)",
     success: "#10b981",
     warning: "#f59e0b",
     info: "#3b82f6",
@@ -113,6 +124,7 @@ export const theme: Theme = {
     sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
     md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
     lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+    focus: "0 0 0 2px",
   },
   typography: {
     fontFamily:
@@ -127,6 +139,7 @@ export const theme: Theme = {
     fontWeight: {
       regular: 400,
       medium: 500,
+      semibold: 600,
       bold: 700,
     },
     lineHeight: {
@@ -143,6 +156,7 @@ export const theme: Theme = {
     widget: 1000,
   },
   breakpoints: {
+    xs: "480px",
     sm: "640px",
     md: "768px",
     lg: "1024px",

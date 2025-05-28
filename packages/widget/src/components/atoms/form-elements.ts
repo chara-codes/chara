@@ -1,12 +1,14 @@
 import styled from "styled-components";
-import {
+import {theme} from "../../styles/theme";
+
+const {
   colors,
   typography,
   spacing,
   borderRadius,
   shadows,
   transitions,
-} from "../../styles/theme-constants";
+} = theme;
 
 // Base input styles
 export const InputBase = styled.input<{
@@ -18,35 +20,35 @@ export const InputBase = styled.input<{
   height: 38px;
   border: 1px solid
     ${(props) => {
-      if (props.$disabled) return colors.border.default;
-      if (props.$hasError) return colors.destructive.default;
-      return colors.border.default;
+      if (props.$disabled) return colors.border;
+      if (props.$hasError) return colors.error;
+      return colors.border;
     }};
   border-radius: ${borderRadius.md};
   font-size: ${typography.fontSize.md};
   font-family: ${typography.fontFamily};
   background-color: ${(props) =>
-    props.$disabled ? colors.background.tertiary : colors.background.primary};
+    props.$disabled ? colors.backgroundSecondary : colors.background};
   color: ${(props) =>
-    props.$disabled ? colors.text.disabled : colors.text.primary};
+    props.$disabled ? colors.textSecondary : colors.text};
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
     border-color: ${(props) =>
-      props.$hasError ? colors.destructive.default : colors.border.hover};
+      props.$hasError ? colors.error : colors.border};
   }
 
   &:focus:not(:disabled) {
     outline: none;
     border-color: ${(props) =>
-      props.$hasError ? colors.destructive.default : colors.primary.default};
+      props.$hasError ? colors.error : colors.primary};
     box-shadow: ${shadows.focus}
       ${(props) =>
-        props.$hasError ? colors.destructive.light : colors.primary.light};
+        props.$hasError ? colors.errorLight : colors.primary};
   }
 
   &::placeholder {
-    color: ${colors.text.disabled};
+    color: ${colors.textSecondary};
   }
 
   &:disabled {
@@ -78,13 +80,13 @@ export const LabelBase = styled.label`
   display: block;
   font-size: ${typography.fontSize.sm};
   font-weight: ${typography.fontWeight.medium};
-  color: ${colors.text.secondary};
+  color: ${colors.textSecondary};
   margin-bottom: ${spacing.xs};
 `;
 
 // Error message
 export const ErrorMessageBase = styled.div`
-  color: ${colors.destructive.default};
+  color: ${colors.error};
   font-size: ${typography.fontSize.xs};
   margin-top: ${spacing.xs};
 `;
@@ -113,8 +115,8 @@ export const FormRowBase = styled.div`
 
 // Form section
 export const FormSectionBase = styled.div`
-  margin-bottom: ${spacing.xxl};
-  background-color: ${colors.background.primary};
+  margin-bottom: ${spacing.lg};
+  background-color: ${colors.background};
   border-radius: ${borderRadius.lg};
   box-shadow: ${shadows.sm};
   padding: ${spacing.lg};
@@ -124,10 +126,10 @@ export const FormSectionBase = styled.div`
 export const SectionTitleBase = styled.h3`
   font-size: ${typography.fontSize.md};
   font-weight: ${typography.fontWeight.semibold};
-  color: ${colors.text.primary};
+  color: ${colors.text};
   margin: 0 0 ${spacing.lg} 0;
   padding-bottom: ${spacing.sm};
-  border-bottom: 1px solid ${colors.border.default};
+  border-bottom: 1px solid ${colors.border};
 `;
 
 // Button base
@@ -173,29 +175,29 @@ export const ButtonBase = styled.button<{
     switch (props.$variant || "primary") {
       case "secondary":
         return `
-          background-color: ${colors.background.primary};
-          color: ${colors.text.secondary};
-          border: 1px solid ${colors.border.default};
+          background-color: ${colors.background};
+          color: ${colors.textSecondary};
+          border: 1px solid ${colors.border};
 
           &:hover:not(:disabled) {
-            background-color: ${colors.background.secondary};
-            border-color: ${colors.border.hover};
+            background-color: ${colors.backgroundSecondary};
+            border-color: ${colors.borderHover};
           }
         `;
       case "destructive":
         return `
-          background-color: ${colors.destructive.default};
-          color: ${colors.background.primary};
+          background-color: ${colors.error};
+          color: ${colors.background};
           border: none;
 
           &:hover:not(:disabled) {
-            background-color: ${colors.destructive.hover};
+            background-color: ${colors.errorHover};
           }
         `;
       case "link":
         return `
           background-color: transparent;
-          color: ${colors.primary.default};
+          color: ${colors.primary};
           border: none;
           padding: 0;
           height: auto;
@@ -208,12 +210,12 @@ export const ButtonBase = styled.button<{
         `;
       default:
         return `
-          background-color: ${colors.primary.default};
-          color: ${colors.background.primary};
+          background-color: ${colors.primary};
+          color: ${colors.background};
           border: none;
 
           &:hover:not(:disabled) {
-            background-color: ${colors.primary.hover};
+            background-color: ${colors.primaryHover};
           }
         `;
     }
@@ -251,7 +253,7 @@ export const CheckboxBase = styled.div`
 
   label {
     font-size: ${typography.fontSize.md};
-    color: ${colors.text.secondary};
+    color: ${colors.textSecondary};
     margin: 0;
     cursor: pointer;
   }
@@ -275,16 +277,16 @@ export const IconOptionBase = styled.div<{ $selected: boolean }>`
   justify-content: center;
   cursor: pointer;
   background-color: ${(props) =>
-    props.$selected ? colors.primary.default : colors.background.tertiary};
+    props.$selected ? colors.primary : colors.backgroundSecondary};
   color: ${(props) =>
-    props.$selected ? colors.background.primary : colors.text.tertiary};
+    props.$selected ? colors.background : colors.textSecondary};
   border: 1px solid
     ${(props) =>
-      props.$selected ? colors.primary.default : colors.border.default};
+      props.$selected ? colors.primary: colors.border};
   transition: all ${transitions.normal} ease;
 
   &:hover {
     background-color: ${(props) =>
-      props.$selected ? colors.primary.default : colors.border.default};
+      props.$selected ? colors.primary : colors.border};
   }
 `;

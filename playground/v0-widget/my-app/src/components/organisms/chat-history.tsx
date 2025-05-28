@@ -1,18 +1,16 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import styled from "styled-components"
-import { format, isValid } from "date-fns" // Added isValid import
-import type { Chat } from "../../store/types"
-import { TrashIcon } from "../atoms/icons"
-// Import the routing store
-import { useRoutingStore } from "../../store/routing-store"
+import type React from "react";
+import { useState } from "react";
+import styled from "styled-components";
+import { format, isValid } from "date-fns"; // Added isValid import
+import type { Chat } from "../../store/types";
+import { TrashIcon } from "../atoms/icons";
 
 interface ChatHistoryProps {
-  chats: Chat[]
-  onSelectChat: (chatId: string) => void
-  onDeleteChat?: (chatId: string) => void
+  chats: Chat[];
+  onSelectChat: (chatId: string) => void;
+  onDeleteChat?: (chatId: string) => void;
 }
 
 const HistoryContainer = styled.div`
@@ -22,17 +20,17 @@ const HistoryContainer = styled.div`
   overflow: hidden;
   background-color: #f9fafb;
   border-radius: 4px;
-`
+`;
 
 const HistoryContent = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: 12px; // Reduced from 16px
-`
+`;
 
 const DateSection = styled.div`
   margin-bottom: 16px; // Reduced from 20px
-`
+`;
 
 const DateHeader = styled.h3`
   font-size: 13px; // Reduced from 14px
@@ -41,13 +39,13 @@ const DateHeader = styled.h3`
   margin-bottom: 8px; // Reduced from 12px
   padding-bottom: 6px; // Reduced from 8px
   border-bottom: 1px solid #e5e7eb;
-`
+`;
 
 const ChatList = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;
-`
+`;
 
 const ChatItem = styled.li`
   margin-bottom: 6px; // Reduced from 8px
@@ -55,12 +53,12 @@ const ChatItem = styled.li`
   background-color: white;
   border: 1px solid #e5e7eb;
   transition: all 0.2s ease;
-  
+
   &:hover {
     border-color: #d1d5db;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
-`
+`;
 
 const ChatButton = styled.button`
   display: flex;
@@ -72,18 +70,18 @@ const ChatButton = styled.button`
   border: none;
   cursor: pointer;
   border-radius: 6px;
-  
+
   &:hover {
     background-color: #f9fafb;
   }
-`
+`;
 
 const ChatHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 4px; // Reduced from 8px
-`
+`;
 
 const ChatTitle = styled.h4`
   font-size: 13px;
@@ -94,12 +92,12 @@ const ChatTitle = styled.h4`
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 85%;
-`
+`;
 
 const ChatTime = styled.span`
   font-size: 11px; // Reduced from 12px
   color: #6b7280;
-`
+`;
 
 const ChatPreview = styled.p`
   font-size: 12px; // Reduced from 13px
@@ -108,13 +106,13 @@ const ChatPreview = styled.p`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-`
+`;
 
 const MessageCount = styled.div`
   font-size: 11px; // Reduced from 12px
   color: #6b7280;
   margin-top: 4px; // Reduced from 8px
-`
+`;
 
 const EmptyState = styled.div`
   display: flex;
@@ -124,28 +122,28 @@ const EmptyState = styled.div`
   height: 100%;
   padding: 24px;
   text-align: center;
-`
+`;
 
 const EmptyStateTitle = styled.h3`
   font-size: 16px;
   font-weight: 500;
   color: #374151;
   margin-bottom: 8px;
-`
+`;
 
 const EmptyStateText = styled.p`
   font-size: 14px;
   color: #6b7280;
   max-width: 300px;
   margin: 0 auto;
-`
+`;
 
 const ChatItemContainer = styled.div`
   display: flex;
   align-items: stretch;
   position: relative;
   width: 100%;
-`
+`;
 
 const DeleteButton = styled.button`
   position: absolute;
@@ -163,15 +161,15 @@ const DeleteButton = styled.button`
   opacity: 0;
   transition: opacity 0.2s ease;
   z-index: 1;
-  
+
   ${ChatItem}:hover & {
     opacity: 1;
   }
-  
+
   &:hover {
     color: #ef4444;
   }
-`
+`;
 
 const DeleteConfirmationOverlay = styled.div`
   position: fixed;
@@ -184,7 +182,7 @@ const DeleteConfirmationOverlay = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-`
+`;
 
 const DeleteConfirmationDialog = styled.div`
   background-color: white;
@@ -192,26 +190,26 @@ const DeleteConfirmationDialog = styled.div`
   padding: 16px;
   width: 300px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`
+`;
 
 const DeleteConfirmationTitle = styled.h4`
   font-size: 16px;
   font-weight: 500;
   color: #111827;
   margin: 0 0 12px 0;
-`
+`;
 
 const DeleteConfirmationText = styled.p`
   font-size: 14px;
   color: #4b5563;
   margin: 0 0 16px 0;
-`
+`;
 
 const DeleteConfirmationButtons = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-`
+`;
 
 const CancelButton = styled.button`
   padding: 6px 12px;
@@ -222,11 +220,11 @@ const CancelButton = styled.button`
   color: #374151;
   border: none;
   cursor: pointer;
-  
+
   &:hover {
     background-color: #e5e7eb;
   }
-`
+`;
 
 const ConfirmButton = styled.button`
   padding: 6px 12px;
@@ -237,118 +235,128 @@ const ConfirmButton = styled.button`
   color: white;
   border: none;
   cursor: pointer;
-  
+
   &:hover {
     background-color: #dc2626;
   }
-`
+`;
 
 // Helper function to group chats by date
 const groupChatsByDate = (chats: Chat[]) => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
 
-  const todayChats: Chat[] = []
-  const yesterdayChats: Chat[] = []
-  const olderChats: Chat[] = []
+  const todayChats: Chat[] = [];
+  const yesterdayChats: Chat[] = [];
+  const olderChats: Chat[] = [];
 
   chats.forEach((chat) => {
     // Ensure we have a valid date before processing
-    const chatDate = new Date(chat.timestamp || Date.now())
+    const chatDate = new Date(chat.timestamp || Date.now());
 
     // Skip invalid dates
-    if (!isValid(chatDate)) return
+    if (!isValid(chatDate)) return;
 
-    chatDate.setHours(0, 0, 0, 0)
+    chatDate.setHours(0, 0, 0, 0);
 
     if (chatDate.getTime() === today.getTime()) {
-      todayChats.push(chat)
+      todayChats.push(chat);
     } else if (chatDate.getTime() === yesterday.getTime()) {
-      yesterdayChats.push(chat)
+      yesterdayChats.push(chat);
     } else {
-      olderChats.push(chat)
+      olderChats.push(chat);
     }
-  })
+  });
 
   return {
     today: todayChats,
     yesterday: yesterdayChats,
     older: olderChats,
-  }
-}
+  };
+};
 
 // Helper function to format chat time with error handling
 const formatChatTime = (timestamp: string | number | Date) => {
   try {
     // Handle different timestamp formats
-    const date = timestamp instanceof Date ? timestamp : new Date(timestamp || Date.now())
+    const date =
+      timestamp instanceof Date ? timestamp : new Date(timestamp || Date.now());
 
     // Check if the date is valid before formatting
     if (!isValid(date)) {
-      return "Unknown time"
+      return "Unknown time";
     }
 
-    return format(date, "h:mm a")
+    return format(date, "h:mm a");
   } catch (error) {
-    console.error("Error formatting date:", error)
-    return "Unknown time"
+    console.error("Error formatting date:", error);
+    return "Unknown time";
   }
-}
+};
 
 // Helper function to get chat preview
 const getChatPreview = (chat: Chat) => {
   if (chat.messages && chat.messages.length > 0) {
-    const lastMessage = chat.messages[chat.messages.length - 1]
-    return lastMessage.content.substring(0, 60) + (lastMessage.content.length > 60 ? "..." : "")
+    const lastMessage = chat.messages[chat.messages.length - 1];
+    return (
+      lastMessage.content.substring(0, 60) +
+      (lastMessage.content.length > 60 ? "..." : "")
+    );
   }
-  return "No messages"
-}
+  return "No messages";
+};
 
 // Helper function to get chat title
 const getChatTitle = (chat: Chat) => {
-  if (chat.title) return chat.title
+  if (chat.title) return chat.title;
 
   if (chat.messages && chat.messages.length > 0) {
-    const firstUserMessage = chat.messages.find((m) => m.isUser)
+    const firstUserMessage = chat.messages.find((m) => m.isUser);
     if (firstUserMessage) {
-      return firstUserMessage.content.substring(0, 30) + (firstUserMessage.content.length > 30 ? "..." : "")
+      return (
+        firstUserMessage.content.substring(0, 30) +
+        (firstUserMessage.content.length > 30 ? "..." : "")
+      );
     }
   }
 
-  return "Untitled Chat"
-}
+  return "Untitled Chat";
+};
 
-const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDeleteChat }) => {
-  const [pendingDeleteChatId, setPendingDeleteChatId] = useState<string | null>(null)
+const ChatHistory: React.FC<ChatHistoryProps> = ({
+  chats,
+  onSelectChat,
+  onDeleteChat,
+}) => {
+  const [pendingDeleteChatId, setPendingDeleteChatId] = useState<string | null>(
+    null,
+  );
 
   // Use chats directly since we no longer filter
-  const filteredChats = chats
+  const filteredChats = chats;
 
   // Group chats by date
-  const groupedChats = groupChatsByDate(filteredChats)
+  const groupedChats = groupChatsByDate(filteredChats);
 
   // Handle delete chat
   const handleDeleteChat = (e: React.MouseEvent, chatId: string) => {
-    e.stopPropagation() // Prevent triggering the chat selection
-    setPendingDeleteChatId(chatId)
-  }
+    e.stopPropagation(); // Prevent triggering the chat selection
+    setPendingDeleteChatId(chatId);
+  };
 
   const confirmDelete = () => {
     if (pendingDeleteChatId && onDeleteChat) {
-      onDeleteChat(pendingDeleteChatId)
+      onDeleteChat(pendingDeleteChatId);
     }
-    setPendingDeleteChatId(null)
-  }
+    setPendingDeleteChatId(null);
+  };
 
   const cancelDelete = () => {
-    setPendingDeleteChatId(null)
-  }
-
-  // Inside the ChatHistory component, add:
-  const { navigateToConversation } = useRoutingStore()
+    setPendingDeleteChatId(null);
+  };
 
   return (
     <HistoryContainer>
@@ -356,7 +364,9 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDelete
         {filteredChats.length === 0 ? (
           <EmptyState>
             <EmptyStateTitle>No conversations found</EmptyStateTitle>
-            <EmptyStateText>You haven't had any conversations yet. Start a new chat to begin.</EmptyStateText>
+            <EmptyStateText>
+              You haven't had any conversations yet. Start a new chat to begin.
+            </EmptyStateText>
           </EmptyState>
         ) : (
           <>
@@ -370,14 +380,20 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDelete
                         <ChatButton onClick={() => onSelectChat(chat.id)}>
                           <ChatHeader>
                             <ChatTitle>{getChatTitle(chat)}</ChatTitle>
-                            <ChatTime>{formatChatTime(chat.timestamp)}</ChatTime>
+                            <ChatTime>
+                              {formatChatTime(chat.timestamp)}
+                            </ChatTime>
                           </ChatHeader>
                           <ChatPreview>{getChatPreview(chat)}</ChatPreview>
                           <MessageCount>
-                            {chat.messages ? `${chat.messages.length} messages` : "0 messages"}
+                            {chat.messages
+                              ? `${chat.messages.length} messages`
+                              : "0 messages"}
                           </MessageCount>
                         </ChatButton>
-                        <DeleteButton onClick={(e) => handleDeleteChat(e, chat.id)}>
+                        <DeleteButton
+                          onClick={(e) => handleDeleteChat(e, chat.id)}
+                        >
                           <TrashIcon width={14} height={14} />
                         </DeleteButton>
                       </ChatItemContainer>
@@ -397,14 +413,20 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDelete
                         <ChatButton onClick={() => onSelectChat(chat.id)}>
                           <ChatHeader>
                             <ChatTitle>{getChatTitle(chat)}</ChatTitle>
-                            <ChatTime>{formatChatTime(chat.timestamp)}</ChatTime>
+                            <ChatTime>
+                              {formatChatTime(chat.timestamp)}
+                            </ChatTime>
                           </ChatHeader>
                           <ChatPreview>{getChatPreview(chat)}</ChatPreview>
                           <MessageCount>
-                            {chat.messages ? `${chat.messages.length} messages` : "0 messages"}
+                            {chat.messages
+                              ? `${chat.messages.length} messages`
+                              : "0 messages"}
                           </MessageCount>
                         </ChatButton>
-                        <DeleteButton onClick={(e) => handleDeleteChat(e, chat.id)}>
+                        <DeleteButton
+                          onClick={(e) => handleDeleteChat(e, chat.id)}
+                        >
                           <TrashIcon width={14} height={14} />
                         </DeleteButton>
                       </ChatItemContainer>
@@ -424,14 +446,20 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDelete
                         <ChatButton onClick={() => onSelectChat(chat.id)}>
                           <ChatHeader>
                             <ChatTitle>{getChatTitle(chat)}</ChatTitle>
-                            <ChatTime>{formatChatTime(chat.timestamp)}</ChatTime>
+                            <ChatTime>
+                              {formatChatTime(chat.timestamp)}
+                            </ChatTime>
                           </ChatHeader>
                           <ChatPreview>{getChatPreview(chat)}</ChatPreview>
                           <MessageCount>
-                            {chat.messages ? `${chat.messages.length} messages` : "0 messages"}
+                            {chat.messages
+                              ? `${chat.messages.length} messages`
+                              : "0 messages"}
                           </MessageCount>
                         </ChatButton>
-                        <DeleteButton onClick={(e) => handleDeleteChat(e, chat.id)}>
+                        <DeleteButton
+                          onClick={(e) => handleDeleteChat(e, chat.id)}
+                        >
                           <TrashIcon width={14} height={14} />
                         </DeleteButton>
                       </ChatItemContainer>
@@ -446,9 +474,12 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDelete
       {pendingDeleteChatId && (
         <DeleteConfirmationOverlay onClick={cancelDelete}>
           <DeleteConfirmationDialog onClick={(e) => e.stopPropagation()}>
-            <DeleteConfirmationTitle>Delete Conversation</DeleteConfirmationTitle>
+            <DeleteConfirmationTitle>
+              Delete Conversation
+            </DeleteConfirmationTitle>
             <DeleteConfirmationText>
-              Are you sure you want to delete this conversation? This action cannot be undone.
+              Are you sure you want to delete this conversation? This action
+              cannot be undone.
             </DeleteConfirmationText>
             <DeleteConfirmationButtons>
               <CancelButton onClick={cancelDelete}>Cancel</CancelButton>
@@ -458,7 +489,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ chats, onSelectChat, onDelete
         </DeleteConfirmationOverlay>
       )}
     </HistoryContainer>
-  )
-}
+  );
+};
 
-export default ChatHistory
+export default ChatHistory;

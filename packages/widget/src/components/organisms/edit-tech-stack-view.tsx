@@ -18,6 +18,7 @@ import {
   useNavigateToTechStacks,
   useSelectedTechStackId,
 } from "../../store/routing-store";
+
 import {
   useGetTechStackById,
   useUpdateTechStack,
@@ -37,43 +38,31 @@ import {
   IconSelectorBase,
   IconOptionBase,
 } from "../atoms/form-elements";
-import {
-  colors,
-  typography,
-  spacing,
-  borderRadius,
-  shadows,
-  breakpoints,
-  transitions,
-  zIndex,
-} from "../../styles/theme-constants";
+import {theme} from "../../styles/theme";
 
-// Theme object for styled-components
-const theme = {
+const {
   colors,
   typography,
   spacing,
   borderRadius,
   shadows,
   breakpoints,
-  transitions,
-  zIndex,
-};
+}  = theme
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background-color: ${colors.background.secondary};
+  background-color: ${colors.backgroundSecondary};
 `;
 
 const Header = styled.div`
   display: flex;
   align-items: center;
   padding: ${spacing.md} ${spacing.lg};
-  border-bottom: 1px solid ${colors.border.default};
-  background-color: ${colors.background.primary};
+  border-bottom: 1px solid ${colors.border};
+  background-color: ${colors.background};
 `;
 
 const BackButton = styled.button`
@@ -85,19 +74,19 @@ const BackButton = styled.button`
   border-radius: ${borderRadius.md};
   border: none;
   background-color: transparent;
-  color: ${colors.text.tertiary};
+  color: ${colors.textSecondary};
   cursor: pointer;
 
   &:hover {
-    background-color: ${colors.background.tertiary};
-    color: ${colors.text.primary};
+    background-color: ${colors.backgroundSecondary};
+    color: ${colors.text};
   }
 `;
 
 const Title = styled.h2`
   font-size: ${typography.fontSize.lg};
   font-weight: ${typography.fontWeight.semibold};
-  color: ${colors.text.primary};
+  color: ${colors.text};
   margin: 0 0 0 ${spacing.md};
 `;
 
@@ -120,9 +109,9 @@ const LinkItem = styled.div`
   gap: ${spacing.md};
   margin-bottom: ${spacing.md};
   padding: ${spacing.md};
-  border: 1px solid ${colors.border.default};
+  border: 1px solid ${colors.border};
   border-radius: ${borderRadius.md};
-  background-color: ${colors.background.secondary};
+  background-color: ${colors.backgroundSecondary};
 `;
 
 const LinkFields = styled.div`
@@ -136,7 +125,7 @@ const RemoveButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: ${colors.text.tertiary};
+  color: ${colors.textSecondary};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -145,8 +134,8 @@ const RemoveButton = styled.button`
   align-self: flex-start;
 
   &:hover {
-    background-color: ${colors.destructive.light};
-    color: ${colors.destructive.default};
+    background-color: ${colors.errorLight};
+    color: ${colors.error};
   }
 `;
 
@@ -162,7 +151,7 @@ const JsonEditor = styled.textarea<{ $hasError?: boolean }>`
   padding: ${spacing.md};
   border: 1px solid
     ${(props) =>
-      props.$hasError ? colors.destructive.default : colors.border.default};
+      props.$hasError ? colors.error : colors.border};
   border-radius: ${borderRadius.md};
   font-size: ${typography.fontSize.md};
   font-family: monospace;
@@ -174,10 +163,10 @@ const JsonEditor = styled.textarea<{ $hasError?: boolean }>`
   &:focus {
     outline: none;
     border-color: ${(props) =>
-      props.$hasError ? colors.destructive.default : colors.primary.default};
+      props.$hasError ? colors.error : colors.primary};
     box-shadow: ${shadows.focus}
       ${(props) =>
-        props.$hasError ? colors.destructive.light : colors.primary.light};
+        props.$hasError ? colors.errorLight : colors.primaryLight};
   }
 `;
 
@@ -187,8 +176,8 @@ const Footer = styled.div`
   justify-content: flex-end;
   gap: ${spacing.md};
   padding: ${spacing.lg};
-  border-top: 1px solid ${colors.border.default};
-  background-color: ${colors.background.primary};
+  border-top: 1px solid ${colors.border};
+  background-color: ${colors.background};
 `;
 
 // Available categories
@@ -602,7 +591,7 @@ const EditTechStackView: React.FC = () => {
             <SectionTitleBase>Documentation Links</SectionTitleBase>
 
             {(formData.documentationLinks || []).map((link, index) => (
-              <LinkItem key={index}>
+              <LinkItem key={link.url}>
                 <LinkFields>
                   <FormGroupBase $fullWidth>
                     <LabelBase htmlFor={`docLink_${index}_name`}>
@@ -682,7 +671,7 @@ const EditTechStackView: React.FC = () => {
             <SectionTitleBase>MCP Servers</SectionTitleBase>
 
             {(formData.mcpServers || []).map((server, index) => (
-              <LinkItem key={index}>
+              <LinkItem key={server.name}>
                 <LinkFields>
                   <FormGroupBase $fullWidth>
                     <LabelBase htmlFor={`mcpServer_${index}_name`}>
@@ -694,7 +683,7 @@ const EditTechStackView: React.FC = () => {
                       onChange={(e) =>
                         handleMcpServerNameChange(index, e.target.value)
                       }
-                      placeholder="e.g. production-server-01"
+                      placeholder="e.g. mcp-server-name"
                     />
                   </FormGroupBase>
 

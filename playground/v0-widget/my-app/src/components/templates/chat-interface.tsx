@@ -103,7 +103,7 @@ interface ChatInterfaceProps {
   buttonConfig?: ButtonConfig[];
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ buttonConfig }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   // Get store initialization functions
   const initializeChatStore = useChatStore((state) => state.initializeStore);
   const initializeModelsStore = useModelsStore(
@@ -235,8 +235,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ buttonConfig }) => {
       case Screen.EDIT_TECH_STACK:
         return <EditTechStackView />;
 
-      case Screen.CONVERSATION:
-      case Screen.NEW_THREAD:
       default:
         return <ConversationView />;
     }

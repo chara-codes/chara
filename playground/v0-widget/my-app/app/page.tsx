@@ -3,7 +3,6 @@
 import { ThemeProvider } from "styled-components";
 import { UIStoreProvider } from "../src/store/ui-store";
 import ChatOverlayPanel from "../src/components/templates/chat-overlay-panel";
-import GlobalStyles from "../src/styles/global-styles";
 import { theme } from "../src/styles/theme";
 import { useEffect, useState } from "react";
 
@@ -42,7 +41,6 @@ export default function HomePage() {
         {isMounted && (
           <UIStoreProvider>
             <ThemeProvider theme={theme}>
-              <GlobalStyles />
               <ChatOverlayPanel
                 defaultOpen={chatConfig.defaultOpen}
                 position={chatConfig.position}
