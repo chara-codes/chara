@@ -97,6 +97,25 @@ async function demonstrateProvidersRegistry() {
     }
   }
 
+  // Try Mistral
+  if (hasProvider("mistral")) {
+    logger.info("🌙 Testing Mistral:");
+    try {
+      const mistralModel = getModel("mistral", "mistral-small-latest");
+      const mistralResult = await generateText({
+        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+        model: mistralModel as any,
+        prompt: prompt,
+        maxTokens: 50,
+      });
+      logger.success("Mistral Response:", { text: mistralResult.text });
+    } catch (error) {
+      logger.error("Mistral Error:", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
   // 5. Demonstrate streaming with the first available provider
   logger.info("🌊 Testing Streaming Response:");
   if (availableProviders.length > 0) {
@@ -112,9 +131,11 @@ async function demonstrateProvidersRegistry() {
               ? "claude-3-5-haiku-20241022"
               : providerName === "google"
                 ? "gemini-1.5-flash"
-                : providerName === "groq"
-                  ? "llama-3.1-8b-instant"
-                  : "default-model";
+                : providerName === "mistral"
+                  ? "mistral-small-latest"
+                  : providerName === "groq"
+                    ? "llama-3.1-8b-instant"
+                    : "default-model";
         const model = getModel(providerName, modelName);
 
         logger.info(`Using ${firstProvider.name} for streaming...`);
@@ -185,6 +206,8 @@ async function compareProviders() {
             ? "claude-3-5-haiku-20241022"
             : providerName === "google"
               ? "gemini-1.5-flash"
+            : providerName === "mistral"
+              ? "mistral-small-latest"
               : "default-model";
       const model = getModel(providerName, modelName);
 
@@ -211,9 +234,9 @@ async function dynamicProviderSelection() {
   logger.info("🎯 Dynamic Provider Selection Demo");
 
   const tasks = [
-    { task: "Creative writing", preferred: ["openai", "anthropic"] },
-    { task: "Code generation", preferred: ["groq", "openai"] },
-    { task: "Analysis", preferred: ["anthropic", "google"] },
+    { task: "Creative writing", preferred: ["openai", "anthropic", "mistral"] },
+    { task: "Code generation", preferred: ["groq", "openai", "mistral"] },
+    { task: "Analysis", preferred: ["anthropic", "google", "mistral"] },
   ];
 
   for (const { task, preferred } of tasks) {
@@ -231,9 +254,11 @@ async function dynamicProviderSelection() {
             ? "gpt-4o-mini"
             : selectedProvider === "anthropic"
               ? "claude-3-5-haiku-20241022"
-              : selectedProvider === "groq"
-                ? "llama-3.1-8b-instant"
-                : "default-model";
+              : selectedProvider === "mistral"
+                ? "mistral-small-latest"
+                : selectedProvider === "groq"
+                  ? "llama-3.1-8b-instant"
+                  : "default-model";
         const model = getModel(selectedProvider, modelName);
         const result = await generateText({
           // biome-ignore lint/suspicious/noExplicitAny: <explanation>

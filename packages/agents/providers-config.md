@@ -30,6 +30,14 @@ GOOGLE_GENERATIVE_AI_API_KEY=your_google_api_key_here
 - **Popular Models**: gemini-1.5-pro, gemini-1.5-flash, gemini-pro (specify when calling)
 - **Cost**: Free tier available, then pay-per-use
 
+### Mistral AI
+```
+MISTRAL_API_KEY=your_mistral_api_key_here
+```
+- **How to get**: Visit [Mistral AI Console](https://console.mistral.ai/)
+- **Popular Models**: mistral-large-latest, mistral-medium-latest, mistral-small-latest (specify when calling)
+- **Cost**: Pay-per-use, competitive pricing
+
 ### Groq
 ```
 GROQ_API_KEY=your_groq_api_key_here
@@ -110,12 +118,13 @@ HuggingFace_API_KEY=your_huggingface_api_key_here
 ### For Production
 - **OpenAI**: Most reliable, best documentation
 - **Anthropic**: Excellent for complex reasoning
+- **Mistral AI**: Good balance of performance and cost
 - **OpenRouter**: Access to multiple models with one API
 
 ### For Specific Use Cases
-- **Code generation**: Groq (fast), OpenAI GPT-4
-- **Creative writing**: Anthropic Claude, OpenAI GPT-4
-- **Analysis**: Anthropic Claude, Google Gemini
+- **Code generation**: Groq (fast), OpenAI GPT-4, Mistral AI
+- **Creative writing**: Anthropic Claude, OpenAI GPT-4, Mistral AI
+- **Analysis**: Anthropic Claude, Google Gemini, Mistral AI
 - **Cost-sensitive**: Google AI, Groq free tier
 
 ## Security Best Practices

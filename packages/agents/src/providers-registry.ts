@@ -1,12 +1,13 @@
-import { openai, createOpenAI } from "@ai-sdk/openai";
-import type { LanguageModelV1 } from "@ai-sdk/provider";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-import { createGroq } from "@ai-sdk/groq";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { createOllama } from "ollama-ai-provider";
-import { bedrock } from "@ai-sdk/amazon-bedrock";
-import { logger } from "@chara/logger";
+import { openai, createOpenAI } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { google } from '@ai-sdk/google';
+import { mistral } from '@ai-sdk/mistral';
+import { createGroq } from '@ai-sdk/groq';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { createOllama } from 'ollama-ai-provider';
+import { bedrock } from '@ai-sdk/amazon-bedrock';
+import type { LanguageModelV1 } from '@ai-sdk/provider';
+import { logger } from '@chara/logger';
 
 /**
  * Represents an error that occurred during provider initialization
@@ -37,6 +38,7 @@ export interface ProviderConfig {
  * - OPENAI_API_KEY: OpenAI GPT models (specify model when calling getModel)
  * - ANTHROPIC_API_KEY: Anthropic Claude models (specify model when calling getModel)
  * - GOOGLE_GENERATIVE_AI_API_KEY: Google Gemini models (specify model when calling getModel)
+ * - MISTRAL_API_KEY: Mistral AI models (specify model when calling getModel)
  * - GROQ_API_KEY: Groq models (specify model when calling getModel)
  * - OPEN_ROUTER_API_KEY: OpenRouter models (specify model when calling getModel)
  * - XAI_API_KEY: xAI Grok models (specify model when calling getModel)
@@ -163,6 +165,24 @@ export class ProvidersRegistry {
       } catch (error) {
         this.logProviderStatus(
           "Google",
+          "failed",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+      }
+    }
+
+    // Mistral
+    if (this.validateApiKey(process.env.MISTRAL_API_KEY, "Mistral")) {
+      try {
+        this.providers.set("mistral", {
+          name: "Mistral",
+          provider: (modelId: string) => mistral(modelId),
+          isAvailable: true,
+        });
+        this.logProviderStatus("Mistral", "success");
+      } catch (error) {
+        this.logProviderStatus(
+          "Mistral",
           "failed",
           error instanceof Error ? error.message : "Unknown error",
         );
