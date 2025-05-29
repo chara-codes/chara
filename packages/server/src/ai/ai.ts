@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { selectAIProvider } from "../utils/select-ai-provider";
-import { engineerAgent } from "./agents/engineer";
 import { myAgent } from "./agents/my-agent";
 
 export const aiProvider = selectAIProvider({
