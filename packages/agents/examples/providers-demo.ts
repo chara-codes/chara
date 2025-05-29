@@ -7,7 +7,7 @@ import {
   hasProvider,
   fetchModels,
   fetchAllModels,
-} from "../src/providers-registry.js";
+} from "../src/providers";
 
 /**
  * Example demonstrating how to use the providers registry
@@ -187,7 +187,7 @@ async function demonstrateModelFetching() {
   logger.info("🔍 Model Fetching Demo");
 
   const availableProviders = getAvailableProviders();
-  
+
   if (availableProviders.length === 0) {
     logger.warning("No providers available for model fetching demo");
     return;
@@ -195,28 +195,29 @@ async function demonstrateModelFetching() {
 
   // 1. Fetch models for a specific provider
   logger.info("📋 Fetching models for individual providers:");
-  
-  for (const provider of availableProviders.slice(0, 2)) { // Test first 2 providers
+
+  for (const provider of availableProviders.slice(0, 2)) {
+    // Test first 2 providers
     const providerName = provider.name.toLowerCase();
     try {
       logger.info(`Fetching models for ${provider.name}...`);
       const models = await fetchModels(providerName);
-      
+
       if (models.length > 0) {
         logger.success(`${provider.name} models (showing first 5):`, {
-          models: models.slice(0, 5).map(m => ({
+          models: models.slice(0, 5).map((m) => ({
             id: m.id,
             name: m.name || m.id,
             contextLength: m.contextLength,
           })),
-          total: models.length
+          total: models.length,
         });
       } else {
         logger.warning(`No models found for ${provider.name}`);
       }
     } catch (error) {
       logger.error(`Failed to fetch models for ${provider.name}:`, {
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -225,71 +226,69 @@ async function demonstrateModelFetching() {
   logger.info("🌐 Fetching models for all providers:");
   try {
     const allModels = await fetchAllModels();
-    
+
     const summary = Object.entries(allModels).map(([provider, models]) => ({
       provider,
       modelCount: models.length,
-      sampleModels: models.slice(0, 3).map(m => m.id)
+      sampleModels: models.slice(0, 3).map((m) => m.id),
     }));
-    
+
     logger.success("All provider models summary:", { summary });
   } catch (error) {
     logger.error("Failed to fetch all models:", {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 
   // 3. Demonstrate finding specific model types
   logger.info("🎯 Finding specific model types:");
-  
+
   try {
     const allModels = await fetchAllModels();
-    
+
     // Find GPT models
-    const gptModels = Object.entries(allModels)
-      .flatMap(([provider, models]) => 
-        models
-          .filter(m => m.id.toLowerCase().includes('gpt'))
-          .map(m => ({ provider, ...m }))
-      );
-    
+    const gptModels = Object.entries(allModels).flatMap(([provider, models]) =>
+      models
+        .filter((m) => m.id.toLowerCase().includes("gpt"))
+        .map((m) => ({ provider, ...m })),
+    );
+
     if (gptModels.length > 0) {
-      logger.info("Found GPT models:", { 
-        models: gptModels.slice(0, 5).map(m => `${m.provider}: ${m.id}`)
+      logger.info("Found GPT models:", {
+        models: gptModels.slice(0, 5).map((m) => `${m.provider}: ${m.id}`),
       });
     }
-    
+
     // Find Claude models
-    const claudeModels = Object.entries(allModels)
-      .flatMap(([provider, models]) => 
+    const claudeModels = Object.entries(allModels).flatMap(
+      ([provider, models]) =>
         models
-          .filter(m => m.id.toLowerCase().includes('claude'))
-          .map(m => ({ provider, ...m }))
-      );
-    
+          .filter((m) => m.id.toLowerCase().includes("claude"))
+          .map((m) => ({ provider, ...m })),
+    );
+
     if (claudeModels.length > 0) {
-      logger.info("Found Claude models:", { 
-        models: claudeModels.map(m => `${m.provider}: ${m.id}`)
+      logger.info("Found Claude models:", {
+        models: claudeModels.map((m) => `${m.provider}: ${m.id}`),
       });
     }
-    
+
     // Find Llama models
-    const llamaModels = Object.entries(allModels)
-      .flatMap(([provider, models]) => 
+    const llamaModels = Object.entries(allModels).flatMap(
+      ([provider, models]) =>
         models
-          .filter(m => m.id.toLowerCase().includes('llama'))
-          .map(m => ({ provider, ...m }))
-      );
-    
+          .filter((m) => m.id.toLowerCase().includes("llama"))
+          .map((m) => ({ provider, ...m })),
+    );
+
     if (llamaModels.length > 0) {
-      logger.info("Found Llama models:", { 
-        models: llamaModels.slice(0, 5).map(m => `${m.provider}: ${m.id}`)
+      logger.info("Found Llama models:", {
+        models: llamaModels.slice(0, 5).map((m) => `${m.provider}: ${m.id}`),
       });
     }
-    
   } catch (error) {
     logger.error("Failed to analyze model types:", {
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : "Unknown error",
     });
   }
 }
@@ -322,9 +321,9 @@ async function compareProviders() {
             ? "claude-3-5-haiku-20241022"
             : providerName === "google"
               ? "gemini-1.5-flash"
-            : providerName === "mistral"
-              ? "mistral-small-latest"
-              : "default-model";
+              : providerName === "mistral"
+                ? "mistral-small-latest"
+                : "default-model";
       const model = getModel(providerName, modelName);
 
       logger.info(`Testing ${provider.name}:`);
