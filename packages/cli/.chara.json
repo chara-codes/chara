@@ -35,25 +35,5 @@
         "@modelcontextprotocol/server-sequential-thinking"
       ]
     }
-  },
-  "systemContext": {
-    "operatingSystem": {
-      "platform": "darwin",
-      "release": "24.4.0",
-      "type": "Darwin",
-      "version": "unknown"
-    },
-    "cpu": {
-      "architecture": "arm64",
-      "cores": 10,
-      "model": "Apple M1 Pro"
-    },
-    "environment": {
-      "nodeVersion": "v22.6.0",
-      "runtime": "Bun v1.2.8",
-      "shell": "/bin/bash",
-      "user": "Andrii_Shutov",
-      "homeDirectory": "/Users/Andrii_Shutov"
-    }
   }
 }

@@ -50,7 +50,7 @@ export type AgentResponse = z.infer<typeof messageSchema>;
 export const myAgent = async function* (
   task: string,
   project: { id: number; name: string },
-): Promise<AgentResponse> {
+): AsyncGenerator<AgentResponse> {
   const projectRoot = resolveProjectPath(project.name);
   const projectContext = await getProjectContext(projectRoot);
   try {

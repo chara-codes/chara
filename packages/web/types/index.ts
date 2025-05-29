@@ -1,5 +1,5 @@
-import { StackType } from "@chara/server";
-import { ReactNode } from "react";
+import type { StackType } from "@chara/server";
+import type { ReactNode } from "react";
 
 /** Chat message types */
 export interface FileDiff {
@@ -33,7 +33,7 @@ export interface FileAttachment {
 export interface Message {
   id: string;
   content: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   role: "user" | "assistant";
   timestamp: Date;
   regenerations?: string[];
