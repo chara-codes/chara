@@ -1,15 +1,15 @@
-import { openai, createOpenAI } from '@ai-sdk/openai';
-import { anthropic } from '@ai-sdk/anthropic';
-import { google } from '@ai-sdk/google';
-import { mistral } from '@ai-sdk/mistral';
-import { createGroq } from '@ai-sdk/groq';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { createOllama } from 'ollama-ai-provider';
-import { bedrock } from '@ai-sdk/amazon-bedrock';
-import { logger } from '@chara/logger';
-import type { ProviderConfig } from './types';
-import { ModelFetcher } from './model-fetcher';
-import { BaseProviderInitializer } from './base-initializer';
+import { openai, createOpenAI } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
+import { mistral } from "@ai-sdk/mistral";
+import { createGroq } from "@ai-sdk/groq";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createOllama } from "ollama-ai-provider";
+import { bedrock } from "@ai-sdk/amazon-bedrock";
+import { logger } from "@chara/logger";
+import type { ProviderConfig } from "./types";
+import { ModelFetcher } from "./model-fetcher";
+import { BaseProviderInitializer } from "./base-initializer";
 
 /**
  * Individual provider configuration functions
@@ -50,7 +50,9 @@ export class ProviderConfigs extends BaseProviderInitializer {
    * Initialize Google provider
    */
   public initializeGoogle(): ProviderConfig | null {
-    if (!this.validateApiKey(process.env.GOOGLE_GENERATIVE_AI_API_KEY, "Google")) {
+    if (
+      !this.validateApiKey(process.env.GOOGLE_GENERATIVE_AI_API_KEY, "Google")
+    ) {
       return null;
     }
 
@@ -139,6 +141,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
         name: "Ollama",
         provider: (modelId: string) => ollamaProvider(modelId),
         isAvailable: true,
+        fetchModels: ModelFetcher.fetchOllamaModels,
       };
     });
   }
@@ -198,7 +201,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
     // Note: HuggingFace would need a custom provider implementation
     // This is a placeholder for future implementation
     logger.warning("HuggingFace provider detected but not yet implemented");
-    
+
     return {
       name: "HuggingFace",
       provider: (_modelId: string) => {
