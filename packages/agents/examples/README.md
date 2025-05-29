@@ -33,11 +33,52 @@ A comprehensive demonstration of the providers registry featuring:
 
 - **Provider Discovery**: Lists all available and configured providers
 - **Provider Status**: Shows which providers are available and ready to use
+- **Model Fetching**: Demonstrates fetching available models from provider APIs
 - **Text Generation**: Tests text generation with multiple providers
 - **Streaming**: Demonstrates streaming responses
 - **Error Handling**: Shows proper error handling for unavailable providers
 - **Provider Comparison**: Compares responses from different providers
 - **Dynamic Selection**: Selects providers based on task requirements
+
+### `model-fetching-demo.ts`
+
+A focused demonstration of the model fetching capabilities:
+
+- **Model Discovery**: Shows which providers support dynamic model fetching
+- **Live Model Fetching**: Fetches real models from provider APIs (like OpenAI)
+- **Model Analysis**: Analyzes and categorizes available models by type
+- **Error Handling**: Demonstrates proper error handling for model fetching
+- **Statistics**: Shows model counts and availability across providers
+</edits>
+
+<edits>
+
+<old_text>
+```typescript
+import { demonstrateProvidersRegistry, compareProviders, demonstrateModelFetching } from './providers-demo.js';
+import { demonstrateModelFetching as demoModelFetching } from './model-fetching-demo.js';
+import { getModel, fetchModels, fetchAllModels } from '../src/providers-registry.js';
+
+// Run just the basic demo
+await demonstrateProvidersRegistry();
+
+// Or run provider comparison
+await compareProviders();
+
+// Demonstrate model fetching
+await demonstrateModelFetching();
+
+// Or run the dedicated model fetching demo
+await demoModelFetching();
+
+// Use specific models with providers
+const openaiModel = getModel('openai', 'gpt-4o');
+const claudeModel = getModel('anthropic', 'claude-3-5-sonnet-20241022');
+
+// Fetch available models dynamically
+const openaiModels = await fetchModels('openai');
+const allModels = await fetchAllModels();
+```
 
 ## Running the Examples
 
@@ -46,6 +87,9 @@ A comprehensive demonstration of the providers registry featuring:
 ```bash
 # From the agents package directory
 bun run examples/providers-demo.ts
+
+# Or run the model fetching demo
+bun run examples/model-fetching-demo.ts
 ```
 
 ### Run with Specific Log Level
@@ -88,13 +132,39 @@ const claudeModel = getModel('anthropic', 'claude-3-5-sonnet-20241022');
 When you run the demo with configured providers, you should see:
 
 1. **Initialization Summary**: Which providers were successfully initialized
-2. **Available Providers**: List of working providers and their models
+2. **Available Providers**: List of working providers and their status
 3. **Provider Status**: Success/failure status for each provider
-4. **Text Generation Tests**: Responses from each available provider
-5. **Streaming Demo**: Real-time streaming text generation
-6. **Error Handling**: Demonstration of graceful error handling
-7. **Provider Comparison**: Side-by-side responses to the same question
-8. **Dynamic Selection**: Task-based provider selection
+4. **Model Fetching**: Live fetching of available models from provider APIs
+5. **Text Generation Tests**: Responses from each available provider
+6. **Streaming Demo**: Real-time streaming text generation
+7. **Error Handling**: Demonstration of graceful error handling
+8. **Provider Comparison**: Side-by-side responses to the same question
+9. **Dynamic Selection**: Task-based provider selection
+
+### Model Fetching Demo Output
+
+When you run `model-fetching-demo.ts`, you should see:
+
+1. **Provider Support Status**: Which providers support model fetching
+2. **Live Model Lists**: Real models fetched from APIs (e.g., 75+ OpenAI models)
+3. **Model Analysis**: Categorization of models by type (GPT, Claude, etc.)
+4. **Statistics**: Model counts and provider coverage
+5. **Error Handling**: Proper handling of unsupported providers
+</edits>
+
+<edits>
+
+<old_text>
+4. Always specify model names when calling getModel():
+   ```typescript
+   const model = getModel('openai', 'gpt-4o');
+   ```
+5. Use model fetching to discover available models:
+   ```typescript
+   const models = await fetchModels('openai');
+   const allModels = await fetchAllModels();
+   ```
+6. Follow the patterns shown in `providers-demo.ts`
 
 ## Troubleshooting
 

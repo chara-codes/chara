@@ -18,6 +18,31 @@ interface InitializationError {
 }
 
 /**
+ * Represents a model available from a provider
+ */
+export interface ModelInfo {
+  id: string;
+  name?: string;
+  description?: string;
+  contextLength?: number;
+  created?: number;
+  ownedBy?: string;
+}
+
+/**
+ * OpenAI API response types
+ */
+interface OpenAIModel {
+  id: string;
+  created: number;
+  owned_by: string;
+}
+
+interface OpenAIModelsResponse {
+  data: OpenAIModel[];
+}
+
+/**
  * Configuration object for an AI provider
  */
 export interface ProviderConfig {
@@ -27,6 +52,8 @@ export interface ProviderConfig {
   provider: (modelId: string) => LanguageModelV1;
   /** Whether the provider is available and properly initialized */
   isAvailable: boolean;
+  /** Function to fetch available models from the provider */
+  fetchModels?: () => Promise<ModelInfo[]>;
 }
 
 /**
@@ -122,6 +149,7 @@ export class ProvidersRegistry {
           name: "OpenAI",
           provider: (modelId: string) => openai(modelId),
           isAvailable: true,
+          fetchModels: async () => this.fetchOpenAIModels(),
         });
         this.logProviderStatus("OpenAI", "success");
       } catch (error) {
@@ -384,6 +412,89 @@ export class ProvidersRegistry {
     return provider.provider(modelName);
   }
 
+  /**
+   * Fetches available models for a specific provider
+   * @param providerName - The name of the provider
+   * @returns Array of available models
+   * @throws Error if the provider is not available or doesn't support model fetching
+   */
+  public async fetchModels(providerName: string): Promise<ModelInfo[]> {
+    const provider = this.getProvider(providerName);
+    if (!provider || !provider.isAvailable) {
+      throw new Error(`Provider ${providerName} is not available`);
+    }
+
+    if (!provider.fetchModels) {
+      throw new Error(`Provider ${providerName} does not support model fetching`);
+    }
+
+    try {
+      return await provider.fetchModels();
+    } catch (error) {
+      logger.error(`Failed to fetch models for ${providerName}:`, {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw new Error(`Failed to fetch models for ${providerName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Fetches available models for all providers that support it
+   * @returns Object mapping provider names to their available models
+   */
+  public async fetchAllModels(): Promise<Record<string, ModelInfo[]>> {
+    const results: Record<string, ModelInfo[]> = {};
+    const availableProviders = this.getAvailableProviders().filter(p => p.fetchModels);
+
+    const fetchPromises = availableProviders.map(async (provider) => {
+      const providerName = provider.name.toLowerCase();
+      try {
+        const models = await this.fetchModels(providerName);
+        results[providerName] = models;
+      } catch (error) {
+        logger.warning(`Failed to fetch models for ${provider.name}:`, {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        results[providerName] = [];
+      }
+    });
+
+    await Promise.all(fetchPromises);
+    return results;
+  }
+
+  // Provider-specific model fetching methods
+  private async fetchOpenAIModels(): Promise<ModelInfo[]> {
+    try {
+      const response = await fetch('https://api.openai.com/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json() as OpenAIModelsResponse;
+      return data.data.map((model: OpenAIModel) => ({
+        id: model.id,
+        name: model.id,
+        created: model.created,
+        ownedBy: model.owned_by,
+      }));
+    } catch (error) {
+      // Fallback to known models if API fails
+      return [
+        { id: 'gpt-4o', name: 'GPT-4o' },
+        { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
+        { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
+        { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
+      ];
+    }
+  }
+
   public getAvailableProviderNames(): string[] {
     return this.getAvailableProviders().map((p) => p.name.toLowerCase());
   }
@@ -444,3 +555,11 @@ export const getModel = (providerName: string, modelName: string) =>
 /** Check if a provider is available */
 export const hasProvider = (name: string) =>
   providersRegistry.hasProvider(name);
+
+/** Fetch available models for a specific provider */
+export const fetchModels = (providerName: string) =>
+  providersRegistry.fetchModels(providerName);
+
+/** Fetch available models for all providers */
+export const fetchAllModels = () =>
+  providersRegistry.fetchAllModels();
