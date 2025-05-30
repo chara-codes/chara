@@ -14,6 +14,7 @@ import {
   type TransportType,
   type LoggerConfig,
 } from "./types";
+import { Dumper, type DumpOptions } from "./dumper";
 
 // Map LogLevel to severity
 const LOG_LEVEL_SEVERITY: Record<LogLevel, LogLevelSeverity> = {
@@ -89,42 +90,73 @@ export class Logger {
       TransportType[]
     >;
 
-    Object.values(LogLevel).forEach((level) => {
+    for (const level of Object.values(LogLevel)) {
       transports[level] = [coloredConsoleTransport];
-    });
+    }
 
     return transports;
   }
 
-  public debug(message: string, metadata?: any): void {
+  public dump(data: unknown, label?: string, options?: DumpOptions): void {
+    const dumper = new Dumper(options);
+    const formattedOutput = dumper.dump(data, label);
+    this.log(LogLevel.INFO, formattedOutput);
+  }
+
+  public dumpError(data: unknown, label?: string): void {
+    const dumper = new Dumper({ colors: true, maxDepth: 3 });
+    const formattedOutput = dumper.dump(data, label);
+    this.log(LogLevel.ERROR, formattedOutput);
+  }
+
+  public dumpDebug(data: unknown, label?: string): void {
+    const dumper = new Dumper({ colors: true, compact: true, showTypes: false });
+    const formattedOutput = dumper.dump(data, label);
+    this.log(LogLevel.DEBUG, formattedOutput);
+  }
+
+  public dumpCompact(data: unknown, label?: string): void {
+    const dumper = new Dumper({ 
+      colors: true, 
+      compact: true, 
+      maxDepth: 2,
+      showTypes: false,
+      maxArrayLength: 10,
+      maxStringLength: 50
+    });
+    const formattedOutput = dumper.dump(data, label);
+    this.log(LogLevel.INFO, formattedOutput);
+  }
+
+  public debug(message: string, metadata?: unknown): void {
     this.log(LogLevel.DEBUG, message, metadata);
   }
 
-  public info(message: string, metadata?: any): void {
+  public info(message: string, metadata?: unknown): void {
     this.log(LogLevel.INFO, message, metadata);
   }
 
-  public success(message: string, metadata?: any): void {
+  public success(message: string, metadata?: unknown): void {
     this.log(LogLevel.SUCCESS, message, metadata);
   }
 
-  public warning(message: string, metadata?: any): void {
+  public warning(message: string, metadata?: unknown): void {
     this.log(LogLevel.WARNING, message, metadata);
   }
 
-  public error(message: string, metadata?: any): void {
+  public error(message: string, metadata?: unknown): void {
     this.log(LogLevel.ERROR, message, metadata);
   }
 
-  public event(message: string, metadata?: any): void {
+  public event(message: string, metadata?: unknown): void {
     this.log(LogLevel.EVENT, message, metadata);
   }
 
-  public server(message: string, metadata?: any): void {
+  public server(message: string, metadata?: unknown): void {
     this.log(LogLevel.SERVER, message, metadata);
   }
 
-  public trace(message: string, metadata?: any): void {
+  public trace(message: string, metadata?: unknown): void {
     this.log(LogLevel.TRACE, message, metadata);
   }
 
@@ -132,8 +164,8 @@ export class Logger {
     const logLevel = level.toUpperCase() as keyof typeof LogLevel;
 
     if (logLevel in LogLevel) {
-      this.currentLogLevelSeverity =
-        LOG_LEVEL_SEVERITY[LogLevel[logLevel]] || LogLevelSeverity.INFO;
+      const severityValue = LOG_LEVEL_SEVERITY[LogLevel[logLevel]];
+      this.currentLogLevelSeverity = severityValue ?? LogLevelSeverity.INFO;
     } else {
       console.warn(`Unknown log level: ${level}. Setting to INFO.`);
       this.currentLogLevelSeverity = LogLevelSeverity.INFO;
@@ -149,7 +181,7 @@ export class Logger {
     return LogLevel.INFO;
   }
 
-  private log(level: LogLevel, message: string, metadata?: any): void {
+  private log(level: LogLevel, message: string, metadata?: unknown): void {
     // Check if this level is enabled in configuration
     if (!this.config.levels?.includes(level)) {
       return;
@@ -164,9 +196,9 @@ export class Logger {
     const transports = this.config.transports?.[level];
 
     if (transports && transports.length > 0) {
-      transports.forEach((transport) => {
+      for (const transport of transports) {
         transport(level, message, metadata);
-      });
+      }
     } else {
       // Fallback to console if no transports are configured
       console.log(message, metadata);

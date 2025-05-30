@@ -21,7 +21,8 @@ export enum LogLevelSeverity {
 }
 
 export interface TransportType {
-  (level: LogLevel, message: string, metadata?: any): void;
+  // biome-ignore lint/style/useShorthandFunctionType: <explanation>
+  (level: LogLevel, message: string, metadata?: unknown): void;
 }
 
 export interface LoggerConfig {
