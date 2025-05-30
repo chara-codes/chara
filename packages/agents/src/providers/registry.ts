@@ -1,7 +1,8 @@
-import { logger } from '@chara/logger';
-import type { ProviderConfig, ModelInfo, InitializationError } from './types';
-import { ProviderConfigs } from './provider-configs';
-import { ModelFetcher } from './model-fetcher';
+import { logger } from "@chara/logger";
+import type { ProviderConfig, ModelInfo, InitializationError } from "./types";
+import { ProviderConfigs } from "./provider-configs";
+import { ModelFetcher } from "./model-fetcher";
+import type { LanguageModelV1 } from "ai";
 
 /**
  * Registry for AI providers that automatically initializes providers based on environment variables.
@@ -54,9 +55,16 @@ export class ProvidersRegistry {
   private initializeProviders(): void {
     const initializers = this.providerConfigs.getAllProviderInitializers();
     const providerKeys = [
-      'openai', 'anthropic', 'google', 'mistral', 
-      'groq', 'openrouter', 'ollama', 'xai', 
-      'bedrock', 'huggingface'
+      "openai",
+      "anthropic",
+      "google",
+      "mistral",
+      "groq",
+      "openrouter",
+      "ollama",
+      "xai",
+      "bedrock",
+      "huggingface",
     ];
 
     initializers.forEach((initializer, index) => {
@@ -141,7 +149,7 @@ export class ProvidersRegistry {
    * const claude = registry.getModel('anthropic', 'claude-3-5-sonnet-20241022');
    * ```
    */
-  public getModel(providerName: string, modelName: string): unknown {
+  public getModel(providerName: string, modelName: string): LanguageModelV1 {
     const provider = this.getProvider(providerName);
     if (!provider || !provider.isAvailable) {
       throw new Error(`Provider ${providerName} is not available`);
@@ -167,10 +175,15 @@ export class ProvidersRegistry {
     }
 
     if (!provider.fetchModels) {
-      throw new Error(`Provider ${providerName} does not support model fetching`);
+      throw new Error(
+        `Provider ${providerName} does not support model fetching`,
+      );
     }
 
-    return ModelFetcher.fetchModelsForProvider(providerName, provider.fetchModels);
+    return ModelFetcher.fetchModelsForProvider(
+      providerName,
+      provider.fetchModels,
+    );
   }
 
   /**
@@ -179,7 +192,9 @@ export class ProvidersRegistry {
    */
   public async fetchAllModels(): Promise<Record<string, ModelInfo[]>> {
     const results: Record<string, ModelInfo[]> = {};
-    const availableProviders = this.getAvailableProviders().filter(p => p.fetchModels);
+    const availableProviders = this.getAvailableProviders().filter(
+      (p) => p.fetchModels,
+    );
 
     const fetchPromises = availableProviders.map(async (provider) => {
       const providerName = provider.name.toLowerCase();
@@ -188,7 +203,7 @@ export class ProvidersRegistry {
         results[providerName] = models;
       } catch (error) {
         logger.warning(`Failed to fetch models for ${provider.name}:`, {
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : "Unknown error",
         });
         results[providerName] = [];
       }
@@ -213,7 +228,8 @@ export class ProvidersRegistry {
   public getProviderStatus(): {
     [key: string]: { available: boolean; error?: string };
   } {
-    const status: { [key: string]: { available: boolean; error?: string } } = {};
+    const status: { [key: string]: { available: boolean; error?: string } } =
+      {};
 
     for (const [name, config] of this.providers) {
       status[name] = { available: config.isAvailable };
