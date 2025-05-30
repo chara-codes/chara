@@ -43,6 +43,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
       name: "Anthropic",
       provider: (modelId: string) => anthropic(modelId),
       isAvailable: true,
+      fetchModels: ModelFetcher.fetchAnthropicModels,
     }));
   }
 

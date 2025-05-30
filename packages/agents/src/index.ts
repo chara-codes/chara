@@ -4,6 +4,7 @@ import {
   miscController,
   beautifyController,
   modelsController,
+  providersController,
 } from "./controllers";
 
 const server = Bun.serve({
@@ -12,6 +13,7 @@ const server = Bun.serve({
     // Static routes
     "/api/status": statusController.getStatus,
     "/api/models": modelsController.getModels,
+    "/api/providers": providersController.list,
     "/api/beautify": beautifyController,
 
     // Wildcard route for all routes that start with "/api/" and aren't otherwise matched

@@ -7,6 +7,8 @@ import type {
   OpenRouterModel,
   OllamaModelsResponse,
   OllamaModel,
+  AnthropicModelsResponse,
+  AnthropicModel,
 } from "./types";
 
 /**
@@ -147,6 +149,51 @@ export namespace ModelFetcher {
         { id: "llama3.1", name: "Llama 3.1" },
         { id: "mistral", name: "Mistral" },
         { id: "codellama", name: "Code Llama" },
+      ];
+    }
+  }
+
+  /**
+   * Fetches available models from Anthropic API
+   * @returns Array of Anthropic models or fallback models if API fails
+   */
+  export async function fetchAnthropicModels(): Promise<ModelInfo[]> {
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/models", {
+        headers: {
+          "x-api-key": `${process.env.ANTHROPIC_API_KEY}`,
+          "Content-Type": "application/json",
+          "anthropic-version": "2023-06-01",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Anthropic API error: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const data = (await response.json()) as AnthropicModelsResponse;
+      return data.data.map((model: AnthropicModel) => ({
+        id: model.id,
+        name: model.display_name,
+        created: new Date(model.created_at).getTime() / 1000,
+      }));
+    } catch (error) {
+      logger.warning(
+        "Failed to fetch Anthropic models from API, using fallback models:",
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      );
+
+      // Fallback to known models if API fails
+      return [
+        { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet" },
+        { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku" },
+        { id: "claude-3-opus-20240229", name: "Claude 3 Opus" },
+        { id: "claude-3-sonnet-20240229", name: "Claude 3 Sonnet" },
+        { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku" },
       ];
     }
   }

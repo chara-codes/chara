@@ -87,6 +87,20 @@ export interface OllamaModelsResponse {
 }
 
 /**
+ * Anthropic API response types
+ */
+export interface AnthropicModel {
+  id: string;
+  type: string;
+  display_name: string;
+  created_at: string;
+}
+
+export interface AnthropicModelsResponse {
+  data: AnthropicModel[];
+}
+
+/**
  * Configuration object for an AI provider
  */
 export interface ProviderConfig {
