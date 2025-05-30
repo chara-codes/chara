@@ -1,11 +1,18 @@
 import { logger } from "@chara/logger";
-import { statusController, miscController } from "./controllers";
+import {
+  statusController,
+  miscController,
+  beautifyController,
+  modelsController,
+} from "./controllers";
 
 const server = Bun.serve({
   port: 3031,
   routes: {
     // Static routes
     "/api/status": statusController.getStatus,
+    "/api/models": modelsController.getModels,
+    "/api/beautify": beautifyController,
 
     // Wildcard route for all routes that start with "/api/" and aren't otherwise matched
     "/api/*": miscController.notFound,

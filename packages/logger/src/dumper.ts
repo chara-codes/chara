@@ -27,7 +27,7 @@ export interface DumpContext {
 }
 
 const DEFAULT_OPTIONS: Required<DumpOptions> = {
-  maxDepth: 5,
+  maxDepth: 7,
   maxArrayLength: 100,
   maxStringLength: 200,
   showTypes: true,
