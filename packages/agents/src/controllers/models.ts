@@ -102,7 +102,17 @@ export const modelsController = {
           })),
       );
 
-      return Response.json({ models });
+      return Response.json(
+        { models },
+        {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods":
+              "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+        },
+      );
     } catch (error) {
       return Response.json(
         {

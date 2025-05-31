@@ -24,5 +24,4 @@ const server = Bun.serve({
   // Required if Bun's version < 1.2.3
   fetch: miscController.fallback,
 });
-
 logger.server(`Server started on port ${server.port}`);

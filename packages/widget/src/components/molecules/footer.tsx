@@ -226,9 +226,7 @@ const ModelOptionContent = styled.div`
 const getModelSourceType = (provider: string): string => {
   const lowerProvider = provider.toLowerCase();
   if (lowerProvider.includes("openrouter")) return "unified";
-  if (
-    ["openai", "anthropic", "mistral ai", "together ai"].includes(lowerProvider)
-  )
+  if (["openai", "anthropic", "mistral", "together"].includes(lowerProvider))
     return "native";
   if (["ollama", "lmstudio"].includes(lowerProvider)) return "local";
   return "unknown";
