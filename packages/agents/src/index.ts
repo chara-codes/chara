@@ -5,12 +5,14 @@ import {
   beautifyController,
   modelsController,
   providersController,
+  chatController,
 } from "./controllers";
 
 const server = Bun.serve({
   port: 3031,
   routes: {
     // Static routes
+    "/api/chat": chatController,
     "/api/status": statusController.getStatus,
     "/api/models": modelsController.getModels,
     "/api/providers": providersController.list,

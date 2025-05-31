@@ -89,8 +89,6 @@ const LoadingLine = styled.div`
   }
 `;
 
-
-
 const InputArea: React.FC<InputAreaProps> = ({
   onSendMessage,
   onAddContext,
@@ -102,7 +100,8 @@ const InputArea: React.FC<InputAreaProps> = ({
   const uiStore = useUIStoreContext();
   const storeButtonConfig = uiStore((state) => state.inputButtonConfig);
   // Use provided buttonConfig or fall back to the one from the store
-  const effectiveButtonConfig = buttonConfig || storeButtonConfig;
+  const effectiveButtonConfig = storeButtonConfig;
+  console.log(effectiveButtonConfig);
   const [message, setMessage] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const plusButtonRef = useRef<HTMLDivElement>(null);
@@ -232,6 +231,7 @@ const InputArea: React.FC<InputAreaProps> = ({
   // Helper function to check if a button is enabled
   const isButtonEnabled = (buttonId: string) => {
     const button = effectiveButtonConfig.find((b) => b.id === buttonId);
+    console.log(button);
     return button ? button.enabled : false;
   };
 
