@@ -1,7 +1,3 @@
-/**
- * Chat/Message icon component
- * Used for chat-related actions and navigation
- */
 export interface ChartIconProps {
   width?: number;
   height?: number;
