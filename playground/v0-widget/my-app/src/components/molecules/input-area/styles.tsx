@@ -85,7 +85,7 @@ export const InputContainer = styled.div<{ isLoading?: boolean }>`
   `}
 `;
 
-export const InputWrapper = styled.div<{ hasContext: boolean }>`
+export const InputWrapper = styled.div<{ hasContext?: boolean }>`
   display: flex;
   align-items: center;
   flex: 1;

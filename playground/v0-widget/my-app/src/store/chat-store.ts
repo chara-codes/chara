@@ -1,12 +1,17 @@
-"use client"
+"use client";
 
-import { create } from "zustand"
-import { devtools, persist } from "zustand/middleware"
-import type { Chat, ChatMode, ContextItem, Message, ExecutedCommand, FileDiff } from "./types"
-import { fetchChats } from "../services/data-service"
-import { mockResponse } from "../data/mock-data" // Import the mock response directly
-
-
+import { create } from "zustand";
+import { devtools, persist } from "zustand/middleware";
+import type {
+  Chat,
+  ChatMode,
+  ContextItem,
+  Message,
+  ExecutedCommand,
+  FileDiff,
+} from "./types";
+import { fetchChats } from "../services/data-service";
+import { mockResponse } from "../data/mock-data"; // Import the mock response directly
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [
@@ -16,46 +21,53 @@ const fallbackChats: Chat[] = [
     timestamp: new Date().toLocaleString(),
     messages: [],
   },
-]
+];
 
 interface ChatState {
   // Chat data
-  chats: Chat[]
-  activeChat: string | null
-  messages: Message[]
-  contextItems: ContextItem[]
+  chats: Chat[];
+  activeChat: string | null;
+  messages: Message[];
+  contextItems: ContextItem[];
 
   // UI state
-  mode: ChatMode
-  model: string
-  isResponding: boolean
-  isLoading: boolean
-  loadError: string | null
+  mode: ChatMode;
+  model: string;
+  isResponding: boolean;
+  isLoading: boolean;
+  loadError: string | null;
 
   // Actions
-  initializeStore: () => Promise<void>
-  setActiveChat: (chatId: string | null) => void
-  createNewChat: () => void
-  sendMessage: (content: string) => void
+  initializeStore: () => Promise<void>;
+  setActiveChat: (chatId: string | null) => void;
+  createNewChat: () => void;
+  sendMessage: (content: string) => void;
   addAIResponse: (
     content: string,
     options?: {
-      filesToChange?: string[]
-      commandsToExecute?: string[]
-      executedCommands?: ExecutedCommand[]
-      fileDiffs?: FileDiff[]
+      filesToChange?: string[];
+      commandsToExecute?: string[];
+      executedCommands?: ExecutedCommand[];
+      fileDiffs?: FileDiff[];
     },
-  ) => void
-  setIsResponding: (isResponding: boolean) => void
-  stopResponse: () => void
-  addContextItem: (item: Omit<ContextItem, "id">) => void
-  removeContextItem: (id: string) => void
-  setMode: (mode: ChatMode) => void
-  setModel: (model: string) => void
-  clearContextItems: () => void
-  updateDiffStatus: (messageId: string, diffId: string, status: "pending" | "kept" | "reverted") => void
-  updateAllDiffStatuses: (messageId: string, status: "kept" | "reverted") => void
-  deleteMessage: (messageId: string) => void
+  ) => void;
+  setIsResponding: (isResponding: boolean) => void;
+  stopResponse: () => void;
+  addContextItem: (item: Omit<ContextItem, "id">) => void;
+  removeContextItem: (id: string) => void;
+  setMode: (mode: ChatMode) => void;
+  setModel: (model: string) => void;
+  clearContextItems: () => void;
+  updateDiffStatus: (
+    messageId: string,
+    diffId: string,
+    status: "pending" | "kept" | "reverted",
+  ) => void;
+  updateAllDiffStatuses: (
+    messageId: string,
+    status: "kept" | "reverted",
+  ) => void;
+  deleteMessage: (messageId: string) => void;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -75,36 +87,37 @@ export const useChatStore = create<ChatState>()(
 
         // Initialize the store with data from JSON files
         initializeStore: async () => {
-          set({ isLoading: true, loadError: null })
+          set({ isLoading: true, loadError: null });
           try {
-            const chats = await fetchChats()
+            const chats = await fetchChats();
             set({
               chats: chats.length > 0 ? chats : fallbackChats,
               isLoading: false,
-            })
+            });
           } catch (error) {
-            console.error("Failed to initialize store:", error)
+            console.error("Failed to initialize store:", error);
             set({
               chats: fallbackChats,
               isLoading: false,
-              loadError: error instanceof Error ? error.message : "Failed to load data",
-            })
+              loadError:
+                error instanceof Error ? error.message : "Failed to load data",
+            });
           }
         },
 
         // Actions
         setActiveChat: (chatId) => {
-          set({ activeChat: chatId })
+          set({ activeChat: chatId });
 
           // If we have a valid chat ID, load its messages
           if (chatId) {
-            const chat = get().chats.find((c) => c.id === chatId)
+            const chat = get().chats.find((c) => c.id === chatId);
             if (chat) {
-              set({ messages: chat.messages })
+              set({ messages: chat.messages });
             }
           } else {
             // Clear messages when no chat is selected
-            set({ messages: [] })
+            set({ messages: [] });
           }
         },
 
@@ -113,22 +126,23 @@ export const useChatStore = create<ChatState>()(
             activeChat: null,
             messages: [],
             contextItems: [],
-          })
+          });
         },
 
         sendMessage: async (content) => {
-          const state = get()
-          const { activeChat, chats, messages, contextItems } = state
+          const state = get();
+          const { activeChat, chats, messages, contextItems } = state;
 
           // Create a copy of the current context items to attach to the message
-          const messageContextItems = contextItems.length > 0 ? [...contextItems] : undefined
+          const messageContextItems =
+            contextItems.length > 0 ? [...contextItems] : undefined;
 
           // Create a deep copy of the messages array to avoid mutation issues
-          const updatedMessages = [...messages]
+          const updatedMessages = [...messages];
 
           // Find the last AI message with diffs more efficiently
           for (let i = updatedMessages.length - 1; i >= 0; i--) {
-            const msg = updatedMessages[i]
+            const msg = updatedMessages[i];
             if (!msg.isUser && msg.fileDiffs && msg.fileDiffs.length > 0) {
               // Update all pending diffs to kept
               updatedMessages[i] = {
@@ -137,8 +151,8 @@ export const useChatStore = create<ChatState>()(
                   ...diff,
                   status: diff.status === "pending" ? "kept" : diff.status,
                 })),
-              }
-              break
+              };
+              break;
             }
           }
 
@@ -146,23 +160,26 @@ export const useChatStore = create<ChatState>()(
             id: Date.now().toString(),
             content,
             isUser: true,
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            timestamp: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
             contextItems: messageContextItems,
-          }
+          };
 
           // Add the new message
-          updatedMessages.push(newMessage)
+          updatedMessages.push(newMessage);
 
           // Batch state updates to prevent multiple re-renders
           const updates: Partial<ChatState> = {
             messages: updatedMessages,
             isResponding: true,
             contextItems: [], // Clear context items
-          }
+          };
 
           // If this is a new chat, create it
           if (!activeChat) {
-            const newChatId = "new-" + Date.now()
+            const newChatId = `new-${Date.now()}`;
             const newChat = {
               id: newChatId,
               title: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
@@ -174,19 +191,21 @@ export const useChatStore = create<ChatState>()(
                 minute: "2-digit",
               }),
               messages: updatedMessages,
-            }
+            };
 
-            updates.chats = [newChat, ...chats]
-            updates.activeChat = newChatId
+            updates.chats = [newChat, ...chats];
+            updates.activeChat = newChatId;
           } else {
             // Update existing chat
             updates.chats = chats.map((chat) =>
-              chat.id === activeChat ? { ...chat, messages: updatedMessages } : chat,
-            )
+              chat.id === activeChat
+                ? { ...chat, messages: updatedMessages }
+                : chat,
+            );
           }
 
           // Apply all updates at once
-          set(updates)
+          set(updates);
 
           // Use the mock response with throttled updates
           setTimeout(() => {
@@ -196,90 +215,108 @@ export const useChatStore = create<ChatState>()(
                     ...diff,
                     status: "pending" as "pending" | "kept" | "reverted",
                   }))
-                : undefined
+                : undefined;
 
               get().addAIResponse(mockResponse.content, {
                 filesToChange: mockResponse.filesToChange,
                 commandsToExecute: mockResponse.commandsToExecute,
-                executedCommands: (mockResponse.executedCommands || []) as ExecutedCommand[],
+                executedCommands: (mockResponse.executedCommands ||
+                  []) as ExecutedCommand[],
                 fileDiffs: (fileDiffsWithStatus || []) as FileDiff[],
-              })
+              });
             } catch (error) {
-              console.error("Unexpected error in mock response handling:", error)
-              get().addAIResponse("Sorry, I encountered an unexpected error. Please try again.")
+              console.error(
+                "Unexpected error in mock response handling:",
+                error,
+              );
+              get().addAIResponse(
+                "Sorry, I encountered an unexpected error. Please try again.",
+              );
             }
-          }, 2000)
+          }, 2000);
         },
 
         addAIResponse: (content, options = {}) => {
-          const state = get()
-          const { activeChat, chats, messages } = state
-          const { filesToChange, commandsToExecute, executedCommands, fileDiffs } = options
+          const state = get();
+          const { activeChat, chats, messages } = state;
+          const {
+            filesToChange,
+            commandsToExecute,
+            executedCommands,
+            fileDiffs,
+          } = options;
 
-          if (!activeChat) return
+          if (!activeChat) return;
 
           const aiResponse: Message = {
             id: Date.now().toString(),
             content,
             isUser: false,
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            timestamp: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
             filesToChange,
             commandsToExecute,
             executedCommands,
             fileDiffs,
-          }
+          };
 
-          const updatedMessages = [...messages, aiResponse]
+          const updatedMessages = [...messages, aiResponse];
 
           // Batch all updates
           const updates = {
             messages: updatedMessages,
             isResponding: false,
-            chats: chats.map((chat) => (chat.id === activeChat ? { ...chat, messages: updatedMessages } : chat)),
-          }
+            chats: chats.map((chat) =>
+              chat.id === activeChat
+                ? { ...chat, messages: updatedMessages }
+                : chat,
+            ),
+          };
 
-          set(updates)
+          set(updates);
         },
 
         setIsResponding: (isResponding) => {
-          set({ isResponding })
+          set({ isResponding });
         },
 
         stopResponse: () => {
-          set({ isResponding: false })
+          set({ isResponding: false });
         },
 
         addContextItem: (item) => {
           const newContextItem: ContextItem = {
             id: Date.now().toString(),
             ...item,
-          }
+          };
 
           set((state) => ({
             contextItems: [...state.contextItems, newContextItem],
-          }))
+          }));
         },
 
         removeContextItem: (id) => {
           set((state) => ({
             contextItems: state.contextItems.filter((item) => item.id !== id),
-          }))
+          }));
         },
 
         clearContextItems: () => {
-          set({ contextItems: [] })
+          set({ contextItems: [] });
         },
 
         setMode: (mode) => {
-          set({ mode })
+          set({ mode });
         },
 
         setModel: (model) => {
-          set({ model })
+          set({ model });
         },
 
         updateDiffStatus: (messageId, diffId, status) => {
-          const { messages, chats, activeChat } = get()
+          const { messages, chats, activeChat } = get();
 
           // Find the message and update the status of the specific diff
           const updatedMessages = messages.map((message) => {
@@ -287,30 +324,32 @@ export const useChatStore = create<ChatState>()(
               // Create a new fileDiffs array with the updated status
               const updatedFileDiffs = message.fileDiffs.map((diff) =>
                 diff.id === diffId ? { ...diff, status } : diff,
-              )
+              );
 
               return {
                 ...message,
                 fileDiffs: updatedFileDiffs,
-              }
+              };
             }
-            return message
-          })
+            return message;
+          });
 
           // Update the store
-          set({ messages: updatedMessages })
+          set({ messages: updatedMessages });
 
           // Update the chat with the new messages
           if (activeChat) {
             const updatedChats = chats.map((chat) =>
-              chat.id === activeChat ? { ...chat, messages: updatedMessages } : chat,
-            )
-            set({ chats: updatedChats })
+              chat.id === activeChat
+                ? { ...chat, messages: updatedMessages }
+                : chat,
+            );
+            set({ chats: updatedChats });
           }
         },
 
         updateAllDiffStatuses: (messageId, status) => {
-          const { messages, chats, activeChat } = get()
+          const { messages, chats, activeChat } = get();
 
           // Find the message and update all diff statuses
           const updatedMessages = messages.map((message) => {
@@ -319,48 +358,54 @@ export const useChatStore = create<ChatState>()(
               const updatedFileDiffs = message.fileDiffs.map((diff) => ({
                 ...diff,
                 status,
-              }))
+              }));
 
               return {
                 ...message,
                 fileDiffs: updatedFileDiffs,
-              }
+              };
             }
-            return message
-          })
+            return message;
+          });
 
           // Update the store
-          set({ messages: updatedMessages })
+          set({ messages: updatedMessages });
 
           // Update the chat with the new messages
           if (activeChat) {
             const updatedChats = chats.map((chat) =>
-              chat.id === activeChat ? { ...chat, messages: updatedMessages } : chat,
-            )
-            set({ chats: updatedChats })
+              chat.id === activeChat
+                ? { ...chat, messages: updatedMessages }
+                : chat,
+            );
+            set({ chats: updatedChats });
           }
         },
 
         deleteMessage: (messageId) => {
-          const { messages, chats, activeChat } = get()
+          const { messages, chats, activeChat } = get();
 
           // Find the index of the message to delete
-          const messageIndex = messages.findIndex((msg) => msg.id === messageId)
+          const messageIndex = messages.findIndex(
+            (msg) => msg.id === messageId,
+          );
 
-          if (messageIndex === -1) return // Message not found
+          if (messageIndex === -1) return; // Message not found
 
           // Remove the message and all subsequent messages
-          const updatedMessages = messages.slice(0, messageIndex)
+          const updatedMessages = messages.slice(0, messageIndex);
 
           // Update the store
-          set({ messages: updatedMessages })
+          set({ messages: updatedMessages });
 
           // Update the chat with the new messages
           if (activeChat) {
             const updatedChats = chats.map((chat) =>
-              chat.id === activeChat ? { ...chat, messages: updatedMessages } : chat,
-            )
-            set({ chats: updatedChats })
+              chat.id === activeChat
+                ? { ...chat, messages: updatedMessages }
+                : chat,
+            );
+            set({ chats: updatedChats });
           }
         },
       }),
@@ -374,4 +419,4 @@ export const useChatStore = create<ChatState>()(
       },
     ),
   ),
-)
+);

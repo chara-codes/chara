@@ -4,7 +4,7 @@ import type React from "react";
 import { useState, useRef, useCallback } from "react";
 import DropdownMenu from "../dropdown-menu";
 import FileInput from "../file-input";
-import type { ButtonConfig, InputAreaProps } from "../../../types/input-area";
+import type { InputAreaProps } from "../../../types/input-area";
 import {
   InputContainer,
   InputWrapper,
@@ -30,6 +30,7 @@ import { useElementSelector } from "../../../hooks/use-element-selector";
 import { createDropdownItems } from "./dropdown-items";
 import styled from "styled-components";
 import AnimatedButton from "./animated-button";
+import { useUIStoreContext } from "../../../store/ui-store";
 
 const RoundedIconButton = styled(IconButton)`
   border-radius: 8px;
@@ -88,26 +89,19 @@ const LoadingLine = styled.div`
   }
 `;
 
-// Default button configuration
-const defaultButtonConfig: ButtonConfig[] = [
-  { id: "add-context", icon: PlusIcon, tooltip: "Add context", enabled: true },
-  {
-    id: "select-element",
-    icon: PointerIcon,
-    tooltip: "Select element",
-    enabled: true,
-  },
-  { id: "upload-file", icon: ClipIcon, tooltip: "Upload file", enabled: true },
-];
-
 const InputArea: React.FC<InputAreaProps> = ({
   onSendMessage,
   onAddContext,
   isResponding = false,
   isLoading = false,
   onStopResponse = () => {},
-  buttonConfig = defaultButtonConfig,
+  buttonConfig,
 }) => {
+  const uiStore = useUIStoreContext();
+  const storeButtonConfig = uiStore((state) => state.inputButtonConfig);
+  // Use provided buttonConfig or fall back to the one from the store
+  const effectiveButtonConfig = storeButtonConfig;
+  console.log(effectiveButtonConfig);
   const [message, setMessage] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const plusButtonRef = useRef<HTMLDivElement>(null);
@@ -236,13 +230,14 @@ const InputArea: React.FC<InputAreaProps> = ({
 
   // Helper function to check if a button is enabled
   const isButtonEnabled = (buttonId: string) => {
-    const button = buttonConfig.find((b) => b.id === buttonId);
+    const button = effectiveButtonConfig.find((b) => b.id === buttonId);
+    console.log(button);
     return button ? button.enabled : false;
   };
 
   // Helper function to get button tooltip
   const getButtonTooltip = (buttonId: string) => {
-    const button = buttonConfig.find((b) => b.id === buttonId);
+    const button = effectiveButtonConfig.find((b) => b.id === buttonId);
     return button ? (button.tooltip as string) : "";
   };
 
@@ -254,7 +249,7 @@ const InputArea: React.FC<InputAreaProps> = ({
       }}
     >
       {(isLoading || isBeautifyLoading) && <LoadingLine />}
-      <InputWrapper hasContext={false}>
+      <InputWrapper>
         <InputControls>
           <StyledInput
             placeholder={

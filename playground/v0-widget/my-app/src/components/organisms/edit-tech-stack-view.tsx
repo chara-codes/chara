@@ -38,16 +38,10 @@ import {
   IconSelectorBase,
   IconOptionBase,
 } from "../atoms/form-elements";
-import {theme} from "../../styles/theme";
+import { theme } from "../../styles/theme";
 
-const {
-  colors,
-  typography,
-  spacing,
-  borderRadius,
-  shadows,
-  breakpoints,
-}  = theme
+const { colors, typography, spacing, borderRadius, shadows, breakpoints } =
+  theme;
 
 const Container = styled.div`
   display: flex;
@@ -150,8 +144,7 @@ const JsonEditor = styled.textarea<{ $hasError?: boolean }>`
   width: 100%;
   padding: ${spacing.md};
   border: 1px solid
-    ${(props) =>
-      props.$hasError ? colors.error : colors.border};
+    ${(props) => (props.$hasError ? colors.error : colors.border)};
   border-radius: ${borderRadius.md};
   font-size: ${typography.fontSize.md};
   font-family: monospace;
@@ -165,8 +158,7 @@ const JsonEditor = styled.textarea<{ $hasError?: boolean }>`
     border-color: ${(props) =>
       props.$hasError ? colors.error : colors.primary};
     box-shadow: ${shadows.focus}
-      ${(props) =>
-        props.$hasError ? colors.errorLight : colors.primaryLight};
+      ${(props) => (props.$hasError ? colors.errorLight : colors.primaryLight)};
   }
 `;
 
@@ -384,7 +376,7 @@ const EditTechStackView: React.FC = () => {
         // Set error for invalid JSON
         setMcpJsonErrors((prev) => ({
           ...prev,
-          [index]: "Invalid JSON format",
+          [index]: `Invalid JSON format ${error?.toString()}`,
         }));
       }
     },

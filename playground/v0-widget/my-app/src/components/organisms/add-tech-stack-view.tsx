@@ -223,7 +223,7 @@ const AddTechStackView: React.FC = () => {
     icon: iconOptions[0].component,
     isNew: false,
     documentationLinks: [],
-    mcpServers: [],
+    mcpServers: [], // MCP = Model Context Protocol
   });
 
   // Selected icon ID
@@ -346,7 +346,7 @@ const AddTechStackView: React.FC = () => {
         // Set error for invalid JSON
         setMcpJsonErrors((prev) => ({
           ...prev,
-          [index]: "Invalid JSON format",
+          [index]: `Invalid JSON format ${error?.toString()}`,
         }));
       }
     },

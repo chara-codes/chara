@@ -174,8 +174,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                 console.log("Debug info:");
                 console.log("- Window location:", window.location.href);
                 console.log(
-                  "- Public URL:",
-                  process.env.PUBLIC_URL || "Not defined",
+                  "- Public Agents URL:",
+                  import.meta.env.VITE_AGENTS_BASE_URL || "Not defined",
                 );
                 console.log("- Base URL:", document.baseURI);
                 alert("Debug info logged to console");
