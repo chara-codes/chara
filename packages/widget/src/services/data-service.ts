@@ -52,10 +52,11 @@ export async function fetchModels(): Promise<{
   models: Model[];
   recentModels: string[];
 }> {
+  const agentsUrl = import.meta.env.VITE_AGENTS_BASE_URL
+    ? `${import.meta.env.VITE_AGENTS_BASE_URL}api/models`
+    : "/data/models.json";
   try {
-    const response = await fetch(
-      `${import.meta.env.VITE_AGENTS_BASE_URL}api/models`,
-    );
+    const response = await fetch(agentsUrl);
     if (!response.ok) {
       console.error(`Failed to fetch models: Status ${response.status}`);
       throw new Error(`Failed to fetch models: ${response.status}`);
