@@ -52,7 +52,7 @@ export async function fetchModels(): Promise<{
   models: Model[];
   recentModels: string[];
 }> {
-  const agentsUrl = import.meta.env.VITE_AGENTS_BASE_URL
+  const agentsUrl = import.meta.env?.VITE_AGENTS_BASE_URL
     ? `${import.meta.env.VITE_AGENTS_BASE_URL}api/models`
     : "/data/models.json";
   try {
