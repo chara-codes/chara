@@ -2,16 +2,12 @@
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type {
-  Chat,
-  ChatMode,
-  ContextItem,
-  Message,
-  ExecutedCommand,
-  FileDiff,
-} from "./types";
+import type { Chat, ChatMode, ContextItem, Message } from "./types";
 import { fetchChats } from "../services/data-service";
-import { mockResponse } from "../data/mock-data"; // Import the mock response directly
+import {
+  processChatStream,
+  type StreamRequestPayload,
+} from "../services/stream-service"; // Import the new service
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [
@@ -36,21 +32,13 @@ interface ChatState {
   isResponding: boolean;
   isLoading: boolean;
   loadError: string | null;
+  abortController: AbortController | null; // For stopping fetch requests
 
   // Actions
   initializeStore: () => Promise<void>;
   setActiveChat: (chatId: string | null) => void;
   createNewChat: () => void;
-  sendMessage: (content: string) => void;
-  addAIResponse: (
-    content: string,
-    options?: {
-      filesToChange?: string[];
-      commandsToExecute?: string[];
-      executedCommands?: ExecutedCommand[];
-      fileDiffs?: FileDiff[];
-    },
-  ) => void;
+  sendMessage: (content: string) => Promise<void>; // Now async
   setIsResponding: (isResponding: boolean) => void;
   stopResponse: () => void;
   addContextItem: (item: Omit<ContextItem, "id">) => void;
@@ -80,12 +68,12 @@ export const useChatStore = create<ChatState>()(
         messages: [],
         contextItems: [],
         mode: "write" as ChatMode,
-        model: "claude-3.7-sonnet",
+        model: "claude-3.7-sonnet", // Default model
         isResponding: false,
         isLoading: true,
         loadError: null,
+        abortController: null,
 
-        // Initialize the store with data from JSON files
         initializeStore: async () => {
           set({ isLoading: true, loadError: null });
           try {
@@ -105,23 +93,19 @@ export const useChatStore = create<ChatState>()(
           }
         },
 
-        // Actions
         setActiveChat: (chatId) => {
+          get().stopResponse(); // Stop any ongoing response when switching chats
           set({ activeChat: chatId });
-
-          // If we have a valid chat ID, load its messages
           if (chatId) {
             const chat = get().chats.find((c) => c.id === chatId);
-            if (chat) {
-              set({ messages: chat.messages });
-            }
+            set({ messages: chat ? chat.messages : [] });
           } else {
-            // Clear messages when no chat is selected
             set({ messages: [] });
           }
         },
 
         createNewChat: () => {
+          get().stopResponse(); // Stop any ongoing response
           set({
             activeChat: null,
             messages: [],
@@ -131,20 +115,22 @@ export const useChatStore = create<ChatState>()(
 
         sendMessage: async (content) => {
           const state = get();
-          const { activeChat, chats, messages, contextItems } = state;
+          const { activeChat, chats, messages, contextItems, model } = state;
 
-          // Create a copy of the current context items to attach to the message
-          const messageContextItems =
-            contextItems.length > 0 ? [...contextItems] : undefined;
+          // Abort any existing request
+          if (state.abortController) {
+            state.abortController.abort();
+          }
+          const newAbortController = new AbortController();
+          set({ abortController: newAbortController, isResponding: true });
 
           // Create a deep copy of the messages array to avoid mutation issues
           const updatedMessages = [...messages];
 
-          // Find the last AI message with diffs more efficiently
+          // Update pending diffs in the last AI message to "kept"
           for (let i = updatedMessages.length - 1; i >= 0; i--) {
             const msg = updatedMessages[i];
             if (!msg.isUser && msg.fileDiffs && msg.fileDiffs.length > 0) {
-              // Update all pending diffs to kept
               updatedMessages[i] = {
                 ...msg,
                 fileDiffs: msg.fileDiffs.map((diff) => ({
@@ -156,7 +142,7 @@ export const useChatStore = create<ChatState>()(
             }
           }
 
-          const newMessage = {
+          const userMessage: Message = {
             id: Date.now().toString(),
             content,
             isUser: true,
@@ -164,118 +150,199 @@ export const useChatStore = create<ChatState>()(
               hour: "2-digit",
               minute: "2-digit",
             }),
-            contextItems: messageContextItems,
+            contextItems:
+              contextItems.length > 0 ? [...contextItems] : undefined,
           };
+          updatedMessages.push(userMessage);
 
-          // Add the new message
-          updatedMessages.push(newMessage);
-
-          // Batch state updates to prevent multiple re-renders
           const updates: Partial<ChatState> = {
             messages: updatedMessages,
-            isResponding: true,
-            contextItems: [], // Clear context items
+            contextItems: [], // Clear context items after sending
           };
 
-          // If this is a new chat, create it
-          if (!activeChat) {
-            const newChatId = `new-${Date.now()}`;
-            const newChat = {
-              id: newChatId,
-              title: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
-              timestamp: new Date().toLocaleString([], {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              messages: updatedMessages,
-            };
-
-            updates.chats = [newChat, ...chats];
+          let currentActiveChatId = activeChat;
+          if (!currentActiveChatId) {
+            const newChatId = `chat-${Date.now()}`;
+            currentActiveChatId = newChatId; // Update currentActiveChatId for this scope
             updates.activeChat = newChatId;
+            updates.chats = [
+              {
+                id: newChatId,
+                title:
+                  content.slice(0, 30) + (content.length > 30 ? "..." : ""),
+                timestamp: new Date().toLocaleString([], {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+                messages: updatedMessages,
+              },
+              ...chats,
+            ];
           } else {
-            // Update existing chat
             updates.chats = chats.map((chat) =>
-              chat.id === activeChat
+              chat.id === currentActiveChatId
                 ? { ...chat, messages: updatedMessages }
                 : chat,
             );
           }
-
-          // Apply all updates at once
           set(updates);
 
-          // Use the mock response with throttled updates
-          setTimeout(() => {
-            try {
-              const fileDiffsWithStatus = mockResponse.fileDiffs
-                ? mockResponse.fileDiffs.map((diff) => ({
-                    ...diff,
-                    status: "pending" as "pending" | "kept" | "reverted",
-                  }))
-                : undefined;
-
-              get().addAIResponse(mockResponse.content, {
-                filesToChange: mockResponse.filesToChange,
-                commandsToExecute: mockResponse.commandsToExecute,
-                executedCommands: (mockResponse.executedCommands ||
-                  []) as ExecutedCommand[],
-                fileDiffs: (fileDiffsWithStatus || []) as FileDiff[],
-              });
-            } catch (error) {
-              console.error(
-                "Unexpected error in mock response handling:",
-                error,
-              );
-              get().addAIResponse(
-                "Sorry, I encountered an unexpected error. Please try again.",
-              );
-            }
-          }, 2000);
-        },
-
-        addAIResponse: (content, options = {}) => {
-          const state = get();
-          const { activeChat, chats, messages } = state;
-          const {
-            filesToChange,
-            commandsToExecute,
-            executedCommands,
-            fileDiffs,
-          } = options;
-
-          if (!activeChat) return;
-
-          const aiResponse: Message = {
-            id: Date.now().toString(),
-            content,
+          const aiMessageId = Date.now().toString() + "-ai";
+          const initialAiMessage: Message = {
+            id: aiMessageId,
+            content: "",
             isUser: false,
             timestamp: new Date().toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             }),
-            filesToChange,
-            commandsToExecute,
-            executedCommands,
-            fileDiffs,
+            filesToChange: [],
+            commandsToExecute: [],
+            executedCommands: [],
+            fileDiffs: [],
           };
 
-          const updatedMessages = [...messages, aiResponse];
+          // Add placeholder for AI's response
+          set((currentState) => {
+            const finalActiveChatId = currentState.activeChat; // Re-fetch activeChat in case it was set above
+            return {
+              messages: [...currentState.messages, initialAiMessage],
+              chats: currentState.chats.map((chat) =>
+                chat.id === finalActiveChatId
+                  ? { ...chat, messages: [...chat.messages, initialAiMessage] }
+                  : chat,
+              ),
+            };
+          });
 
-          // Batch all updates
-          const updates = {
-            messages: updatedMessages,
-            isResponding: false,
-            chats: chats.map((chat) =>
-              chat.id === activeChat
-                ? { ...chat, messages: updatedMessages }
-                : chat,
-            ),
+          const agentBaseUrl =
+            import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031"; // Default to local agent
+          const apiUrl = `${agentBaseUrl}/api/chat`;
+
+          const agentPayload: StreamRequestPayload = {
+            messages: updatedMessages.map((m) => ({
+              // Send current message history
+              role: m.isUser ? "user" : "assistant",
+              content: m.content,
+              // TODO: If your agent supports tool_calls/tool_results in history, map them here
+            })),
+            model: model, // Send selected model
+            // You might need to send contextItems, mode, etc., depending on agent's API
+            // context_items: contextItems.map(item => ({ name: item.name, type: item.type, data: item.data })),
           };
 
-          set(updates);
+          const updateAIMessageInStore = (
+            updater: (currentAIMsg: Message) => Partial<Message>,
+          ) => {
+            set((currentState) => {
+              const finalActiveChatId = currentState.activeChat;
+              const currentMsgs = [...currentState.messages];
+              const aiMsgIdx = currentMsgs.findIndex(
+                (m) => m.id === aiMessageId,
+              );
+              if (aiMsgIdx === -1) return {};
+
+              const updatedAIMsgPart = updater(currentMsgs[aiMsgIdx]);
+              currentMsgs[aiMsgIdx] = {
+                ...currentMsgs[aiMsgIdx],
+                ...updatedAIMsgPart,
+              };
+
+              return {
+                messages: currentMsgs,
+                chats: currentState.chats.map((c) =>
+                  c.id === finalActiveChatId
+                    ? { ...c, messages: currentMsgs }
+                    : c,
+                ),
+              };
+            });
+          };
+
+          try {
+            await processChatStream(
+              apiUrl,
+              agentPayload,
+              {
+                onTextDelta: (delta) => {
+                  updateAIMessageInStore((msg) => ({
+                    content: (msg.content || "") + delta,
+                  }));
+                },
+                onToolCall: (toolCall) => {
+                  console.log("Store: Tool Call received", toolCall);
+                  // updateAIMessageInStore(msg => ({ toolCalls: [...(msg.toolCalls || []), toolCall] }));
+                },
+                onStructuredData: (data) => {
+                  updateAIMessageInStore((msg) => {
+                    const newPartial: Partial<Message> = {};
+                    if (data.fileDiffs) {
+                      newPartial.fileDiffs = [
+                        ...(msg.fileDiffs || []),
+                        ...data.fileDiffs,
+                      ];
+                    }
+                    if (data.filesToChange) {
+                      newPartial.filesToChange = [
+                        ...(msg.filesToChange || []),
+                        ...data.filesToChange,
+                      ];
+                    }
+                    if (data.commandsToExecute) {
+                      newPartial.commandsToExecute = [
+                        ...(msg.commandsToExecute || []),
+                        ...data.commandsToExecute,
+                      ];
+                    }
+                    if (data.executedCommands) {
+                      newPartial.executedCommands = [
+                        ...(msg.executedCommands || []),
+                        ...data.executedCommands,
+                      ];
+                    }
+                    return newPartial;
+                  });
+                },
+                onStreamError: (errorMsg) => {
+                  updateAIMessageInStore((msg) => ({
+                    content:
+                      (msg.content || "") + `\n\nStream Error: ${errorMsg}`,
+                  }));
+                  set({ isResponding: false, abortController: null }); // Stop on stream error
+                },
+                onStreamClose: (aborted) => {
+                  if (aborted) {
+                    updateAIMessageInStore((msg) => ({
+                      content:
+                        (msg.content || "") + "\n(Response cancelled by user)",
+                    }));
+                  }
+                  // Final state update handled in finally block of sendMessage
+                },
+              },
+              newAbortController.signal,
+            );
+          } catch (error: any) {
+            // Catch errors from processChatStream if it throws directly (should be rare)
+            console.error(
+              "Chat Store: Error calling processChatStream:",
+              error,
+            );
+            updateAIMessageInStore((msg) => ({
+              content:
+                (msg.content || "") +
+                `\n\nError: ${error.message || "Failed to process response."}`,
+            }));
+          } finally {
+            // Ensure isResponding is set to false and controller is cleared
+            if (get().isResponding || get().abortController) {
+              // Check if not already set by onStreamError
+              set({ isResponding: false, abortController: null });
+            }
+          }
         },
 
         setIsResponding: (isResponding) => {
@@ -283,7 +350,11 @@ export const useChatStore = create<ChatState>()(
         },
 
         stopResponse: () => {
-          set({ isResponding: false });
+          if (get().abortController) {
+            get().abortController!.abort();
+          } else {
+            set({ isResponding: false });
+          }
         },
 
         addContextItem: (item) => {
@@ -291,7 +362,6 @@ export const useChatStore = create<ChatState>()(
             id: Date.now().toString(),
             ...item,
           };
-
           set((state) => ({
             contextItems: [...state.contextItems, newContextItem],
           }));
@@ -303,114 +373,79 @@ export const useChatStore = create<ChatState>()(
           }));
         },
 
-        clearContextItems: () => {
-          set({ contextItems: [] });
-        },
-
-        setMode: (mode) => {
-          set({ mode });
-        },
-
-        setModel: (model) => {
-          set({ model });
-        },
+        clearContextItems: () => set({ contextItems: [] }),
+        setMode: (mode) => set({ mode }),
+        setModel: (model) => set({ model }),
 
         updateDiffStatus: (messageId, diffId, status) => {
-          const { messages, chats, activeChat } = get();
-
-          // Find the message and update the status of the specific diff
-          const updatedMessages = messages.map((message) => {
-            if (message.id === messageId && message.fileDiffs) {
-              // Create a new fileDiffs array with the updated status
-              const updatedFileDiffs = message.fileDiffs.map((diff) =>
-                diff.id === diffId ? { ...diff, status } : diff,
-              );
-
-              return {
-                ...message,
-                fileDiffs: updatedFileDiffs,
-              };
-            }
-            return message;
+          set((state) => {
+            const updatedMessages = state.messages.map((message) => {
+              if (message.id === messageId && message.fileDiffs) {
+                return {
+                  ...message,
+                  fileDiffs: message.fileDiffs.map((diff) =>
+                    diff.id === diffId ? { ...diff, status } : diff,
+                  ),
+                };
+              }
+              return message;
+            });
+            return {
+              messages: updatedMessages,
+              chats: state.chats.map((chat) =>
+                chat.id === state.activeChat
+                  ? { ...chat, messages: updatedMessages }
+                  : chat,
+              ),
+            };
           });
-
-          // Update the store
-          set({ messages: updatedMessages });
-
-          // Update the chat with the new messages
-          if (activeChat) {
-            const updatedChats = chats.map((chat) =>
-              chat.id === activeChat
-                ? { ...chat, messages: updatedMessages }
-                : chat,
-            );
-            set({ chats: updatedChats });
-          }
         },
 
         updateAllDiffStatuses: (messageId, status) => {
-          const { messages, chats, activeChat } = get();
-
-          // Find the message and update all diff statuses
-          const updatedMessages = messages.map((message) => {
-            if (message.id === messageId && message.fileDiffs) {
-              // Create a new fileDiffs array with all statuses updated
-              const updatedFileDiffs = message.fileDiffs.map((diff) => ({
-                ...diff,
-                status,
-              }));
-
-              return {
-                ...message,
-                fileDiffs: updatedFileDiffs,
-              };
-            }
-            return message;
+          set((state) => {
+            const updatedMessages = state.messages.map((message) => {
+              if (message.id === messageId && message.fileDiffs) {
+                return {
+                  ...message,
+                  fileDiffs: message.fileDiffs.map((diff) => ({
+                    ...diff,
+                    status,
+                  })),
+                };
+              }
+              return message;
+            });
+            return {
+              messages: updatedMessages,
+              chats: state.chats.map((chat) =>
+                chat.id === state.activeChat
+                  ? { ...chat, messages: updatedMessages }
+                  : chat,
+              ),
+            };
           });
-
-          // Update the store
-          set({ messages: updatedMessages });
-
-          // Update the chat with the new messages
-          if (activeChat) {
-            const updatedChats = chats.map((chat) =>
-              chat.id === activeChat
-                ? { ...chat, messages: updatedMessages }
-                : chat,
-            );
-            set({ chats: updatedChats });
-          }
         },
 
         deleteMessage: (messageId) => {
-          const { messages, chats, activeChat } = get();
-
-          // Find the index of the message to delete
-          const messageIndex = messages.findIndex(
-            (msg) => msg.id === messageId,
-          );
-
-          if (messageIndex === -1) return; // Message not found
-
-          // Remove the message and all subsequent messages
-          const updatedMessages = messages.slice(0, messageIndex);
-
-          // Update the store
-          set({ messages: updatedMessages });
-
-          // Update the chat with the new messages
-          if (activeChat) {
-            const updatedChats = chats.map((chat) =>
-              chat.id === activeChat
-                ? { ...chat, messages: updatedMessages }
-                : chat,
+          set((state) => {
+            const messageIndex = state.messages.findIndex(
+              (msg) => msg.id === messageId,
             );
-            set({ chats: updatedChats });
-          }
+            if (messageIndex === -1) return {};
+            const updatedMessages = state.messages.slice(0, messageIndex);
+            return {
+              messages: updatedMessages,
+              chats: state.chats.map((chat) =>
+                chat.id === state.activeChat
+                  ? { ...chat, messages: updatedMessages }
+                  : chat,
+              ),
+            };
+          });
         },
       }),
       {
-        name: "ai-chat-storage",
+        name: "ai-chat-storage-v2", // Consider versioning storage name if state shape changes significantly
         partialize: (state) => ({
           chats: state.chats,
           model: state.model,

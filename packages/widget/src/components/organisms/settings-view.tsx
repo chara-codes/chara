@@ -1,10 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useContext } from "react"
 import styled from "styled-components"
 import ViewNavigation from "../molecules/view-navigation"
-import { useUIStore, type KeyboardShortcut } from "../../store/ui-store"
+import { useUIStore, type KeyboardShortcut, UIStoreContext } from "../../store/ui-store"
 import { ChevronDownIcon } from "../atoms/icons"
 
 const SettingsContainer = styled.div`
@@ -304,7 +304,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
   const keyboardShortcuts = useUIStore((state) => state.keyboardShortcuts)
 
   // Get UI store actions using getState to avoid subscription issues
-  const uiStore = useUIStore.getState()
+  const storeApi = useContext(UIStoreContext)
+  if (!storeApi) {
+    // This should not happen if `useUIStore` above works, as both rely on the same context.
+    // However, it's a good safeguard.
+    throw new Error("SettingsView must be used within a UIStoreProvider")
+  }
 
   const [settingsSearchQuery, setSettingsSearchQuery] = useState("")
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -343,10 +348,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
     (action: string) => {
       const shortcut = getShortcutByAction(action)
       if (shortcut) {
-        uiStore.updateKeyboardShortcut(action, { enabled: !shortcut.enabled })
+        storeApi.getState().updateKeyboardShortcut(action, { enabled: !shortcut.enabled })
       }
     },
-    [getShortcutByAction, uiStore],
+    [getShortcutByAction, storeApi],
   )
 
   // Handle key press during recording
@@ -371,7 +376,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
       if (e.metaKey) key = `Meta+${key}`
 
       // Update the shortcut
-      uiStore.updateKeyboardShortcut(recordingShortcut, { key })
+      storeApi.getState().updateKeyboardShortcut(recordingShortcut, { key })
       setRecordingShortcut(null)
     }
 
@@ -379,7 +384,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [recordingShortcut, uiStore])
+  }, [recordingShortcut, storeApi])
 
   // Handle search query change
   const handleSearchChange = useCallback((value: string) => {

@@ -27,6 +27,7 @@ const MODEL_WHITELIST = [
   "gpt-4.1-mini",
   "gpt-4.1-nano",
   "gpt-4o",
+  "gpt-4o-mini",
 
   // O1, O3, O4 models from OpenRouter
   "openai/o1",

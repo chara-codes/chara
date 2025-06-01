@@ -136,7 +136,7 @@ export const useUIStore = create<UIState>()(
         enableInputButton: (id: string) => {
           set((state) => ({
             inputButtonConfig: state.inputButtonConfig.map((button) =>
-              button.id === id ? { ...button, enabled: true } : button
+              button.id === id ? { ...button, enabled: true } : button,
             ),
           }));
         },
@@ -144,7 +144,7 @@ export const useUIStore = create<UIState>()(
         disableInputButton: (id: string) => {
           set((state) => ({
             inputButtonConfig: state.inputButtonConfig.map((button) =>
-              button.id === id ? { ...button, enabled: false } : button
+              button.id === id ? { ...button, enabled: false } : button,
             ),
           }));
         },
@@ -152,32 +152,39 @@ export const useUIStore = create<UIState>()(
         toggleInputButton: (id: string) => {
           set((state) => ({
             inputButtonConfig: state.inputButtonConfig.map((button) =>
-              button.id === id ? { ...button, enabled: !button.enabled } : button
+              button.id === id
+                ? { ...button, enabled: !button.enabled }
+                : button,
             ),
           }));
         },
 
-        updateInputButtonConfig: (id: string, updates: Partial<ButtonConfig>) => {
+        updateInputButtonConfig: (
+          id: string,
+          updates: Partial<ButtonConfig>,
+        ) => {
           set((state) => ({
             inputButtonConfig: state.inputButtonConfig.map((button) =>
-              button.id === id ? { ...button, ...updates } : button
+              button.id === id ? { ...button, ...updates } : button,
             ),
           }));
         },
 
         disableAllInputButtons: () => {
           set((state) => ({
-            inputButtonConfig: state.inputButtonConfig.map((button) => 
-              ({ ...button, enabled: false })
-            ),
+            inputButtonConfig: state.inputButtonConfig.map((button) => ({
+              ...button,
+              enabled: false,
+            })),
           }));
         },
 
         enableAllInputButtons: () => {
           set((state) => ({
-            inputButtonConfig: state.inputButtonConfig.map((button) => 
-              ({ ...button, enabled: true })
-            ),
+            inputButtonConfig: state.inputButtonConfig.map((button) => ({
+              ...button,
+              enabled: true,
+            })),
           }));
         },
 
@@ -233,7 +240,7 @@ type UIStoreContextValue = {
   store: typeof useUIStore;
 };
 
-const UIStoreContext = createContext<UIStoreContextValue | null>(null);
+export const UIStoreContext = createContext<UIStoreContextValue | null>(null);
 
 // Create a provider component
 interface UIStoreProviderProps {

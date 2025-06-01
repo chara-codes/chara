@@ -1,12 +1,12 @@
-"use client";
+"use client"
 
-import React, { useEffect, useCallback } from "react";
-import styled from "styled-components";
-import { theme } from "../../styles/theme";
-import ChatInterface from "../templates/chat-interface";
-import { ChatIcon } from "../atoms/icons";
-import { useUIStore } from "../../store/ui-store";
-import ResizeHandle from "../atoms/resize-handle";
+import React, { useEffect, useCallback } from "react"
+import styled from "styled-components"
+import { theme } from "../../styles/theme"
+import ChatInterface from "../templates/chat-interface"
+import { ChatIcon } from "../atoms/icons"
+import { useUIStore } from "../../store/ui-store" // Correctly imports the overloaded hook
+import ResizeHandle from "../atoms/resize-handle"
 
 const Backdrop = styled.div<{ isOpen: boolean }>`
   position: fixed;
@@ -28,36 +28,29 @@ const Backdrop = styled.div<{ isOpen: boolean }>`
     background-color: transparent;
     pointer-events: ${({ isOpen }) => (isOpen ? "auto" : "none")};
   }
-`;
+`
 
-// Fix: Use $isResizing instead of isResizing
 const OverlayContainer = styled.div<{
-  isOpen: boolean;
-  width: number;
-  $isResizing: boolean;
-  position: "right" | "left";
-  $showFeedback: boolean;
+  isOpen: boolean
+  width: number
+  $isResizing: boolean
+  position: "right" | "left"
+  $showFeedback: boolean
 }>`
   background-color: ${theme.colors.background};
   width: ${({ width }) => `${width}px`};
   max-width: 90%;
   height: 100%;
   box-shadow: ${({ position }) =>
-    position === "right"
-      ? "-2px 0 10px rgba(0, 0, 0, 0.1)"
-      : "2px 0 10px rgba(0, 0, 0, 0.1)"};
+    position === "right" ? "-2px 0 10px rgba(0, 0, 0, 0.1)" : "2px 0 10px rgba(0, 0, 0, 0.1)"};
   z-index: 1000;
   transform: translateX(
-    ${({ isOpen, position }) =>
-      isOpen ? "0" : position === "right" ? "100%" : "-100%"}
+    ${({ isOpen, position }) => (isOpen ? "0" : position === "right" ? "100%" : "-100%")}
   );
-  transition: ${({ $isResizing }) =>
-    $isResizing ? "none" : "transform 0.3s ease-in-out"};
+  transition: ${({ $isResizing }) => ($isResizing ? "none" : "transform 0.3s ease-in-out")};
   position: relative;
-  border-left: ${({ position }) =>
-    position === "right" ? `1px solid ${theme.colors.border}` : "none"};
-  border-right: ${({ position }) =>
-    position === "left" ? `1px solid ${theme.colors.border}` : "none"};
+  border-left: ${({ position }) => (position === "right" ? `1px solid ${theme.colors.border}` : "none")};
+  border-right: ${({ position }) => (position === "left" ? `1px solid ${theme.colors.border}` : "none")};
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -71,25 +64,19 @@ const OverlayContainer = styled.div<{
   @media (max-width: 768px) {
     width: 90%;
   }
-`;
+`
 
 const ToggleButton = styled.button<{
-  position: "right" | "left";
-  bottom?: number;
-  right?: number;
-  left?: number;
-  $showFeedback: boolean;
+  position: "right" | "left"
+  bottom?: number
+  right?: number
+  left?: number
+  $showFeedback: boolean
 }>`
   position: fixed;
   bottom: ${({ bottom }) => (bottom !== undefined ? `${bottom}px` : "20px")};
-  right: ${({ position, right }) =>
-    position === "right"
-      ? right !== undefined
-        ? `${right}px`
-        : "20px"
-      : "auto"};
-  left: ${({ position, left }) =>
-    position === "left" ? (left !== undefined ? `${left}px` : "20px") : "auto"};
+  right: ${({ position, right }) => (position === "right" ? (right !== undefined ? `${right}px` : "20px") : "auto")};
+  left: ${({ position, left }) => (position === "left" ? (left !== undefined ? `${left}px` : "20px") : "auto")};
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -122,14 +109,14 @@ const ToggleButton = styled.button<{
   &:active {
     transform: scale(0.95);
   }
-`;
+`
 
 const ChatInterfaceWrapper = styled.div`
   flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-`;
+`
 
 const ShortcutTooltip = styled.div<{ isVisible: boolean }>`
   position: fixed;
@@ -162,16 +149,16 @@ const ShortcutTooltip = styled.div<{ isVisible: boolean }>`
     border-right: 5px solid transparent;
     border-top: 5px solid #1f2937;
   }
-`;
+`
 
 interface ChatOverlayPanelProps {
-  defaultOpen?: boolean;
-  position?: "right" | "left";
+  defaultOpen?: boolean
+  position?: "right" | "left"
   offset?: {
-    bottom?: number;
-    right?: number;
-    left?: number;
-  };
+    bottom?: number
+    right?: number
+    left?: number
+  }
 }
 
 const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
@@ -179,8 +166,8 @@ const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
   position = "right",
   offset = { bottom: 20, right: 20, left: 20 },
 }) => {
-  const [isResizing, setIsResizing] = React.useState(false);
-  const [showTooltip, setShowTooltip] = React.useState(false);
+  const [isResizing, setIsResizing] = React.useState(false)
+  const [showTooltip, setShowTooltip] = React.useState(false)
   const {
     isChatOverlayOpen,
     toggleChatOverlay,
@@ -191,116 +178,93 @@ const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
     handleKeyboardShortcut,
     keyboardShortcuts,
     showShortcutFeedback,
-  } = useUIStore();
+  } = useUIStore() // This call should now work correctly and return UIState
 
-  // Set initial state based on defaultOpen prop
   useEffect(() => {
     if (defaultOpen) {
-      openChatOverlay();
+      openChatOverlay()
     }
-  }, [defaultOpen, openChatOverlay]);
+  }, [defaultOpen, openChatOverlay])
 
-  // Prevent body scrolling when panel is open
   useEffect(() => {
     if (isChatOverlayOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = "hidden"
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = ""
     }
-
     return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isChatOverlayOpen]);
+      document.body.style.overflow = ""
+    }
+  }, [isChatOverlayOpen])
 
-  // Handle resize with debounce for performance
   const handleResize = useCallback(
     (newWidth: number) => {
-      setIsResizing(true);
-      setChatOverlayWidth(newWidth);
-
-      // Clear the resize state after a short delay
+      setIsResizing(true)
+      setChatOverlayWidth(newWidth)
       if (window.resizeTimeout) {
-        clearTimeout(window.resizeTimeout);
+        clearTimeout(window.resizeTimeout)
       }
-
       window.resizeTimeout = setTimeout(() => {
-        setIsResizing(false);
-      }, 100) as unknown as number;
+        setIsResizing(false)
+      }, 100) as unknown as number
     },
     [setChatOverlayWidth],
-  );
+  )
 
-  // Global keyboard shortcut handler
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Skip if user is typing in an input, textarea, or contentEditable element
       if (
         document.activeElement instanceof HTMLInputElement ||
         document.activeElement instanceof HTMLTextAreaElement ||
-        (document.activeElement &&
-          document.activeElement.getAttribute("contenteditable") === "true")
+        (document.activeElement && document.activeElement.getAttribute("contenteditable") === "true")
       ) {
-        return;
+        return
       }
-
-      // Skip if user is in element selection mode
       if (document.body.classList.contains("element-selecting")) {
-        return;
+        return
       }
-
-      // Check if any selection UI elements exist, which indicates element selection mode
       if (
         document.getElementById("element-selector-cursor") ||
         document.getElementById("element-selection-guide") ||
         document.getElementById("element-tag-display") ||
         document.getElementById("element-comment-modal")
       ) {
-        return;
+        return
       }
-
-      // Find the toggle overlay shortcut
       const toggleShortcut = keyboardShortcuts.find(
-        (shortcut) =>
-          shortcut.action === "toggleChatOverlay" && shortcut.enabled,
-      );
-
-      if (!toggleShortcut) return;
-
-      // Check if the pressed key matches the shortcut
+        (shortcut) => shortcut.action === "toggleChatOverlay" && shortcut.enabled,
+      )
+      if (!toggleShortcut) return
       if (event.key === toggleShortcut.key) {
-        event.preventDefault();
-        handleKeyboardShortcut(toggleShortcut.key);
+        event.preventDefault()
+        handleKeyboardShortcut(toggleShortcut.key)
       }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
+    }
+    window.addEventListener("keydown", handleKeyDown)
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [keyboardShortcuts, handleKeyboardShortcut]);
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [keyboardShortcuts, handleKeyboardShortcut])
 
-  // Show tooltip on hover
   const handleMouseEnter = () => {
     const toggleShortcut = keyboardShortcuts.find(
       (shortcut) => shortcut.action === "toggleChatOverlay" && shortcut.enabled,
-    );
+    )
     if (toggleShortcut) {
-      setShowTooltip(true);
+      setShowTooltip(true)
     }
-  };
+  }
 
   const handleMouseLeave = () => {
-    setShowTooltip(false);
-  };
+    setShowTooltip(false)
+  }
 
-  // Get the current shortcut key for the tooltip
   const getShortcutKey = () => {
     const toggleShortcut = keyboardShortcuts.find(
       (shortcut) => shortcut.action === "toggleChatOverlay" && shortcut.enabled,
-    );
-    return toggleShortcut ? toggleShortcut.key : "±";
-  };
+    )
+    return toggleShortcut ? toggleShortcut.key : "±"
+  }
 
   return (
     <>
@@ -308,7 +272,7 @@ const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
         isOpen={isChatOverlayOpen}
         onClick={(e) => {
           if (e.target === e.currentTarget) {
-            closeChatOverlay();
+            closeChatOverlay()
           }
         }}
       >
@@ -320,19 +284,12 @@ const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
           $showFeedback={showShortcutFeedback}
           id="chat-overlay-panel"
         >
-          <ResizeHandle
-            onResize={handleResize}
-            currentWidth={chatOverlayWidth}
-            minWidth={300}
-            maxWidth={800}
-          />
-
+          <ResizeHandle onResize={handleResize} currentWidth={chatOverlayWidth} minWidth={300} maxWidth={800} />
           <ChatInterfaceWrapper>
             <ChatInterface />
           </ChatInterfaceWrapper>
         </OverlayContainer>
       </Backdrop>
-
       <ToggleButton
         onClick={toggleChatOverlay}
         aria-label={isChatOverlayOpen ? "Close chat panel" : "Open chat panel"}
@@ -348,12 +305,9 @@ const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
       >
         <ChatIcon />
       </ToggleButton>
-
-      <ShortcutTooltip isVisible={showTooltip}>
-        Press {getShortcutKey()} to toggle chat panel
-      </ShortcutTooltip>
+      <ShortcutTooltip isVisible={showTooltip}>Press {getShortcutKey()} to toggle chat panel</ShortcutTooltip>
     </>
-  );
-};
+  )
+}
 
-export default ChatOverlayPanel;
+export default ChatOverlayPanel
