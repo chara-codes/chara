@@ -1,12 +1,10 @@
 "use client"
 
-import { ThemeProvider } from "styled-components";
-import { UIStoreProvider } from "../src/store/ui-store";
-import ChatOverlayPanel from "../src/components/templates/chat-overlay-panel";
-import { theme } from "../src/styles/theme";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import styled from "styled-components";
+import { ThemeProvider } from "styled-components"
+import { UIStoreProvider } from "../src/store/ui-store"
+import ChatOverlayPanel from "../src/components/templates/chat-overlay-panel"
+import { theme } from "../src/styles/theme"
+import { useEffect, useState } from "react"
 
 // Configuration for the chat overlay panel
 const chatConfig = {
@@ -19,10 +17,12 @@ const chatConfig = {
 }
 
 export default function HomePage() {
+  // Use state to handle client-side rendering
   const [isMounted, setIsMounted] = useState(false)
-  const [darkMode] = useState(false) // Assuming this might be used for a theme toggle later
-  const [, setScrollPosition] = useState(0) // Keep for scroll logic
+  const [darkMode] = useState(false)
+  const [, setScrollPosition] = useState(0)
 
+  // Only render the chat panel on the client side
   useEffect(() => {
     setIsMounted(true)
 
@@ -37,11 +37,10 @@ export default function HomePage() {
   return (
     <div className={`min-h-screen ${darkMode ? "dark" : ""}`}>
       <div className="bg-background text-foreground relative">
+        {/* Chat Overlay Panel */}
         {isMounted && (
           <UIStoreProvider>
             <ThemeProvider theme={theme}>
-              {" "}
-              {/* This is styled-components' ThemeProvider */}
               <ChatOverlayPanel
                 defaultOpen={chatConfig.defaultOpen}
                 position={chatConfig.position}

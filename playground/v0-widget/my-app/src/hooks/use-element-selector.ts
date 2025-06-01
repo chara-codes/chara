@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { useUIStore } from "../store/ui-store"
+import { useState, useEffect, useCallback, useRef, useContext } from "react" // Added useContext
+import { UIStoreContext } from "../store/ui-store" // Added UIStoreContext import
 
 /**
  * Information about a component detected from a DOM element
@@ -76,6 +76,11 @@ const DEFAULT_UI_CONFIG: ElementSelectorUIConfig = {
 export const useElementSelector = (
   onAddContext: (contextItem: { name: string; type: string; data?: unknown }) => void,
 ): UseElementSelectorReturn => {
+  const storeApi = useContext(UIStoreContext)
+  if (!storeApi) {
+    throw new Error("useElementSelector must be used within a UIStoreProvider")
+  }
+
   // State for tracking element selection
   const [isSelectingElement, setIsSelectingElement] = useState<boolean>(false)
   const [selectedElement, setSelectedElement] = useState<HTMLElement | null>(null)
@@ -385,8 +390,7 @@ export const useElementSelector = (
     console.log("Ending element selection mode")
 
     // Show the chat panel using the store
-    const openChatOverlay = useUIStore.getState().openChatOverlay
-    openChatOverlay()
+    storeApi.getState().openChatOverlay()
 
     // Remove comment modal if exists
     removeElementById("element-comment-modal")
@@ -435,7 +439,7 @@ export const useElementSelector = (
 
     // Clear input ref
     commentInputRef.current = null
-  }, [cleanupElementSelectionUI])
+  }, [cleanupElementSelectionUI, storeApi]) // Added storeApi to dependency array
 
   // Fix the useCallback dependencies
   const startElementSelection = useCallback(() => {
@@ -443,8 +447,7 @@ export const useElementSelector = (
     const config = uiConfigRef.current
 
     // Hide the chat panel using the store
-    const closeChatOverlay = useUIStore.getState().closeChatOverlay
-    closeChatOverlay()
+    storeApi.getState().closeChatOverlay()
 
     // Set selecting mode
     setIsSelectingElement(true)
@@ -457,8 +460,7 @@ export const useElementSelector = (
 
     // Set up event handlers
     setupSelectionEventHandlers()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [storeApi]) // Added storeApi to dependency array
 
   /**
    * Creates the UI elements for selection mode
@@ -1223,8 +1225,7 @@ export const useElementSelector = (
 
       return confirmButton
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cleanupElementSelectionUI, detectComponentInfo],
+    [cleanupElementSelectionUI, detectComponentInfo, endElementSelection], // Added endElementSelection
   )
 
   // Clean up element selection if component unmounts while selecting
