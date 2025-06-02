@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { create } from "zustand";
@@ -353,6 +354,7 @@ export const useChatStore = create<ChatState>()(
               },
               newAbortController.signal,
             );
+            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
           } catch (error: any) {
             // Catch errors from processChatStream if it throws directly (should be rare)
             console.error(
