@@ -92,7 +92,8 @@ export async function processChatStream(
           const parsedData = JSON.parse(jsonDataString);
 
           switch (typeChar) {
-            case "0": // Text delta
+            case "0": {
+              // Text delta
               const textDelta = parsedData as string;
 
               // Handle thinking tags with proper text segmentation
@@ -101,9 +102,13 @@ export async function processChatStream(
                 const thinkingTagRegex = /<\/?think(?:ing)?\s*>/gi;
 
                 let currentIndex = 0;
-                let match;
+                let match: RegExpExecArray | null;
 
-                while ((match = thinkingTagRegex.exec(text)) !== null) {
+                // Avoid assignment in expressions
+                while (true) {
+                  match = thinkingTagRegex.exec(text);
+                  if (match === null) break;
+
                   // Process text before the tag
                   if (match.index > currentIndex) {
                     const beforeTag = text.slice(currentIndex, match.index);
@@ -149,6 +154,7 @@ export async function processChatStream(
               // Process the text delta with thinking tag handling
               processTextWithThinkingTags(textDelta);
               break;
+            }
             case "1": // Tool Call
               callbacks.onToolCall(parsedData);
               break;
@@ -276,7 +282,6 @@ export async function processChatStream(
     if (callbacks.onStreamClose) {
       callbacks.onStreamClose(signal.aborted);
     }
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "AbortError") {
       console.log("Stream Service: Fetch aborted by user (caught in service).");
