@@ -4,6 +4,8 @@ import React from "react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown"; // Import ReactMarkdown
 import remarkGfm from "remark-gfm"; // Import remark-gfm for GitHub Flavored Markdown
+import rehypeHighlight from "rehype-highlight"; // Import rehype-highlight for syntax highlighting
+import "highlight.js/styles/github.css"; // Import highlight.js CSS theme for syntax highlighting
 import CommandTerminal from "../command-terminal";
 import FileDiffComponent from "../file-diff";
 import FileChangesList from "../file-changes-list";
@@ -120,16 +122,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     if (isThinking && isThinkingExpanded && thinkingContentRef.current) {
       const scrollToBottom = () => {
         if (thinkingContentRef.current) {
-          thinkingContentRef.current.scrollTop = thinkingContentRef.current.scrollHeight;
+          thinkingContentRef.current.scrollTop =
+            thinkingContentRef.current.scrollHeight;
         }
       };
-      
+
       // Scroll immediately
       scrollToBottom();
-      
+
       // Set up interval to continuously scroll during thinking
       const interval = setInterval(scrollToBottom, 100);
-      
+
       return () => clearInterval(interval);
     }
   }, [isThinking, isThinkingExpanded, thinkingContent]);
@@ -316,11 +319,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         {hasThinkingContent && (
           <ThinkingContainer isExpanded={isThinkingExpanded}>
-            <ThinkingHeader 
+            <ThinkingHeader
               onClick={handleThinkingToggle}
-              style={{ 
-                cursor: (!isThinking || thinkingContent) ? 'pointer' : 'default',
-                opacity: (!isThinking || thinkingContent) ? 1 : 0.7
+              style={{
+                cursor: !isThinking || thinkingContent ? "pointer" : "default",
+                opacity: !isThinking || thinkingContent ? 1 : 0.7,
               }}
             >
               <ThinkingLabel>
@@ -334,7 +337,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               )}
             </ThinkingHeader>
             {(thinkingContent || isThinking) && (
-              <ThinkingContent ref={thinkingContentRef} isExpanded={isThinkingExpanded}>
+              <ThinkingContent
+                ref={thinkingContentRef}
+                isExpanded={isThinkingExpanded}
+              >
                 {thinkingContent || "Processing your request..."}
               </ThinkingContent>
             )}
@@ -345,8 +351,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           {isUser ? (
             content // Render user content as plain text
           ) : (
-            // Render AI content as Markdown
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            // Render AI content as Markdown with syntax highlighting
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+            >
+              {content}
+            </ReactMarkdown>
           )}
         </MessageContent>
 

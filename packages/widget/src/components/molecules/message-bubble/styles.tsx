@@ -108,31 +108,67 @@ export const MessageContent = styled.div`
     }
   }
 
-  code {
+  /* Inline code styling */
+  code:not(pre code) {
     font-family:
       ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
-    background-color: #e5e7eb; /* Light gray background for inline code */
+    background-color: #f6f8fa;
+    color: #d73a49;
     padding: 0.2em 0.4em;
     font-size: 0.875em;
     border-radius: 4px;
-    white-space: pre-wrap; /* Wrap inline code if it's too long */
+    white-space: pre-wrap;
+    border: 1px solid #e1e4e8;
   }
 
+  /* Code block container styling */
   pre {
-    background-color: #1f2937; /* Dark background for code blocks */
-    color: #d1d5db; /* Light text for code blocks */
-    padding: 1em;
+    background-color: #f6f8fa !important; /* Light background to match github theme */
+    border: 1px solid #e1e4e8;
     border-radius: 6px;
-    overflow-x: auto; /* Allow horizontal scrolling for long lines */
-    margin-bottom: 0.8em;
-    white-space: pre; /* Preserve all whitespace within <pre> */
+    padding: 16px;
+    margin: 12px 0;
+    overflow-x: auto;
+    white-space: pre;
+    font-size: 14px;
+    line-height: 1.45;
+    
+    /* Custom scrollbar for code blocks */
+    &::-webkit-scrollbar {
+      height: 8px;
+    }
+    &::-webkit-scrollbar-track {
+      background: #f1f3f4;
+      border-radius: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #c1c8cd;
+      border-radius: 4px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: #a8b0b8;
+    }
   }
+
+  /* Code inside pre blocks */
   pre code {
-    background-color: transparent; /* Reset background for <code> inside <pre> */
+    background-color: transparent !important;
+    color: inherit !important;
     padding: 0;
-    font-size: 0.875em; /* Ensure consistent font size */
-    white-space: inherit; /* Inherit pre's whitespace handling */
+    font-size: inherit;
+    white-space: inherit;
+    border: none;
+    border-radius: 0;
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
+  }
+
+  /* Highlight.js specific overrides */
+  .hljs {
+    background: #f6f8fa !important;
+    padding: 0 !important;
   }
 
   blockquote {
