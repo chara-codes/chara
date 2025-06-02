@@ -5,6 +5,8 @@ export interface MessageBubbleProps {
   content: string
   isUser: boolean
   timestamp?: string
+  thinkingContent?: string
+  isThinking?: boolean
   contextItems?: ContextItem[]
   filesToChange?: string[]
   commandsToExecute?: string[]

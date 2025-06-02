@@ -30,6 +30,7 @@ interface ChatState {
   mode: ChatMode;
   model: string;
   isResponding: boolean;
+  isThinking: boolean;
   isLoading: boolean;
   loadError: string | null;
   abortController: AbortController | null; // For stopping fetch requests
@@ -40,6 +41,7 @@ interface ChatState {
   createNewChat: () => void;
   sendMessage: (content: string) => Promise<void>; // Now async
   setIsResponding: (isResponding: boolean) => void;
+  setIsThinking: (isThinking: boolean) => void;
   stopResponse: () => void;
   addContextItem: (item: Omit<ContextItem, "id">) => void;
   removeContextItem: (id: string) => void;
@@ -70,6 +72,7 @@ export const useChatStore = create<ChatState>()(
         mode: "write" as ChatMode,
         model: "claude-3.7-sonnet", // Default model
         isResponding: false,
+        isThinking: false,
         isLoading: true,
         loadError: null,
         abortController: null,
@@ -110,6 +113,7 @@ export const useChatStore = create<ChatState>()(
             activeChat: null,
             messages: [],
             contextItems: [],
+            isThinking: false,
           });
         },
 
@@ -122,7 +126,11 @@ export const useChatStore = create<ChatState>()(
             state.abortController.abort();
           }
           const newAbortController = new AbortController();
-          set({ abortController: newAbortController, isResponding: true });
+          set({
+            abortController: newAbortController,
+            isResponding: true,
+            isThinking: false,
+          });
 
           // Create a deep copy of the messages array to avoid mutation issues
           const updatedMessages = [...messages];
@@ -190,7 +198,7 @@ export const useChatStore = create<ChatState>()(
           }
           set(updates);
 
-          const aiMessageId = Date.now().toString() + "-ai";
+          const aiMessageId = `${Date.now().toString()}-ai`;
           const initialAiMessage: Message = {
             id: aiMessageId,
             content: "",
@@ -203,6 +211,8 @@ export const useChatStore = create<ChatState>()(
             commandsToExecute: [],
             executedCommands: [],
             fileDiffs: [],
+            thinkingContent: "",
+            isThinking: false,
           };
 
           // Add placeholder for AI's response
@@ -270,7 +280,16 @@ export const useChatStore = create<ChatState>()(
                 onTextDelta: (delta) => {
                   updateAIMessageInStore((msg) => ({
                     content: (msg.content || "") + delta,
+                    isThinking: false,
                   }));
+                  set({ isThinking: false });
+                },
+                onThinkingDelta: (delta) => {
+                  updateAIMessageInStore((msg) => ({
+                    thinkingContent: (msg.thinkingContent || "") + delta,
+                    isThinking: true,
+                  }));
+                  set({ isThinking: true });
                 },
                 onToolCall: (toolCall) => {
                   console.log("Store: Tool Call received", toolCall);
@@ -308,19 +327,28 @@ export const useChatStore = create<ChatState>()(
                 },
                 onStreamError: (errorMsg) => {
                   updateAIMessageInStore((msg) => ({
-                    content:
-                      (msg.content || "") + `\n\nStream Error: ${errorMsg}`,
+                    content: `${msg.content || ""}\n\nStream Error: ${errorMsg}`,
                   }));
-                  set({ isResponding: false, abortController: null }); // Stop on stream error
+                  set({
+                    isResponding: false,
+                    isThinking: false,
+                    abortController: null,
+                  }); // Stop on stream error
                 },
                 onStreamClose: (aborted) => {
                   if (aborted) {
                     updateAIMessageInStore((msg) => ({
-                      content:
-                        (msg.content || "") + "\n(Response cancelled by user)",
+                      content: `${msg.content || ""}\n(Response cancelled by user)`,
                     }));
                   }
+                  set({ isThinking: false });
                   // Final state update handled in finally block of sendMessage
+                },
+                onCompletion: (data) => {
+                  console.log("Chat Store: Stream completed", data);
+                  // Handle completion with usage statistics
+                  // data contains: finishReason, usage (promptTokens, completionTokens), isContinued
+                  set({ isThinking: false });
                 },
               },
               newAbortController.signal,
@@ -332,15 +360,21 @@ export const useChatStore = create<ChatState>()(
               error,
             );
             updateAIMessageInStore((msg) => ({
-              content:
-                (msg.content || "") +
-                `\n\nError: ${error.message || "Failed to process response."}`,
+              content: `${msg.content || ""}\n\nError: ${error.message || "Failed to process response."}`,
             }));
           } finally {
-            // Ensure isResponding is set to false and controller is cleared
-            if (get().isResponding || get().abortController) {
+            // Ensure isResponding and isThinking are set to false and controller is cleared
+            if (
+              get().isResponding ||
+              get().abortController ||
+              get().isThinking
+            ) {
               // Check if not already set by onStreamError
-              set({ isResponding: false, abortController: null });
+              set({
+                isResponding: false,
+                isThinking: false,
+                abortController: null,
+              });
             }
           }
         },
@@ -349,11 +383,15 @@ export const useChatStore = create<ChatState>()(
           set({ isResponding });
         },
 
+        setIsThinking: (isThinking) => {
+          set({ isThinking });
+        },
+
         stopResponse: () => {
           if (get().abortController) {
-            get().abortController!.abort();
+            get().abortController?.abort();
           } else {
-            set({ isResponding: false });
+            set({ isResponding: false, isThinking: false });
           }
         },
 

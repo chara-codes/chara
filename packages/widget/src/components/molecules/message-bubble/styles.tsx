@@ -343,6 +343,141 @@ export const CloseIcon = styled.svg.attrs({
   }
 `;
 
+// Thinking section styles
+export const ThinkingContainer = styled.div<{ isExpanded: boolean }>`
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #fefce8;
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #fde047;
+  transition: all 0.2s ease;
+`;
+
+export const ThinkingHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  cursor: pointer;
+  user-select: none;
+`;
+
+export const ThinkingLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #a16207;
+
+  svg {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+`;
+
+export const ThinkingToggle = styled.button`
+  background: none;
+  border: none;
+  color: #a16207;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #fef3c7;
+  }
+
+  svg {
+    transition: transform 0.2s ease;
+  }
+`;
+
+export const ThinkingContent = styled.div<{ isExpanded: boolean }>`
+  font-size: 13px;
+  line-height: 1.5;
+  color: #92400e;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: ${(props) => (props.isExpanded ? "300px" : "80px")};
+  overflow-y: ${(props) => (props.isExpanded ? "auto" : "hidden")};
+  transition: max-height 0.3s ease;
+  position: relative;
+
+  &:not(:last-child) {
+    margin-bottom: 8px;
+  }
+
+  ${(props) =>
+    !props.isExpanded &&
+    `
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: linear-gradient(transparent, #fefce8);
+      pointer-events: none;
+    }
+  `}
+`;
+
+export const ThinkingIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-label="Thinking indicator"
+  >
+    <title>Thinking indicator</title>
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="12" cy="5" r="1" />
+    <circle cx="12" cy="19" r="1" />
+  </svg>
+);
+
+export const ChevronIconSVG = ({ isExpanded }: { isExpanded: boolean }) => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-label={isExpanded ? "Collapse thinking section" : "Expand thinking section"}
+    style={{
+      transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+      transition: "transform 0.2s ease",
+    }}
+  >
+    <title>{isExpanded ? "Collapse thinking section" : "Expand thinking section"}</title>
+    <polyline points="6,9 12,15 18,9" />
+  </svg>
+);
+
 // Instruction section styles
 export const InstructionSection = styled.div`
   margin-top: 16px;

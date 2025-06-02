@@ -9,6 +9,8 @@ export interface Message {
   executedCommands?: ExecutedCommand[] // Add executed commands
   fileDiffs?: FileDiff[] // Add file diffs
   diffStatuses?: { id: string; status: "pending" | "kept" | "reverted" }[] // Add diff statuses
+  thinkingContent?: string // Store thinking content separately
+  isThinking?: boolean // Track if message is currently in thinking mode
 }
 
 export interface Chat {

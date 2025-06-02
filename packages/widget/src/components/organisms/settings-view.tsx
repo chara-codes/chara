@@ -1,11 +1,15 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useCallback, useEffect, useContext } from "react"
-import styled from "styled-components"
-import ViewNavigation from "../molecules/view-navigation"
-import { useUIStore, type KeyboardShortcut, UIStoreContext } from "../../store/ui-store"
-import { ChevronDownIcon } from "../atoms/icons"
+import type React from "react";
+import { useState, useCallback, useEffect, useContext } from "react";
+import styled from "styled-components";
+import ViewNavigation from "../molecules/view-navigation";
+import {
+  useUIStore,
+  type KeyboardShortcut,
+  UIStoreContext,
+} from "../../store/ui-store";
+import { ChevronDownIcon } from "../atoms/icons";
 
 const SettingsContainer = styled.div`
   display: flex;
@@ -13,13 +17,13 @@ const SettingsContainer = styled.div`
   height: 100%;
   overflow: hidden;
   background-color: #f9fafb;
-`
+`;
 
 const SettingsContent = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: 12px;
-`
+`;
 
 const SettingsGroup = styled.div`
   margin-bottom: 16px;
@@ -27,7 +31,7 @@ const SettingsGroup = styled.div`
   background-color: white;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   overflow: hidden;
-`
+`;
 
 const SettingsGroupHeader = styled.div<{ $isOpen?: boolean }>`
   display: flex;
@@ -37,63 +41,63 @@ const SettingsGroupHeader = styled.div<{ $isOpen?: boolean }>`
   background-color: white;
   border-bottom: ${(props) => (props.$isOpen ? "1px solid #e5e7eb" : "none")};
   cursor: pointer;
-  
+
   &:hover {
     background-color: #f9fafb;
   }
-`
+`;
 
 const SettingsGroupTitle = styled.h3`
   font-size: 14px;
   font-weight: 500;
   color: #111827;
   margin: 0;
-`
+`;
 
 const SettingsGroupIcon = styled.div<{ $isOpen?: boolean }>`
   transform: ${(props) => (props.$isOpen ? "rotate(180deg)" : "rotate(0)")};
   transition: transform 0.2s ease;
   color: #6b7280;
-`
+`;
 
 const SettingsGroupContent = styled.div<{ $isOpen?: boolean }>`
   display: ${(props) => (props.$isOpen ? "block" : "none")};
-`
+`;
 
 const SettingItem = styled.div`
   display: flex;
   align-items: flex-start;
   padding: 10px 12px;
   border-bottom: 1px solid #f3f4f6;
-  
+
   &:last-child {
     border-bottom: none;
   }
-`
+`;
 
 const SettingInfo = styled.div`
   flex: 1;
-`
+`;
 
 const SettingTitle = styled.h4`
   font-size: 13px;
   font-weight: 500;
   color: #374151;
   margin: 0 0 2px 0;
-`
+`;
 
 const SettingDescription = styled.p`
   font-size: 12px;
   color: #6b7280;
   margin: 0;
   line-height: 1.4;
-`
+`;
 
 const SettingControl = styled.div`
   margin-left: 12px;
   display: flex;
   align-items: center;
-`
+`;
 
 const NoSettingsResults = styled.div`
   padding: 16px;
@@ -103,7 +107,7 @@ const NoSettingsResults = styled.div`
   background-color: white;
   border-radius: 6px;
   margin-top: 12px;
-`
+`;
 
 const KeyboardShortcutInput = styled.input`
   width: 60px;
@@ -113,13 +117,13 @@ const KeyboardShortcutInput = styled.input`
   border: 1px solid #e5e7eb;
   text-align: center;
   font-family: monospace;
-  
+
   &:focus {
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
   }
-`
+`;
 
 const ShortcutToggle = styled.div<{ $enabled: boolean }>`
   width: 36px;
@@ -130,7 +134,7 @@ const ShortcutToggle = styled.div<{ $enabled: boolean }>`
   cursor: pointer;
   transition: background-color 0.2s ease;
   margin-right: 8px;
-  
+
   &::after {
     content: "";
     position: absolute;
@@ -143,12 +147,12 @@ const ShortcutToggle = styled.div<{ $enabled: boolean }>`
     transition: left 0.2s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
-`
+`;
 
 const ShortcutControls = styled.div`
   display: flex;
   align-items: center;
-`
+`;
 
 // Settings data structure
 const settingsData = [
@@ -285,33 +289,33 @@ const settingsData = [
       },
     ],
   },
-]
+];
 
 interface SettingsItemWithAction {
-  id: string
-  title: string
-  description: string
-  control: string
-  action: string
+  id: string;
+  title: string;
+  description: string;
+  control: string;
+  action: string;
 }
 
 interface SettingsViewProps {
-  onBack: () => void
+  onBack: () => void;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
   // Get UI store state
-  const keyboardShortcuts = useUIStore((state) => state.keyboardShortcuts)
+  const keyboardShortcuts = useUIStore((state) => state.keyboardShortcuts);
 
   // Get UI store actions using getState to avoid subscription issues
-  const storeApi = useContext(UIStoreContext)
+  const storeApi = useContext(UIStoreContext);
   if (!storeApi) {
     // This should not happen if `useUIStore` above works, as both rely on the same context.
     // However, it's a good safeguard.
-    throw new Error("SettingsView must be used within a UIStoreProvider")
+    throw new Error("SettingsView must be used within a UIStoreProvider");
   }
 
-  const [settingsSearchQuery, setSettingsSearchQuery] = useState("")
+  const [settingsSearchQuery, setSettingsSearchQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     general: true,
     "keyboard-shortcuts": true,
@@ -319,77 +323,83 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
     privacy: true,
     appearance: true,
     advanced: true,
-  })
-  const [recordingShortcut, setRecordingShortcut] = useState<string | null>(null)
+  });
+  const [recordingShortcut, setRecordingShortcut] = useState<string | null>(
+    null,
+  );
 
   // Toggle group open/closed state
   const toggleGroup = useCallback((groupId: string) => {
     setOpenGroups((prev) => ({
       ...prev,
       [groupId]: !prev[groupId],
-    }))
-  }, [])
+    }));
+  }, []);
 
   // Handle shortcut key recording
   const startRecordingShortcut = useCallback((action: string) => {
-    setRecordingShortcut(action)
-  }, [])
+    setRecordingShortcut(action);
+  }, []);
 
   // Get shortcut by action
   const getShortcutByAction = useCallback(
     (action: string): KeyboardShortcut | undefined => {
-      return keyboardShortcuts.find((shortcut) => shortcut.action === action)
+      return keyboardShortcuts.find((shortcut) => shortcut.action === action);
     },
     [keyboardShortcuts],
-  )
+  );
 
   // Toggle shortcut enabled state
   const toggleShortcutEnabled = useCallback(
     (action: string) => {
-      const shortcut = getShortcutByAction(action)
+      const shortcut = getShortcutByAction(action);
       if (shortcut) {
-        storeApi.getState().updateKeyboardShortcut(action, { enabled: !shortcut.enabled })
+        storeApi.store
+          .getState()
+          .updateKeyboardShortcut(action, { enabled: !shortcut.enabled });
       }
     },
     [getShortcutByAction, storeApi],
-  )
+  );
 
   // Handle key press during recording
   useEffect(() => {
-    if (!recordingShortcut) return
+    if (!recordingShortcut) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault()
+      e.preventDefault();
 
       // Get the key or key combination
-      let key = e.key
+      let key = e.key;
 
       // Don't allow modifier keys alone
       if (["Control", "Alt", "Shift", "Meta"].includes(key)) {
-        return
+        return;
       }
 
       // Add modifiers if pressed
-      if (e.ctrlKey) key = `Ctrl+${key}`
-      if (e.altKey) key = `Alt+${key}`
-      if (e.shiftKey) key = `Shift+${key}`
-      if (e.metaKey) key = `Meta+${key}`
+      if (e.ctrlKey) key = `Ctrl+${key}`;
+      if (e.altKey) key = `Alt+${key}`;
+      if (e.shiftKey) key = `Shift+${key}`;
+      if (e.metaKey) key = `Meta+${key}`;
 
       // Update the shortcut
-      storeApi.getState().updateKeyboardShortcut(recordingShortcut, { key })
-      setRecordingShortcut(null)
-    }
+      storeApi.store
+        .getState()
+        .updateKeyboardShortcut(recordingShortcut, { key });
+      setRecordingShortcut(null);
+    };
 
-    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-    }
-  }, [recordingShortcut, storeApi])
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [recordingShortcut, storeApi]);
 
   // Handle search query change
   const handleSearchChange = useCallback((value: string) => {
-    setSettingsSearchQuery(value)
-  }, [])
+    setSettingsSearchQuery(value);
+  }, []);
 
   // Filter settings based on search query
   const filteredSettings =
@@ -400,11 +410,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
             ...group,
             items: group.items.filter(
               (item) =>
-                item.title.toLowerCase().includes(settingsSearchQuery.toLowerCase()) ||
-                item.description.toLowerCase().includes(settingsSearchQuery.toLowerCase()),
+                item.title
+                  .toLowerCase()
+                  .includes(settingsSearchQuery.toLowerCase()) ||
+                item.description
+                  .toLowerCase()
+                  .includes(settingsSearchQuery.toLowerCase()),
             ),
           }))
-          .filter((group) => group.items.length > 0)
+          .filter((group) => group.items.length > 0);
 
   return (
     <SettingsContainer>
@@ -419,7 +433,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         {filteredSettings.length > 0 ? (
           filteredSettings.map((group) => (
             <SettingsGroup key={group.id}>
-              <SettingsGroupHeader $isOpen={openGroups[group.id]} onClick={() => toggleGroup(group.id)}>
+              <SettingsGroupHeader
+                $isOpen={openGroups[group.id]}
+                onClick={() => toggleGroup(group.id)}
+              >
                 <SettingsGroupTitle>{group.title}</SettingsGroupTitle>
                 <SettingsGroupIcon $isOpen={openGroups[group.id]}>
                   <ChevronDownIcon width={16} height={16} />
@@ -430,7 +447,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
                   <SettingItem key={item.id}>
                     <SettingInfo>
                       <SettingTitle>{item.title}</SettingTitle>
-                      <SettingDescription>{item.description}</SettingDescription>
+                      <SettingDescription>
+                        {item.description}
+                      </SettingDescription>
                     </SettingInfo>
                     <SettingControl>
                       {item.control === "toggle" && (
@@ -456,24 +475,40 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
                           />
                         </div>
                       )}
-                      {item.control === "shortcut" && (item as SettingsItemWithAction).action && (
-                        <ShortcutControls>
-                          <ShortcutToggle
-                            $enabled={getShortcutByAction((item as SettingsItemWithAction).action)?.enabled || false}
-                            onClick={() => toggleShortcutEnabled((item as SettingsItemWithAction).action)}
-                          />
-                          <KeyboardShortcutInput
-                            value={
-                              recordingShortcut === (item as SettingsItemWithAction).action
-                                ? "Press key..."
-                                : getShortcutByAction((item as SettingsItemWithAction).action)?.key || ""
-                            }
-                            onFocus={() => startRecordingShortcut((item as SettingsItemWithAction).action)}
-                            readOnly
-                            placeholder="Press key"
-                          />
-                        </ShortcutControls>
-                      )}
+                      {item.control === "shortcut" &&
+                        (item as SettingsItemWithAction).action && (
+                          <ShortcutControls>
+                            <ShortcutToggle
+                              $enabled={
+                                getShortcutByAction(
+                                  (item as SettingsItemWithAction).action,
+                                )?.enabled || false
+                              }
+                              onClick={() =>
+                                toggleShortcutEnabled(
+                                  (item as SettingsItemWithAction).action,
+                                )
+                              }
+                            />
+                            <KeyboardShortcutInput
+                              value={
+                                recordingShortcut ===
+                                (item as SettingsItemWithAction).action
+                                  ? "Press key..."
+                                  : getShortcutByAction(
+                                      (item as SettingsItemWithAction).action,
+                                    )?.key || ""
+                              }
+                              onFocus={() =>
+                                startRecordingShortcut(
+                                  (item as SettingsItemWithAction).action,
+                                )
+                              }
+                              readOnly
+                              placeholder="Press key"
+                            />
+                          </ShortcutControls>
+                        )}
                       {item.control === "select" && (
                         <select
                           style={{
@@ -487,7 +522,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
                         </select>
                       )}
                       {item.control === "slider" && (
-                        <input type="range" min="0" max="100" defaultValue="50" style={{ width: "80px" }} />
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          defaultValue="50"
+                          style={{ width: "80px" }}
+                        />
                       )}
                       {item.control === "input" && (
                         <input
@@ -503,6 +544,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
                       )}
                       {item.control === "button" && (
                         <button
+                          type="button"
                           style={{
                             padding: "4px 8px",
                             fontSize: "12px",
@@ -522,12 +564,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
           ))
         ) : (
           <NoSettingsResults>
-            No settings found for &quot;{settingsSearchQuery}&quot;. Try a different search term.
+            No settings found for &quot;{settingsSearchQuery}&quot;. Try a
+            different search term.
           </NoSettingsResults>
         )}
       </SettingsContent>
     </SettingsContainer>
-  )
-}
+  );
+};
 
-export default SettingsView
+export default SettingsView;

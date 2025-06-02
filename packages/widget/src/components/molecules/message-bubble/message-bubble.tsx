@@ -43,6 +43,14 @@ import {
   ContextDetailContent,
   CloseButton,
   CloseIcon,
+  // Thinking section styled components
+  ThinkingContainer,
+  ThinkingHeader,
+  ThinkingLabel,
+  ThinkingToggle,
+  ThinkingContent,
+  ThinkingIcon,
+  ChevronIconSVG,
 } from "./styles";
 import { getPreviewContent } from "./utils";
 import type { FileDiff } from "../../../store/types";
@@ -53,6 +61,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   content,
   isUser,
   timestamp,
+  thinkingContent,
+  isThinking,
   contextItems,
   filesToChange,
   commandsToExecute,
@@ -70,6 +80,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const [selectedDiff, setSelectedDiff] = useState<FileDiff | null>(null);
   const [activeTab, setActiveTab] = useState<"commands" | "diffs">("diffs");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
 
   const contextPanelRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -82,6 +93,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     executedCommands !== undefined && executedCommands.length > 0;
   const hasFileDiffs = fileDiffs !== undefined && fileDiffs.length > 0;
   const hasGenerationDetails = hasExecutedCommands || hasFileDiffs;
+  const hasThinkingContent = !isUser && (thinkingContent || isThinking);
 
   useEffect(() => {
     if (activeTab === "diffs" && !hasFileDiffs) {
@@ -99,11 +111,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         expandedContextId !== null
       ) {
         let clickedOnContextItem = false;
-        itemRefs.current.forEach((itemEl) => {
+        for (const itemEl of itemRefs.current.values()) {
           if (itemEl.contains(event.target as Node)) {
             clickedOnContextItem = true;
+            break;
           }
-        });
+        }
         if (!clickedOnContextItem) {
           setExpandedContextId(null);
         }
@@ -145,6 +158,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   const handleDeleteCancel = useCallback(() => {
     setShowDeleteConfirm(false);
+  }, []);
+
+  const handleThinkingToggle = useCallback(() => {
+    setIsThinkingExpanded((prev) => !prev);
   }, []);
 
   const getIcon = (type: string) => {
@@ -231,6 +248,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               }}
             >
               <button
+                type="button"
                 onClick={handleDeleteCancel}
                 style={{
                   padding: "4px 8px",
@@ -244,6 +262,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleDeleteConfirm}
                 style={{
                   padding: "4px 8px",
@@ -269,6 +288,25 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
           )}
         </MessageContent>
+
+        {hasThinkingContent && (
+          <ThinkingContainer isExpanded={isThinkingExpanded}>
+            <ThinkingHeader onClick={handleThinkingToggle}>
+              <ThinkingLabel>
+                <ThinkingIcon />
+                {isThinking ? "Thinking..." : "Thought process"}
+              </ThinkingLabel>
+              <ThinkingToggle>
+                <ChevronIconSVG isExpanded={isThinkingExpanded} />
+              </ThinkingToggle>
+            </ThinkingHeader>
+            {(thinkingContent || isThinking) && (
+              <ThinkingContent isExpanded={isThinkingExpanded}>
+                {thinkingContent || "Processing your request..."}
+              </ThinkingContent>
+            )}
+          </ThinkingContainer>
+        )}
 
         {hasContext && (
           <>
@@ -330,8 +368,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               Files to Change
             </InstructionHeader>
             <InstructionList>
-              {filesToChange.map((file, index) => (
-                <InstructionItem key={index}>{file}</InstructionItem>
+              {filesToChange.map((file) => (
+                <InstructionItem key={file}>{file}</InstructionItem>
               ))}
             </InstructionList>
           </InstructionSection>
@@ -344,8 +382,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               Commands to Execute
             </InstructionHeader>
             <InstructionList>
-              {commandsToExecute.map((command, index) => (
-                <InstructionItem key={index}>$ {command}</InstructionItem>
+              {commandsToExecute.map((command) => (
+                <InstructionItem key={command}>$ {command}</InstructionItem>
               ))}
             </InstructionList>
           </InstructionSection>
