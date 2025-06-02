@@ -280,15 +280,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         )}
 
-        <MessageContent>
-          {isUser ? (
-            content // Render user content as plain text
-          ) : (
-            // Render AI content as Markdown
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-          )}
-        </MessageContent>
-
         {hasThinkingContent && (
           <ThinkingContainer isExpanded={isThinkingExpanded}>
             <ThinkingHeader onClick={handleThinkingToggle}>
@@ -307,6 +298,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             )}
           </ThinkingContainer>
         )}
+
+        <MessageContent>
+          {isUser ? (
+            content // Render user content as plain text
+          ) : (
+            // Render AI content as Markdown
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+          )}
+        </MessageContent>
 
         {hasContext && (
           <>
