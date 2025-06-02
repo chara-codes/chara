@@ -346,42 +346,43 @@ export const CloseIcon = styled.svg.attrs({
 // Thinking section styles
 export const ThinkingContainer = styled.div<{ isExpanded: boolean }>`
   margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
-  background-color: #fefce8;
-  border-radius: 6px;
-  padding: 12px;
-  border: 1px solid #fde047;
-  transition: all 0.2s ease;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  transition: all 0.3s ease;
 `;
 
 export const ThinkingHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   cursor: pointer;
   user-select: none;
+  padding: 4px 0;
+  transition: all 0.2s ease;
 `;
 
 export const ThinkingLabel = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #a16207;
+  font-size: 11px;
+  font-weight: 400;
+  color: #6b7280;
 
   svg {
-    animation: pulse 1.5s ease-in-out infinite;
+    color: #9ca3af;
+    animation: pulse 2s ease-in-out infinite;
   }
 
   @keyframes pulse {
     0%, 100% {
       opacity: 1;
+      transform: scale(1);
     }
     50% {
-      opacity: 0.5;
+      opacity: 0.7;
+      transform: scale(0.95);
     }
   }
 `;
@@ -389,34 +390,58 @@ export const ThinkingLabel = styled.div`
 export const ThinkingToggle = styled.button`
   background: none;
   border: none;
-  color: #a16207;
+  color: #9ca3af;
   cursor: pointer;
   padding: 2px;
-  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
 
   &:hover {
-    background-color: #fef3c7;
+    color: #6b7280;
+  }
+
+  &:focus {
+    outline: none;
   }
 
   svg {
-    transition: transform 0.2s ease;
+    transition: transform 0.3s ease;
   }
 `;
 
 export const ThinkingContent = styled.div<{ isExpanded: boolean }>`
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
-  color: #92400e;
+  color: #6b7280;
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: ${(props) => (props.isExpanded ? "300px" : "80px")};
+  max-height: ${(props) => (props.isExpanded ? "400px" : "0")};
   overflow-y: ${(props) => (props.isExpanded ? "auto" : "hidden")};
-  transition: max-height 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  padding: 8px 0;
+  margin-top: 4px;
+  scroll-behavior: smooth;
+
+  /* Custom scrollbar styling */
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
 
   &:not(:last-child) {
     margin-bottom: 8px;
@@ -425,20 +450,32 @@ export const ThinkingContent = styled.div<{ isExpanded: boolean }>`
   ${(props) =>
     !props.isExpanded &&
     `
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 20px;
-      background: linear-gradient(transparent, #fefce8);
-      pointer-events: none;
-    }
+    padding: 0;
+    margin: 0;
   `}
 `;
 
 export const ThinkingIcon = () => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-label="Idea indicator"
+  >
+    <title>Idea indicator</title>
+    <path d="M9 21h6" />
+    <path d="M12 21v-3" />
+    <path d="M12 3a6 6 0 0 0-6 6c0 1.8.8 3.4 2 4.5V17h8v-3.5c1.2-1.1 2-2.7 2-4.5a6 6 0 0 0-6-6z" />
+    <path d="M8 17h8" />
+  </svg>
+);
+
+export const ChevronIconSVG = ({ isExpanded }: { isExpanded: boolean }) => (
   <svg
     width="14"
     height="14"
@@ -448,29 +485,10 @@ export const ThinkingIcon = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    aria-label="Thinking indicator"
-  >
-    <title>Thinking indicator</title>
-    <circle cx="12" cy="12" r="1" />
-    <circle cx="12" cy="5" r="1" />
-    <circle cx="12" cy="19" r="1" />
-  </svg>
-);
-
-export const ChevronIconSVG = ({ isExpanded }: { isExpanded: boolean }) => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
     aria-label={isExpanded ? "Collapse thinking section" : "Expand thinking section"}
     style={{
       transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-      transition: "transform 0.2s ease",
+      transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     }}
   >
     <title>{isExpanded ? "Collapse thinking section" : "Expand thinking section"}</title>

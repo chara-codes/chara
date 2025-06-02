@@ -84,6 +84,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   const contextPanelRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const thinkingContentRef = useRef<HTMLDivElement>(null);
 
   const hasContext = contextItems && contextItems.length > 0;
   const hasFilesToChange = filesToChange && filesToChange.length > 0;
@@ -102,6 +103,36 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       }
     }
   }, [activeTab, hasFileDiffs, hasExecutedCommands]);
+
+  // Auto-expand when thinking starts, auto-collapse when thinking ends
+  useEffect(() => {
+    if (isThinking) {
+      // Auto-expand when thinking starts
+      setIsThinkingExpanded(true);
+    } else if (!isThinking && isThinkingExpanded && thinkingContent) {
+      // Auto-collapse when thinking ends, but only if there's content
+      setIsThinkingExpanded(false);
+    }
+  }, [isThinking, thinkingContent]);
+
+  // Auto-scroll thinking content to bottom when thinking is in progress
+  useEffect(() => {
+    if (isThinking && isThinkingExpanded && thinkingContentRef.current) {
+      const scrollToBottom = () => {
+        if (thinkingContentRef.current) {
+          thinkingContentRef.current.scrollTop = thinkingContentRef.current.scrollHeight;
+        }
+      };
+      
+      // Scroll immediately
+      scrollToBottom();
+      
+      // Set up interval to continuously scroll during thinking
+      const interval = setInterval(scrollToBottom, 100);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isThinking, isThinkingExpanded, thinkingContent]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -161,8 +192,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   }, []);
 
   const handleThinkingToggle = useCallback(() => {
-    setIsThinkingExpanded((prev) => !prev);
-  }, []);
+    if (!isThinking || thinkingContent) {
+      // Only allow toggle if not currently thinking, or if there's content to show
+      setIsThinkingExpanded((prev) => !prev);
+    }
+  }, [isThinking, thinkingContent]);
 
   const getIcon = (type: string) => {
     const lowerType = type.toLowerCase();
@@ -282,17 +316,25 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         {hasThinkingContent && (
           <ThinkingContainer isExpanded={isThinkingExpanded}>
-            <ThinkingHeader onClick={handleThinkingToggle}>
+            <ThinkingHeader 
+              onClick={handleThinkingToggle}
+              style={{ 
+                cursor: (!isThinking || thinkingContent) ? 'pointer' : 'default',
+                opacity: (!isThinking || thinkingContent) ? 1 : 0.7
+              }}
+            >
               <ThinkingLabel>
                 <ThinkingIcon />
                 {isThinking ? "Thinking..." : "Thought process"}
               </ThinkingLabel>
-              <ThinkingToggle>
-                <ChevronIconSVG isExpanded={isThinkingExpanded} />
-              </ThinkingToggle>
+              {(!isThinking || thinkingContent) && (
+                <ThinkingToggle>
+                  <ChevronIconSVG isExpanded={isThinkingExpanded} />
+                </ThinkingToggle>
+              )}
             </ThinkingHeader>
             {(thinkingContent || isThinking) && (
-              <ThinkingContent isExpanded={isThinkingExpanded}>
+              <ThinkingContent ref={thinkingContentRef} isExpanded={isThinkingExpanded}>
                 {thinkingContent || "Processing your request..."}
               </ThinkingContent>
             )}
