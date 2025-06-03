@@ -60,6 +60,15 @@ export interface ServerEvents {
     stream: AsyncIterable<string>;
     results: any;
   };
+  "file:change": {
+    type: "add" | "change" | "unlink";
+    projectName: string;
+    relativePath: string;
+  };
+  "file:error": {
+    projectName: string;
+    error: string;
+  };
   // Add other events as needed
 }
 

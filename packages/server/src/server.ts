@@ -11,11 +11,16 @@ import { myLogger as logger } from "./utils/logger";
 import { chatRouter } from "./api/routes/chat";
 import { subscription } from "./api/routes/subscription";
 import { instructionsRouter } from "./api/routes/instructions";
-import { BunSSEServerTransport } from "./mcp/transport";
-import { mcpClientsSubscriptions, mcpClientsMutations } from "./api/routes/mcpservers";
-import { createServer } from "./mcp/server"
-import { sessionRouter } from "./api/routes/sessions";
+import { filesRouter } from "./api/routes/files";
 import superjson from "superjson";
+import { previewRouter } from "./api/routes/preview";
+import { BunSSEServerTransport } from "./mcp/transport";
+import {
+  mcpClientsSubscriptions,
+  mcpClientsMutations,
+} from "./api/routes/mcpservers";
+import { createServer } from "./mcp/server";
+import { sessionRouter } from "./api/routes/sessions";
 import { parse } from "querystring";
 import {
   McpServer,
@@ -36,8 +41,10 @@ export const appRouter = router({
   sessions: sessionRouter,
   events: subscription,
   instructions: instructionsRouter,
+  files: filesRouter,
+  preview: previewRouter,
   mcpClientsSubscriptions: mcpClientsSubscriptions,
-  mcpResponses: mcpClientsMutations
+  mcpResponses: mcpClientsMutations,
 });
 
 export type AppRouter = typeof appRouter;
@@ -57,8 +64,8 @@ const server = serve({
   port: 3030,
   async fetch(request): Promise<Response | undefined> {
     const url = new URL(request.url);
-    logger.request(request.method, request.url);
-    logger.info(`Headers: ${JSON.stringify(request.headers, null, 2)}`);
+    // logger.request(request.method, request.url);
+    // logger.info(`Headers: ${JSON.stringify(request.headers, null, 2)}`);
     // Only used for start-server-and-test package that
     // expects a 200 OK to start testing the server
     if (request.method === "HEAD" || request.method === "OPTIONS") {
@@ -153,57 +160,57 @@ const SSEServer = serve({
     const url = new URL(req.url);
     const pathname = url.pathname;
 
-    if (req.method === 'GET' && pathname === '/sse') {
-      logger.info('Received GET request to /sse');
+    if (req.method === "GET" && pathname === "/sse") {
+      logger.info("Received GET request to /sse");
 
-      const transport = new BunSSEServerTransport('/messages');
+      const transport = new BunSSEServerTransport("/messages");
       const sessionId = transport.sessionId;
       transports[sessionId] = transport;
-    
+
       transport.onclose = () => {
         logger.info(`SSE transport closed for session ${sessionId}`);
         delete transports[sessionId];
       };
-    
+
       await MCPserver.connect(transport);
       logger.info(`Established SSE stream with session ID: ${sessionId}`);
-    
-      return transport.createResponse();;
+
+      return transport.createResponse();
     }
 
-    if (req.method === 'POST' && pathname === '/messages') {
-      logger.info('Received POST request to /messages');
+    if (req.method === "POST" && pathname === "/messages") {
+      logger.info("Received POST request to /messages");
       const query = parse(url.searchParams.toString());
       const sessionId = query.sessionId?.toString();
 
       if (!sessionId) {
-        return new Response('Missing sessionId parameter', { status: 400 });
+        return new Response("Missing sessionId parameter", { status: 400 });
       }
 
       const transport = transports[sessionId];
       if (!transport) {
-        return new Response('Session not found', { status: 404 });
+        return new Response("Session not found", { status: 404 });
       }
 
       try {
         return transports[sessionId].handlePostMessage(req);
       } catch (error) {
-        logger.error('Error handling request:', error);
-        return new Response('Error handling request', { status: 500 });
+        logger.error("Error handling request:", error);
+        return new Response("Error handling request", { status: 500 });
       }
     }
 
-    return new Response('Not found', { status: 404 });
+    return new Response("Not found", { status: 404 });
   },
   async error(err) {
-    logger.error('Server error:', err);
-    return new Response('Internal server error', { status: 500 });
+    logger.error("Server error:", err);
+    return new Response("Internal server error", { status: 500 });
   },
 });
 
 // Shutdown handling
-process.on('SIGINT', async () => {
-  logger.info('Shutting down Bun MCP server...');
+process.on("SIGINT", async () => {
+  logger.info("Shutting down Bun MCP server...");
   for (const sessionId in transports) {
     try {
       await transports[sessionId].close();
@@ -212,7 +219,7 @@ process.on('SIGINT', async () => {
       logger.error(`Error closing transport ${sessionId}`, err);
     }
   }
-  logger.info('Server shutdown complete');
+  logger.info("Server shutdown complete");
   process.exit(0);
 });
 

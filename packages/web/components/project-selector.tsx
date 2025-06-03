@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { FolderOpen, RefreshCw } from "lucide-react";
 import { generateStringHash } from "@/lib/hash-string";
+import { directoryManager } from "@/utils/file-system";
 
 interface ProjectSelectorProps {
   onProjectSelect: (projectId: number, projectName: string) => void;
-  selectedProject?: { id: string; name: string } | null;
+  selectedProject?: { id: number; name: string } | null;
 }
 
 export function ProjectSelector({
@@ -32,10 +33,18 @@ export function ProjectSelector({
 
       const projectId = parseInt(
         generateStringHash(directoryHandle.name).substring(0, 8),
-        16,
+        16
       );
 
-      await directoryHandle.requestPermission({ mode: "readwrite" });
+      // Request read/write permission
+      const permissionStatus = await directoryHandle.requestPermission({ mode: "readwrite" });
+      
+      if (permissionStatus !== "granted") {
+        throw new Error("Permission denied for directory access");
+      }
+
+      // Store the directory handle for future access
+      directoryManager.setDirectoryHandle(projectId, directoryHandle);
 
       // Update the selected project in the parent component
       onProjectSelect(projectId, projectName);

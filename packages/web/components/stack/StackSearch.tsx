@@ -1,6 +1,6 @@
 "use client";
 import { Input } from "@/components/ui/input";
-import { useStacks } from "@/context/StackContext";
+import { useStacks } from "@/context/StacksContext";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 
