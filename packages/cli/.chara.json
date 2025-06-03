@@ -45,15 +45,15 @@
     },
     "cpu": {
       "architecture": "arm64",
-      "cores": 10,
-      "model": "Apple M1 Pro"
+      "cores": 12,
+      "model": "Apple M4 Pro"
     },
     "environment": {
       "nodeVersion": "v22.6.0",
-      "runtime": "Bun v1.2.8",
-      "shell": "/bin/bash",
-      "user": "Andrii_Shutov",
-      "homeDirectory": "/Users/Andrii_Shutov"
+      "runtime": "Bun v1.2.9",
+      "shell": "/bin/zsh",
+      "user": "Daniel_Megyeri",
+      "homeDirectory": "/Users/Daniel_Megyeri"
     }
   }
 }

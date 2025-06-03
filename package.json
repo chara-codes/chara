@@ -13,7 +13,9 @@
     "clean": "rm -rf node_modules packages/*/node_modules bun.lock packages/*/bun.lock"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.11"
+    "@isomorphic-git/lightning-fs": "^4.6.2",
+    "@types/bun": "^1.2.11",
+    "isomorphic-git": "^1.30.2"
   },
   "trustedDependencies": [
     "@swc/core",
