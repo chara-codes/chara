@@ -1,17 +1,27 @@
-import { streamText } from "ai";
-import { providersRegistry } from "../providers";
+import { createDataStreamResponse, type CoreMessage } from "ai";
+import { beautifyAgent } from "../agents/beautify-agent";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
 export const beautifyController = {
   async POST(req: Request) {
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    const { messages } = (await req.json()) as { messages: any };
+    const { model, messages } = (await req.json()) as {
+      model: string;
+      messages: CoreMessage[];
+    };
 
-    const result = streamText({
-      model: providersRegistry.getModel("ollama", "qwen3:latest"),
-      system: "You are a helpful assistant.",
-      messages,
+    return createDataStreamResponse({
+      headers: CORS_HEADERS,
+      execute: (dataStream) => {
+        const result = beautifyAgent({
+          model,
+          messages,
+        });
+        result.mergeIntoDataStream(dataStream);
+      },
     });
-
-    return result.toDataStreamResponse();
   },
 };

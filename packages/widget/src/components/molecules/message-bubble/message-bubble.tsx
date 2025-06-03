@@ -115,10 +115,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       // Auto-collapse when thinking ends, but only if there's content
       setIsThinkingExpanded(false);
     }
-  }, [isThinking, thinkingContent]);
 
-  // Auto-scroll thinking content to bottom when thinking is in progress
-  useEffect(() => {
     if (isThinking && isThinkingExpanded && thinkingContentRef.current) {
       const scrollToBottom = () => {
         if (thinkingContentRef.current) {
