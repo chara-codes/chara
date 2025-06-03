@@ -23,6 +23,7 @@ import { createDropdownItems } from "./dropdown-items"
 import styled from "styled-components"
 import AnimatedButton from "./animated-button"
 import { useUIStore } from "../../../store/ui-store" // Updated to use the corrected context hook
+import { useChatStore } from "../../../store/chat-store"
 
 const RoundedIconButton = styled(IconButton)`
   border-radius: 8px;
@@ -91,6 +92,7 @@ const InputArea: React.FC<InputAreaProps> = ({
 }) => {
   // Use the context-aware hook to get buttonConfig from the store
   const storeButtonConfig = useUIStore((state) => state.inputButtonConfig)
+  const beautifyPrompt = useChatStore((state) => state.beautifyPrompt)
 
   // If buttonConfig prop is provided, it overrides the store's config.
   // Otherwise, use the config from the store.
@@ -107,33 +109,24 @@ const InputArea: React.FC<InputAreaProps> = ({
 
   const { startElementSelection } = useElementSelector(onAddContext)
 
-  const beautifyText = useCallback(() => {
+  const beautifyText = useCallback(async () => {
     if (!message.trim()) return
 
     setIsBeautifyLoading(true)
     setOriginalText(message)
 
-    setTimeout(() => {
-      const enhancedText = message
-        .split(". ")
-        .map((sentence) => {
-          let s = sentence.trim()
-          if (s.length > 0) {
-            s = s.charAt(0).toUpperCase() + s.slice(1)
-          }
-          return s
-        })
-        .join(". ")
-        .replace(/\bi\b/g, "I")
-        .replace(/\bdont\b/g, "don't")
-        .replace(/\bcant\b/g, "can't")
-        .replace(/\bwont\b/g, "won't")
-
-      setMessage(enhancedText)
+    try {
+      const beautifiedText = await beautifyPrompt(message)
+      setMessage(beautifiedText)
       setIsBeautified(true)
+    } catch (error) {
+      console.error("Failed to beautify text:", error)
+      // Revert to original text on error
+      setMessage(originalText || message)
+    } finally {
       setIsBeautifyLoading(false)
-    }, 1000)
-  }, [message])
+    }
+  }, [message, beautifyPrompt, originalText])
 
   const handleUndo = useCallback(() => {
     setMessage(originalText)

@@ -8,8 +8,8 @@ import { fetchChats } from "../services/data-service";
 import {
   processChatStream,
   type StreamRequestPayload,
+  type StreamCallbacks,
 } from "../services/stream-service"; // Import the new service
-import { beautifyPrompt } from "../services/beautify-service";
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [
@@ -488,12 +488,94 @@ export const useChatStore = create<ChatState>()(
 
         beautifyPrompt: async (currentPrompt) => {
           const state = get();
+          if (!currentPrompt.trim()) {
+            return currentPrompt;
+          }
+
+          const abortController = new AbortController();
+          const timeoutId = setTimeout(() => {
+            abortController.abort();
+          }, 30000); // 30 second timeout
+
           try {
-            const beautifiedText = await beautifyPrompt(currentPrompt, state.messages);
-            return beautifiedText;
+            const agentBaseUrl = import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
+            const apiUrl = `${agentBaseUrl}api/beautify`;
+            
+            // Use recent messages for context (last 5 messages max)
+            const recentMessages = state.messages.slice(-5).map((message) => ({
+              role: message.isUser ? "user" : "assistant",
+              content: message.content,
+            }));
+
+            const payload: StreamRequestPayload = {
+              messages: [
+                ...recentMessages,
+                {
+                  role: "user",
+                  content: `Please improve and beautify the following text while preserving its meaning and intent. Return only the improved text without any additional explanation:\n\n${currentPrompt}`,
+                }
+              ],
+              model: state.model,
+            };
+
+            let beautifiedText = "";
+            let streamError: string | null = null;
+
+            const callbacks: StreamCallbacks = {
+              onTextDelta: (delta: string) => {
+                beautifiedText += delta;
+              },
+              onThinkingDelta: () => {
+                // Ignore thinking content for beautification
+              },
+              onToolCall: () => {
+                // Not expected for beautification
+              },
+              onStructuredData: () => {
+                // Not expected for beautification
+              },
+              onStreamError: (error: string) => {
+                streamError = error;
+              },
+              onStreamClose: (aborted: boolean) => {
+                if (aborted && !abortController.signal.aborted) {
+                  streamError = "Stream was unexpectedly closed";
+                }
+              },
+              onCompletion: () => {
+                // Stream completed successfully
+              },
+            };
+
+            await processChatStream(apiUrl, payload, callbacks, abortController.signal);
+            
+            // Check for errors
+            if (streamError) {
+              throw new Error(`Beautify stream error: ${streamError}`);
+            }
+
+            if (abortController.signal.aborted) {
+              throw new Error("Beautify request timed out");
+            }
+
+            // Return beautified text or fallback to original
+            const result = beautifiedText.trim();
+            return result || currentPrompt;
           } catch (error) {
             console.error("Failed to beautify prompt:", error);
-            throw error;
+            
+            // Return original text on any error
+            if (error instanceof Error && error.name === "AbortError") {
+              throw new Error("Beautify request timed out");
+            }
+            
+            throw new Error(
+              error instanceof Error 
+                ? `Failed to beautify text: ${error.message}` 
+                : "Failed to beautify text"
+            );
+          } finally {
+            clearTimeout(timeoutId);
           }
         },
       }),

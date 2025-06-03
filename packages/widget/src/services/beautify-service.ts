@@ -1,5 +1,12 @@
 import type { Message } from "../store/types";
 
+/**
+ * @deprecated This service is deprecated and kept for reference only.
+ * The beautify functionality has been migrated to use the stream service
+ * for real-time streaming responses. See chat-store.ts beautifyPrompt method
+ * for the current implementation using processChatStream.
+ */
+
 export interface BeautifyRequest {
   currentPrompt: string;
   messageHistory: Array<{
@@ -12,6 +19,10 @@ export interface BeautifyResponse {
   beautifiedText: string;
 }
 
+/**
+ * @deprecated Use chat-store.ts beautifyPrompt method instead.
+ * This function has been replaced with a stream-based implementation.
+ */
 export async function beautifyPrompt(
   currentPrompt: string,
   messages: Message[]

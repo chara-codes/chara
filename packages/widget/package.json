@@ -10,7 +10,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview --port 3000 --host 0.0.0.0",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "@ai-sdk/react": "^1.2.12",

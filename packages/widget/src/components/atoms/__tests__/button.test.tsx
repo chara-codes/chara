@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { ThemeProvider } from "styled-components";
-import Button from "./button";
+import Button from "../button";
 
 const mockTheme = {
   colors: {
@@ -125,7 +125,7 @@ describe("Button Component", () => {
       const buttonProps = element.props.children as React.ReactElement;
       expect(buttonProps.props.variant).toBe(variant);
     }
-  });;
+  });
 
   it("should accept all size options", () => {
     const sizes = ["sm", "md", "lg"] as const;

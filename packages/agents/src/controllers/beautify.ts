@@ -7,6 +7,7 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 export const beautifyController = {
+  OPTIONS: () => new Response("", { headers: CORS_HEADERS }),
   async POST(req: Request) {
     const { model, messages } = (await req.json()) as {
       model: string;
