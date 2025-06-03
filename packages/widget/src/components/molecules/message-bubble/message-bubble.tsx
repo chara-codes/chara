@@ -108,14 +108,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   // Auto-expand when thinking starts, auto-collapse when thinking ends
   useEffect(() => {
-    if (isThinking) {
-      // Auto-expand when thinking starts
-      setIsThinkingExpanded(true);
-    } else if (!isThinking && isThinkingExpanded && thinkingContent) {
-      // Auto-collapse when thinking ends, but only if there's content
-      setIsThinkingExpanded(false);
-    }
-
     if (isThinking && isThinkingExpanded && thinkingContentRef.current) {
       const scrollToBottom = () => {
         if (thinkingContentRef.current) {
@@ -132,7 +124,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
       return () => clearInterval(interval);
     }
-  }, [isThinking, isThinkingExpanded, thinkingContent]);
+  }, [isThinking, isThinkingExpanded]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -192,11 +184,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   }, []);
 
   const handleThinkingToggle = useCallback(() => {
-    if (!isThinking || thinkingContent) {
-      // Only allow toggle if not currently thinking, or if there's content to show
-      setIsThinkingExpanded((prev) => !prev);
-    }
-  }, [isThinking, thinkingContent]);
+    setIsThinkingExpanded((prev) => !prev);
+  }, []);
 
   const getIcon = (type: string) => {
     const lowerType = type.toLowerCase();
@@ -317,21 +306,18 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         {hasThinkingContent && (
           <ThinkingContainer isExpanded={isThinkingExpanded}>
             <ThinkingHeader
-              onClick={handleThinkingToggle}
               style={{
-                cursor: !isThinking || thinkingContent ? "pointer" : "default",
-                opacity: !isThinking || thinkingContent ? 1 : 0.7,
+                cursor: "pointer",
+                opacity: 1,
               }}
             >
-              <ThinkingLabel>
+              <ThinkingLabel onClick={handleThinkingToggle}>
                 <ThinkingIcon />
                 {isThinking ? "Thinking..." : "Thought process"}
               </ThinkingLabel>
-              {(!isThinking || thinkingContent) && (
-                <ThinkingToggle>
-                  <ChevronIconSVG isExpanded={isThinkingExpanded} />
-                </ThinkingToggle>
-              )}
+              <ThinkingToggle onClick={handleThinkingToggle}>
+                <ChevronIconSVG isExpanded={isThinkingExpanded} />
+              </ThinkingToggle>
             </ThinkingHeader>
             {(thinkingContent || isThinking) && (
               <ThinkingContent
