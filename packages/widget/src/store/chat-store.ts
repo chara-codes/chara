@@ -9,6 +9,7 @@ import {
   processChatStream,
   type StreamRequestPayload,
 } from "../services/stream-service"; // Import the new service
+import { beautifyPrompt } from "../services/beautify-service";
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [
@@ -59,6 +60,7 @@ interface ChatState {
     status: "kept" | "reverted",
   ) => void;
   deleteMessage: (messageId: string) => void;
+  beautifyPrompt: (currentPrompt: string) => Promise<string>;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -482,6 +484,17 @@ export const useChatStore = create<ChatState>()(
               ),
             };
           });
+        },
+
+        beautifyPrompt: async (currentPrompt) => {
+          const state = get();
+          try {
+            const beautifiedText = await beautifyPrompt(currentPrompt, state.messages);
+            return beautifiedText;
+          } catch (error) {
+            console.error("Failed to beautify prompt:", error);
+            throw error;
+          }
         },
       }),
       {
