@@ -12,7 +12,6 @@ This package contains the web interface for the Chara AI chat application. It's 
 - Command execution interface
 - Regeneration and navigation of AI responses
 - File attachment support
-- Git-based file history visualization
 - Responsive design for mobile and desktop
 
 ## Getting Started
@@ -52,12 +51,8 @@ bun start
 - `app/` - Next.js app router pages and layouts
 - `components/` - React components
   - `ui/` - Shadcn UI components
-  - `file-history/` - Git-based file history components
-- `docs/` - Documentation files
-- `examples/` - Example implementation components
 - `hooks/` - Custom React hooks
 - `lib/` - Utility functions and helpers
-  - `git/` - Isomorphic Git implementation
 - `mocks/` - Mock data for development
 - `public/` - Static assets
 - `styles/` - Global CSS styles
@@ -82,17 +77,6 @@ The preview panel shows:
 - Code previews
 - File changes
 - Visual previews of content
-- File history and diffs
-
-### File History
-
-The file history feature provides:
-
-- Git-based file history tracking
-- Commit history visualization for individual files
-- Side-by-side diff comparison between versions
-- In-browser Git functionality using isomorphic-git
-- File history dialog integration
 
 ### Split Interface
 
