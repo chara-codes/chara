@@ -418,4 +418,96 @@ describe("Beautify Logic Tests", () => {
       expect(result.error).toBe("Beautify request timed out");
     });
   });
+
+  describe("textarea auto-resize logic", () => {
+    // Mock textarea element with height calculation
+    const createMockTextarea = (scrollHeight: number) => ({
+      style: { height: '24px', overflowY: 'hidden' },
+      scrollHeight,
+    });
+
+    const adjustTextareaHeight = (textarea: any, maxHeight: number = 150) => {
+      textarea.style.height = 'auto';
+      const scrollHeight = textarea.scrollHeight;
+      textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+      textarea.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
+      return {
+        height: Math.min(scrollHeight, maxHeight),
+        overflow: scrollHeight > maxHeight ? 'auto' : 'hidden',
+      };
+    };
+
+    it("should set correct height for short text", () => {
+      const mockTextarea = createMockTextarea(24);
+      
+      const result = adjustTextareaHeight(mockTextarea);
+      
+      expect(result.height).toBe(24);
+      expect(result.overflow).toBe('hidden');
+      expect(mockTextarea.style.height).toBe('24px');
+    });
+
+    it("should set correct height for medium text", () => {
+      const mockTextarea = createMockTextarea(80);
+      
+      const result = adjustTextareaHeight(mockTextarea);
+      
+      expect(result.height).toBe(80);
+      expect(result.overflow).toBe('hidden');
+      expect(mockTextarea.style.height).toBe('80px');
+    });
+
+    it("should limit height to max 150px for long text", () => {
+      const mockTextarea = createMockTextarea(200);
+      
+      const result = adjustTextareaHeight(mockTextarea);
+      
+      expect(result.height).toBe(150);
+      expect(result.overflow).toBe('auto');
+      expect(mockTextarea.style.height).toBe('150px');
+      expect(mockTextarea.style.overflowY).toBe('auto');
+    });
+
+    it("should handle exactly max height", () => {
+      const mockTextarea = createMockTextarea(150);
+      
+      const result = adjustTextareaHeight(mockTextarea);
+      
+      expect(result.height).toBe(150);
+      expect(result.overflow).toBe('hidden');
+      expect(mockTextarea.style.height).toBe('150px');
+      expect(mockTextarea.style.overflowY).toBe('hidden');
+    });
+
+    it("should reset height to auto before calculation", () => {
+      const mockTextarea = createMockTextarea(100);
+      mockTextarea.style.height = '200px'; // Start with different height
+      
+      adjustTextareaHeight(mockTextarea);
+      
+      // Height should be reset to auto first, then set to calculated value
+      expect(mockTextarea.style.height).toBe('100px');
+    });
+
+    it("should handle very large text content", () => {
+      const mockTextarea = createMockTextarea(500);
+      
+      const result = adjustTextareaHeight(mockTextarea);
+      
+      expect(result.height).toBe(150);
+      expect(result.overflow).toBe('auto');
+      expect(mockTextarea.style.overflowY).toBe('auto');
+    });
+
+    it("should work with custom max height", () => {
+      const mockTextarea = createMockTextarea(200);
+      const customMaxHeight = 100;
+      
+      const result = adjustTextareaHeight(mockTextarea, customMaxHeight);
+      
+      expect(result.height).toBe(100);
+      expect(result.overflow).toBe('auto');
+      expect(mockTextarea.style.height).toBe('100px');
+    });
+  });
 });

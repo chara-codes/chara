@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import DropdownMenu from "../dropdown-menu"
 import FileInput from "../file-input"
 import type { InputAreaProps } from "../../../types/input-area"
@@ -106,8 +106,25 @@ const InputArea: React.FC<InputAreaProps> = ({
   const [originalText, setOriginalText] = useState<string>("")
   const [isBeautified, setIsBeautified] = useState(false)
   const [isBeautifyLoading, setIsBeautifyLoading] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const { startElementSelection } = useElementSelector(onAddContext)
+
+  // Auto-resize textarea
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current
+    if (textarea) {
+      textarea.style.height = 'auto'
+      const scrollHeight = textarea.scrollHeight
+      const maxHeight = 150
+      textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`
+      textarea.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden'
+    }
+  }, [])
+
+  useEffect(() => {
+    adjustTextareaHeight()
+  }, [message, adjustTextareaHeight])
 
   const beautifyText = useCallback(async () => {
     if (!message.trim()) return
@@ -138,6 +155,8 @@ const InputArea: React.FC<InputAreaProps> = ({
       onSendMessage(message)
       setMessage("")
       setIsBeautified(false)
+      // Reset textarea height after clearing message
+      setTimeout(adjustTextareaHeight, 0)
     }
   }
 
@@ -219,6 +238,7 @@ const InputArea: React.FC<InputAreaProps> = ({
       <InputWrapper>
         <InputControls>
           <StyledInput
+            ref={textareaRef}
             placeholder={isResponding ? "AI is responding..." : "Message the agent..."}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
