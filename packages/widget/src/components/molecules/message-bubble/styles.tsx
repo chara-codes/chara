@@ -532,6 +532,30 @@ export const ChevronIconSVG = ({ isExpanded }: { isExpanded: boolean }) => (
   </svg>
 );
 
+export const ToolCallToggle = styled.button`
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #6b7280;
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  svg {
+    transition: transform 0.3s ease;
+  }
+`;
+
 // Instruction section styles
 export const InstructionSection = styled.div`
   margin-top: 16px;
@@ -603,35 +627,43 @@ export const TabContent = styled.div`
 
 // Tool call styles
 export const ToolCallsContainer = styled.div`
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  transition: all 0.3s ease;
 `;
 
-export const ToolCallItem = styled.div`
-  margin-bottom: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  overflow: hidden;
-  background-color: #f9fafb;
+export const ToolCallItem = styled.div<{ isExpanded: boolean }>`
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
 `;
 
 export const ToolCallHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  background-color: #f3f4f6;
-  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 4px;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+  transition: all 0.2s ease;
+`;
+
+export const ToolCallItemHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 2px 0;
 `;
 
 export const ToolCallName = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #1f2937;
+  font-size: 11px;
+  font-weight: 400;
+  color: #6b7280;
   font-family: monospace;
 `;
 
@@ -671,8 +703,30 @@ export const ToolCallStatus = styled.span<{ status: string }>`
   }};
 `;
 
-export const ToolCallContent = styled.div`
-  padding: 12px;
+export const ToolCallContent = styled.div<{ isExpanded: boolean }>`
+  max-height: ${(props) => (props.isExpanded ? "400px" : "0")};
+  overflow-y: ${(props) => (props.isExpanded ? "auto" : "hidden")};
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: ${(props) => (props.isExpanded ? "8px 0" : "0")};
+  margin-top: 4px;
+
+  /* Custom scrollbar styling */
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
 `;
 
 export const ToolCallArguments = styled.div`
@@ -681,9 +735,9 @@ export const ToolCallArguments = styled.div`
 
 export const ToolCallArgumentsLabel = styled.div`
   font-size: 11px;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 4px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-bottom: 2px;
   text-transform: uppercase;
   letter-spacing: 0.025em;
 `;
@@ -691,11 +745,11 @@ export const ToolCallArgumentsLabel = styled.div`
 export const ToolCallArgumentsContent = styled.pre`
   font-size: 12px;
   font-family: monospace;
-  color: #4b5563;
-  background-color: #f6f8fa;
-  border: 1px solid #e1e4e8;
+  color: #6b7280;
+  background-color: transparent;
+  border: none;
   border-radius: 4px;
-  padding: 8px;
+  padding: 4px 0;
   margin: 0;
   overflow-x: auto;
   white-space: pre-wrap;
@@ -708,20 +762,20 @@ export const ToolCallResult = styled.div`
 
 export const ToolCallResultLabel = styled.div`
   font-size: 11px;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 4px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-bottom: 2px;
   text-transform: uppercase;
   letter-spacing: 0.025em;
 `;
 
 export const ToolCallResultContent = styled.div<{ hasError?: boolean }>`
   font-size: 12px;
-  color: ${(props) => (props.hasError ? "#dc2626" : "#4b5563")};
-  background-color: ${(props) => (props.hasError ? "#fef2f2" : "#f6f8fa")};
-  border: 1px solid ${(props) => (props.hasError ? "#fecaca" : "#e1e4e8")};
+  color: ${(props) => (props.hasError ? "#dc2626" : "#6b7280")};
+  background-color: transparent;
+  border: none;
   border-radius: 4px;
-  padding: 8px;
+  padding: 4px 0;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: ${(props) => (props.hasError ? "inherit" : "monospace")};

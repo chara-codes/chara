@@ -67,6 +67,8 @@ import {
   ToolCallResult,
   ToolCallResultLabel,
   ToolCallResultContent,
+  ToolCallToggle,
+  ToolCallItemHeader,
 } from "./styles";
 import { getPreviewContent } from "./utils";
 import type { FileDiff, ToolResult } from "../../../store/types";
@@ -98,6 +100,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const [activeTab, setActiveTab] = useState<"commands" | "diffs">("diffs");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
+  const [isToolCallsExpanded, setIsToolCallsExpanded] = useState(false);
 
   const contextPanelRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -113,6 +116,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const hasToolCalls = toolCalls !== undefined && toolCalls.length > 0;
   const hasGenerationDetails = hasExecutedCommands || hasFileDiffs;
   const hasThinkingContent = !isUser && (thinkingContent || isThinking);
+  const hasActiveToolCalls = toolCalls?.some(tc => tc.status === 'pending' || tc.status === 'in-progress') || false;
 
   useEffect(() => {
     if (activeTab === "diffs" && !hasFileDiffs) {
@@ -141,6 +145,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       return () => clearInterval(interval);
     }
   }, [isThinking, isThinkingExpanded]);
+
+  // Auto-expand when tool calls start
+  useEffect(() => {
+    if (hasActiveToolCalls && !isToolCallsExpanded) {
+      setIsToolCallsExpanded(true);
+    }
+  }, [hasActiveToolCalls, isToolCallsExpanded]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -201,6 +212,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   const handleThinkingToggle = useCallback(() => {
     setIsThinkingExpanded((prev) => !prev);
+  }, []);
+
+  const handleToolCallsToggle = useCallback(() => {
+    setIsToolCallsExpanded((prev) => !prev);
   }, []);
 
   const formatToolCallResult = useCallback((result: ToolResult | unknown) => {
@@ -445,22 +460,32 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         {!isUser && hasToolCalls && (
           <ToolCallsContainer>
-            <InstructionHeader>
-              <ToolIcon />
-              Tool Calls
-            </InstructionHeader>
-            {toolCalls.map((toolCall) => (
-              <ToolCallItem key={toolCall.id}>
-                <ToolCallHeader>
-                  <ToolCallName>
-                    <ToolIcon />
-                    {toolCall.name}
-                  </ToolCallName>
-                  <ToolCallStatus status={toolCall.status}>
-                    {toolCall.status}
-                  </ToolCallStatus>
-                </ToolCallHeader>
-                <ToolCallContent>
+            <ToolCallHeader
+              style={{
+                cursor: "pointer",
+                opacity: 1,
+              }}
+            >
+              <ToolCallName onClick={handleToolCallsToggle}>
+                <ToolIcon />
+                {hasActiveToolCalls ? "Tool Calls..." : "Tool Calls"} ({toolCalls.length})
+              </ToolCallName>
+              <ToolCallToggle onClick={handleToolCallsToggle}>
+                <ChevronIconSVG isExpanded={isToolCallsExpanded} />
+              </ToolCallToggle>
+            </ToolCallHeader>
+            <ToolCallContent isExpanded={isToolCallsExpanded}>
+              {toolCalls.map((toolCall) => (
+                <ToolCallItem key={toolCall.id} isExpanded={isToolCallsExpanded}>
+                  <ToolCallItemHeader>
+                    <ToolCallName>
+                      <ToolIcon />
+                      {toolCall.name}
+                    </ToolCallName>
+                    <ToolCallStatus status={toolCall.status}>
+                      {toolCall.status}
+                    </ToolCallStatus>
+                  </ToolCallItemHeader>
                   <ToolCallArguments>
                     <ToolCallArgumentsLabel>Arguments</ToolCallArgumentsLabel>
                     <ToolCallArgumentsContent>
@@ -475,9 +500,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                       </ToolCallResultContent>
                     </ToolCallResult>
                   )}
-                </ToolCallContent>
-              </ToolCallItem>
-            ))}
+                </ToolCallItem>
+              ))}
+            </ToolCallContent>
           </ToolCallsContainer>
         )}
 
