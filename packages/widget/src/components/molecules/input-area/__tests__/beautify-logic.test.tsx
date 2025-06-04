@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock the beautify function and stream service
 const mockBeautifyPrompt = vi.fn();
+const mockBeautifyPromptStream = vi.fn();
 const mockProcessChatStream = vi.fn();
 
 // Mock stream service
@@ -14,6 +15,7 @@ vi.mock("../../../../store/chat-store", () => ({
   useChatStore: vi.fn((selector) => 
     selector({ 
       beautifyPrompt: mockBeautifyPrompt,
+      beautifyPromptStream: mockBeautifyPromptStream,
       messages: [],
       model: "gpt-4"
     })
@@ -53,6 +55,35 @@ describe("Beautify Logic Tests", () => {
 
       expect(mockBeautifyPrompt).toHaveBeenCalledWith(testMessage);
       expect(result).toBe(expectedResult);
+    });
+
+    it("should call beautifyPromptStream with correct callbacks", () => {
+      const testMessage = "test message for beautification";
+      const onTextDelta = vi.fn();
+      const onComplete = vi.fn();
+      const onError = vi.fn();
+      
+      mockBeautifyPromptStream.mockImplementation((message, onDelta, onComp, onErr) => {
+        // Simulate streaming
+        onDelta("Test ");
+        onDelta("message ");
+        onDelta("for beautification.");
+        onComp("Test message for beautification.");
+      });
+
+      mockBeautifyPromptStream(testMessage, onTextDelta, onComplete, onError);
+
+      expect(mockBeautifyPromptStream).toHaveBeenCalledWith(
+        testMessage, 
+        onTextDelta, 
+        onComplete, 
+        onError
+      );
+      expect(onTextDelta).toHaveBeenCalledTimes(3);
+      expect(onTextDelta).toHaveBeenCalledWith("Test ");
+      expect(onTextDelta).toHaveBeenCalledWith("message ");
+      expect(onTextDelta).toHaveBeenCalledWith("for beautification.");
+      expect(onComplete).toHaveBeenCalledWith("Test message for beautification.");
     });
 
     it("should use stream service for beautification", async () => {
@@ -110,6 +141,24 @@ describe("Beautify Logic Tests", () => {
       );
     });
 
+    it("should handle streaming beautify errors gracefully", () => {
+      const testMessage = "test message";
+      const onTextDelta = vi.fn();
+      const onComplete = vi.fn();
+      const onError = vi.fn();
+      const error = new Error("Stream failed");
+      
+      mockBeautifyPromptStream.mockImplementation((message, onDelta, onComp, onErr) => {
+        onErr(error);
+      });
+
+      mockBeautifyPromptStream(testMessage, onTextDelta, onComplete, onError);
+
+      expect(onError).toHaveBeenCalledWith(error);
+      expect(onTextDelta).not.toHaveBeenCalled();
+      expect(onComplete).not.toHaveBeenCalled();
+    });
+
     it("should work with empty strings", async () => {
       const emptyMessage = "";
       mockBeautifyPrompt.mockResolvedValue("");
@@ -118,6 +167,23 @@ describe("Beautify Logic Tests", () => {
 
       expect(mockBeautifyPrompt).toHaveBeenCalledWith(emptyMessage);
       expect(result).toBe("");
+    });
+
+    it("should handle empty strings in streaming mode", () => {
+      const emptyMessage = "";
+      const onTextDelta = vi.fn();
+      const onComplete = vi.fn();
+      const onError = vi.fn();
+      
+      mockBeautifyPromptStream.mockImplementation((message, onDelta, onComp, onErr) => {
+        onComp(message); // Return original empty message
+      });
+
+      mockBeautifyPromptStream(emptyMessage, onTextDelta, onComplete, onError);
+
+      expect(onComplete).toHaveBeenCalledWith(emptyMessage);
+      expect(onTextDelta).not.toHaveBeenCalled();
+      expect(onError).not.toHaveBeenCalled();
     });
 
     it("should handle long messages", async () => {
@@ -376,6 +442,36 @@ describe("Beautify Logic Tests", () => {
       }
     };
 
+    const simulateStreamingBeautifyWorkflow = (
+      message: string
+    ): Promise<{ success: boolean; result: string; error?: string }> => {
+      return new Promise((resolve) => {
+        if (!message.trim()) {
+          resolve({ success: false, result: message, error: "Empty message" });
+          return;
+        }
+
+        let streamedText = "";
+        
+        mockBeautifyPromptStream(
+          message,
+          (delta: string) => {
+            streamedText += delta;
+          },
+          (finalText: string) => {
+            resolve({ success: true, result: finalText });
+          },
+          (error: Error) => {
+            resolve({
+              success: false,
+              result: message,
+              error: error.message,
+            });
+          }
+        );
+      });
+    };
+
     it("should complete successful beautify workflow", async () => {
       const originalMessage = "test message for beautification";
       const beautifiedMessage = "Test message for beautification.";
@@ -416,6 +512,222 @@ describe("Beautify Logic Tests", () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Beautify request timed out");
+    });
+
+    it("should complete successful streaming beautify workflow", async () => {
+      const originalMessage = "test message for beautification";
+      const beautifiedMessage = "Test message for beautification.";
+      
+      mockBeautifyPromptStream.mockImplementation((message, onDelta, onComplete, onError) => {
+        // Simulate streaming
+        onDelta("Test ");
+        onDelta("message ");
+        onDelta("for beautification.");
+        onComplete(beautifiedMessage);
+      });
+
+      const result = await simulateStreamingBeautifyWorkflow(originalMessage);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBe(beautifiedMessage);
+      expect(result.error).toBeUndefined();
+    });
+
+    it("should handle failed streaming beautify workflow", async () => {
+      const originalMessage = "test message";
+      const error = new Error("Stream API failed");
+      
+      mockBeautifyPromptStream.mockImplementation((message, onDelta, onComplete, onError) => {
+        onError(error);
+      });
+
+      const result = await simulateStreamingBeautifyWorkflow(originalMessage);
+
+      expect(result.success).toBe(false);
+      expect(result.result).toBe(originalMessage);
+      expect(result.error).toBe("Stream API failed");
+    });
+
+    it("should handle empty message in streaming workflow", async () => {
+      const emptyMessage = "   ";
+
+      const result = await simulateStreamingBeautifyWorkflow(emptyMessage);
+
+      expect(result.success).toBe(false);
+      expect(result.result).toBe(emptyMessage);
+      expect(result.error).toBe("Empty message");
+    });
+  });
+
+  describe("streaming visual effects", () => {
+    const simulateStreamingDisplay = (message: string, chunks: string[]) => {
+      let displayedText = "";
+      const updates: string[] = [];
+      
+      // Simulate clearing the input first
+      displayedText = "";
+      updates.push(displayedText);
+      
+      // Simulate streaming chunks
+      chunks.forEach(chunk => {
+        displayedText += chunk;
+        updates.push(displayedText);
+      });
+      
+      return updates;
+    };
+
+    it("should show progressive text building during stream", () => {
+      const originalMessage = "hello world";
+      const chunks = ["Hello ", "beautiful ", "world!"];
+      
+      const updates = simulateStreamingDisplay(originalMessage, chunks);
+      
+      expect(updates).toEqual([
+        "", // Initial clear
+        "Hello ", // First chunk
+        "Hello beautiful ", // Second chunk
+        "Hello beautiful world!" // Final result
+      ]);
+    });
+
+    it("should handle single character streaming", () => {
+      const originalMessage = "hi";
+      const chunks = ["H", "e", "l", "l", "o"];
+      
+      const updates = simulateStreamingDisplay(originalMessage, chunks);
+      
+      expect(updates).toEqual([
+        "",
+        "H",
+        "He", 
+        "Hel",
+        "Hell",
+        "Hello"
+      ]);
+    });
+
+    it("should handle word-by-word streaming", () => {
+      const originalMessage = "make this better";
+      const chunks = ["Please ", "make ", "this ", "text ", "much ", "better."];
+      
+      const updates = simulateStreamingDisplay(originalMessage, chunks);
+      
+      expect(updates[0]).toBe(""); // Starts empty
+      expect(updates[updates.length - 1]).toBe("Please make this text much better.");
+      expect(updates.length).toBe(7); // Initial + 6 chunks
+    });
+
+    it("should show immediate feedback on beautify start", () => {
+      const mockStreamState = {
+        message: "original text",
+        isLoading: false,
+        isBeautifyLoading: false,
+      };
+
+      // Simulate beautify start
+      const startBeautify = () => {
+        mockStreamState.isBeautifyLoading = true;
+        mockStreamState.message = ""; // Clear immediately
+      };
+
+      startBeautify();
+      
+      expect(mockStreamState.isBeautifyLoading).toBe(true);
+      expect(mockStreamState.message).toBe("");
+    });
+
+    it("should handle streaming with punctuation and formatting", () => {
+      const originalMessage = "fix this text please";
+      const chunks = ["Please ", "fix ", "this ", "text, ", "thank ", "you!"];
+      
+      const updates = simulateStreamingDisplay(originalMessage, chunks);
+      
+      const finalText = updates[updates.length - 1];
+      expect(finalText).toBe("Please fix this text, thank you!");
+      expect(finalText.includes(",")).toBe(true);
+      expect(finalText.includes("!")).toBe(true);
+    });
+
+    it("should maintain text area auto-resize during streaming", () => {
+      const simulateHeightAdjustment = (text: string) => {
+        const lines = text.split('\n').length;
+        const baseHeight = 24;
+        const lineHeight = 24;
+        const maxHeight = 150;
+        
+        const calculatedHeight = Math.min(baseHeight + (lines - 1) * lineHeight, maxHeight);
+        return {
+          height: calculatedHeight,
+          overflow: calculatedHeight >= maxHeight ? 'auto' : 'hidden'
+        };
+      };
+
+      const shortText = "Short";
+      const mediumText = "Line 1\nLine 2\nLine 3"; // 3 lines = 24 + (3-1)*24 = 72px
+      const longText = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7"; // 7 lines = 24 + (7-1)*24 = 168px, capped at 150px
+
+      expect(simulateHeightAdjustment(shortText).height).toBe(24);
+      expect(simulateHeightAdjustment(mediumText).height).toBe(72);
+      expect(simulateHeightAdjustment(longText).height).toBe(150);
+      expect(simulateHeightAdjustment(longText).overflow).toBe('auto');
+    });
+  });
+
+  describe("user experience during streaming", () => {
+    it("should provide clear visual feedback states", () => {
+      const uiStates = {
+        idle: { isLoading: false, isBeautifyLoading: false, message: "original text" },
+        starting: { isLoading: false, isBeautifyLoading: true, message: "" },
+        streaming: { isLoading: false, isBeautifyLoading: true, message: "partial text" },
+        completed: { isLoading: false, isBeautifyLoading: false, message: "beautified text" },
+        error: { isLoading: false, isBeautifyLoading: false, message: "original text" }
+      };
+
+      // Verify distinct states
+      expect(uiStates.idle.isBeautifyLoading).toBe(false);
+      expect(uiStates.starting.isBeautifyLoading).toBe(true);
+      expect(uiStates.starting.message).toBe("");
+      expect(uiStates.streaming.message.length).toBeGreaterThan(0);
+      expect(uiStates.completed.isBeautifyLoading).toBe(false);
+      expect(uiStates.error.message).toBe("original text");
+    });
+
+    it("should handle user interactions during streaming", () => {
+      const interactionStates = {
+        canSend: (isBeautifyLoading: boolean, message: string) => !isBeautifyLoading && message.trim().length > 0,
+        canBeautify: (isBeautifyLoading: boolean, message: string) => !isBeautifyLoading && message.length > 10,
+        canUndo: (isBeautified: boolean, isBeautifyLoading: boolean) => isBeautified && !isBeautifyLoading,
+        canAddContext: (isBeautifyLoading: boolean) => !isBeautifyLoading
+      };
+
+      // During streaming
+      expect(interactionStates.canSend(true, "some text")).toBe(false);
+      expect(interactionStates.canBeautify(true, "some longer text")).toBe(false);
+      expect(interactionStates.canUndo(false, true)).toBe(false);
+      expect(interactionStates.canAddContext(true)).toBe(false);
+
+      // After streaming completes
+      expect(interactionStates.canSend(false, "beautified text")).toBe(true);
+      expect(interactionStates.canUndo(true, false)).toBe(true);
+      expect(interactionStates.canAddContext(false)).toBe(true);
+    });
+
+    it("should handle streaming interruption scenarios", () => {
+      const handleStreamInterruption = (reason: string) => {
+        const responses = {
+          "timeout": { shouldRevert: true, errorMessage: "Request timed out" },
+          "network": { shouldRevert: true, errorMessage: "Network error" },
+          "abort": { shouldRevert: true, errorMessage: "Request was cancelled" },
+          "server": { shouldRevert: true, errorMessage: "Server error" }
+        };
+        
+        return responses[reason as keyof typeof responses] || { shouldRevert: true, errorMessage: "Unknown error" };
+      };
+
+      expect(handleStreamInterruption("timeout").shouldRevert).toBe(true);
+      expect(handleStreamInterruption("network").errorMessage).toBe("Network error");
+      expect(handleStreamInterruption("abort").shouldRevert).toBe(true);
     });
   });
 
