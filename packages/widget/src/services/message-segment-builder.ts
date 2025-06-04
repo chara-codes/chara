@@ -11,6 +11,7 @@ export class MessageSegmentBuilder {
   private currentTextSegment = '';
   private pendingToolCalls = new Map<string, ToolCall>();
   private toolCallInsertionPositions = new Map<string, number>();
+  private completedToolCalls = new Set<string>();
 
 
 
@@ -71,9 +72,9 @@ export class MessageSegmentBuilder {
         this.segments[position].toolCall = { ...toolCall };
       }
       
-      // Clean up tracking data
+      // Move to completed set and clean up pending tracking
+      this.completedToolCalls.add(toolCallId);
       this.pendingToolCalls.delete(toolCallId);
-      this.toolCallInsertionPositions.delete(toolCallId);
     }
   }
 
@@ -89,9 +90,9 @@ export class MessageSegmentBuilder {
         this.segments[position].toolCall = { ...toolCall };
       }
       
-      // Clean up tracking data
+      // Move to completed set and clean up pending tracking
+      this.completedToolCalls.add(toolCallId);
       this.pendingToolCalls.delete(toolCallId);
-      this.toolCallInsertionPositions.delete(toolCallId);
     }
   }
 
@@ -138,6 +139,13 @@ export class MessageSegmentBuilder {
     this.currentTextSegment = '';
     this.pendingToolCalls.clear();
     this.toolCallInsertionPositions.clear();
+    this.completedToolCalls.clear();
+  }
+
+  isToolCallTracked(toolCallId: string): boolean {
+    return this.pendingToolCalls.has(toolCallId) || 
+           this.toolCallInsertionPositions.has(toolCallId) ||
+           this.completedToolCalls.has(toolCallId);
   }
 
   private finalizeCurrentTextSegment(): void {

@@ -293,11 +293,9 @@ export const useChatStore = create<ChatState>()(
               agentPayload,
               {
                 onTextDelta: (delta) => {
-                  segmentBuilder.addTextDelta(delta);
                   updateAIMessageInStore((msg) => ({
                     content: (msg.content || "") + delta,
                     isThinking: false,
-                    segments: segmentBuilder.getSegments() as Message['segments'],
                   }));
                   set({ isThinking: false });
                 },
@@ -311,11 +309,9 @@ export const useChatStore = create<ChatState>()(
                 onToolCall: (toolCall) => {
                   console.log("Store: Tool Call received", toolCall);
                   
-                  // Handle legacy tool calls that don't come through segment builder
-                  segmentBuilder.handleLegacyToolCall(toolCall);
+                  const incomingToolCall = toolCall as ToolCall;
                   
                   updateAIMessageInStore(msg => {
-                    const incomingToolCall = toolCall as ToolCall;
                     const existingToolCalls = msg.toolCalls || [];
                     console.log("Store: Current tool calls", existingToolCalls);
                     
@@ -330,7 +326,6 @@ export const useChatStore = create<ChatState>()(
                       console.log("Store: Updated tool calls", updatedToolCalls);
                       return { 
                         toolCalls: updatedToolCalls,
-                        segments: segmentBuilder.getSegments() as Message['segments'],
                       };
                     }
                     // Add new tool call
@@ -338,7 +333,6 @@ export const useChatStore = create<ChatState>()(
                     console.log("Store: New tool calls", newToolCalls);
                     return { 
                       toolCalls: newToolCalls,
-                      segments: segmentBuilder.getSegments() as Message['segments'],
                     };
                   });
                 },
@@ -406,7 +400,6 @@ export const useChatStore = create<ChatState>()(
                   console.log("Chat Store: Stream completed", data);
                   // Handle completion with usage statistics
                   // data contains: finishReason, usage (promptTokens, completionTokens), isContinued
-                  set({ isThinking: false });
                 },
               },
               newAbortController.signal,

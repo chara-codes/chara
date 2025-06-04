@@ -24,6 +24,7 @@ export const chatAgent = (
     ...options,
     system: "You are a helpful assistant.",
     tools: {
+      // mcp: mcp.tools(),
       weather: tool({
         description: "Get the weather in a location",
         parameters: z.object({
@@ -33,6 +34,19 @@ export const chatAgent = (
           location,
           temperature: 72 + Math.floor(Math.random() * 21) - 10,
         }),
+      }),
+      saveFile: tool({
+        description: "Save a file",
+        parameters: z.object({
+          name: z.string().describe("The name of the file"),
+          content: z.string().describe("The content of the file"),
+        }),
+        execute: async ({ name, content }) => {
+          logger.info("File name:", name);
+          logger.dump(content);
+          await Bun.write(name, content);
+          return { success: true, name };
+        },
       }),
     },
     model: aiModel,

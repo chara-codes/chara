@@ -6,6 +6,7 @@ export const FileIcon = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>File</title>
     <path
       d="M13 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V9L13 2Z"
       stroke="currentColor"
@@ -31,6 +32,7 @@ export const LinkIcon = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Link</title>
     <path
       d="M10 13C10.4295 13.5741 10.9774 14.0492 11.6066 14.3929C12.2357 14.7367 12.9315 14.9411 13.6467 14.9923C14.3618 15.0435 15.0796 14.9404 15.7513 14.6898C16.4231 14.4392 17.0331 14.0471 17.54 13.54L20.54 10.54C21.4508 9.59699 21.9548 8.33397 21.9434 7.02299C21.932 5.71201 21.4061 4.45794 20.4791 3.5309C19.5521 2.60386 18.298 2.07802 16.987 2.06663C15.676 2.05523 14.413 2.55921 13.47 3.47L11.75 5.18"
       stroke="currentColor"
@@ -56,6 +58,7 @@ export const TextIcon = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Text</title>
     <path
       d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
       stroke="currentColor"
@@ -102,6 +105,7 @@ export const DocumentationIcon = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Documentation</title>
     <path
       d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20"
       stroke="currentColor"
@@ -127,6 +131,7 @@ export const TerminalIcon = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Terminal</title>
     <path
       d="M4 17L10 11L4 5"
       stroke="currentColor"
@@ -152,6 +157,7 @@ export const FilesIcon = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Files</title>
     <path
       d="M20 6H12L10 4H4C2.89 4 2 4.89 2 6V18C2 19.11 2.89 20 4 20H20C21.11 20 22 19.11 22 18V8C22 6.89 21.11 6 20 6Z"
       stroke="currentColor"
@@ -170,6 +176,7 @@ export const CommandsIcon = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Commands</title>
     <path
       d="M18 3C19.6569 3 21 4.34315 21 6V18C21 19.6569 19.6569 21 18 21H6C4.34315 21 3 19.6569 3 18V6C3 4.34315 4.34315 3 6 3H18Z"
       stroke="currentColor"
@@ -216,6 +223,7 @@ export const DiffIcon = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Diff</title>
     <path
       d="M11 18H13V16H15V14H13V12H11V14H9V16H11V18Z"
       stroke="currentColor"
@@ -255,6 +263,7 @@ export const TrashIcon = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Trash</title>
     <path
       d="M3 6H5H21"
       stroke="currentColor"

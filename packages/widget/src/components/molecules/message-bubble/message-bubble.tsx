@@ -118,7 +118,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const hasToolCalls = toolCalls !== undefined && toolCalls.length > 0;
   const hasGenerationDetails = hasExecutedCommands || hasFileDiffs;
   const hasThinkingContent = !isUser && (thinkingContent || isThinking);
-  const hasActiveToolCalls = toolCalls?.some(tc => tc.status === 'pending' || tc.status === 'in-progress') || false;
+  const hasActiveToolCalls =
+    toolCalls?.some(
+      (tc) => tc.status === "pending" || tc.status === "in-progress",
+    ) || false;
 
   useEffect(() => {
     if (activeTab === "diffs" && !hasFileDiffs) {
@@ -147,13 +150,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
       return () => clearInterval(interval);
     }
   }, [isThinking, isThinkingExpanded]);
-
-  // Auto-expand when tool calls start
-  useEffect(() => {
-    if (hasActiveToolCalls && !isToolCallsExpanded) {
-      setIsToolCallsExpanded(true);
-    }
-  }, [hasActiveToolCalls, isToolCallsExpanded]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -216,35 +212,31 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     setIsThinkingExpanded((prev) => !prev);
   }, []);
 
-  const handleToolCallsToggle = useCallback(() => {
-    setIsToolCallsExpanded((prev) => !prev);
-  }, []);
-
   const formatToolCallResult = useCallback((result: ToolResult | unknown) => {
     console.log("formatToolCallResult: received result", result);
-    
+
     if (!result) return "No result";
-    
+
     const resultObj = result as Record<string, unknown>;
-    
+
     // Handle error case
-    if (typeof result === 'object' && result !== null && 'error' in result) {
+    if (typeof result === "object" && result !== null && "error" in result) {
       console.log("formatToolCallResult: using error", resultObj.error);
       return String(resultObj.error);
     }
-    
+
     // Handle content case
-    if (typeof result === 'object' && result !== null && 'content' in result) {
+    if (typeof result === "object" && result !== null && "content" in result) {
       console.log("formatToolCallResult: using content", resultObj.content);
       return String(resultObj.content);
     }
-    
+
     // Handle data case
-    if (typeof result === 'object' && result !== null && 'data' in result) {
+    if (typeof result === "object" && result !== null && "data" in result) {
       console.log("formatToolCallResult: using data", resultObj.data);
       return JSON.stringify(resultObj.data, null, 2);
     }
-    
+
     // Handle direct result object
     console.log("formatToolCallResult: using direct result", result);
     return JSON.stringify(result, null, 2);
@@ -465,49 +457,33 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         {!isUser && hasToolCalls && (!segments || segments.length === 0) && (
           <ToolCallsContainer>
-            <ToolCallHeader
-              style={{
-                cursor: "pointer",
-                opacity: 1,
-              }}
-            >
-              <ToolCallName onClick={handleToolCallsToggle}>
-                <ToolIcon />
-                {hasActiveToolCalls ? "Tool Calls..." : "Tool Calls"} ({toolCalls.length})
-              </ToolCallName>
-              <ToolCallToggle onClick={handleToolCallsToggle}>
-                <ChevronIconSVG isExpanded={isToolCallsExpanded} />
-              </ToolCallToggle>
-            </ToolCallHeader>
-            <ToolCallContent isExpanded={isToolCallsExpanded}>
-              {toolCalls.map((toolCall) => (
-                <ToolCallItem key={toolCall.id} isExpanded={isToolCallsExpanded}>
-                  <ToolCallItemHeader>
-                    <ToolCallName>
-                      <ToolIcon />
-                      {toolCall.name}
-                    </ToolCallName>
-                    <ToolCallStatus status={toolCall.status}>
-                      {toolCall.status}
-                    </ToolCallStatus>
-                  </ToolCallItemHeader>
-                  <ToolCallArguments>
-                    <ToolCallArgumentsLabel>Arguments</ToolCallArgumentsLabel>
-                    <ToolCallArgumentsContent>
-                      {JSON.stringify(toolCall.arguments, null, 2)}
-                    </ToolCallArgumentsContent>
-                  </ToolCallArguments>
-                  {toolCall.result && (
-                    <ToolCallResult>
-                      <ToolCallResultLabel>Result</ToolCallResultLabel>
-                      <ToolCallResultContent hasError={!!toolCall.result.error}>
-                        {formatToolCallResult(toolCall.result)}
-                      </ToolCallResultContent>
-                    </ToolCallResult>
-                  )}
-                </ToolCallItem>
-              ))}
-            </ToolCallContent>
+            {toolCalls.map((toolCall) => (
+              <ToolCallItem key={toolCall.id} isExpanded={isToolCallsExpanded}>
+                <ToolCallItemHeader>
+                  <ToolCallName>
+                    <ToolIcon />
+                    {toolCall.name}
+                  </ToolCallName>
+                  <ToolCallStatus status={toolCall.status}>
+                    {toolCall.status}
+                  </ToolCallStatus>
+                </ToolCallItemHeader>
+                <ToolCallArguments>
+                  <ToolCallArgumentsLabel>Arguments</ToolCallArgumentsLabel>
+                  <ToolCallArgumentsContent>
+                    {JSON.stringify(toolCall.arguments, null, 2)}
+                  </ToolCallArgumentsContent>
+                </ToolCallArguments>
+                {toolCall.result && (
+                  <ToolCallResult>
+                    <ToolCallResultLabel>Result</ToolCallResultLabel>
+                    <ToolCallResultContent hasError={!!toolCall.result.error}>
+                      {formatToolCallResult(toolCall.result)}
+                    </ToolCallResultContent>
+                  </ToolCallResult>
+                )}
+              </ToolCallItem>
+            ))}
           </ToolCallsContainer>
         )}
 
