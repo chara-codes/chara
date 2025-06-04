@@ -203,10 +203,14 @@ export const StyledInput = styled.textarea`
   padding: 6px 0;
   width: 100%;
   min-height: 24px;
+  max-height: 150px;
   border: none;
   outline: none;
   resize: none;
   background: transparent;
+  line-height: 1.5;
+  transition: height 0.1s ease;
+  overflow-y: hidden;
 
   &::placeholder {
     color: #9ca3af;

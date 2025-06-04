@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import DropdownMenu from "../dropdown-menu"
 import FileInput from "../file-input"
 import type { InputAreaProps } from "../../../types/input-area"
@@ -92,7 +92,7 @@ const InputArea: React.FC<InputAreaProps> = ({
 }) => {
   // Use the context-aware hook to get buttonConfig from the store
   const storeButtonConfig = useUIStore((state) => state.inputButtonConfig)
-  const beautifyPrompt = useChatStore((state) => state.beautifyPrompt)
+  const beautifyPromptStream = useChatStore((state) => state.beautifyPromptStream)
 
   // If buttonConfig prop is provided, it overrides the store's config.
   // Otherwise, use the config from the store.
@@ -106,27 +106,68 @@ const InputArea: React.FC<InputAreaProps> = ({
   const [originalText, setOriginalText] = useState<string>("")
   const [isBeautified, setIsBeautified] = useState(false)
   const [isBeautifyLoading, setIsBeautifyLoading] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const { startElementSelection } = useElementSelector(onAddContext)
 
-  const beautifyText = useCallback(async () => {
+  // Auto-resize textarea
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current
+    if (textarea) {
+      textarea.style.height = 'auto'
+      const scrollHeight = textarea.scrollHeight
+      const maxHeight = 150
+      textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`
+      textarea.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden'
+    }
+  }, [])
+
+  useEffect(() => {
+    adjustTextareaHeight()
+  }, [adjustTextareaHeight])
+
+  const beautifyText = useCallback(() => {
     if (!message.trim()) return
 
+    const currentMessage = message
     setIsBeautifyLoading(true)
-    setOriginalText(message)
+    setOriginalText(currentMessage)
+    
+    // Clear the current message to show streaming effect
+    setMessage("")
 
-    try {
-      const beautifiedText = await beautifyPrompt(message)
-      setMessage(beautifiedText)
-      setIsBeautified(true)
-    } catch (error) {
-      console.error("Failed to beautify text:", error)
-      // Revert to original text on error
-      setMessage(originalText || message)
-    } finally {
-      setIsBeautifyLoading(false)
-    }
-  }, [message, beautifyPrompt, originalText])
+    beautifyPromptStream(
+      currentMessage,
+      // onTextDelta - update message in real-time
+      (delta: string) => {
+        setMessage(prev => prev + delta)
+        // Trigger height adjustment after each delta
+        setTimeout(() => {
+          const textarea = textareaRef.current
+          if (textarea) {
+            textarea.style.height = 'auto'
+            const scrollHeight = textarea.scrollHeight
+            const maxHeight = 150
+            textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`
+            textarea.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden'
+          }
+        }, 0)
+      },
+      // onComplete - finalize the beautification
+      (finalText: string) => {
+        setMessage(finalText)
+        setIsBeautified(true)
+        setIsBeautifyLoading(false)
+      },
+      // onError - handle errors
+      (error: Error) => {
+        console.error("Failed to beautify text:", error)
+        // Revert to original text on error
+        setMessage(currentMessage)
+        setIsBeautifyLoading(false)
+      }
+    )
+  }, [message, beautifyPromptStream])
 
   const handleUndo = useCallback(() => {
     setMessage(originalText)
@@ -138,6 +179,8 @@ const InputArea: React.FC<InputAreaProps> = ({
       onSendMessage(message)
       setMessage("")
       setIsBeautified(false)
+      // Reset textarea height after clearing message
+      setTimeout(adjustTextareaHeight, 0)
     }
   }
 
@@ -219,9 +262,13 @@ const InputArea: React.FC<InputAreaProps> = ({
       <InputWrapper>
         <InputControls>
           <StyledInput
+            ref={textareaRef}
             placeholder={isResponding ? "AI is responding..." : "Message the agent..."}
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              setMessage(e.target.value)
+              adjustTextareaHeight()
+            }}
             onKeyDown={handleKeyDown}
             disabled={isResponding || isLoading || isBeautifyLoading}
           />
