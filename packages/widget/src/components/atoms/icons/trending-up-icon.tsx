@@ -1,10 +1,10 @@
-import type React from "react"
+import type React from "react";
 
 export interface TrendingUpIconProps {
-  width?: number
-  height?: number
-  color?: string
-  className?: string
+  width?: number;
+  height?: number;
+  color?: string;
+  className?: string;
 }
 
 /**
@@ -39,5 +39,5 @@ export const TrendingUpIcon: React.FC<TrendingUpIconProps> = ({
         strokeLinejoin="round"
       />
     </svg>
-  )
-}
+  );
+};

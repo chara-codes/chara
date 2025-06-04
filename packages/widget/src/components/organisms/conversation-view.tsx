@@ -13,8 +13,10 @@ import { useChatStore } from "../../store/chat-store"
 
 const ChatContent = styled.div`
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 12px;
+  display: flex;
+  flex-direction: column;
 `
 
 const EmptyStateContainer = styled.div`
@@ -138,6 +140,7 @@ const ConversationView: React.FC = () => {
           {activeChat || messages.length > 0 ? (
             <ChatMessages
               messages={messages}
+              isResponding={isResponding}
               onKeepAllDiffs={handleKeepAllDiffs}
               onRevertAllDiffs={handleRevertAllDiffs}
               onKeepDiff={handleKeepDiff}
