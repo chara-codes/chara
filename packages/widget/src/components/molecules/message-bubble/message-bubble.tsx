@@ -9,6 +9,7 @@ import "highlight.js/styles/github.css"; // Import highlight.js CSS theme for sy
 import CommandTerminal from "../command-terminal";
 import FileDiffComponent from "../file-diff";
 import FileChangesList from "../file-changes-list";
+import { InlineMessageContent } from "./inline-message-content";
 import type { MessageBubbleProps } from "./types";
 import {
   FileIcon,
@@ -87,6 +88,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   executedCommands,
   fileDiffs,
   toolCalls,
+  segments,
   onKeepAllDiffs,
   onRevertAllDiffs,
   onKeepDiff,
@@ -392,7 +394,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
 
         <MessageContent>
-          {isUser ? (
+          {segments && segments.length > 0 ? (
+            // Render message with inline tool calls
+            <InlineMessageContent segments={segments} isUser={isUser} />
+          ) : isUser ? (
             content // Render user content as plain text
           ) : (
             // Render AI content as Markdown with syntax highlighting
@@ -458,7 +463,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           </>
         )}
 
-        {!isUser && hasToolCalls && (
+        {!isUser && hasToolCalls && (!segments || segments.length === 0) && (
           <ToolCallsContainer>
             <ToolCallHeader
               style={{

@@ -13,6 +13,11 @@ export interface MessageBubbleProps {
   executedCommands?: ExecutedCommand[]
   fileDiffs?: FileDiff[]
   toolCalls?: ToolCall[]
+  segments?: Array<{
+    type: 'text' | 'tool-call';
+    content: string;
+    toolCall?: ToolCall;
+  }>
   onKeepAllDiffs?: () => void
   onRevertAllDiffs?: () => void
   onKeepDiff?: (diffId: string) => void

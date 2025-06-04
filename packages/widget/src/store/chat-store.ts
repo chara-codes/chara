@@ -10,6 +10,7 @@ import {
   type StreamRequestPayload,
   type StreamCallbacks,
 } from "../services/stream-service"; // Import the new service
+import { MessageSegmentBuilder } from "../services/message-segment-builder";
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [
@@ -255,6 +256,9 @@ export const useChatStore = create<ChatState>()(
             // context_items: contextItems.map(item => ({ name: item.name, type: item.type, data: item.data })),
           };
 
+          // Create segment builder for inline tool calls
+          const segmentBuilder = new MessageSegmentBuilder();
+
           const updateAIMessageInStore = (
             updater: (currentAIMsg: Message) => Partial<Message>,
           ) => {
@@ -289,9 +293,11 @@ export const useChatStore = create<ChatState>()(
               agentPayload,
               {
                 onTextDelta: (delta) => {
+                  segmentBuilder.addTextDelta(delta);
                   updateAIMessageInStore((msg) => ({
                     content: (msg.content || "") + delta,
                     isThinking: false,
+                    segments: segmentBuilder.getSegments() as Message['segments'],
                   }));
                   set({ isThinking: false });
                 },
@@ -304,6 +310,10 @@ export const useChatStore = create<ChatState>()(
                 },
                 onToolCall: (toolCall) => {
                   console.log("Store: Tool Call received", toolCall);
+                  
+                  // Handle legacy tool calls that don't come through segment builder
+                  segmentBuilder.handleLegacyToolCall(toolCall);
+                  
                   updateAIMessageInStore(msg => {
                     const incomingToolCall = toolCall as ToolCall;
                     const existingToolCalls = msg.toolCalls || [];
@@ -315,17 +325,21 @@ export const useChatStore = create<ChatState>()(
                     
                     if (existingIndex >= 0) {
                       // Update existing tool call
-                      console.log("Store: Updating existing tool call", incomingToolCall.id);
                       const updatedToolCalls = [...existingToolCalls];
                       updatedToolCalls[existingIndex] = incomingToolCall;
                       console.log("Store: Updated tool calls", updatedToolCalls);
-                      return { toolCalls: updatedToolCalls };
+                      return { 
+                        toolCalls: updatedToolCalls,
+                        segments: segmentBuilder.getSegments() as Message['segments'],
+                      };
                     }
                     // Add new tool call
-                    console.log("Store: Adding new tool call", incomingToolCall.id);
                     const newToolCalls = [...existingToolCalls, incomingToolCall];
-                    console.log("Store: New tool calls array", newToolCalls);
-                    return { toolCalls: newToolCalls };
+                    console.log("Store: New tool calls", newToolCalls);
+                    return { 
+                      toolCalls: newToolCalls,
+                      segments: segmentBuilder.getSegments() as Message['segments'],
+                    };
                   });
                 },
                 onStructuredData: (data) => {
@@ -377,7 +391,18 @@ export const useChatStore = create<ChatState>()(
                   set({ isThinking: false });
                   // Final state update handled in finally block of sendMessage
                 },
+                onSegmentUpdate: (segments) => {
+                  updateAIMessageInStore(() => ({
+                    segments: segments as Message['segments'],
+                  }));
+                },
                 onCompletion: (data) => {
+                  // Finalize segments when stream completes
+                  const finalSegments = segmentBuilder.finalize();
+                  updateAIMessageInStore(() => ({
+                    segments: finalSegments as Message['segments'],
+                  }));
+                  
                   console.log("Chat Store: Stream completed", data);
                   // Handle completion with usage statistics
                   // data contains: finishReason, usage (promptTokens, completionTokens), isContinued

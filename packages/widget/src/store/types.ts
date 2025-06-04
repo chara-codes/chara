@@ -12,6 +12,11 @@ export interface Message {
   thinkingContent?: string // Store thinking content separately
   isThinking?: boolean // Track if message is currently in thinking mode
   toolCalls?: ToolCall[] // Add tool calls
+  segments?: Array<{
+    type: 'text' | 'tool-call';
+    content: string;
+    toolCall?: ToolCall;
+  }> // Add message segments for inline tool call rendering
 }
 
 export interface Chat {

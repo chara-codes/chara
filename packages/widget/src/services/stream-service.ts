@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Message, FileDiff } from "../store/types"; // Assuming types are in store
+import { MessageSegmentBuilder } from "./message-segment-builder";
 
 export interface StreamCallbacks {
   onTextDelta: (delta: string) => void;
@@ -14,6 +15,18 @@ export interface StreamCallbacks {
     usage?: { promptTokens: number; completionTokens: number };
     isContinued?: boolean;
   }) => void; // Optional: for completion stats
+  onSegmentUpdate?: (segments: Array<{
+    type: 'text' | 'tool-call';
+    content: string;
+    toolCall?: {
+      id: string;
+      name: string;
+      arguments: Record<string, unknown>;
+      status: "pending" | "in-progress" | "success" | "error";
+      result?: unknown;
+      timestamp: string;
+    };
+  }>) => void; // For inline tool call rendering
 }
 
 export interface StreamRequestPayload {
@@ -79,6 +92,9 @@ export async function processChatStream(
       result?: unknown;
       timestamp: string;
     }>();
+
+    // Message segment builder for inline tool calls
+    const segmentBuilder = new MessageSegmentBuilder();
 
     while (true) {
       const { done, value } = await reader.read();
@@ -164,6 +180,14 @@ export async function processChatStream(
 
               // Process the text delta with thinking tag handling
               processTextWithThinkingTags(textDelta);
+              
+              // Also add to segment builder if not thinking
+              if (!isThinking) {
+                segmentBuilder.addTextDelta(textDelta);
+                if (callbacks.onSegmentUpdate) {
+                  callbacks.onSegmentUpdate(segmentBuilder.getSegments());
+                }
+              }
               break;
             }
             case "1": // Tool Call
@@ -191,27 +215,49 @@ export async function processChatStream(
                 };
                 console.log("Stream Service: Sending initial tool call to UI", toolCall);
                 callbacks.onToolCall(toolCall);
+
+                // Add to segment builder for inline rendering
+                segmentBuilder.beginToolCall(parsedData.toolCallId, parsedData.toolName);
+                if (callbacks.onSegmentUpdate) {
+                  callbacks.onSegmentUpdate(segmentBuilder.getSegments());
+                }
               }
               break;
             case "c": // Tool call arguments delta
               // Build up arguments text
               console.log("Stream Service: Tool call args delta", parsedData);
-              if (parsedData.toolCallId && parsedData.argsTextDelta) {
+              if (parsedData.toolCallId && parsedData.argsTextDelta !== undefined) {
                 const pending = pendingToolCalls.get(parsedData.toolCallId);
                 if (pending) {
                   pending.argsText += parsedData.argsTextDelta;
                   pending.status = "in-progress";
                   console.log("Stream Service: Updated args text", { toolCallId: parsedData.toolCallId, argsText: pending.argsText });
                   
+                  // Try to parse partial arguments for display
+                  try {
+                    if (pending.argsText.trim()) {
+                      const partialArgs = JSON.parse(pending.argsText);
+                      pending.arguments = partialArgs;
+                    }
+                  } catch {
+                    // Keep building arguments text
+                  }
+                  
                   // Send updated tool call to UI
                   const toolCall = {
                     id: pending.id,
                     name: pending.name,
-                    arguments: {}, // We'll update this when we get the complete args
+                    arguments: pending.arguments || {},
                     status: "in-progress",
                     timestamp: pending.timestamp,
                   };
                   callbacks.onToolCall(toolCall);
+                  
+                  // Update segment builder
+                  segmentBuilder.updateToolCallArgs(parsedData.toolCallId, pending.arguments || {});
+                  if (callbacks.onSegmentUpdate) {
+                    callbacks.onSegmentUpdate(segmentBuilder.getSegments());
+                  }
                 }
               }
               break;
@@ -283,6 +329,13 @@ export async function processChatStream(
               console.log("Stream Service: Stream done", parsedData);
               // This indicates the stream is done with finish reason and usage stats
               // parsedData contains: finishReason, usage (promptTokens, completionTokens)
+              
+              // Finalize segments when stream completes
+              const finalSegments = segmentBuilder.finalize();
+              if (callbacks.onSegmentUpdate) {
+                callbacks.onSegmentUpdate(finalSegments);
+              }
+              
               if (callbacks.onCompletion) {
                 callbacks.onCompletion(parsedData);
               }
@@ -291,6 +344,13 @@ export async function processChatStream(
               console.log("Stream Service: Stream completed", parsedData);
               // This indicates the stream is complete with finish reason and usage stats
               // parsedData contains: finishReason, usage (promptTokens, completionTokens), isContinued
+              
+              // Finalize segments when stream completes
+              const finalSegmentsE = segmentBuilder.finalize();
+              if (callbacks.onSegmentUpdate) {
+                callbacks.onSegmentUpdate(finalSegmentsE);
+              }
+              
               if (callbacks.onCompletion) {
                 callbacks.onCompletion(parsedData);
               }
@@ -337,6 +397,12 @@ export async function processChatStream(
                   };
                   console.log("Stream Service: Sending tool call with complete args", toolCall);
                   callbacks.onToolCall(toolCall);
+
+                  // Update segment builder with arguments
+                  segmentBuilder.updateToolCallArgs(parsedData.toolCallId, parsedData.args);
+                  if (callbacks.onSegmentUpdate) {
+                    callbacks.onSegmentUpdate(segmentBuilder.getSegments());
+                  }
                 }
               }
               break;
@@ -361,6 +427,12 @@ export async function processChatStream(
                   console.log("Stream Service: Sending final tool call with result", toolCall);
                   callbacks.onToolCall(toolCall);
                   
+                  // Complete tool call in segment builder
+                  segmentBuilder.completeToolCall(parsedData.toolCallId, parsedData.result);
+                  if (callbacks.onSegmentUpdate) {
+                    callbacks.onSegmentUpdate(segmentBuilder.getSegments());
+                  }
+                  
                   // Clean up completed tool call
                   pendingToolCalls.delete(parsedData.toolCallId);
                 }
@@ -381,6 +453,12 @@ export async function processChatStream(
       if (signal.aborted) break; // Check again after processing a batch of lines
     }
 
+    // Finalize segments when stream closes
+    const finalSegmentsClose = segmentBuilder.finalize();
+    if (callbacks.onSegmentUpdate) {
+      callbacks.onSegmentUpdate(finalSegmentsClose);
+    }
+    
     if (callbacks.onStreamClose) {
       callbacks.onStreamClose(signal.aborted);
     }
