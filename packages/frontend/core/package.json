@@ -1,0 +1,25 @@
+{
+  "name": "@frontend/core",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
+  },
+  "dependencies": {
+    "zustand": "^4.5.0",
+    "date-fns": "^4.1.0",
+    "zod": "^3.25.41"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "tsup": "^8.0.2",
+    "eslint": "^9.27.0",
+    "@types/node": "^20.17.50"
+  }
+}
