@@ -274,8 +274,8 @@ export const TrashIcon = () => (
 
 export const ToolIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="10"
+    height="10"
     viewBox="0 0 17 17"
     version="1.1"
     xmlns="http://www.w3.org/2000/svg"
