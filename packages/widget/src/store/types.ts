@@ -11,6 +11,7 @@ export interface Message {
   diffStatuses?: { id: string; status: "pending" | "kept" | "reverted" }[] // Add diff statuses
   thinkingContent?: string // Store thinking content separately
   isThinking?: boolean // Track if message is currently in thinking mode
+  toolCalls?: ToolCall[] // Add tool calls
 }
 
 export interface Chat {
@@ -82,4 +83,20 @@ export interface DiffChange {
   lineNumber?: number
   oldLineNumber?: number
   newLineNumber?: number
+}
+
+// Tool call types
+export interface ToolCall {
+  id: string
+  name: string
+  arguments: Record<string, unknown>
+  status: "pending" | "in-progress" | "success" | "error"
+  result?: ToolResult
+  timestamp: string
+}
+
+export interface ToolResult {
+  content?: string
+  data?: unknown
+  error?: string
 }

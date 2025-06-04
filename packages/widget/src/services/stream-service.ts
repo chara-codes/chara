@@ -68,6 +68,17 @@ export async function processChatStream(
     const decoder = new TextDecoder();
     let streamBuffer = "";
     let isThinking = false;
+    
+    // Track partial tool calls during streaming
+    const pendingToolCalls = new Map<string, {
+      id: string;
+      name: string;
+      argsText: string;
+      arguments?: Record<string, unknown>;
+      status: "pending" | "in-progress" | "success" | "error";
+      result?: unknown;
+      timestamp: string;
+    }>();
 
     while (true) {
       const { done, value } = await reader.read();
@@ -157,6 +168,52 @@ export async function processChatStream(
             }
             case "1": // Tool Call
               callbacks.onToolCall(parsedData);
+              break;
+            case "b": // Tool call begin
+              // Start a new tool call
+              console.log("Stream Service: Tool call begin", parsedData);
+              if (parsedData.toolCallId && parsedData.toolName) {
+                pendingToolCalls.set(parsedData.toolCallId, {
+                  id: parsedData.toolCallId,
+                  name: parsedData.toolName,
+                  argsText: "",
+                  status: "pending",
+                  timestamp: new Date().toISOString(),
+                });
+                
+                // Send initial tool call to UI
+                const toolCall = {
+                  id: parsedData.toolCallId,
+                  name: parsedData.toolName,
+                  arguments: {},
+                  status: "pending",
+                  timestamp: new Date().toISOString(),
+                };
+                console.log("Stream Service: Sending initial tool call to UI", toolCall);
+                callbacks.onToolCall(toolCall);
+              }
+              break;
+            case "c": // Tool call arguments delta
+              // Build up arguments text
+              console.log("Stream Service: Tool call args delta", parsedData);
+              if (parsedData.toolCallId && parsedData.argsTextDelta) {
+                const pending = pendingToolCalls.get(parsedData.toolCallId);
+                if (pending) {
+                  pending.argsText += parsedData.argsTextDelta;
+                  pending.status = "in-progress";
+                  console.log("Stream Service: Updated args text", { toolCallId: parsedData.toolCallId, argsText: pending.argsText });
+                  
+                  // Send updated tool call to UI
+                  const toolCall = {
+                    id: pending.id,
+                    name: pending.name,
+                    arguments: {}, // We'll update this when we get the complete args
+                    status: "in-progress",
+                    timestamp: pending.timestamp,
+                  };
+                  callbacks.onToolCall(toolCall);
+                }
+              }
               break;
             case "2": // Data (for FileDiffs, etc.) or Tool Result
               // This part needs to be robust based on actual agent output for '2:'
@@ -261,8 +318,53 @@ export async function processChatStream(
               console.log("Stream Service: Warning", parsedData);
               // Handle non-fatal warnings
               break;
-            case "9": // Heartbeat/keepalive
-              // Handle heartbeat signals (usually silent)
+            case "9": // Tool call complete with arguments
+              // Finalize tool call with complete arguments
+              console.log("Stream Service: Tool call complete with arguments", parsedData);
+              if (parsedData.toolCallId && parsedData.args) {
+                const pending = pendingToolCalls.get(parsedData.toolCallId);
+                if (pending) {
+                  pending.arguments = parsedData.args;
+                  pending.status = "in-progress";
+                  
+                  // Send updated tool call with complete arguments
+                  const toolCall = {
+                    id: pending.id,
+                    name: pending.name,
+                    arguments: parsedData.args,
+                    status: "in-progress",
+                    timestamp: pending.timestamp,
+                  };
+                  console.log("Stream Service: Sending tool call with complete args", toolCall);
+                  callbacks.onToolCall(toolCall);
+                }
+              }
+              break;
+            case "a": // Tool call result
+              // Add result to tool call
+              console.log("Stream Service: Tool call result", parsedData);
+              if (parsedData.toolCallId && parsedData.result) {
+                const pending = pendingToolCalls.get(parsedData.toolCallId);
+                if (pending) {
+                  pending.result = parsedData.result;
+                  pending.status = "success";
+                  
+                  // Send final tool call with result
+                  const toolCall = {
+                    id: pending.id,
+                    name: pending.name,
+                    arguments: pending.arguments || {},
+                    status: "success",
+                    result: parsedData.result,
+                    timestamp: pending.timestamp,
+                  };
+                  console.log("Stream Service: Sending final tool call with result", toolCall);
+                  callbacks.onToolCall(toolCall);
+                  
+                  // Clean up completed tool call
+                  pendingToolCalls.delete(parsedData.toolCallId);
+                }
+              }
               break;
             default:
               console.warn(

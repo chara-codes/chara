@@ -1,4 +1,4 @@
-import type { ContextItem, ExecutedCommand, FileDiff } from "../../../store/types"
+import type { ContextItem, ExecutedCommand, FileDiff, ToolCall } from "../../../store/types"
 
 export interface MessageBubbleProps {
   id?: string
@@ -12,6 +12,7 @@ export interface MessageBubbleProps {
   commandsToExecute?: string[]
   executedCommands?: ExecutedCommand[]
   fileDiffs?: FileDiff[]
+  toolCalls?: ToolCall[]
   onKeepAllDiffs?: () => void
   onRevertAllDiffs?: () => void
   onKeepDiff?: (diffId: string) => void

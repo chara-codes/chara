@@ -19,6 +19,7 @@ import {
   FilesIcon,
   CommandsIcon,
   TrashIcon,
+  ToolIcon,
 } from "./icons";
 import {
   BubbleContainer,
@@ -53,9 +54,22 @@ import {
   ThinkingContent,
   ThinkingIcon,
   ChevronIconSVG,
+  // Tool call styled components
+  ToolCallsContainer,
+  ToolCallItem,
+  ToolCallHeader,
+  ToolCallName,
+  ToolCallStatus,
+  ToolCallContent,
+  ToolCallArguments,
+  ToolCallArgumentsLabel,
+  ToolCallArgumentsContent,
+  ToolCallResult,
+  ToolCallResultLabel,
+  ToolCallResultContent,
 } from "./styles";
 import { getPreviewContent } from "./utils";
-import type { FileDiff } from "../../../store/types";
+import type { FileDiff, ToolResult } from "../../../store/types";
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -70,6 +84,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   commandsToExecute,
   executedCommands,
   fileDiffs,
+  toolCalls,
   onKeepAllDiffs,
   onRevertAllDiffs,
   onKeepDiff,
@@ -95,6 +110,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const hasExecutedCommands =
     executedCommands !== undefined && executedCommands.length > 0;
   const hasFileDiffs = fileDiffs !== undefined && fileDiffs.length > 0;
+  const hasToolCalls = toolCalls !== undefined && toolCalls.length > 0;
   const hasGenerationDetails = hasExecutedCommands || hasFileDiffs;
   const hasThinkingContent = !isUser && (thinkingContent || isThinking);
 
@@ -185,6 +201,36 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   const handleThinkingToggle = useCallback(() => {
     setIsThinkingExpanded((prev) => !prev);
+  }, []);
+
+  const formatToolCallResult = useCallback((result: ToolResult | unknown) => {
+    console.log("formatToolCallResult: received result", result);
+    
+    if (!result) return "No result";
+    
+    const resultObj = result as Record<string, unknown>;
+    
+    // Handle error case
+    if (typeof result === 'object' && result !== null && 'error' in result) {
+      console.log("formatToolCallResult: using error", resultObj.error);
+      return String(resultObj.error);
+    }
+    
+    // Handle content case
+    if (typeof result === 'object' && result !== null && 'content' in result) {
+      console.log("formatToolCallResult: using content", resultObj.content);
+      return String(resultObj.content);
+    }
+    
+    // Handle data case
+    if (typeof result === 'object' && result !== null && 'data' in result) {
+      console.log("formatToolCallResult: using data", resultObj.data);
+      return JSON.stringify(resultObj.data, null, 2);
+    }
+    
+    // Handle direct result object
+    console.log("formatToolCallResult: using direct result", result);
+    return JSON.stringify(result, null, 2);
   }, []);
 
   const getIcon = (type: string) => {
@@ -395,6 +441,44 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               </ContextDetailsPanel>
             )}
           </>
+        )}
+
+        {!isUser && hasToolCalls && (
+          <ToolCallsContainer>
+            <InstructionHeader>
+              <ToolIcon />
+              Tool Calls
+            </InstructionHeader>
+            {toolCalls.map((toolCall) => (
+              <ToolCallItem key={toolCall.id}>
+                <ToolCallHeader>
+                  <ToolCallName>
+                    <ToolIcon />
+                    {toolCall.name}
+                  </ToolCallName>
+                  <ToolCallStatus status={toolCall.status}>
+                    {toolCall.status}
+                  </ToolCallStatus>
+                </ToolCallHeader>
+                <ToolCallContent>
+                  <ToolCallArguments>
+                    <ToolCallArgumentsLabel>Arguments</ToolCallArgumentsLabel>
+                    <ToolCallArgumentsContent>
+                      {JSON.stringify(toolCall.arguments, null, 2)}
+                    </ToolCallArgumentsContent>
+                  </ToolCallArguments>
+                  {toolCall.result && (
+                    <ToolCallResult>
+                      <ToolCallResultLabel>Result</ToolCallResultLabel>
+                      <ToolCallResultContent hasError={!!toolCall.result.error}>
+                        {formatToolCallResult(toolCall.result)}
+                      </ToolCallResultContent>
+                    </ToolCallResult>
+                  )}
+                </ToolCallContent>
+              </ToolCallItem>
+            ))}
+          </ToolCallsContainer>
         )}
 
         {!isUser && hasFilesToChange && !hasGenerationDetails && (

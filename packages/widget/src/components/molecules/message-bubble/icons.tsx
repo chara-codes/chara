@@ -133,3 +133,30 @@ export const TrashIcon = () => (
     />
   </svg>
 )
+
+export const ToolIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M14.7 6.3C15.1 6.7 15.1 7.3 14.7 7.7L12.4 10C12 10.4 11.4 10.4 11 10L9 8C8.6 7.6 8.6 7 9 6.6L11.3 4.3C11.7 3.9 12.3 3.9 12.7 4.3L14.7 6.3Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M8.21 13.89L7 15.1C6.61 15.49 6.61 16.12 7 16.51L7.49 17C7.88 17.39 8.51 17.39 8.9 17L10.11 15.79"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M15.5 7.5L19.85 11.85C20.66 12.66 20.66 13.94 19.85 14.75L14.25 20.35C13.44 21.16 12.16 21.16 11.35 20.35L7 16L15.5 7.5Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="M5 2L2 5L8.5 11.5L11.5 8.5L5 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)

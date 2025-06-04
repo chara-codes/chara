@@ -600,3 +600,129 @@ export const Tab = styled.button<{ $active: boolean }>`
 export const TabContent = styled.div`
   padding: 4px 0;
 `;
+
+// Tool call styles
+export const ToolCallsContainer = styled.div`
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+`;
+
+export const ToolCallItem = styled.div`
+  margin-bottom: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #f9fafb;
+`;
+
+export const ToolCallHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background-color: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+`;
+
+export const ToolCallName = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+  font-family: monospace;
+`;
+
+export const ToolCallStatus = styled.span<{ status: string }>`
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: capitalize;
+  color: ${(props) => {
+    switch (props.status) {
+      case "success":
+        return "#059669";
+      case "error":
+        return "#dc2626";
+      case "in-progress":
+        return "#d97706";
+      case "pending":
+        return "#6b7280";
+      default:
+        return "#6b7280";
+    }
+  }};
+  background-color: ${(props) => {
+    switch (props.status) {
+      case "success":
+        return "#d1fae5";
+      case "error":
+        return "#fee2e2";
+      case "in-progress":
+        return "#fef3c7";
+      case "pending":
+        return "#f3f4f6";
+      default:
+        return "#f3f4f6";
+    }
+  }};
+`;
+
+export const ToolCallContent = styled.div`
+  padding: 12px;
+`;
+
+export const ToolCallArguments = styled.div`
+  margin-bottom: 8px;
+`;
+
+export const ToolCallArgumentsLabel = styled.div`
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+`;
+
+export const ToolCallArgumentsContent = styled.pre`
+  font-size: 12px;
+  font-family: monospace;
+  color: #4b5563;
+  background-color: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+`;
+
+export const ToolCallResult = styled.div`
+  margin-top: 8px;
+`;
+
+export const ToolCallResultLabel = styled.div`
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+`;
+
+export const ToolCallResultContent = styled.div<{ hasError?: boolean }>`
+  font-size: 12px;
+  color: ${(props) => (props.hasError ? "#dc2626" : "#4b5563")};
+  background-color: ${(props) => (props.hasError ? "#fef2f2" : "#f6f8fa")};
+  border: 1px solid ${(props) => (props.hasError ? "#fecaca" : "#e1e4e8")};
+  border-radius: 4px;
+  padding: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ${(props) => (props.hasError ? "inherit" : "monospace")};
+`;

@@ -3,7 +3,7 @@
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { Chat, ChatMode, ContextItem, Message } from "./types";
+import type { Chat, ChatMode, ContextItem, Message, ToolCall } from "./types";
 import { fetchChats } from "../services/data-service";
 import {
   processChatStream,
@@ -240,7 +240,15 @@ export const useChatStore = create<ChatState>()(
               // Send current message history
               role: m.isUser ? "user" : "assistant",
               content: m.content,
-              // TODO: If your agent supports tool_calls/tool_results in history, map them here
+              // Include tool calls in message history
+              tool_calls: m.toolCalls?.map(tc => ({
+                id: tc.id,
+                type: "function",
+                function: {
+                  name: tc.name,
+                  arguments: JSON.stringify(tc.arguments)
+                }
+              })),
             })),
             model: model, // Send selected model
             // You might need to send contextItems, mode, etc., depending on agent's API
@@ -296,7 +304,29 @@ export const useChatStore = create<ChatState>()(
                 },
                 onToolCall: (toolCall) => {
                   console.log("Store: Tool Call received", toolCall);
-                  // updateAIMessageInStore(msg => ({ toolCalls: [...(msg.toolCalls || []), toolCall] }));
+                  updateAIMessageInStore(msg => {
+                    const incomingToolCall = toolCall as ToolCall;
+                    const existingToolCalls = msg.toolCalls || [];
+                    console.log("Store: Current tool calls", existingToolCalls);
+                    
+                    // Find existing tool call with same ID
+                    const existingIndex = existingToolCalls.findIndex(tc => tc.id === incomingToolCall.id);
+                    console.log("Store: Existing tool call index", existingIndex);
+                    
+                    if (existingIndex >= 0) {
+                      // Update existing tool call
+                      console.log("Store: Updating existing tool call", incomingToolCall.id);
+                      const updatedToolCalls = [...existingToolCalls];
+                      updatedToolCalls[existingIndex] = incomingToolCall;
+                      console.log("Store: Updated tool calls", updatedToolCalls);
+                      return { toolCalls: updatedToolCalls };
+                    }
+                    // Add new tool call
+                    console.log("Store: Adding new tool call", incomingToolCall.id);
+                    const newToolCalls = [...existingToolCalls, incomingToolCall];
+                    console.log("Store: New tool calls array", newToolCalls);
+                    return { toolCalls: newToolCalls };
+                  });
                 },
                 onStructuredData: (data) => {
                   updateAIMessageInStore((msg) => {

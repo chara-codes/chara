@@ -98,6 +98,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
           commandsToExecute={message.commandsToExecute}
           executedCommands={message.executedCommands}
           fileDiffs={message.fileDiffs}
+          toolCalls={message.toolCalls}
           onKeepAllDiffs={() => onKeepAllDiffs?.(message.id)}
           onRevertAllDiffs={() => onRevertAllDiffs?.(message.id)}
           onKeepDiff={(diffId) => handleKeepDiff(message.id, diffId)}
