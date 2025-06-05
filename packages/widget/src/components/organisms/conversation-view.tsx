@@ -182,7 +182,7 @@ const ConversationView: React.FC = () => {
                 <LogoContainer>
                   <CharaLogo width={200} height={150} />
                   <Title>CharaCodes</Title>
-                  <Subtitle>AI Frontend Development Tools</Subtitle>
+                  <Subtitle>AI Development Tools</Subtitle>
                   {/* <VersionLabel>1.0.0-alpha</VersionLabel> */}
                 </LogoContainer>
               </EmptyStateMessage>
