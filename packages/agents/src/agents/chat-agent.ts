@@ -2,8 +2,9 @@ import { StreamData, streamText, tool, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
 import z from "zod";
+import { mcpWrapper } from "../mcp/mcp-client";
 
-export const chatAgent = (
+export const chatAgent = async (
   {
     model,
     messages,
@@ -11,44 +12,22 @@ export const chatAgent = (
     model: string;
     messages: CoreMessage[];
   },
-  options: { headers?: Record<string, string> } = {},
+  options: { headers?: Record<string, string> } = {}
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");
   const aiModel = providersRegistry.getModel(providerName, modelName);
   logger.info(providerName, modelName);
 
-  // const data = new StreamData();
+  // Get ready tools from MCP wrapper (already initialized)
+  const tools = mcpWrapper.getTools();
+
+  logger.info(`Using ${Object.keys(tools).length} tools for chat`);
 
   return streamText({
     ...options,
     system: "You are a helpful assistant.",
-    tools: {
-      // mcp: mcp.tools(),
-      weather: tool({
-        description: "Get the weather in a location",
-        parameters: z.object({
-          location: z.string().describe("The location to get the weather for"),
-        }),
-        execute: async ({ location }) => ({
-          location,
-          temperature: 72 + Math.floor(Math.random() * 21) - 10,
-        }),
-      }),
-      saveFile: tool({
-        description: "Save a file",
-        parameters: z.object({
-          name: z.string().describe("The name of the file"),
-          content: z.string().describe("The content of the file"),
-        }),
-        execute: async ({ name, content }) => {
-          logger.info("File name:", name);
-          logger.dump(content);
-          await Bun.write(name, content);
-          return { success: true, name };
-        },
-      }),
-    },
+    tools,
     model: aiModel,
     toolCallStreaming: true,
     maxSteps: 10,
