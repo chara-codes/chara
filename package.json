@@ -11,16 +11,17 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "clean": "rm -rf node_modules packages/*/node_modules bun.lock packages/*/bun.lock"
+    "clean": "rm -rf node_modules packages/*/node_modules bun.lock packages/*/bun.lock",
+    "test": "turbo run test"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.11"
+    "@types/bun": "^1.2.15"
   },
   "trustedDependencies": [
     "@swc/core",
     "protobufjs"
   ],
   "dependencies": {
-    "turbo": "^2.5.2"
+    "turbo": "^2.5.4"
   }
 }

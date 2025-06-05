@@ -1,10 +1,10 @@
-import type React from "react"
+import type React from "react";
 
 export interface ServerIconProps {
-  width?: number
-  height?: number
-  color?: string
-  className?: string
+  width?: number;
+  height?: number;
+  color?: string;
+  className?: string;
 }
 
 export const ServerIcon: React.FC<ServerIconProps> = ({
@@ -22,6 +22,7 @@ export const ServerIcon: React.FC<ServerIconProps> = ({
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
+      <title>Server Icon</title>
       <rect
         x="2"
         y="4"
@@ -47,7 +48,7 @@ export const ServerIcon: React.FC<ServerIconProps> = ({
       <circle cx="6" cy="7" r="1" fill={color} />
       <circle cx="6" cy="17" r="1" fill={color} />
     </svg>
-  )
-}
+  );
+};
 
-export default ServerIcon
+export default ServerIcon;

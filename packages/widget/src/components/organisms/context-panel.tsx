@@ -74,12 +74,6 @@ const RemoveButton = styled.button`
   }
 `;
 
-const EmptyMessage = styled.span`
-  font-size: 11px;
-  color: #9ca3af;
-  font-style: italic;
-`;
-
 const ContextPanel: React.FC<ContextPanelProps> = ({
   contextItems,
   onRemoveContext,
