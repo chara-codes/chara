@@ -22,8 +22,9 @@ class MCPWrapper {
   private isInitialized = false;
   private toolsCache: Record<string, any> = {};
 
-  constructor(baseUrl: string = "http://localhost:3035") {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl?: string) {
+    this.baseUrl =
+      baseUrl || process.env.MCP_SERVER_URL || "http://localhost:3035";
   }
 
   /**
