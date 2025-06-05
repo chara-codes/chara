@@ -62,18 +62,28 @@ export type ExecutedCommand = {
   timestamp: string
 }
 
-// New types for file diffs
+// File diff types using original and patch approach
 export interface FileDiff {
   id: string
   filePath: string
   fileName: string
   language?: string
-  hunks: DiffHunk[]
-  originalContent?: string
-  newContent?: string
-  status: "pending" | "kept" | "reverted" // Add status directly to FileDiff
+  originalContent: string // The original file content
+  patchContent: string // The patch/diff content in unified diff format
+  newContent?: string // Optional - the resulting content after applying patch
+  status: "pending" | "kept" | "reverted"
+  stats?: DiffStats // Optional statistics about the diff
 }
 
+export interface DiffStats {
+  additions: number
+  deletions: number
+  modifications: number
+  totalLines: number
+}
+
+// Legacy interfaces - kept for backwards compatibility
+// These may be removed in a future version
 export interface DiffHunk {
   id: string
   header: string
