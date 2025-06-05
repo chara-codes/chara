@@ -25,7 +25,7 @@ export const beautifyAgent = (
       {
         role: "system",
         content:
-          "Use previous messages and current user prompt and improve it. Focus on development aspects, make answer up to 300 symbols and clear for implement. Use plain text for the generated message.",
+          "Use previous messages and the current user prompt to generate a better, implementation-focused answer. Limit the response to 300 symbols, make it actionable for development, and use plain text only. Prioritize clarity and practical instructions.",
       },
       ...messages,
     ],

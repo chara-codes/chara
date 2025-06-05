@@ -107,39 +107,49 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true)
+  const [userScrolledUp, setUserScrolledUp] = useState(false)
+  
   // Check if user is near bottom of scroll
   const isNearBottom = useCallback(() => {
-    if (!messagesContainerRef.current) return true;
-    const { scrollTop, scrollHeight, clientHeight } =
-      messagesContainerRef.current;
-    return scrollTop + clientHeight >= scrollHeight - 100;
-  }, []);
+    if (!messagesContainerRef.current) return true
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current
+    return scrollTop + clientHeight >= scrollHeight - 100
+  }, [])
 
   // Scroll to bottom
   const scrollToBottom = useCallback(() => {
     if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop =
-        messagesContainerRef.current.scrollHeight;
-      setShouldAutoScroll(true);
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+      setShouldAutoScroll(true)
+      setUserScrolledUp(false)
     }
-  }, []);
+  }, [])
 
   // Handle scroll events
   const handleScroll = useCallback(() => {
-    if (!messagesContainerRef.current) return;
-
-    const nearBottom = isNearBottom();
-    setShowScrollButton(!nearBottom);
-    setShouldAutoScroll(nearBottom);
-  }, [isNearBottom]);
-
-  // Auto-scroll when new messages arrive or when responding
-  useEffect(() => {
-    if (shouldAutoScroll || isResponding) {
-      scrollToBottom();
+    if (!messagesContainerRef.current) return
+    
+    const nearBottom = isNearBottom()
+    setShowScrollButton(!nearBottom)
+    
+    // If user scrolls up manually, disable auto-scroll
+    if (!nearBottom) {
+      setUserScrolledUp(true)
+      setShouldAutoScroll(false)
+    } else {
+      // If user scrolls back to bottom manually, re-enable auto-scroll
+      setUserScrolledUp(false)
+      setShouldAutoScroll(true)
     }
-  }, [messages, isResponding, shouldAutoScroll, scrollToBottom]);
+  }, [isNearBottom])
+
+  // Auto-scroll when new messages arrive or when responding (but not if user scrolled up)
+  useEffect(() => {
+    if (shouldAutoScroll && !userScrolledUp) {
+      scrollToBottom()
+    }
+  }, [messages, shouldAutoScroll, userScrolledUp, scrollToBottom])
 
   // Add scroll listener
   useEffect(() => {
