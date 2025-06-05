@@ -1,7 +1,6 @@
 import { StreamData, streamText, tool, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
-import z from "zod";
 import { mcpWrapper } from "../mcp/mcp-client";
 
 export const chatAgent = async (
@@ -12,7 +11,7 @@ export const chatAgent = async (
     model: string;
     messages: CoreMessage[];
   },
-  options: { headers?: Record<string, string> } = {}
+  options: { headers?: Record<string, string> } = {},
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");
@@ -21,7 +20,7 @@ export const chatAgent = async (
 
   // Get ready tools from MCP wrapper (already initialized)
   const tools = mcpWrapper.getTools();
-
+  logger.dump(tools);
   logger.info(`Using ${Object.keys(tools).length} tools for chat`);
 
   return streamText({
