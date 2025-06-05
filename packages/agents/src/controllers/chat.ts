@@ -17,8 +17,8 @@ export const chatController = {
 
     return createDataStreamResponse({
       headers: CORS_HEADERS,
-      execute: (dataStream) => {
-        const result = chatAgent({
+      execute: async (dataStream) => {
+        const result = await chatAgent({
           model,
           messages,
         });
