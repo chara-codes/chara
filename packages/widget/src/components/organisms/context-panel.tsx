@@ -33,12 +33,7 @@ const Container = styled.div`
   min-height: 36px;
 `;
 
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: ${(props) => (props.children ? "8px" : "0")};
-`;
+
 
 const ContextList = styled.div`
   display: flex;

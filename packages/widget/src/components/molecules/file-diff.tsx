@@ -4,46 +4,15 @@ import React from "react"
 import { useState, useEffect } from "react"
 import styled from "styled-components"
 import type { FileDiff as FileDiffType } from "../../store/types"
+import { FileIcon } from "../atoms/icons/file-icon"
+import { CloseIcon } from "../atoms/icons/close-icon"
+import { ArrowLeftIcon } from "../atoms/icons/arrow-left-icon"
+import { UndoIcon } from "../atoms/icons/undo-icon"
+import { CheckIcon } from "../atoms/icons/check-icon"
 
-const FileIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
 
-const CloseIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
 
-const KeepIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M16.7071 5.29289C17.0976 5.68342 17.0976 6.31658 16.7071 6.70711L8.70711 14.7071C8.31658 15.0976 7.68342 15.0976 7.29289 14.7071L3.29289 10.7071C2.90237 10.3166 2.90237 9.68342 3.29289 10.0739C3.68342 9.68342 4.31658 10.3166 4.70711 10.7071L8 14L16 5.29289C16.3905 4.90237 17.0237 4.90237 16.7071 5.29289Z"
-    />
-  </svg>
-)
 
-const RevertIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path
-      fillRule="evenodd"
-      clipRule="evenodd"
-      d="M3.29289 6.70711C2.90237 6.31658 2.90237 5.68342 3.29289 5.29289L11.2929 13.2929C11.6834 13.6834 12.3166 13.6834 12.7071 13.2929L16.7071 9.29289C17.0976 8.90237 17.0976 8.26921 16.7071 7.87868C16.3166 7.48815 15.6834 7.48815 15.2929 7.87868L12 11.1716L4.70711 3.87868C4.31658 3.48815 3.68342 3.48815 3.29289 3.87868L3.29289 6.70711Z"
-    />
-  </svg>
-)
 
 interface FileDiffProps {
   diff: FileDiffType
@@ -138,23 +107,9 @@ const LineContent = styled.td<{ $type: "addition" | "deletion" | "context" }>`
   ${({ $type }) => {
     switch ($type) {
       case "addition":
-        return `
-          background-color: #d1fae5;
-          &::before {
-            content: '+';
-            color: #10b981;
-            margin-right: 4px;
-          }
-        `
+        return "background-color: #d1fae5; &::before { content: '+'; color: #10b981; margin-right: 4px; }"
       case "deletion":
-        return `
-          background-color: #fee2e2;
-          &::before {
-            content: '-';
-            color: #ef4444;
-            margin-right: 4px;
-          }
-        `
+        return "background-color: #fee2e2; &::before { content: '-'; color: #ef4444; margin-right: 4px; }"
       default:
         return ""
     }
@@ -166,11 +121,11 @@ const DiffRow = styled.tr<{ $type: "addition" | "deletion" | "context" }>`
     ${({ $type }) => {
       switch ($type) {
         case "addition":
-          return `background-color: #a7f3d0;`
+          return "background-color: #a7f3d0;"
         case "deletion":
-          return `background-color: #fecaca;`
+          return "background-color: #fecaca;"
         default:
-          return `background-color: #f3f4f6;`
+          return "background-color: #f3f4f6;"
       }
     }}
   }
@@ -232,12 +187,7 @@ const StatusBadge = styled.div<{ $status: "kept" | "reverted" }>`
   color: ${({ $status }) => ($status === "kept" ? "#10b981" : "#ef4444")};
 `
 
-const BackIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M19 12H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M12 19L5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
+
 
 const FullFileContainer = styled.div`
   padding: 12px;
@@ -329,7 +279,7 @@ const BackToDiffButton = styled.button`
 
 const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = () => {}, onKeep, onRevert }) => {
   const [status, setStatus] = useState(diff.status)
-  const [expandedHunks, setExpandedHunks] = useState<Set<string>>(new Set(diff.hunks.map((h) => h.id)))
+  const [expandedHunks, setExpandedHunks] = useState<Set<string>>(new Set(diff.hunks?.map((h) => h.id) || []))
   const [viewMode, setViewMode] = useState<"diff" | "original" | "new">("diff")
 
   const toggleHunk = (hunkId: string) => {
@@ -345,15 +295,15 @@ const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = (
   }
 
   // Calculate stats
-  const additions = diff.hunks.reduce(
+  const additions = diff.hunks?.reduce(
     (count, hunk) => count + hunk.changes.filter((change) => change.type === "addition").length,
     0,
-  )
+  ) || 0
 
-  const deletions = diff.hunks.reduce(
+  const deletions = diff.hunks?.reduce(
     (count, hunk) => count + hunk.changes.filter((change) => change.type === "deletion").length,
     0,
-  )
+  ) || 0
 
   // Add effect to log when diff status changes
   useEffect(() => {
@@ -366,18 +316,18 @@ const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = (
     <DiffContainer isVisible={isVisible} data-diff-id={diff.id} data-status={diff.status}>
       <DiffHeader>
         <DiffTitle>
-          <FileIcon />
+          <FileIcon width={12} height={12} />
           {diff.filePath}
           {status !== "pending" && (
             <StatusBadge $status={status === "kept" ? "kept" : "reverted"}>
               {status === "kept" ? (
                 <>
-                  <KeepIcon />
+                  <CheckIcon width={12} height={12} />
                   Kept
                 </>
               ) : (
                 <>
-                  <RevertIcon />
+                  <UndoIcon size={12} />
                   Reverted
                 </>
               )}
@@ -402,17 +352,17 @@ const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = (
                 View Full File
               </StyledDiffButton>
               <StyledDiffButton onClick={onClose}>
-                <CloseIcon />
+                <CloseIcon size={12} />
               </StyledDiffButton>
             </>
           ) : (
             <>
               <BackToDiffButton onClick={() => setViewMode("diff")}>
-                <BackIcon />
+                <ArrowLeftIcon width={12} height={12} />
                 Back to Diff
               </BackToDiffButton>
               <StyledDiffButton onClick={onClose}>
-                <CloseIcon />
+                <CloseIcon size={12} />
               </StyledDiffButton>
             </>
           )}
@@ -429,7 +379,7 @@ const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = (
           <DiffContent>
             <DiffTable>
               <tbody>
-                {diff.hunks.map((hunk) => (
+                {diff.hunks?.map((hunk) => (
                   <React.Fragment key={hunk.id}>
                     <HunkHeader onClick={() => toggleHunk(hunk.id)} style={{ cursor: "pointer" }}>
                       <td colSpan={3}>
@@ -481,7 +431,7 @@ const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = (
                   }
                 }}
               >
-                <KeepIcon />
+                <CheckIcon width={12} height={12} />
                 Keep Changes
               </StyledDiffButton>
               <StyledDiffButton
@@ -496,7 +446,7 @@ const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = (
                   }
                 }}
               >
-                <RevertIcon />
+                <UndoIcon size={12} />
                 Revert Changes
               </StyledDiffButton>
             </DiffActions>
@@ -506,7 +456,7 @@ const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = (
         <FullFileContainer>
           <FullFileHeader>
             <FullFileTitle>
-              <FileIcon />
+              <FileIcon width={12} height={12} />
               {diff.fileName} - {viewMode === "original" ? "Original" : "New"} Version
             </FullFileTitle>
           </FullFileHeader>
@@ -527,7 +477,7 @@ const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = (
           <CodeWithLineNumbers>
             <LineNumbers>
               {(viewMode === "original" ? diff.originalContent : diff.newContent)?.split("\n").map((_, i) => (
-                <div key={i}>{i + 1}</div>
+                <div key={`line-${i}`}>{i + 1}</div>
               ))}
             </LineNumbers>
             <FullFileContent>{viewMode === "original" ? diff.originalContent : diff.newContent}</FullFileContent>
