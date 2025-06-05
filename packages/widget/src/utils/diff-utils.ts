@@ -32,7 +32,7 @@ export function parsePatchStats(patchContent: string): DiffStats {
  * Apply a patch to original content to get new content
  * This is a simplified implementation - in production you'd use a proper patch library
  */
-export function applyPatch(originalContent: string, patchContent: string): string {
+export function applyPatch(originalContent: string, _patchContent: string): string {
   // For now, return the newContent if available, otherwise return original
   // In a real implementation, you'd parse the patch and apply it line by line
   return originalContent; // Placeholder implementation
@@ -171,8 +171,8 @@ export function parsePatchHunks(patchContent: string): PatchHunk[] {
  * Convert a FileDiff with the new patch structure to display format
  */
 export function convertDiffForDisplay(diff: FileDiff) {
-  const hunks = parsePatchHunks(diff.patchContent);
-  const stats = diff.stats || parsePatchStats(diff.patchContent);
+  const hunks = parsePatchHunks(diff.patchContent || "");
+  const stats = diff.stats || parsePatchStats(diff.patchContent || "");
   
   return {
     ...diff,
@@ -216,7 +216,7 @@ export function hasDiffChanges(diff: FileDiff): boolean {
     return diff.stats.additions > 0 || diff.stats.deletions > 0;
   }
   
-  const stats = parsePatchStats(diff.patchContent);
+  const stats = parsePatchStats(diff.patchContent || "");
   return stats.additions > 0 || stats.deletions > 0;
 }
 

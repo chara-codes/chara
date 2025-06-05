@@ -279,7 +279,7 @@ const BackToDiffButton = styled.button`
 
 const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = () => {}, onKeep, onRevert }) => {
   const [status, setStatus] = useState(diff.status)
-  const [expandedHunks, setExpandedHunks] = useState<Set<string>>(new Set(diff.hunks.map((h) => h.id)))
+  const [expandedHunks, setExpandedHunks] = useState<Set<string>>(new Set(diff.hunks?.map((h) => h.id) || []))
   const [viewMode, setViewMode] = useState<"diff" | "original" | "new">("diff")
 
   const toggleHunk = (hunkId: string) => {
@@ -295,15 +295,15 @@ const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = (
   }
 
   // Calculate stats
-  const additions = diff.hunks.reduce(
+  const additions = diff.hunks?.reduce(
     (count, hunk) => count + hunk.changes.filter((change) => change.type === "addition").length,
     0,
-  )
+  ) || 0
 
-  const deletions = diff.hunks.reduce(
+  const deletions = diff.hunks?.reduce(
     (count, hunk) => count + hunk.changes.filter((change) => change.type === "deletion").length,
     0,
-  )
+  ) || 0
 
   // Add effect to log when diff status changes
   useEffect(() => {
@@ -379,7 +379,7 @@ const FileDiff: React.FC<FileDiffProps> = ({ diff, isVisible = true, onClose = (
           <DiffContent>
             <DiffTable>
               <tbody>
-                {diff.hunks.map((hunk) => (
+                {diff.hunks?.map((hunk) => (
                   <React.Fragment key={hunk.id}>
                     <HunkHeader onClick={() => toggleHunk(hunk.id)} style={{ cursor: "pointer" }}>
                       <td colSpan={3}>

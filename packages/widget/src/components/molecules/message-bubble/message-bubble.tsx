@@ -58,17 +58,14 @@ import {
   // Tool call styled components
   ToolCallsContainer,
   ToolCallItem,
-  ToolCallHeader,
   ToolCallName,
   ToolCallStatus,
-  ToolCallContent,
   ToolCallArguments,
   ToolCallArgumentsLabel,
   ToolCallArgumentsContent,
   ToolCallResult,
   ToolCallResultLabel,
   ToolCallResultContent,
-  ToolCallToggle,
   ToolCallItemHeader,
 } from "./styles";
 import { getPreviewContent } from "./utils";
@@ -102,7 +99,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const [activeTab, setActiveTab] = useState<"commands" | "diffs">("diffs");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
-  const [isToolCallsExpanded, setIsToolCallsExpanded] = useState(false);
+  const [isToolCallsExpanded] = useState(false);
 
   const contextPanelRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -118,10 +115,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const hasToolCalls = toolCalls !== undefined && toolCalls.length > 0;
   const hasGenerationDetails = hasExecutedCommands || hasFileDiffs;
   const hasThinkingContent = !isUser && (thinkingContent || isThinking);
-  const hasActiveToolCalls =
-    toolCalls?.some(
-      (tc) => tc.status === "pending" || tc.status === "in-progress",
-    ) || false;
+
 
   useEffect(() => {
     if (activeTab === "diffs" && !hasFileDiffs) {

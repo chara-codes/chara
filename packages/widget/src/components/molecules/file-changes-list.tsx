@@ -386,7 +386,7 @@ const FileChangesList: React.FC<FileChangesListProps> = ({
     }
 
     // Otherwise, parse the patch content to calculate stats
-    const stats = parsePatchStats(diff.patchContent);
+    const stats = parsePatchStats(diff.patchContent || "");
     return {
       additions: stats.additions,
       deletions: stats.deletions,

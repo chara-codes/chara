@@ -34,10 +34,7 @@ export const CheckIcon: React.FC<CheckIconProps> = ({
     fill={color}
     xmlns="http://www.w3.org/2000/svg"
     className={className}
-    aria-labelledby="checkIconTitle"
-    role="img"
   >
-    <title id="checkIconTitle">Check</title>
     <path
       fillRule="evenodd"
       clipRule="evenodd"

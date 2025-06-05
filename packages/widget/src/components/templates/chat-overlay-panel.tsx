@@ -7,7 +7,7 @@ import ChatInterface from "../templates/chat-interface";
 import { ChatIcon } from "../atoms/icons";
 import { useUIStore } from "../../store/ui-store"; // Correctly imports the overloaded hook
 import ResizeHandle from "../atoms/resize-handle";
-import { CharaLogo } from "../atoms/chara-logo";
+
 
 const Backdrop = styled.div<{ isOpen: boolean }>`
   position: fixed;
