@@ -140,7 +140,8 @@ export class ProviderConfigs extends BaseProviderInitializer {
       });
       return {
         name: "Ollama",
-        provider: (modelId: string) => ollamaProvider(modelId),
+        provider: (modelId: string) =>
+          ollamaProvider(modelId, { simulateStreaming: true }),
         isAvailable: true,
         fetchModels: ModelFetcher.fetchOllamaModels,
       };
