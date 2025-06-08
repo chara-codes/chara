@@ -18,6 +18,7 @@ import type { LanguageModelV1 } from "ai";
  * - OPEN_ROUTER_API_KEY: OpenRouter models (specify model when calling getModel)
  * - XAI_API_KEY: xAI Grok models (specify model when calling getModel)
  * - OLLAMA_API_BASE_URL: Local Ollama instance (specify model when calling getModel)
+ * - LMSTUDIO_API_BASE_URL: Local LMStudio instance (specify model when calling getModel)
  * - AWS_BEDROCK_CONFIG: AWS Bedrock (JSON config, specify model when calling getModel)
  * - HuggingFace_API_KEY: HuggingFace models (placeholder, not yet implemented)
  *
@@ -54,25 +55,13 @@ export class ProvidersRegistry {
    */
   private initializeProviders(): void {
     const initializers = this.providerConfigs.getAllProviderInitializers();
-    const providerKeys = [
-      "openai",
-      "anthropic",
-      "google",
-      "mistral",
-      "groq",
-      "openrouter",
-      "ollama",
-      "xai",
-      "bedrock",
-      "huggingface",
-    ];
 
-    initializers.forEach((initializer, index) => {
+    for (const [providerKey, initializer] of Object.entries(initializers)) {
       const config = initializer();
-      if (config && providerKeys[index]) {
-        this.providers.set(providerKeys[index], config);
+      if (config) {
+        this.providers.set(providerKey, config);
       }
-    });
+    }
 
     // Log initialization summary
     const totalProviders = this.providers.size;

@@ -90,7 +90,7 @@ export const modelsController = {
               return true;
             }
             // Include all ollama models
-            if (provider === "ollama") {
+            if (provider === "ollama" || provider === "lmstudio") {
               return true;
             }
             // Include whitelisted models

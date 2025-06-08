@@ -175,12 +175,15 @@ export namespace ModelFetcher {
       }
 
       const data = (await response.json()) as OpenAIModelsResponse;
-      return data.data.map((model: OpenAIModel) => ({
-        id: model.id,
-        name: model.id,
-        created: model.created,
-        ownedBy: model.owned_by,
-      }));
+      logger.dump(data);
+      return data.data
+        .filter((model: OpenAIModel) => model.id.indexOf("embedding") === -1)
+        .map((model: OpenAIModel) => ({
+          id: model.id,
+          name: model.id,
+          created: model.created,
+          ownedBy: model.owned_by,
+        }));
     } catch (error) {
       logger.warning(
         "Failed to fetch LMStudio models from API, using fallback models:",
