@@ -192,6 +192,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
         name: "LMStudio",
         provider: (modelId: string) => lmstudioProvider(modelId),
         isAvailable: true,
+        fetchModels: () => ModelFetcher.fetchLMStudioModels(baseURL),
       };
     });
   }

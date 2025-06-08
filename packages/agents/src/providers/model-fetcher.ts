@@ -154,6 +154,52 @@ export namespace ModelFetcher {
   }
 
   /**
+   * Fetches available models from LMStudio API
+   * @param baseUrl - Base URL for LMStudio server (default: http://localhost:1234/v1)
+   * @returns Array of LMStudio models or fallback models if API fails
+   */
+  export async function fetchLMStudioModels(
+    baseUrl = "http://localhost:1234/v1",
+  ): Promise<ModelInfo[]> {
+    try {
+      const response = await fetch(`${baseUrl}/models`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `LMStudio API error: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const data = (await response.json()) as OpenAIModelsResponse;
+      return data.data.map((model: OpenAIModel) => ({
+        id: model.id,
+        name: model.id,
+        created: model.created,
+        ownedBy: model.owned_by,
+      }));
+    } catch (error) {
+      logger.warning(
+        "Failed to fetch LMStudio models from API, using fallback models:",
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      );
+
+      // Fallback to known popular models if API fails
+      return [
+        { id: "local-model", name: "Local Model" },
+        { id: "llama-3.2-3b-instruct", name: "Llama 3.2 3B Instruct" },
+        { id: "llama-3.1-8b-instruct", name: "Llama 3.1 8B Instruct" },
+        { id: "mistral-7b-instruct", name: "Mistral 7B Instruct" },
+      ];
+    }
+  }
+
+  /**
    * Fetches available models from Anthropic API
    * @returns Array of Anthropic models or fallback models if API fails
    */
