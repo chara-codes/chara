@@ -1,5 +1,6 @@
 import { createDataStreamResponse, type CoreMessage } from "ai";
 import { chatAgent } from "../agents/chat-agent";
+import { logger } from "@chara/logger";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",

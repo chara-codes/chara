@@ -1,4 +1,4 @@
-import { StreamData, streamText, tool, type CoreMessage } from "ai";
+import { streamText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
 import { mcpWrapper } from "../mcp/mcp-client";
@@ -20,7 +20,6 @@ export const chatAgent = async (
 
   // Get ready tools from MCP wrapper (already initialized)
   const tools = mcpWrapper.getTools();
-  logger.dump(tools);
   logger.info(`Using ${Object.keys(tools).length} tools for chat`);
 
   return streamText({
@@ -29,7 +28,7 @@ export const chatAgent = async (
     tools,
     model: aiModel,
     toolCallStreaming: true,
-    maxSteps: 10,
+    maxSteps: 99,
     messages: [{ role: "system", content: "Be funny" }, ...messages],
   });
 };
