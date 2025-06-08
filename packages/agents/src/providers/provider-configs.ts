@@ -170,6 +170,33 @@ export class ProviderConfigs extends BaseProviderInitializer {
   }
 
   /**
+   * Initialize LMStudio provider
+   */
+  public initializeLMStudio(): ProviderConfig | null {
+    if (!process.env.LMSTUDIO_API_BASE_URL) {
+      return null;
+    }
+
+    return this.safeInitialize("LMStudio", () => {
+      const baseURL = process.env.LMSTUDIO_API_BASE_URL;
+      if (!baseURL) {
+        throw new Error("LMSTUDIO_API_BASE_URL is required");
+      }
+      // Validate URL format
+      new URL(baseURL);
+      const lmstudioProvider = createOpenAI({
+        apiKey: "lm-studio", // LMStudio requires any non-empty API key
+        baseURL,
+      });
+      return {
+        name: "LMStudio",
+        provider: (modelId: string) => lmstudioProvider(modelId),
+        isAvailable: true,
+      };
+    });
+  }
+
+  /**
    * Initialize AWS Bedrock provider
    */
   public initializeBedrock(): ProviderConfig | null {
@@ -226,6 +253,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
       () => this.initializeOpenRouter(),
       () => this.initializeOllama(),
       () => this.initializeXAI(),
+      () => this.initializeLMStudio(),
       () => this.initializeBedrock(),
       () => this.initializeHuggingFace(),
     ];
