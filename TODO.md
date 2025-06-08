@@ -1,12 +1,19 @@
 # Chara Codes TODO
 
-The list of technical items needed for the project:
+CLI
+[ ] Run separatly mcp, server, web, and agents
+[ ] Use .env for urls
+[ ] Improve DX, remove useless logs
 
-[ ] Describe the architecture
-[ ] Add hooks for the project
-[ ] Add CI/CD for the project
-[ ] Add Dockerfile  for a packages, and add docker-compose to run the project locally
-[ ] Publish artifacts
-[ ] Add commitlint and commitizen
-[ ] Write CONTRIBUTION.md
-[ ] Domain name for the project
+Server
+[ ] Move MCP to separate package
+[ ] Add ability to run sever with custom db
+[ ] Remove multi user/project support (no session, no project in database)
+[ ] Move AI to Agents
+
+Web
+[ ] Move to new one design
+
+Agents
+[ ] Tools for communication with cli
+[ ] Debug MCP errors (mcp-client.ts)

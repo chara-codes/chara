@@ -1,6 +1,5 @@
 import { streamText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
-import { logger } from "@chara/logger";
 
 export const beautifyAgent = (
   {
