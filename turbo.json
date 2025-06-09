@@ -12,5 +12,6 @@
       "persistent": true
     },
     "test": {}
-  }
+  },
+  "concurrency": "14"
 }
