@@ -32,10 +32,12 @@ export interface StreamCallbacks {
   ) => void; // For inline tool call rendering
 }
 
+import type { MessageContent } from "../store/types";
+
 export interface StreamRequestPayload {
   messages: Array<{
     role: string;
-    content: string;
+    content: string | MessageContent[];
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     tool_calls?: any[];
     tool_call_id?: string;

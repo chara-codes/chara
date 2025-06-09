@@ -1,6 +1,13 @@
+export interface MessageContent {
+  type: 'text' | 'file'
+  text?: string
+  data?: string // base64 encoded file data
+  mimeType?: string
+}
+
 export interface Message {
   id: string
-  content: string
+  content: string | MessageContent[] // Support both legacy string and new multi-part content
   isUser: boolean
   timestamp?: string
   contextItems?: ContextItem[] // Add context items to messages
