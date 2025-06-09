@@ -1,4 +1,4 @@
-# @frontend/design-system
+# @chara/design-system
 
 A component library and design system for the frontend applications.
 

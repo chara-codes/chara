@@ -1,4 +1,4 @@
-# @frontend/core
+# @chara/core
 
 Core state management, types, and utilities for the frontend applications.
 

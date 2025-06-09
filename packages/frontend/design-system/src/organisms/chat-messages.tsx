@@ -3,7 +3,7 @@
 import React from "react";
 import styled from "styled-components";
 import MessageBubble from "../molecules/message-bubble";
-import type { Message } from "@frontend/core";
+import type { Message } from "@chara/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // Update the ChatMessagesProps interface to include handlers for the new buttons

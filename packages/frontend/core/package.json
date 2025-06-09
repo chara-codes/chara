@@ -1,5 +1,5 @@
 {
-  "name": "@frontend/core",
+  "name": "@chara/core",
   "version": "0.1.0",
   "private": true,
   "main": "./dist/index.js",

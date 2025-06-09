@@ -30,7 +30,7 @@ import {
   IconOptionBase,
 } from "../atoms";
 import { theme } from "../theme";
-import { useNavigateBack, useNavigateToTechStacks } from "@frontend/core";
+import { useNavigateBack, useNavigateToTechStacks } from "@chara/core";
 
 const { colors, typography, spacing, borderRadius, shadows, breakpoints } =
   theme;

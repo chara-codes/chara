@@ -19,11 +19,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@frontend/design-system": path.resolve(
+      "@chara/design-system": path.resolve(
         __dirname,
         "../frontend/design-system/src",
       ),
-      "@frontend/core": path.resolve(__dirname, "../frontend/core/src"),
+      "@chara/core": path.resolve(__dirname, "../frontend/core/src"),
     },
   },
   preview: {

@@ -2,7 +2,7 @@
 
 import type React from "react"
 import styled from "styled-components"
-import { ExecutedCommand } from '@frontend/core';
+import { ExecutedCommand } from '@chara/core';
 
 interface CommandTerminalProps {
   commands: ExecutedCommand[]

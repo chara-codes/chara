@@ -16,7 +16,7 @@ import {
   useNavigateToTechStacks, // Import the new navigation hook
   useCurrentScreen,
   Screen,
-} from '@frontend/core';
+} from '@chara/core';
 import { Theme } from '@/theme';
 // Define Theme interface locally to avoid dependency issues
 

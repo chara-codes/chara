@@ -1,5 +1,5 @@
 {
-  "name": "@frontend/design-system",
+  "name": "@chara/design-system",
   "version": "0.1.0",
   "private": true,
   "main": "./dist/index.js",
@@ -12,7 +12,7 @@
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
   "dependencies": {
-    "@frontend/core": "workspace:*",
+    "@chara/core": "workspace:*",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-aspect-ratio": "^1.1.2",
     "@radix-ui/react-avatar": "^1.1.10",

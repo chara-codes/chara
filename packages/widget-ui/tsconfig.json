@@ -17,8 +17,8 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@frontend/design-system": ["../frontend/design-system/src"],
-      "@frontend/design-system/*": ["../frontend/design-system/src/*"]
+      "@chara/design-system": ["../frontend/design-system/src"],
+      "@chara/design-system/*": ["../frontend/design-system/src/*"]
     }
   },
   "include": ["src"],

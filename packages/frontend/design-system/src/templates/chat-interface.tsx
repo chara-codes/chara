@@ -10,15 +10,15 @@ import SettingsView from "../organisms/settings-view";
 import TechStacksView from "../organisms/tech-stacks-view";
 import AddTechStackView from "../organisms/add-tech-stack-view";
 import EditTechStackView from "../organisms/edit-tech-stack-view";
-import { useChatStore } from '@frontend/core';
-import { useModelsStore } from '@frontend/core';
+import { useChatStore } from '@chara/core';
+import { useModelsStore } from '@chara/core';
 import {
   useRoutingStore,
   Screen,
   useNavigateToConversation,
-} from '@frontend/core';
+} from '@chara/core';
 import type { Theme } from '@/theme';
-import type { ButtonConfig } from '@frontend/core';
+import type { ButtonConfig } from '@chara/core';
 
 const Container = styled.div`
   all: revert;

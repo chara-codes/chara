@@ -14,7 +14,7 @@ import {
   useNavigateToAddTechStack,
   useNavigateToEditTechStack,
   useNavigateBack,
-} from '@frontend/core';
+} from '@chara/core';
 import { useTechStacks } from '../stores';
 import Tooltip from "../atoms/tooltip";
 

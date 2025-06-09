@@ -3,8 +3,8 @@
 import type React from "react";
 import styled from "styled-components";
 import { useState, useEffect } from "react";
-import type { FileDiff } from '@frontend/core';
-import { parsePatchStats } from '@frontend/core';
+import type { FileDiff } from '@chara/core';
+import { parsePatchStats } from '@chara/core';
 
 // Update the FileChangesListProps interface
 interface FileChangesListProps {

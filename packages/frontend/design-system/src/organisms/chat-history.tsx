@@ -4,7 +4,7 @@ import type React from "react";
 import { useState } from "react";
 import styled from "styled-components";
 import { format, isValid } from "date-fns"; // Added isValid import
-import type { Chat } from "@frontend/core";
+import type { Chat } from "@chara/core";
 import { TrashIcon } from "../atoms/icons";
 
 interface ChatHistoryProps {

@@ -2,8 +2,8 @@
 
 import type React from "react";
 import styled from "styled-components";
-import type { Chat } from "@frontend/core";
-import { useNavigateToHistory } from '@frontend/core';
+import type { Chat } from "@chara/core";
+import { useNavigateToHistory } from '@chara/core';
 
 interface RecentHistoryProps {
   chats: Chat[];

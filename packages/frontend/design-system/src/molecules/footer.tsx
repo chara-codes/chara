@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import { useChatStore, useModelsStore } from '@frontend/core';
+import { useChatStore, useModelsStore } from '@chara/core';
 
 // Make the footer more compact
 const FooterContainer = styled.footer`

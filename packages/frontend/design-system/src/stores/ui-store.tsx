@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import type React from "react";
 import { createContext, useContext, useRef, type ReactNode } from "react";
-import type { ButtonConfig } from '@frontend/core';
+import type { ButtonConfig } from '@chara/core';
 import {
   PlusIcon,
   ClipIcon,

@@ -4,7 +4,7 @@ import {
   theme,
   UIStoreProvider,
   useUIStore,
-} from "@frontend/design-system";
+} from "@chara/design-system";
 
 // Configuration interface
 export interface CharaWebConfig {

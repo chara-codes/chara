@@ -17,8 +17,8 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@frontend/core": ["../frontend/core/src"],
-      "@frontend/core/*": ["../frontend/core/src/*"]
+      "@chara/core": ["../frontend/core/src"],
+      "@chara/core/*": ["../frontend/core/src/*"]
     }
   },
   "include": ["src"],

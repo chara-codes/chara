@@ -17,7 +17,7 @@ import {
   useNavigateBack,
   useNavigateToTechStacks,
   useSelectedTechStackId,
-} from '@frontend/core';
+} from '@chara/core';
 
 import {
   useGetTechStackById,
