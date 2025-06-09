@@ -1,25 +1,25 @@
-import type { FileDiff, DiffStats } from '../store/types';
+import type { FileDiff, DiffStats } from "../store/types";
 
 /**
  * Parse a unified diff patch to extract statistics
  */
 export function parsePatchStats(patchContent: string): DiffStats {
-  const lines = patchContent.split('\n');
+  const lines = patchContent.split("\n");
   let additions = 0;
   let deletions = 0;
   let modifications = 0;
-  
+
   for (const line of lines) {
-    if (line.startsWith('+') && !line.startsWith('+++')) {
+    if (line.startsWith("+") && !line.startsWith("+++")) {
       additions++;
-    } else if (line.startsWith('-') && !line.startsWith('---')) {
+    } else if (line.startsWith("-") && !line.startsWith("---")) {
       deletions++;
     }
   }
-  
+
   // Modifications are the minimum of additions and deletions
   modifications = Math.min(additions, deletions);
-  
+
   return {
     additions,
     deletions,
@@ -32,7 +32,7 @@ export function parsePatchStats(patchContent: string): DiffStats {
  * Apply a patch to original content to get new content
  * This is a simplified implementation - in production you'd use a proper patch library
  */
-export function applyPatch(originalContent: string, _patchContent: string): string {
+export function applyPatch(originalContent: string): string {
   // For now, return the newContent if available, otherwise return original
   // In a real implementation, you'd parse the patch and apply it line by line
   return originalContent; // Placeholder implementation
@@ -44,29 +44,29 @@ export function applyPatch(originalContent: string, _patchContent: string): stri
 export function createPatch(
   originalContent: string,
   newContent: string,
-  filePath: string
+  filePath: string,
 ): string {
   // This is a simplified implementation
   // In production, you'd use a proper diff library like 'diff' or similar
-  const originalLines = originalContent.split('\n');
-  const newLines = newContent.split('\n');
-  
+  const originalLines = originalContent.split("\n");
+  const newLines = newContent.split("\n");
+
   let patch = `--- a/${filePath}\n+++ b/${filePath}\n`;
-  
+
   // Simple line-by-line comparison (not optimal, but functional)
   const maxLines = Math.max(originalLines.length, newLines.length);
   let hunkStart = -1;
   let changes: string[] = [];
-  
+
   for (let i = 0; i < maxLines; i++) {
     const originalLine = originalLines[i];
     const newLine = newLines[i];
-    
+
     if (originalLine !== newLine) {
       if (hunkStart === -1) {
         hunkStart = i;
       }
-      
+
       if (originalLine !== undefined) {
         changes.push(`-${originalLine}`);
       }
@@ -75,19 +75,19 @@ export function createPatch(
       }
     } else if (changes.length > 0) {
       // End of hunk
-      const hunkHeader = `@@ -${hunkStart + 1},${changes.filter(c => c.startsWith('-')).length} +${hunkStart + 1},${changes.filter(c => c.startsWith('+')).length} @@`;
-      patch += hunkHeader + '\n' + changes.join('\n') + '\n';
+      const hunkHeader = `@@ -${hunkStart + 1},${changes.filter((c) => c.startsWith("-")).length} +${hunkStart + 1},${changes.filter((c) => c.startsWith("+")).length} @@`;
+      patch += `${hunkHeader}\n${changes.join("\n")}\n`;
       changes = [];
       hunkStart = -1;
     }
   }
-  
+
   // Handle remaining changes
   if (changes.length > 0) {
-    const hunkHeader = `@@ -${hunkStart + 1},${changes.filter(c => c.startsWith('-')).length} +${hunkStart + 1},${changes.filter(c => c.startsWith('+')).length} @@`;
-    patch += hunkHeader + '\n' + changes.join('\n') + '\n';
+    const hunkHeader = `@@ -${hunkStart + 1},${changes.filter((c) => c.startsWith("-")).length} +${hunkStart + 1},${changes.filter((c) => c.startsWith("+")).length} @@`;
+    patch += `${hunkHeader}\n${changes.join("\n")}\n`;
   }
-  
+
   return patch;
 }
 
@@ -101,7 +101,7 @@ export interface PatchHunk {
   newStart: number;
   newCount: number;
   changes: Array<{
-    type: 'context' | 'addition' | 'deletion';
+    type: "context" | "addition" | "deletion";
     content: string;
     oldLineNumber?: number;
     newLineNumber?: number;
@@ -109,18 +109,18 @@ export interface PatchHunk {
 }
 
 export function parsePatchHunks(patchContent: string): PatchHunk[] {
-  const lines = patchContent.split('\n');
+  const lines = patchContent.split("\n");
   const hunks: PatchHunk[] = [];
   let currentHunk: PatchHunk | null = null;
 
   for (const line of lines) {
     // Skip file headers
-    if (line.startsWith('---') || line.startsWith('+++')) {
+    if (line.startsWith("---") || line.startsWith("+++")) {
       continue;
     }
 
     // Hunk header
-    if (line.startsWith('@@')) {
+    if (line.startsWith("@@")) {
       if (currentHunk) {
         hunks.push(currentHunk);
       }
@@ -130,9 +130,9 @@ export function parsePatchHunks(patchContent: string): PatchHunk[] {
         currentHunk = {
           header: line,
           oldStart: Number.parseInt(match[1], 10),
-          oldCount: Number.parseInt(match[2] || '1', 10),
+          oldCount: Number.parseInt(match[2] || "1", 10),
           newStart: Number.parseInt(match[3], 10),
-          newCount: Number.parseInt(match[4] || '1', 10),
+          newCount: Number.parseInt(match[4] || "1", 10),
           changes: [],
         };
       }
@@ -141,19 +141,19 @@ export function parsePatchHunks(patchContent: string): PatchHunk[] {
 
     // Hunk content
     if (currentHunk) {
-      if (line.startsWith('+')) {
+      if (line.startsWith("+")) {
         currentHunk.changes.push({
-          type: 'addition',
+          type: "addition",
           content: line.substring(1),
         });
-      } else if (line.startsWith('-')) {
+      } else if (line.startsWith("-")) {
         currentHunk.changes.push({
-          type: 'deletion',
+          type: "deletion",
           content: line.substring(1),
         });
-      } else if (line.startsWith(' ')) {
+      } else if (line.startsWith(" ")) {
         currentHunk.changes.push({
-          type: 'context',
+          type: "context",
           content: line.substring(1),
         });
       }
@@ -173,7 +173,7 @@ export function parsePatchHunks(patchContent: string): PatchHunk[] {
 export function convertDiffForDisplay(diff: FileDiff) {
   const hunks = parsePatchHunks(diff.patchContent || "");
   const stats = diff.stats || parsePatchStats(diff.patchContent || "");
-  
+
   return {
     ...diff,
     hunks,
@@ -189,12 +189,12 @@ export function createFileDiff(
   filePath: string,
   originalContent: string,
   newContent: string,
-  language?: string
+  language?: string,
 ): FileDiff {
-  const fileName = filePath.split('/').pop() || filePath;
+  const fileName = filePath.split("/").pop() || filePath;
   const patchContent = createPatch(originalContent, newContent, filePath);
   const stats = parsePatchStats(patchContent);
-  
+
   return {
     id,
     filePath,
@@ -203,7 +203,7 @@ export function createFileDiff(
     originalContent,
     patchContent,
     newContent,
-    status: 'pending',
+    status: "pending",
     stats,
   };
 }
@@ -215,7 +215,7 @@ export function hasDiffChanges(diff: FileDiff): boolean {
   if (diff.stats) {
     return diff.stats.additions > 0 || diff.stats.deletions > 0;
   }
-  
+
   const stats = parsePatchStats(diff.patchContent || "");
   return stats.additions > 0 || stats.deletions > 0;
 }
@@ -228,57 +228,57 @@ export function migrateLegacyDiff(legacyDiff: any): FileDiff {
   if (legacyDiff.patchContent && legacyDiff.originalContent) {
     return legacyDiff as FileDiff;
   }
-  
+
   // Convert legacy hunks to patch format
   let patchContent = `--- a/${legacyDiff.filePath}\n+++ b/${legacyDiff.filePath}\n`;
-  let originalContent = legacyDiff.originalContent || '';
-  let newContent = legacyDiff.newContent || '';
-  
+  let originalContent = legacyDiff.originalContent || "";
+  let newContent = legacyDiff.newContent || "";
+
   if (legacyDiff.hunks && Array.isArray(legacyDiff.hunks)) {
     for (const hunk of legacyDiff.hunks) {
-      patchContent += hunk.header + '\n';
-      
+      patchContent += hunk.header + "\n";
+
       if (hunk.changes && Array.isArray(hunk.changes)) {
         for (const change of hunk.changes) {
-          if (change.type === 'addition') {
+          if (change.type === "addition") {
             patchContent += `+${change.content}\n`;
-          } else if (change.type === 'deletion') {
+          } else if (change.type === "deletion") {
             patchContent += `-${change.content}\n`;
-          } else if (change.type === 'context') {
+          } else if (change.type === "context") {
             patchContent += ` ${change.content}\n`;
           }
         }
       }
     }
   }
-  
+
   // If we don't have original/new content, try to reconstruct from hunks
   if (!originalContent && legacyDiff.hunks) {
     const lines: string[] = [];
     for (const hunk of legacyDiff.hunks) {
       for (const change of hunk.changes || []) {
-        if (change.type === 'context' || change.type === 'deletion') {
+        if (change.type === "context" || change.type === "deletion") {
           lines.push(change.content);
         }
       }
     }
-    originalContent = lines.join('\n');
+    originalContent = lines.join("\n");
   }
-  
+
   if (!newContent && legacyDiff.hunks) {
     const lines: string[] = [];
     for (const hunk of legacyDiff.hunks) {
       for (const change of hunk.changes || []) {
-        if (change.type === 'context' || change.type === 'addition') {
+        if (change.type === "context" || change.type === "addition") {
           lines.push(change.content);
         }
       }
     }
-    newContent = lines.join('\n');
+    newContent = lines.join("\n");
   }
-  
+
   const stats = parsePatchStats(patchContent);
-  
+
   return {
     id: legacyDiff.id,
     filePath: legacyDiff.filePath,
@@ -287,7 +287,7 @@ export function migrateLegacyDiff(legacyDiff: any): FileDiff {
     originalContent,
     patchContent,
     newContent,
-    status: legacyDiff.status || 'pending',
+    status: legacyDiff.status || "pending",
     stats,
   };
 }
