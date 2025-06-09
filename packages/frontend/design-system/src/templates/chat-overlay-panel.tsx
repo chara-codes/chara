@@ -2,11 +2,11 @@
 
 import React, { useEffect, useCallback } from "react";
 import styled from "styled-components";
-import { theme } from '../theme/theme';
-import ChatInterface from "../templates/chat-interface";
+import { theme } from "../theme/theme";
 import { ChatIcon } from "../atoms/icons";
-import { useUIStore } from '../stores'; // Correctly imports the overloaded hook
+import { useUIStore } from "../stores"; // Correctly imports the overloaded hook
 import ResizeHandle from "../atoms/resize-handle";
+import { ChatInterface } from "../templates";
 
 const Backdrop = styled.div<{ isOpen: boolean }>`
   position: fixed;
@@ -333,4 +333,3 @@ export const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
     </>
   );
 };
-

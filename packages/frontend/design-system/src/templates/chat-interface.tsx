@@ -10,15 +10,15 @@ import SettingsView from "../organisms/settings-view";
 import TechStacksView from "../organisms/tech-stacks-view";
 import AddTechStackView from "../organisms/add-tech-stack-view";
 import EditTechStackView from "../organisms/edit-tech-stack-view";
-import { useChatStore } from '@chara/core';
-import { useModelsStore } from '@chara/core';
+import { useChatStore } from "@chara/core";
+import { useModelsStore } from "@chara/core";
 import {
   useRoutingStore,
   Screen,
   useNavigateToConversation,
-} from '@chara/core';
-import type { Theme } from '@/theme';
-import type { ButtonConfig } from '@chara/core';
+} from "@chara/core";
+import type { Theme } from "@/theme";
+import type { ButtonConfig } from "@chara/core";
 
 const Container = styled.div`
   all: revert;
@@ -103,7 +103,7 @@ interface ChatInterfaceProps {
   buttonConfig?: ButtonConfig[];
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = () => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   // Get store initialization functions
   const initializeChatStore = useChatStore((state) => state.initializeStore);
   const initializeModelsStore = useModelsStore(
@@ -173,10 +173,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               onClick={() => {
                 console.log("Debug info:");
                 console.log("- Window location:", window.location.href);
-                console.log(
-                  "- Public Agents URL:",
-                  import.meta.env.VITE_AGENTS_BASE_URL || "Not defined",
-                );
                 console.log("- Base URL:", document.baseURI);
                 alert("Debug info logged to console");
               }}
@@ -247,5 +243,3 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     </Container>
   );
 };
-
-export default ChatInterface;
