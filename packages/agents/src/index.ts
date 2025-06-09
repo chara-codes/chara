@@ -19,7 +19,7 @@ async function startServer() {
   // Verify tools are ready
   const tools = mcpWrapper.getTools();
   logger.info(
-    `✅ MCP initialization complete. Available tools: ${Object.keys(tools).length}`
+    `✅ MCP initialization complete. Available tools: ${Object.keys(tools).length}`,
   );
 
   if (Object.keys(tools).length === 2) {
@@ -27,12 +27,18 @@ async function startServer() {
   } else {
     logger.info(
       "🎯 MCP tools loaded successfully:",
-      Object.keys(tools).slice(0, 3)
+      Object.keys(tools).slice(0, 3),
     );
   }
 
-  const server = Bun.serve({
+  // Check for HTTPS configuration
+  const certPath = process.env.CERT_PATH;
+  const keyPath = process.env.KEY_PATH;
+
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  const serverConfig: any = {
     port: 3031,
+    idleTimeout: 255,
     routes: {
       // Static routes
       "/api/chat": chatController,
@@ -48,8 +54,27 @@ async function startServer() {
     // (optional) fallback for unmatched routes:
     // Required if Bun's version < 1.2.3
     fetch: miscController.fallback,
-  });
-  logger.server(`Server started on port ${server.port}`);
+  };
+
+  // Add HTTPS configuration if certificates are available
+  if (certPath && keyPath) {
+    try {
+      serverConfig.tls = {
+        cert: Bun.file(certPath),
+        key: Bun.file(keyPath),
+      };
+      logger.info("🔒 HTTPS configuration loaded successfully");
+    } catch (error) {
+      logger.error("❌ Failed to load SSL certificates:", error);
+      logger.warning("⚠️ Falling back to HTTP server");
+    }
+  } else {
+    logger.info("🌐 Starting HTTP server (no SSL certificates provided)");
+  }
+
+  const server = Bun.serve(serverConfig);
+  const protocol = serverConfig.tls ? "https" : "http";
+  logger.server(`Server started on ${protocol}://localhost:${server.port}`);
   logger.info("🎉 Server fully ready to accept requests");
 }
 

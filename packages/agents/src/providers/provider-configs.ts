@@ -1,4 +1,5 @@
 import { openai, createOpenAI } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
@@ -170,6 +171,34 @@ export class ProviderConfigs extends BaseProviderInitializer {
   }
 
   /**
+   * Initialize LMStudio provider
+   */
+  public initializeLMStudio(): ProviderConfig | null {
+    if (!process.env.LMSTUDIO_API_BASE_URL) {
+      return null;
+    }
+
+    return this.safeInitialize("LMStudio", () => {
+      const baseURL = process.env.LMSTUDIO_API_BASE_URL;
+      if (!baseURL) {
+        throw new Error("LMSTUDIO_API_BASE_URL is required");
+      }
+      // Validate URL format
+      new URL(baseURL);
+      const lmstudioProvider = createOpenAICompatible({
+        name: "lmstudio",
+        baseURL,
+      });
+      return {
+        name: "LMStudio",
+        provider: (modelId: string) => lmstudioProvider(modelId),
+        isAvailable: true,
+        fetchModels: () => ModelFetcher.fetchLMStudioModels(baseURL),
+      };
+    });
+  }
+
+  /**
    * Initialize AWS Bedrock provider
    */
   public initializeBedrock(): ProviderConfig | null {
@@ -216,18 +245,19 @@ export class ProviderConfigs extends BaseProviderInitializer {
   /**
    * Get all provider initialization methods
    */
-  public getAllProviderInitializers(): Array<() => ProviderConfig | null> {
-    return [
-      () => this.initializeOpenAI(),
-      () => this.initializeAnthropic(),
-      () => this.initializeGoogle(),
-      () => this.initializeMistral(),
-      () => this.initializeGroq(),
-      () => this.initializeOpenRouter(),
-      () => this.initializeOllama(),
-      () => this.initializeXAI(),
-      () => this.initializeBedrock(),
-      () => this.initializeHuggingFace(),
-    ];
+  public getAllProviderInitializers(): Record<string, () => ProviderConfig | null> {
+    return {
+      openai: () => this.initializeOpenAI(),
+      anthropic: () => this.initializeAnthropic(),
+      google: () => this.initializeGoogle(),
+      mistral: () => this.initializeMistral(),
+      groq: () => this.initializeGroq(),
+      openrouter: () => this.initializeOpenRouter(),
+      ollama: () => this.initializeOllama(),
+      lmstudio: () => this.initializeLMStudio(),
+      xai: () => this.initializeXAI(),
+      bedrock: () => this.initializeBedrock(),
+      huggingface: () => this.initializeHuggingFace(),
+    };
   }
 }

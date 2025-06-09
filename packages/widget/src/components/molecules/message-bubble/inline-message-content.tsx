@@ -6,6 +6,7 @@ import styled from "styled-components";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { ToolCall } from "../../../store/types";
 import { ToolIcon } from "./icons";
+import { cleanThinkingTags } from "../../../utils/thinking-tags";
 
 interface ContentSegment {
   type: "text" | "tool-call";
@@ -172,7 +173,7 @@ export const InlineMessageContent = ({
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight]}
         >
-          {segment.content}
+          {cleanThinkingTags(segment.content)}
         </ReactMarkdown>
       );
     }

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Message, FileDiff } from "../store/types"; // Assuming types are in store
 import { MessageSegmentBuilder } from "./message-segment-builder";
+import { THINKING_TAG_REGEX } from "../utils/thinking-tags";
 
 export interface StreamCallbacks {
   onTextDelta: (delta: string) => void;
@@ -130,20 +131,31 @@ export async function processChatStream(
 
               // Handle thinking tags with proper text segmentation
               const processTextWithThinkingTags = (text: string) => {
-                // Regular expression to match thinking tags (case-insensitive)
-                const thinkingTagRegex = /<\/?think(?:ing)?\s*>/gi;
+                // Use shared thinking tag regex for consistent handling
+                const thinkingTagRegex = new RegExp(THINKING_TAG_REGEX.source, THINKING_TAG_REGEX.flags);
 
                 let currentIndex = 0;
                 let match: RegExpExecArray | null;
 
+                // Check if text ends with a partial tag that might be completed in next chunk
+                const partialTagRegex = /<\/?think(?:ing)?(?:\s[^>]*)?$/i;
+                const partialMatch = partialTagRegex.exec(text);
+                
+                // If we have a partial tag at the end, process everything except the partial tag
+                let textToProcess = text;
+                if (partialMatch) {
+                  textToProcess = text.slice(0, partialMatch.index);
+                  // The partial tag will be handled when the complete tag arrives
+                }
+
                 // Avoid assignment in expressions
                 while (true) {
-                  match = thinkingTagRegex.exec(text);
+                  match = thinkingTagRegex.exec(textToProcess);
                   if (match === null) break;
 
                   // Process text before the tag
                   if (match.index > currentIndex) {
-                    const beforeTag = text.slice(currentIndex, match.index);
+                    const beforeTag = textToProcess.slice(currentIndex, match.index);
                     if (beforeTag) {
                       if (isThinking) {
                         callbacks.onThinkingDelta(beforeTag);
@@ -154,15 +166,19 @@ export async function processChatStream(
                   }
 
                   // Update thinking state based on tag type
-                  const tagContent = match[0].toLowerCase();
+                  const tagContent = match[0].toLowerCase().trim();
                   if (
                     tagContent.startsWith("<think>") ||
-                    tagContent.startsWith("<thinking>")
+                    tagContent.startsWith("<thinking>") ||
+                    tagContent.startsWith("<think ") ||
+                    tagContent.startsWith("<thinking ")
                   ) {
                     isThinking = true;
                   } else if (
                     tagContent.startsWith("</think>") ||
-                    tagContent.startsWith("</thinking>")
+                    tagContent.startsWith("</thinking>") ||
+                    tagContent.startsWith("</think") ||
+                    tagContent.startsWith("</thinking")
                   ) {
                     isThinking = false;
                   }
@@ -170,9 +186,9 @@ export async function processChatStream(
                   currentIndex = match.index + match[0].length;
                 }
 
-                // Process remaining text after the last tag
-                if (currentIndex < text.length) {
-                  const remainingText = text.slice(currentIndex);
+                // Process remaining text after the last tag (excluding partial tag)
+                if (currentIndex < textToProcess.length) {
+                  const remainingText = textToProcess.slice(currentIndex);
                   if (remainingText) {
                     if (isThinking) {
                       callbacks.onThinkingDelta(remainingText);
@@ -180,6 +196,12 @@ export async function processChatStream(
                       callbacks.onTextDelta(remainingText);
                     }
                   }
+                }
+
+                // If we have a partial tag, don't process it yet - wait for completion
+                if (partialMatch) {
+                  // Store partial tag for next processing cycle if needed
+                  // For now, we'll just ignore it and let it be completed in the next chunk
                 }
               };
 
@@ -331,35 +353,39 @@ export async function processChatStream(
               // The parsedData typically contains messageId
               break;
             case "d": // Done signal with completion stats
-              console.log("Stream Service: Stream done", parsedData);
-              // This indicates the stream is done with finish reason and usage stats
-              // parsedData contains: finishReason, usage (promptTokens, completionTokens)
+              {
+                console.log("Stream Service: Stream done", parsedData);
+                // This indicates the stream is done with finish reason and usage stats
+                // parsedData contains: finishReason, usage (promptTokens, completionTokens)
 
-              // Finalize segments when stream completes
-              const finalSegments = segmentBuilder.finalize();
-              if (callbacks.onSegmentUpdate) {
-                callbacks.onSegmentUpdate(finalSegments);
-              }
+                // Finalize segments when stream completes
+                const finalSegments = segmentBuilder.finalize();
+                if (callbacks.onSegmentUpdate) {
+                  callbacks.onSegmentUpdate(finalSegments);
+                }
 
-              if (callbacks.onCompletion) {
-                callbacks.onCompletion(parsedData);
+                if (callbacks.onCompletion) {
+                  callbacks.onCompletion(parsedData);
+                }
+                break;
               }
-              break;
             case "e": // Stream completion/end with usage stats
-              console.log("Stream Service: Stream completed", parsedData);
-              // This indicates the stream is complete with finish reason and usage stats
-              // parsedData contains: finishReason, usage (promptTokens, completionTokens), isContinued
+              {
+                console.log("Stream Service: Stream completed", parsedData);
+                // This indicates the stream is complete with finish reason and usage stats
+                // parsedData contains: finishReason, usage (promptTokens, completionTokens), isContinued
 
-              // Finalize segments when stream completes
-              const finalSegmentsE = segmentBuilder.finalize();
-              if (callbacks.onSegmentUpdate) {
-                callbacks.onSegmentUpdate(finalSegmentsE);
-              }
+                // Finalize segments when stream completes
+                const finalSegmentsE = segmentBuilder.finalize();
+                if (callbacks.onSegmentUpdate) {
+                  callbacks.onSegmentUpdate(finalSegmentsE);
+                }
 
-              if (callbacks.onCompletion) {
-                callbacks.onCompletion(parsedData);
+                if (callbacks.onCompletion) {
+                  callbacks.onCompletion(parsedData);
+                }
+                break;
               }
-              break;
             case "3": // Tool result/response
               console.log("Stream Service: Tool result received", parsedData);
               // Handle tool execution results

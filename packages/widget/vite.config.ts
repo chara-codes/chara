@@ -2,16 +2,19 @@ import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
+import mkcert from "vite-plugin-mkcert";
+
 /// <reference types="vitest" />
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react({
-      jsxImportSource: 'react',
-      jsxRuntime: 'automatic',
-    }), 
-    tailwindcss()
+      jsxImportSource: "react",
+      jsxRuntime: "automatic",
+    }),
+    tailwindcss(),
+    mkcert(),
   ],
   resolve: {
     alias: {
@@ -32,8 +35,8 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'jsdom',
+    environment: "jsdom",
     globals: true,
-    setupFiles: ['./src/test/setup.ts'],
+    setupFiles: ["./src/test/setup.ts"],
   },
 });

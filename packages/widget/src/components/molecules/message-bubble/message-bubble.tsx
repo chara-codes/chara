@@ -70,6 +70,7 @@ import {
 } from "./styles";
 import { getPreviewContent } from "./utils";
 import type { FileDiff, ToolResult } from "../../../store/types";
+import { cleanThinkingTags } from "../../../utils/thinking-tags";
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -386,12 +387,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           ) : isUser ? (
             content // Render user content as plain text
           ) : (
-            // Render AI content as Markdown with syntax highlighting
+            // Render AI content as Markdown with syntax highlighting, cleaned of thinking tags
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeHighlight]}
             >
-              {content}
+              {cleanThinkingTags(content)}
             </ReactMarkdown>
           )}
         </MessageContent>

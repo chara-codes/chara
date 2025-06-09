@@ -18,6 +18,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/vite": "^4.1.8",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitejs/plugin-basic-ssl": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "highlight.js": "^11.11.1",
@@ -52,6 +53,7 @@
     "typescript": "~5.7.3",
     "typescript-eslint": "^8.33.1",
     "vite": "^6.3.5",
+    "vite-plugin-mkcert": "^1.17.8",
     "vitest": "^3.2.2"
   }
 }
