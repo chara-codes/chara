@@ -253,12 +253,12 @@ const groupChatsByDate = (chats: Chat[]) => {
   const yesterdayChats: Chat[] = [];
   const olderChats: Chat[] = [];
 
-  chats.forEach((chat) => {
+  for (const chat of chats) {
     // Ensure we have a valid date before processing
     const chatDate = new Date(chat.timestamp || Date.now());
 
     // Skip invalid dates
-    if (!isValid(chatDate)) return;
+    if (!isValid(chatDate)) continue;
 
     chatDate.setHours(0, 0, 0, 0);
 
@@ -269,7 +269,7 @@ const groupChatsByDate = (chats: Chat[]) => {
     } else {
       olderChats.push(chat);
     }
-  });
+  }
 
   return {
     today: todayChats,
@@ -301,9 +301,20 @@ const formatChatTime = (timestamp: string | number | Date) => {
 const getChatPreview = (chat: Chat) => {
   if (chat.messages && chat.messages.length > 0) {
     const lastMessage = chat.messages[chat.messages.length - 1];
+    let contentText = "";
+
+    if (typeof lastMessage.content === "string") {
+      contentText = lastMessage.content;
+    } else if (Array.isArray(lastMessage.content)) {
+      // Extract only the first text part (main message content)
+      const firstTextPart = lastMessage.content.find(
+        (part) => part.type === "text" && part.text,
+      );
+      contentText = firstTextPart?.text || "";
+    }
+
     return (
-      lastMessage.content.substring(0, 60) +
-      (lastMessage.content.length > 60 ? "..." : "")
+      contentText.substring(0, 60) + (contentText.length > 60 ? "..." : "")
     );
   }
   return "No messages";
@@ -316,9 +327,20 @@ const getChatTitle = (chat: Chat) => {
   if (chat.messages && chat.messages.length > 0) {
     const firstUserMessage = chat.messages.find((m) => m.isUser);
     if (firstUserMessage) {
+      let contentText = "";
+
+      if (typeof firstUserMessage.content === "string") {
+        contentText = firstUserMessage.content;
+      } else if (Array.isArray(firstUserMessage.content)) {
+        // Extract only the first text part (main message content)
+        const firstTextPart = firstUserMessage.content.find(
+          (part) => part.type === "text" && part.text,
+        );
+        contentText = firstTextPart?.text || "";
+      }
+
       return (
-        firstUserMessage.content.substring(0, 30) +
-        (firstUserMessage.content.length > 30 ? "..." : "")
+        contentText.substring(0, 30) + (contentText.length > 30 ? "..." : "")
       );
     }
   }

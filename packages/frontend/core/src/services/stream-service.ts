@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Message, FileDiff } from "../types"; // Assuming types are in store
+import type { Message, FileDiff, MessageContent } from "../types"; // Assuming types are in store
 import { MessageSegmentBuilder } from "./message-segment-builder.ts";
-import { THINKING_TAG_REGEX } from '../utils';
+import { THINKING_TAG_REGEX } from "../utils";
 
 export interface StreamCallbacks {
   onTextDelta: (delta: string) => void;
@@ -35,7 +35,7 @@ export interface StreamCallbacks {
 export interface StreamRequestPayload {
   messages: Array<{
     role: string;
-    content: string;
+    content: string | MessageContent[];
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     tool_calls?: any[];
     tool_call_id?: string;
@@ -361,7 +361,8 @@ export async function processChatStream(
               // This indicates the message is complete
               // The parsedData typically contains messageId
               break;
-            case "d": { // Done signal with completion stats
+            case "d": {
+              // Done signal with completion stats
               console.log("Stream Service: Stream done", parsedData);
               // This indicates the stream is done with finish reason and usage stats
               // parsedData contains: finishReason, usage (promptTokens, completionTokens)
@@ -377,7 +378,8 @@ export async function processChatStream(
               }
               break;
             }
-            case "e": { // Stream completion/end with usage stats
+            case "e": {
+              // Stream completion/end with usage stats
               console.log("Stream Service: Stream completed", parsedData);
               // This indicates the stream is complete with finish reason and usage stats
               // parsedData contains: finishReason, usage (promptTokens, completionTokens), isContinued

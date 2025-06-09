@@ -3,20 +3,15 @@
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type {
-  Chat,
-  ChatMode,
-  ContextItem,
-  Message,
-  ToolCall,
-} from "../types";
-import { fetchChats } from '../services';
+import type { Chat, ChatMode, ContextItem, Message, ToolCall } from "../types";
+import { fetchChats } from "../services";
 import {
   processChatStream,
   type StreamRequestPayload,
   type StreamCallbacks,
-} from '../services'; // Import the new service
+} from "../services"; // Import the new service
 import { MessageSegmentBuilder } from "../services/message-segment-builder.ts";
+import type { MessageContent } from "@chara/widget/src/store/types.ts";
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [
@@ -166,9 +161,50 @@ export const useChatStore = create<ChatState>()(
             }
           }
 
+          // Create message content - automatically include context if available
+          let messageContent: string | MessageContent[];
+
+          if (contextItems.length > 0) {
+            // Create multi-part content with text and context items
+            messageContent = [
+              {
+                type: "text",
+                text: content,
+              },
+              ...contextItems.map((item) => {
+                if (item.type === "file" && item.data) {
+                  return {
+                    type: "file" as const,
+                    data:
+                      typeof item.data === "string"
+                        ? item.data
+                        : JSON.stringify(item.data),
+                    mimeType: item.name.endsWith(".pdf")
+                      ? "application/pdf"
+                      : item.name.endsWith(".png")
+                        ? "image/png"
+                        : item.name.endsWith(".jpg") ||
+                            item.name.endsWith(".jpeg")
+                          ? "image/jpeg"
+                          : item.name.endsWith(".txt")
+                            ? "text/plain"
+                            : "application/octet-stream",
+                  };
+                }
+                return {
+                  type: "text" as const,
+                  text: `Context: ${item.name}\n${typeof item.data === "string" ? item.data : JSON.stringify(item.data)}`,
+                };
+              }),
+            ];
+          } else {
+            // Use simple string content if not including context
+            messageContent = content;
+          }
+
           const userMessage: Message = {
             id: Date.now().toString(),
-            content,
+            content: messageContent,
             isUser: true,
             timestamp: new Date().toLocaleTimeString([], {
               hour: "2-digit",
@@ -252,7 +288,9 @@ export const useChatStore = create<ChatState>()(
             messages: updatedMessages.map((m) => ({
               // Send current message history
               role: m.isUser ? "user" : "assistant",
-              content: m.content,
+              content: Array.isArray(m.content)
+                ? m.content
+                : [{ type: "text", text: m.content }],
               // Include tool calls in message history
               tool_calls: m.toolCalls?.map((tc) => ({
                 id: tc.id,
