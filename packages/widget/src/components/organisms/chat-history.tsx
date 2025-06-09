@@ -306,9 +306,9 @@ const getChatPreview = (chat: Chat) => {
     if (typeof lastMessage.content === 'string') {
       contentText = lastMessage.content;
     } else if (Array.isArray(lastMessage.content)) {
-      // Extract text from multi-part content
-      const textParts = lastMessage.content.filter(part => part.type === 'text' && part.text);
-      contentText = textParts.map(part => part.text).join(' ');
+      // Extract only the first text part (main message content)
+      const firstTextPart = lastMessage.content.find(part => part.type === 'text' && part.text);
+      contentText = firstTextPart?.text || '';
     }
     
     return (
@@ -331,9 +331,9 @@ const getChatTitle = (chat: Chat) => {
       if (typeof firstUserMessage.content === 'string') {
         contentText = firstUserMessage.content;
       } else if (Array.isArray(firstUserMessage.content)) {
-        // Extract text from multi-part content
-        const textParts = firstUserMessage.content.filter(part => part.type === 'text' && part.text);
-        contentText = textParts.map(part => part.text).join(' ');
+        // Extract only the first text part (main message content)
+        const firstTextPart = firstUserMessage.content.find(part => part.type === 'text' && part.text);
+        contentText = firstTextPart?.text || '';
       }
       
       return (

@@ -74,77 +74,39 @@ import type { FileDiff, ToolResult } from "../../../store/types";
 import { cleanThinkingTags } from "../../../utils/thinking-tags";
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
 
-// Helper function to render message content (string or multi-part)
-const renderMessageContent = (content: string | MessageContentType[], isUser = false) => {
+// Helper function to get the main message content (first text part)
+const getMainMessageContent = (content: string | MessageContentType[]): string => {
   if (typeof content === 'string') {
-    // Legacy string content
-    if (isUser) {
-      return content; // Render user content as plain text
-    }
-    // Render AI content as Markdown with syntax highlighting, cleaned of thinking tags
-    return (
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
-      >
-        {cleanThinkingTags(content)}
-      </ReactMarkdown>
-    );
+    return content;
   }
   
-  // Multi-part content
+  // Find the first text part
+  const firstTextPart = content.find(part => part.type === 'text');
+  return firstTextPart?.text || '';
+};
+
+
+
+// Helper function to render main message content
+const renderMainMessageContent = (content: string | MessageContentType[], isUser = false) => {
+  const mainContent = getMainMessageContent(content);
+  
+  if (isUser) {
+    return mainContent; // Render user content as plain text
+  }
+  
+  // Render AI content as Markdown with syntax highlighting, cleaned of thinking tags
   return (
-      <div>
-        {content.map((part, index) => {
-          if (part.type === 'text') {
-            if (isUser) {
-              return <div key={`text-${part.text || ''}-${index}`}>{part.text}</div>;
-            }
-            return (
-              <ReactMarkdown
-                key={`text-${part.text || ''}-${index}`}
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeHighlight]}
-              >
-                {cleanThinkingTags(part.text || '')}
-              </ReactMarkdown>
-            );
-          }
-          if (part.type === 'file') {
-            return (
-              <div key={`file-${part.mimeType || ''}-${index}`} style={{
-                margin: '8px 0', 
-                padding: '8px', 
-                backgroundColor: '#f5f5f5', 
-                borderRadius: '4px',
-                border: '1px solid #ddd'
-              }}>
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                  📎 Attached file ({part.mimeType})
-                </div>
-                {part.mimeType?.startsWith('image/') ? (
-                  <img 
-                    src={`data:${part.mimeType};base64,${part.data}`} 
-                    alt="Attachment"
-                    style={{ maxWidth: '100%', height: 'auto' }}
-                  />
-                ) : part.mimeType === 'application/pdf' ? (
-                  <div style={{ fontSize: '14px', color: '#333' }}>
-                    PDF file attached (base64 encoded)
-                  </div>
-                ) : (
-                <div style={{ fontSize: '14px', color: '#333' }}>
-                  File attached: {part.mimeType}
-                </div>
-              )}
-            </div>
-          );
-        }
-          return null;
-        })}
-    </div>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeHighlight]}
+    >
+      {cleanThinkingTags(mainContent)}
+    </ReactMarkdown>
   );
 };
+
+
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   id,
@@ -458,8 +420,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             // Render message with inline tool calls
             <InlineMessageContent segments={segments} isUser={isUser} />
           ) : (
-            // Render content based on type (string or multi-part)
-            renderMessageContent(content, isUser)
+            // Render only the main message content
+            renderMainMessageContent(content, isUser)
           )}
         </MessageContent>
 
