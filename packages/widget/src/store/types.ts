@@ -39,6 +39,8 @@ export type ContextItem = {
   name: string
   type: string
   data?: unknown
+  content?: string // File content (text or base64 for binary files)
+  mimeType?: string // MIME type of the file
 }
 
 export type ChatMode = "write" | "ask"

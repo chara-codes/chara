@@ -5,6 +5,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import DropdownMenu from "../dropdown-menu";
 import FileInput from "../file-input";
 import type { InputAreaProps } from "../../../types/input-area";
+import { readFileContent, isSupportedFileType } from "../../../utils/file-utils";
 import {
   InputContainer,
   InputWrapper,
@@ -226,13 +227,44 @@ const InputArea: React.FC<InputAreaProps> = ({
     setIsDropdownOpen(false);
   };
 
-  const handleFileSelect = (file: File) => {
-    onAddContext({
-      name: file.name,
-      type: "File",
-      data: file,
-    });
-    setIsDropdownOpen(false);
+  const handleFileSelect = async (file: File) => {
+    try {
+      // Check if file type is supported
+      if (!isSupportedFileType(file)) {
+        console.warn(`Unsupported file type: ${file.type || 'unknown'}`);
+        // Still add the file but without content
+        onAddContext({
+          name: file.name,
+          type: "File",
+          data: file,
+          mimeType: file.type || 'application/octet-stream',
+        });
+        setIsDropdownOpen(false);
+        return;
+      }
+
+      // Read file content
+      const { content, mimeType } = await readFileContent(file);
+      
+      onAddContext({
+        name: file.name,
+        type: "File",
+        data: file,
+        content: content,
+        mimeType: mimeType,
+      });
+      setIsDropdownOpen(false);
+    } catch (error) {
+      console.error('Error reading file:', error);
+      // Fallback to adding file without content
+      onAddContext({
+        name: file.name,
+        type: "File",
+        data: file,
+        mimeType: file.type || 'application/octet-stream',
+      });
+      setIsDropdownOpen(false);
+    }
   };
 
   const triggerFileUpload = () => {
