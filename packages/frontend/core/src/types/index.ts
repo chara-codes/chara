@@ -1,3 +1,2 @@
-export * from './chat';
-export * from './preview';
-export * from './common';
+export * from "./input-area";
+export * from "./stores";
