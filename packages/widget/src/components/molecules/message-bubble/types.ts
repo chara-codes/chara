@@ -1,8 +1,8 @@
-import type { ContextItem, ExecutedCommand, FileDiff, ToolCall } from "../../../store/types"
+import type { ContextItem, ExecutedCommand, FileDiff, MessageContent, ToolCall } from "../../../store/types"
 
 export interface MessageBubbleProps {
   id?: string
-  content: string
+  content: string | MessageContent[]
   isUser: boolean
   timestamp?: string
   thinkingContent?: string

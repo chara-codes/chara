@@ -301,9 +301,19 @@ const formatChatTime = (timestamp: string | number | Date) => {
 const getChatPreview = (chat: Chat) => {
   if (chat.messages && chat.messages.length > 0) {
     const lastMessage = chat.messages[chat.messages.length - 1];
+    let contentText = "";
+    
+    if (typeof lastMessage.content === 'string') {
+      contentText = lastMessage.content;
+    } else if (Array.isArray(lastMessage.content)) {
+      // Extract text from multi-part content
+      const textParts = lastMessage.content.filter(part => part.type === 'text' && part.text);
+      contentText = textParts.map(part => part.text).join(' ');
+    }
+    
     return (
-      lastMessage.content.substring(0, 60) +
-      (lastMessage.content.length > 60 ? "..." : "")
+      contentText.substring(0, 60) +
+      (contentText.length > 60 ? "..." : "")
     );
   }
   return "No messages";
@@ -316,9 +326,19 @@ const getChatTitle = (chat: Chat) => {
   if (chat.messages && chat.messages.length > 0) {
     const firstUserMessage = chat.messages.find((m) => m.isUser);
     if (firstUserMessage) {
+      let contentText = "";
+      
+      if (typeof firstUserMessage.content === 'string') {
+        contentText = firstUserMessage.content;
+      } else if (Array.isArray(firstUserMessage.content)) {
+        // Extract text from multi-part content
+        const textParts = firstUserMessage.content.filter(part => part.type === 'text' && part.text);
+        contentText = textParts.map(part => part.text).join(' ');
+      }
+      
       return (
-        firstUserMessage.content.substring(0, 30) +
-        (firstUserMessage.content.length > 30 ? "..." : "")
+        contentText.substring(0, 30) +
+        (contentText.length > 30 ? "..." : "")
       );
     }
   }

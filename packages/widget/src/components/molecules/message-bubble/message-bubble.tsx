@@ -9,6 +9,7 @@ import "highlight.js/styles/github.css"; // Import highlight.js CSS theme for sy
 import CommandTerminal from "../command-terminal";
 import FileDiffComponent from "../file-diff";
 import FileChangesList from "../file-changes-list";
+import type { MessageContent as MessageContentType } from "../../../store/types";
 import { InlineMessageContent } from "./inline-message-content";
 import type { MessageBubbleProps } from "./types";
 import {
@@ -72,6 +73,78 @@ import { getPreviewContent } from "./utils";
 import type { FileDiff, ToolResult } from "../../../store/types";
 import { cleanThinkingTags } from "../../../utils/thinking-tags";
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
+
+// Helper function to render message content (string or multi-part)
+const renderMessageContent = (content: string | MessageContentType[], isUser = false) => {
+  if (typeof content === 'string') {
+    // Legacy string content
+    if (isUser) {
+      return content; // Render user content as plain text
+    }
+    // Render AI content as Markdown with syntax highlighting, cleaned of thinking tags
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeHighlight]}
+      >
+        {cleanThinkingTags(content)}
+      </ReactMarkdown>
+    );
+  }
+  
+  // Multi-part content
+  return (
+      <div>
+        {content.map((part, index) => {
+          if (part.type === 'text') {
+            if (isUser) {
+              return <div key={`text-${part.text || ''}-${index}`}>{part.text}</div>;
+            }
+            return (
+              <ReactMarkdown
+                key={`text-${part.text || ''}-${index}`}
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+              >
+                {cleanThinkingTags(part.text || '')}
+              </ReactMarkdown>
+            );
+          }
+          if (part.type === 'file') {
+            return (
+              <div key={`file-${part.mimeType || ''}-${index}`} style={{
+                margin: '8px 0', 
+                padding: '8px', 
+                backgroundColor: '#f5f5f5', 
+                borderRadius: '4px',
+                border: '1px solid #ddd'
+              }}>
+                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                  📎 Attached file ({part.mimeType})
+                </div>
+                {part.mimeType?.startsWith('image/') ? (
+                  <img 
+                    src={`data:${part.mimeType};base64,${part.data}`} 
+                    alt="Attachment"
+                    style={{ maxWidth: '100%', height: 'auto' }}
+                  />
+                ) : part.mimeType === 'application/pdf' ? (
+                  <div style={{ fontSize: '14px', color: '#333' }}>
+                    PDF file attached (base64 encoded)
+                  </div>
+                ) : (
+                <div style={{ fontSize: '14px', color: '#333' }}>
+                  File attached: {part.mimeType}
+                </div>
+              )}
+            </div>
+          );
+        }
+          return null;
+        })}
+    </div>
+  );
+};
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   id,
@@ -384,16 +457,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           {segments && segments.length > 0 ? (
             // Render message with inline tool calls
             <InlineMessageContent segments={segments} isUser={isUser} />
-          ) : isUser ? (
-            content // Render user content as plain text
           ) : (
-            // Render AI content as Markdown with syntax highlighting, cleaned of thinking tags
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeHighlight]}
-            >
-              {cleanThinkingTags(content)}
-            </ReactMarkdown>
+            // Render content based on type (string or multi-part)
+            renderMessageContent(content, isUser)
           )}
         </MessageContent>
 
