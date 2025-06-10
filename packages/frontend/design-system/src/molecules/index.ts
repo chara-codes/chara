@@ -1,4 +1,5 @@
 export * from "./command-terminal";
+export * from "./context-item";
 export * from "./context-tooltip";
 export * from "./conversation-suggestions";
 export * from "./dropdown-menu";

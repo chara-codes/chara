@@ -34,11 +34,12 @@ export interface Chat {
 }
 
 export type ContextItem = {
-  // Add the properties that should be in this type
   id: string;
   name: string;
   type: string;
   data?: unknown;
+  content?: string; // File content (text or base64 for binary files)
+  mimeType?: string; // MIME type of the file
 };
 
 export type ChatMode = "write" | "ask";
