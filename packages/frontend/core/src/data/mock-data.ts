@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import type { Chat, Model } from "../../../frontend/core/src/stores/types.ts"
+import type { Chat, Model } from "../types";
 
 // Direct mock data that can be used if fetch fails
 export const mockChats: Chat[] = [
@@ -16,7 +16,7 @@ export const mockChats: Chat[] = [
     timestamp: "08.05.2025 14:26",
     messages: [],
   },
-]
+];
 
 export const mockModels: Model[] = [
   {
@@ -29,7 +29,7 @@ export const mockModels: Model[] = [
     name: "GPT-4o",
     provider: "OpenAI",
   },
-]
+];
 
 export const mockResponse = {
   content:
@@ -66,16 +66,16 @@ export const mockResponse = {
                 path: "/src/components/Header.tsx",
                 type: "file" as const,
                 language: "typescript",
-                hasChanges: true
+                hasChanges: true,
               },
               {
                 name: "Button.tsx",
                 path: "/src/components/Button.tsx",
                 type: "file" as const,
                 language: "typescript",
-                hasChanges: true
-              }
-            ]
+                hasChanges: true,
+              },
+            ],
           },
           {
             name: "styles",
@@ -87,9 +87,9 @@ export const mockResponse = {
                 path: "/src/styles/theme.ts",
                 type: "file" as const,
                 language: "typescript",
-                hasChanges: true
-              }
-            ]
+                hasChanges: true,
+              },
+            ],
           },
           {
             name: "utils",
@@ -101,20 +101,20 @@ export const mockResponse = {
                 path: "/src/utils/helpers.ts",
                 type: "file" as const,
                 language: "typescript",
-                hasChanges: true
-              }
-            ]
-          }
-        ]
+                hasChanges: true,
+              },
+            ],
+          },
+        ],
       },
       {
         name: "package.json",
         path: "/package.json",
         type: "file" as const,
         language: "json",
-        hasChanges: true
-      }
-    ]
+        hasChanges: true,
+      },
+    ],
   },
   executedCommands: [
     {
@@ -127,7 +127,8 @@ export const mockResponse = {
     {
       id: "cmd-2",
       command: "npm run build",
-      output: "> project@1.0.0 build\n> next build\n\nCompiling...\nCompiled successfully!",
+      output:
+        "> project@1.0.0 build\n> next build\n\nCompiling...\nCompiled successfully!",
       status: "success",
       timestamp: "12:31 PM",
     },
@@ -221,7 +222,8 @@ export const mockResponse = {
             },
             {
               type: "addition",
-              content: '      <div className="container mx-auto flex justify-between items-center">',
+              content:
+                '      <div className="container mx-auto flex justify-between items-center">',
               newLineNumber: 10,
             },
             {
@@ -404,7 +406,8 @@ export const mockResponse = {
             },
             {
               type: "deletion",
-              content: "export function formatDateString(dateStr: string): string {",
+              content:
+                "export function formatDateString(dateStr: string): string {",
               oldLineNumber: 4,
             },
             {
@@ -414,7 +417,8 @@ export const mockResponse = {
             },
             {
               type: "deletion",
-              content: "  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;",
+              content:
+                "  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;",
               oldLineNumber: 6,
             },
             {
@@ -434,7 +438,8 @@ export const mockResponse = {
             },
             {
               type: "deletion",
-              content: " * @deprecated Use truncateString from helpers.ts instead",
+              content:
+                " * @deprecated Use truncateString from helpers.ts instead",
               oldLineNumber: 10,
             },
             {
@@ -444,7 +449,8 @@ export const mockResponse = {
             },
             {
               type: "deletion",
-              content: "export function shortenText(text: string, length: number): string {",
+              content:
+                "export function shortenText(text: string, length: number): string {",
               oldLineNumber: 12,
             },
             {
@@ -613,4 +619,4 @@ export const mockResponse = {
       ],
     },
   ],
-}
+};

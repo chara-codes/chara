@@ -2,7 +2,7 @@ import styled, { ThemeProvider } from "styled-components";
 import {
   ChatInterface,
   PreviewType,
-  Theme,
+  type Theme,
   theme,
   UIStoreProvider,
   PreviewToolbar,
@@ -333,7 +333,7 @@ export const CharaWeb = () => {
             {`// Example generated code
                 import React from 'react';
                 import { Button } from './components/ui/button';
-                
+
                 export default function HomePage() {
                   return (
                     <div className="container mx-auto py-8">

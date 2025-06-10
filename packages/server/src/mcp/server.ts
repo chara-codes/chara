@@ -12,15 +12,19 @@ import {
   ListResourceTemplatesRequestSchema,
   type ResourceTemplate,
 } from "@modelcontextprotocol/sdk/types.js";
-import { z } from 'zod';
-import * as eventsource from 'eventsource';
-import { trpcMCPCalls } from "../api/routes/mcpservers"
-import { logger } from "@chara/logger"
+import { z } from "zod";
+import * as eventsource from "eventsource";
+import { trpcMCPCalls } from "../api/routes/mcpservers";
+import { logger } from "@chara/logger";
 
-const CLIENT_ID = 'client-123';
+const CLIENT_ID = "client-123";
 global.EventSource = eventsource.EventSource;
 
-export async function handleClientRequest(clientId: string, command: string, params: string): Promise<string> {
+export async function handleClientRequest(
+  clientId: string,
+  command: string,
+  params: string,
+): Promise<string> {
   const emit = trpcMCPCalls.clients[clientId];
 
   if (!emit) {
@@ -38,7 +42,7 @@ export async function handleClientRequest(clientId: string, command: string, par
   emit({
     instructionId,
     command: command,
-    params: params ?? ''
+    params: params ?? "",
   });
 
   // Wait for the response
@@ -66,12 +70,16 @@ export const createServer = async () => {
     let allTools: Tool[] = [];
     try {
       const params = JSON.stringify({
-        _meta: request.params?._meta
+        _meta: request.params?._meta,
       });
-      const response = await handleClientRequest(CLIENT_ID, 'tools/list', params)
+      const response = await handleClientRequest(
+        CLIENT_ID,
+        "tools/list",
+        params,
+      );
       allTools = JSON.parse(response);
     } catch (error) {
-      console.error(`Error fetching tools from:`, error);
+      console.error("Error fetching tools from:", error);
     }
 
     return { tools: allTools };
@@ -86,10 +94,14 @@ export const createServer = async () => {
         name,
         arguments: args || {},
         _meta: {
-          progressToken: request.params._meta?.progressToken
-        }
+          progressToken: request.params._meta?.progressToken,
+        },
       });
-      const response = await handleClientRequest(CLIENT_ID, 'tools/call', params);
+      const response = await handleClientRequest(
+        CLIENT_ID,
+        "tools/call",
+        params,
+      );
       toolCall = JSON.parse(response);
     } catch (error) {
       logger.error(`Error calling tool ${name}:`, error);
@@ -100,15 +112,19 @@ export const createServer = async () => {
 
   // List of prompts
   server.setRequestHandler(ListPromptsRequestSchema, async (request) => {
-    let allPrompts: z.infer<typeof ListPromptsResultSchema>['prompts'] = [];
+    let allPrompts: z.infer<typeof ListPromptsResultSchema>["prompts"] = [];
     try {
       const params = JSON.stringify({
         cursor: request.params?.cursor,
         _meta: request.params?._meta || {
-          progressToken: undefined
-        }
+          progressToken: undefined,
+        },
       });
-      const response = await handleClientRequest(CLIENT_ID, 'prompts/list', params);
+      const response = await handleClientRequest(
+        CLIENT_ID,
+        "prompts/list",
+        params,
+      );
       allPrompts = JSON.parse(response);
     } catch (error) {
       logger.error(`Error fetching prompt:`, error);
@@ -116,7 +132,7 @@ export const createServer = async () => {
 
     return {
       prompts: allPrompts,
-      nextCursor: request.params?.cursor
+      nextCursor: request.params?.cursor,
     };
   });
 
@@ -125,17 +141,21 @@ export const createServer = async () => {
     const { name } = request.params;
     let promptCall = {};
     try {
-      logger.info('Forwarding prompt request:', name);
+      logger.info("Forwarding prompt request:", name);
       const params = JSON.stringify({
         name,
         arguments: request.params.arguments || {},
         _meta: request.params._meta || {
-          progressToken: undefined
-        }
+          progressToken: undefined,
+        },
       });
-      const response = await handleClientRequest(CLIENT_ID, 'prompts/get', params);
+      const response = await handleClientRequest(
+        CLIENT_ID,
+        "prompts/get",
+        params,
+      );
       promptCall = JSON.parse(response);
-      logger.success('Prompt result:', response);
+      logger.success("Prompt result:", response);
     } catch (error) {
       logger.error(`Error getting prompt ${name}:`, error);
       throw error;
@@ -145,13 +165,18 @@ export const createServer = async () => {
 
   // List of resources
   server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
-    let allResources: z.infer<typeof ListResourcesResultSchema>['resources'] = [];
+    let allResources: z.infer<typeof ListResourcesResultSchema>["resources"] =
+      [];
     try {
       const params = JSON.stringify({
         cursor: request.params?.cursor,
-        _meta: request.params?._meta
+        _meta: request.params?._meta,
       });
-      const response = await handleClientRequest(CLIENT_ID, 'resources/list', params);
+      const response = await handleClientRequest(
+        CLIENT_ID,
+        "resources/list",
+        params,
+      );
       allResources = JSON.parse(response);
     } catch (error) {
       logger.error(`Error fetching resources:`, error);
@@ -159,7 +184,7 @@ export const createServer = async () => {
 
     return {
       resources: allResources,
-      nextCursor: request.params?.cursor
+      nextCursor: request.params?.cursor,
     };
   });
 
@@ -170,9 +195,13 @@ export const createServer = async () => {
     try {
       const params = JSON.stringify({
         uri,
-        _meta: request.params._meta
+        _meta: request.params._meta,
       });
-      const response = await handleClientRequest(CLIENT_ID, 'resources/read', params);
+      const response = await handleClientRequest(
+        CLIENT_ID,
+        "resources/read",
+        params,
+      );
       return JSON.parse(response);
     } catch (error) {
       logger.error(`Error reading resource:`, error);
@@ -181,26 +210,33 @@ export const createServer = async () => {
   });
 
   // List resource templates
-  server.setRequestHandler(ListResourceTemplatesRequestSchema, async (request) => {
-    let allTemplates: ResourceTemplate[] = [];
-    try {
-      const params = JSON.stringify({
-        cursor: request.params?.cursor,
-        _meta: request.params?._meta || {
-          progressToken: undefined
-        }
-      });
-      const response = await handleClientRequest(CLIENT_ID, 'resources/templates/list', params);
-      allTemplates = JSON.parse(response);
-    } catch (error) {
-      logger.error(`Error fetching resource templates:`, error);
-    }
+  server.setRequestHandler(
+    ListResourceTemplatesRequestSchema,
+    async (request) => {
+      let allTemplates: ResourceTemplate[] = [];
+      try {
+        const params = JSON.stringify({
+          cursor: request.params?.cursor,
+          _meta: request.params?._meta || {
+            progressToken: undefined,
+          },
+        });
+        const response = await handleClientRequest(
+          CLIENT_ID,
+          "resources/templates/list",
+          params,
+        );
+        allTemplates = JSON.parse(response);
+      } catch (error) {
+        logger.error(`Error fetching resource templates:`, error);
+      }
 
-    return {
-      resourceTemplates: allTemplates,
-      nextCursor: request.params?.cursor
-    };
-  });
+      return {
+        resourceTemplates: allTemplates,
+        nextCursor: request.params?.cursor,
+      };
+    },
+  );
 
   return server;
 };

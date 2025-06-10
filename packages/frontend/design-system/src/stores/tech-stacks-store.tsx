@@ -8,8 +8,8 @@ import {
   DatabaseIcon,
   GlobeIcon,
   LayersIcon,
-} from '../atoms';
-import { TechStackDetail } from "../organisms";
+} from "../atoms";
+import type { TechStackDetail } from "../organisms";
 
 // Define the tech stacks state interface
 interface TechStacksState {

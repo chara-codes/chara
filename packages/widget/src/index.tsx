@@ -1,7 +1,10 @@
 import { ThemeProvider } from "styled-components";
-import ChatOverlayPanel from "./components/templates/chat-overlay-panel";
-import { UIStoreProvider, useUIStore } from "./store/ui-store";
-import { theme } from "./styles/theme";
+import {
+  ChatOverlayPanel,
+  theme,
+  UIStoreProvider,
+  useUIStore,
+} from "@chara/design-system";
 
 // Configuration interface
 export interface CharaWidgetConfig {

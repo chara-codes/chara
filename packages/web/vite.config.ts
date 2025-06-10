@@ -8,6 +8,9 @@ import { defineConfig } from "vitest/config";
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    port: 1237,
+  },
   plugins: [
     react({
       jsxImportSource: "react",
@@ -28,7 +31,7 @@ export default defineConfig({
   },
   preview: {
     port: 3000,
-    allowedHosts: ["widget.chara-ai.dev"],
+    allowedHosts: ["web.chara-ai.dev"],
   },
   build: {
     cssCodeSplit: false,
