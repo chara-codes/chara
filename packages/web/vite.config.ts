@@ -27,11 +27,9 @@ export default defineConfig({
         "../frontend/design-system/src",
       ),
       "@chara/core": path.resolve(__dirname, "../frontend/core/src"),
+      // Add alias for design-system internal paths
+      "@/theme": path.resolve(__dirname, "../frontend/design-system/src/theme"),
     },
-  },
-  preview: {
-    port: 3000,
-    allowedHosts: ["web.chara-ai.dev"],
   },
   build: {
     cssCodeSplit: false,
@@ -41,6 +39,7 @@ export default defineConfig({
         assetFileNames: "main.css",
       },
     },
+    chunkSizeWarningLimit: 1000,
   },
   test: {
     environment: "jsdom",

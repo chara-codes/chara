@@ -11,7 +11,7 @@ import {
   ChartIcon,
 } from "../atoms/icons";
 import Tooltip from "../atoms/tooltip";
-import { Theme } from "../theme";
+import type { Theme } from "../theme";
 
 // Define the different preview types
 export enum PreviewType {
@@ -78,16 +78,24 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
   onTypeChange,
 }) => {
   const toolbarItems = [
-    { type: PreviewType.APP, icon: GlobeIcon, tooltip: "App Preview" },
-    { type: PreviewType.CODE, icon: CodeIcon, tooltip: "Code View" },
-    { type: PreviewType.TESTS, icon: FileIcon, tooltip: "Tests" },
-    { type: PreviewType.STATISTICS, icon: ChartIcon, tooltip: "Statistics" },
+    { type: PreviewType.APP, icon: <GlobeIcon />, tooltip: "App Preview" },
+    { type: PreviewType.CODE, icon: <CodeIcon />, tooltip: "Code View" },
+    { type: PreviewType.TESTS, icon: <FileIcon />, tooltip: "Tests" },
+    {
+      type: PreviewType.STATISTICS,
+      icon: <ChartIcon />,
+      tooltip: "Statistics",
+    },
     {
       type: PreviewType.DOCUMENTATION,
-      icon: DocumentationIcon,
+      icon: <DocumentationIcon />,
       tooltip: "Documentation",
     },
-    { type: PreviewType.DEPLOYMENT, icon: ServerIcon, tooltip: "Deployment" },
+    {
+      type: PreviewType.DEPLOYMENT,
+      icon: <ServerIcon />,
+      tooltip: "Deployment",
+    },
   ];
 
   return (
@@ -100,7 +108,7 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
               $isActive={activeType === item.type}
               onClick={() => onTypeChange(item.type)}
             >
-              <item.icon width={20} height={20} />
+              {item.icon}
             </ToolbarButton>
           </Tooltip>
         </React.Fragment>

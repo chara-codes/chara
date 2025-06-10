@@ -18,9 +18,9 @@
     "baseUrl": ".",
     "paths": {
       "@chara/design-system": ["../frontend/design-system/src"],
-      "@chara/design-system/*": ["../frontend/design-system/src/*"]
+      "@chara/design-system/*": ["../frontend/design-system/src/*"],
+      "@/theme": ["../frontend/design-system/src/theme"]
     }
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"]
 }

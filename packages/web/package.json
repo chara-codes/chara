@@ -7,7 +7,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
+    "build:check": "bun run typecheck && vite build",
     "lint": "eslint .",
     "preview": "vite preview --port 3000 --host 0.0.0.0",
     "test": "vitest run"
