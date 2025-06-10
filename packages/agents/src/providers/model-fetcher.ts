@@ -208,7 +208,8 @@ export namespace ModelFetcher {
    */
   export async function fetchDIALModels(baseUrl: string): Promise<ModelInfo[]> {
     try {
-      const response = await fetch(`${baseUrl}/openai/models`, {
+      const rootDomain = new URL(baseUrl).origin;
+      const response = await fetch(`${rootDomain}/openai/models`, {
         headers: {
           "Api-Key": `${process.env.DIAL_API_KEY}`,
           "Content-Type": "application/json",

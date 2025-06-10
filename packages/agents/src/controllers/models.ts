@@ -11,6 +11,7 @@ const MODEL_WHITELIST = [
   "anthropic.claude-3-7-sonnet-20250219-v1:0",
   "o4-mini-2025-04-16",
   "o3-2025-04-16",
+  "deepseek-r1",
   "claude-sonnet-4@20250514",
   "gemini-2.5-flash-preview-05-20",
   "gemini-2.5-pro-preview-05-06",

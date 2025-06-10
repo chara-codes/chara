@@ -245,6 +245,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
       const dialProvider = createAzure({
         apiKey: process.env.DIAL_API_KEY as string,
         baseURL,
+        apiVersion: "2024-02-01",
       });
       return {
         name: "DIAL",
