@@ -40,7 +40,7 @@ class MCPWrapper {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         logger.info(
-          `🚀 Initializing MCP client... (attempt ${attempt}/${maxRetries})`
+          `🚀 Initializing MCP client... (attempt ${attempt}/${maxRetries})`,
         );
 
         // Get sessionId
@@ -59,14 +59,14 @@ class MCPWrapper {
 
         this.isInitialized = true;
         logger.info(
-          `✅ MCP client initialized with ${Object.keys(this.toolsCache).length} tools`
+          `✅ MCP client initialized with ${Object.keys(this.toolsCache).length} tools`,
         );
         return; // Success - exit retry loop
       } catch (error) {
         logger.warning(`⚠️ MCP initialization attempt ${attempt} failed:`);
         logger.warning(
           "Error message:",
-          error instanceof Error ? error.message : String(error)
+          error instanceof Error ? error.message : String(error),
         );
 
         if (attempt === maxRetries) {
@@ -74,17 +74,17 @@ class MCPWrapper {
           logger.error("Error details:", error);
           logger.error(
             "Error stack:",
-            error instanceof Error ? error.stack : "No stack"
+            error instanceof Error ? error.stack : "No stack",
           );
 
           // Use fallback tools
           logger.info(
-            "🔄 Using fallback tools due to MCP initialization failure"
+            "🔄 Using fallback tools due to MCP initialization failure",
           );
           this.toolsCache = this.getFallbackTools();
           this.isInitialized = true;
           logger.info(
-            `⚠️ Initialized with ${Object.keys(this.toolsCache).length} fallback tools`
+            `⚠️ Initialized with ${Object.keys(this.toolsCache).length} fallback tools`,
           );
           return;
         }
@@ -145,7 +145,7 @@ class MCPWrapper {
 
                 // Search for sessionId in chunks
                 const sessionIdMatch = chunk.match(
-                  /sessionId[=:][\s]*([a-f0-9\-]+)/i
+                  /sessionId[=:][\s]*([a-f0-9\-]+)/i,
                 );
                 if (sessionIdMatch && sessionIdMatch[1]) {
                   this.sessionId = sessionIdMatch[1];
@@ -201,7 +201,7 @@ class MCPWrapper {
               method: "tools/list",
               params: {},
             }),
-          }
+          },
         );
 
         logger.info(`📤 MCP tools request status: ${response.status}`);
@@ -216,7 +216,7 @@ class MCPWrapper {
         logger.info("Using fetch stream for SSE...");
 
         const sseResponse = await fetch(
-          `${this.baseUrl}/sse?sessionId=${this.sessionId}`
+          `${this.baseUrl}/sse?sessionId=${this.sessionId}`,
         );
         if (!sseResponse.body) {
           throw new Error("No SSE response body");
@@ -246,7 +246,7 @@ class MCPWrapper {
               if (message.trim()) {
                 logger.info(
                   "📡 Complete SSE message:",
-                  message.substring(0, 150)
+                  message.substring(0, 150),
                 );
 
                 // Parse SSE format: event: xxx\ndata: yyy
@@ -261,7 +261,7 @@ class MCPWrapper {
                       if (jsonData.result && jsonData.result.tools) {
                         const tools = jsonData.result.tools;
                         logger.info(
-                          `🎯 Got ${tools.length} tools from SSE stream`
+                          `🎯 Got ${tools.length} tools from SSE stream`,
                         );
 
                         clearTimeout(timeout);
@@ -271,7 +271,7 @@ class MCPWrapper {
                       }
                     } catch (parseError) {
                       logger.info(
-                        "Could not parse SSE data as JSON, continuing..."
+                        "Could not parse SSE data as JSON, continuing...",
                       );
                     }
                   }
@@ -314,7 +314,7 @@ class MCPWrapper {
     }
 
     logger.info(
-      `Converted ${Object.keys(aiTools).length} MCP tools for AI SDK`
+      `Converted ${Object.keys(aiTools).length} MCP tools for AI SDK`,
     );
     return aiTools;
   }
@@ -324,7 +324,7 @@ class MCPWrapper {
    */
   private async callMCPTool(
     name: string,
-    arguments_: Record<string, any>
+    arguments_: Record<string, any>,
   ): Promise<any> {
     if (!this.sessionId) {
       throw new Error("No sessionId available for tool call");
@@ -350,7 +350,7 @@ class MCPWrapper {
               arguments: arguments_,
             },
           }),
-        }
+        },
       );
 
       logger.info(`📤 Tool call response status: ${response.status}`);
@@ -383,7 +383,7 @@ class MCPWrapper {
         const responseText = await response.text();
         logger.error(
           `Unexpected tool call status ${response.status}:`,
-          responseText
+          responseText,
         );
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -402,7 +402,7 @@ class MCPWrapper {
    * Convert JSON Schema to Zod schema
    */
   private convertToZodSchema(
-    inputSchema: MCPTool["inputSchema"]
+    inputSchema: MCPTool["inputSchema"],
   ): z.ZodType<any> {
     if (inputSchema.type !== "object") {
       return z.any();
@@ -468,8 +468,6 @@ class MCPWrapper {
           content: z.string().describe("The content of the file"),
         }),
         execute: async ({ name, content }) => {
-          logger.info("File name:", name);
-          logger.dump(content);
           await Bun.write(name, content);
           return { success: true, name, note: "Fallback tool used" };
         },
