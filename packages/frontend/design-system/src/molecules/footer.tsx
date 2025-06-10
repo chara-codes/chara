@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import styled from "styled-components";
-import { useChatStore, useModelsStore } from '@chara/core';
+import { useChatStore, useModelsStore } from "@chara/core";
 
 // Make the footer more compact
 const FooterContainer = styled.footer`
@@ -66,6 +66,7 @@ const ChevronDownIcon = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Chevron Down</title>
     <path
       d="M6 9L12 15L18 9"
       stroke="currentColor"
@@ -84,6 +85,7 @@ const SearchIcon = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>Search</title>
     <path
       d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
       stroke="currentColor"

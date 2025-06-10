@@ -3,8 +3,8 @@
 import type React from "react";
 import styled from "styled-components";
 import { useState, useEffect } from "react";
-import type { FileDiff } from '@chara/core';
-import { parsePatchStats } from '@chara/core';
+import type { FileDiff } from "@chara/core";
+import { parsePatchStats } from "@chara/core";
 
 // Update the FileChangesListProps interface
 interface FileChangesListProps {
@@ -116,7 +116,7 @@ const FileItem = styled.div<{ $status?: "kept" | "reverted" | "pending" }>`
           background-color: rgba(239, 68, 68, 0.05);
         `;
       default:
-        return ``;
+        return "";
     }
   }}
 `;
@@ -235,16 +235,15 @@ const StatusFilter = styled.button<{
             border-color: #d1d5db;
           `;
       }
-    } else {
-      return `
-        background-color: transparent;
-        color: #6b7280;
-        border-color: #e5e7eb;
-        &:hover {
-          background-color: #f3f4f6;
-        }
-      `;
     }
+    return `
+      background-color: transparent;
+      color: #6b7280;
+      border-color: #e5e7eb;
+      &:hover {
+        background-color: #f3f4f6;
+      }
+    `;
   }}
 `;
 

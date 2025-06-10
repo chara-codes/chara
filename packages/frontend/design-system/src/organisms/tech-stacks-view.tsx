@@ -4,18 +4,18 @@ import type React from "react";
 import { useState, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import ViewNavigation from "../molecules/view-navigation";
-import { PlusIcon, EditIcon } from '../atoms';
-import type { Theme } from '../theme';
+import { PlusIcon, EditIcon } from "../atoms";
+import type { Theme } from "../theme";
 import TechStackDetailView, {
   type TechStackDetail,
 } from "./tech-stack-detail-view";
-import { ButtonBase } from '../atoms';
+import { ButtonBase } from "../atoms";
 import {
   useNavigateToAddTechStack,
   useNavigateToEditTechStack,
   useNavigateBack,
-} from '@chara/core';
-import { useTechStacks } from '../stores';
+} from "@chara/core";
+import { useTechStacks } from "../stores";
 import Tooltip from "../atoms/tooltip";
 
 const TechStacksContainer = styled.div`
@@ -264,12 +264,12 @@ const TechStacksView: React.FC = () => {
   const techStacksByCategory = useMemo(() => {
     const grouped: Record<string, TechStackDetail[]> = {};
 
-    filteredTechStacks.forEach((stack) => {
+    for (const stack of filteredTechStacks) {
       if (!grouped[stack.category]) {
         grouped[stack.category] = [];
       }
       grouped[stack.category].push(stack);
-    });
+    }
 
     // Sort categories alphabetically
     return Object.keys(grouped)

@@ -537,7 +537,16 @@ const FileDiff: React.FC<FileDiffProps> = ({
                 : diff.newContent
               )
                 ?.split("\n")
-                .map((_, i) => <div key={`line-${i}`}>{i + 1}</div>)}
+                .map((_, i) => (
+                  <div
+                    key={`line-${
+                      // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                      i
+                    }`}
+                  >
+                    {i + 1}
+                  </div>
+                ))}
             </LineNumbers>
             <FullFileContent>
               {viewMode === "original" ? diff.originalContent : diff.newContent}
