@@ -12,6 +12,8 @@ import "./directory-tree.test";
 import "./move-file.test";
 import "./search-files.test";
 import "./get-file-info.test";
+import "./terminal.test";
+import "./grep.test";
 
 // Import all tools to verify they export correctly
 import { tools } from "../index";
@@ -30,9 +32,12 @@ describe("Tools Index", () => {
       "move-file",
       "search-files",
       "get-file-info",
+      "fetch",
+      "terminal",
+      "grep",
     ];
 
-    expectedTools.forEach(toolName => {
+    expectedTools.forEach((toolName) => {
       expect(tools[toolName]).toBeDefined();
       expect(typeof tools[toolName]).toBe("object");
       expect(tools[toolName].description).toBeDefined();
@@ -43,7 +48,7 @@ describe("Tools Index", () => {
   });
 
   test("should have correct number of tools", () => {
-    expect(Object.keys(tools)).toHaveLength(11);
+    expect(Object.keys(tools)).toHaveLength(14);
   });
 
   test("should not have duplicate tool names", () => {

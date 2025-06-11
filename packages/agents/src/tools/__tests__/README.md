@@ -17,6 +17,9 @@ Each tool has its own test file following the naming convention `{tool-name}.tes
 - `move-file.test.ts` - Tests for file/directory moving tool
 - `search-files.test.ts` - Tests for file search tool
 - `get-file-info.test.ts` - Tests for file metadata tool
+- `fetch.test.ts` - Tests for URL fetching tool
+- `terminal.test.ts` - Tests for terminal command execution tool
+- `grep.test.ts` - Tests for grep pattern search tool
 
 ## Test Utilities
 
@@ -43,6 +46,21 @@ bun run test:coverage
 Run specific test file:
 ```bash
 bun test src/tools/__tests__/read-file.test.ts
+```
+
+Run fetch tool tests:
+```bash
+bun test src/tools/__tests__/fetch.test.ts
+```
+
+Run terminal tool tests:
+```bash
+bun test src/tools/__tests__/terminal.test.ts
+```
+
+Run grep tool tests:
+```bash
+bun test src/tools/__tests__/grep.test.ts
 ```
 
 ## Test Framework
@@ -105,6 +123,60 @@ describe("toolName tool", () => {
   });
 });
 ```
+
+## Fetch Tool Tests
+
+The fetch tool tests include:
+
+- **URL fetching**: Basic HTTP requests with various content types
+- **HTML to Markdown conversion**: Automatic conversion of HTML content
+- **Content pagination**: Handling large responses with truncation
+- **Raw mode**: Option to return unprocessed HTML
+- **Robots.txt compliance**: Checking site permissions before fetching
+- **Error handling**: Network errors, timeouts, invalid URLs
+- **Parameter validation**: Testing all input parameters and ranges
+
+Note: Fetch tests use mocked HTTP responses to avoid network dependencies.
+
+## Terminal Tool Tests
+
+The terminal tool tests include:
+
+- **Command execution**: Basic shell commands with various outputs
+- **Exit code handling**: Success and failure scenarios
+- **Output processing**: stdout, stderr, and combined output handling
+- **Working directory**: Commands executed in specified directories
+- **Output truncation**: Handling large command outputs
+- **Error conditions**: Invalid commands, directories, and timeouts
+- **Cross-platform**: Tests work on both Unix and Windows systems
+- **Special characters**: Unicode and special character support in commands
+- **File operations**: Creating, reading, and manipulating files
+- **Environment handling**: Command execution with proper environment setup
+
+Note: Terminal tests use real shell commands but are isolated in temporary directories.
+
+## Grep Tool Tests
+
+The grep tool tests include:
+
+- **Pattern matching**: Basic text search with various patterns
+- **Regular expressions**: Complex regex pattern support with proper escaping
+- **Case sensitivity**: Case-insensitive and case-sensitive search modes
+- **Fixed string matching**: Literal text search without regex interpretation
+- **Context lines**: Before/after context line display around matches
+- **Invert matching**: Finding lines that don't match the pattern
+- **File filtering**: Search only files matching specific patterns (e.g., "*.txt")
+- **Recursive search**: Deep directory traversal with pattern matching
+- **Multiple files**: Concurrent search across multiple file paths
+- **Result limiting**: Maximum match count limiting and result truncation
+- **Line numbering**: Optional line number display in results
+- **Match positions**: Highlighting match positions within lines
+- **Unicode support**: Proper handling of international characters
+- **Binary files**: Graceful handling of binary content
+- **Large files**: Performance testing with large file content
+- **Error handling**: Invalid regex patterns, missing files, permission errors
+
+Note: Grep tests use the Bun file system APIs and handle various edge cases for robust pattern searching.
 
 ## Adding New Tests
 

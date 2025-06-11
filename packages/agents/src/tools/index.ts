@@ -9,6 +9,9 @@ import { directoryTree } from "./directory-tree";
 import { moveFile } from "./move-file";
 import { searchFiles } from "./search-files";
 import { getFileInfo } from "./get-file-info";
+import { fetchTool } from "./fetch";
+import { terminal } from "./terminal";
+import { grep } from "./grep";
 
 export const tools = {
   "read-file": readFile,
@@ -22,4 +25,7 @@ export const tools = {
   "move-file": moveFile,
   "search-files": searchFiles,
   "get-file-info": getFileInfo,
+  fetch: fetchTool,
+  terminal: terminal,
+  grep: grep,
 };
