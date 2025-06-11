@@ -146,6 +146,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
   }, [isNearBottom]);
 
   // Auto-scroll when new messages arrive or when responding (but not if user scrolled up)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (shouldAutoScroll && !userScrolledUp) {
       scrollToBottom();

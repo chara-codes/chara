@@ -2,21 +2,8 @@
 
 import type React from "react";
 import styled from "styled-components";
-import {
-  FileIcon,
-  LinkIcon,
-  TextIcon,
-  DocumentationIcon,
-  TerminalIcon,
-  CloseIcon,
-} from "../atoms/icons";
-
-interface ContextItem {
-  id: string;
-  name: string;
-  type: string;
-  data?: unknown;
-}
+import { ContextItem as ContextItemComponent } from "../molecules/context-item";
+import type { ContextItem } from "@chara/core";
 
 interface ContextPanelProps {
   contextItems: ContextItem[];
@@ -39,69 +26,21 @@ const ContextList = styled.div`
   gap: 8px;
 `;
 
-const ContextItemContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 6px;
-  background-color: #e5e7eb;
-  border-radius: 4px;
-  font-size: 11px;
-  color: #4b5563;
-`;
-
-const RemoveButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border: none;
-  background: transparent;
-  color: #6b7280;
-  cursor: pointer;
-  padding: 0;
-
-  &:hover {
-    color: #ef4444;
-  }
-`;
-
 const ContextPanel: React.FC<ContextPanelProps> = ({
   contextItems,
   onRemoveContext,
 }) => {
-  const getIcon = (type: string) => {
-    const lowerType = type.toLowerCase();
-    switch (lowerType) {
-      case "file":
-        return <FileIcon />;
-      case "link":
-        return <LinkIcon />;
-      case "text":
-        return <TextIcon />;
-      case "documentation":
-        return <DocumentationIcon />;
-      case "terminal":
-        return <TerminalIcon />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <>
       {contextItems.length > 0 && (
         <Container>
           <ContextList>
             {contextItems.map((item) => (
-              <ContextItemContainer key={item.id}>
-                {getIcon(item.type)}
-                {item.name}
-                <RemoveButton onClick={() => onRemoveContext(item.id)}>
-                  <CloseIcon />
-                </RemoveButton>
-              </ContextItemContainer>
+              <ContextItemComponent
+                key={item.id}
+                item={item}
+                onRemove={onRemoveContext}
+              />
             ))}
           </ContextList>
         </Container>

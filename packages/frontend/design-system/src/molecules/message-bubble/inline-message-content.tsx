@@ -4,9 +4,8 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import styled from "styled-components";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import type { ToolCall } from "../../../../../frontend/core/src/stores/types.ts";
 import { ToolIcon } from "./icons";
-import { cleanThinkingTags } from "../../../../../frontend/core/src/utils/thinking-tags.ts";
+import { cleanThinkingTags, type ToolCall } from "@chara/core";
 
 interface ContentSegment {
   type: "text" | "tool-call";

@@ -1,10 +1,8 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useRef, useEffect } from "react"
-import { useChatStore } from "../../../../../frontend/core/src/stores/chat-store.ts"
-import { useModelsStore } from "../../../../../frontend/core/src/stores/models-store.ts"
-import { ChevronDownIcon, SearchIcon } from "../../atoms/icons"
+import type React from "react";
+import { useState, useRef, useEffect } from "react";
+import { ChevronDownIcon, SearchIcon } from "../../atoms/icons";
 import {
   FooterContainer,
   ModeSelector,
@@ -22,42 +20,43 @@ import {
   ModelInfo,
   SourceBadge,
   ModelOptionContent,
-} from "./styles"
-import { getModelSourceType, getSourceLabel } from "./utils"
+} from "./styles";
+import { getModelSourceType, getSourceLabel } from "./utils";
+import { useChatStore, useModelsStore } from "@chara/core";
 
 /**
  * Footer component with mode selector and model selector
  */
 const Footer: React.FC = () => {
-  const { mode, model, setMode, setModel } = useChatStore()
-  const { models, addRecentModel } = useModelsStore()
+  const { mode, model, setMode, setModel } = useChatStore();
+  const { models, addRecentModel } = useModelsStore();
 
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Get the selected model info for display
   const getSelectedModelInfo = () => {
-    const foundModel = models.find((m) => m.id === model)
+    const foundModel = models.find((m) => m.id === model);
     if (foundModel) {
-      const sourceType = getModelSourceType(foundModel.provider)
-      return { name: foundModel.name, sourceType }
+      const sourceType = getModelSourceType(foundModel.provider);
+      return { name: foundModel.name, sourceType };
     }
-    return { name: model, sourceType: "unknown" }
-  }
+    return { name: model, sourceType: "unknown" };
+  };
 
   // Group models by provider
   const groupedModels = models.reduce(
     (acc, model) => {
       if (!acc[model.provider]) {
-        acc[model.provider] = []
+        acc[model.provider] = [];
       }
-      acc[model.provider].push(model)
-      return acc
+      acc[model.provider].push(model);
+      return acc;
     },
     {} as Record<string, typeof models>,
-  )
+  );
 
   // Filter models based on search query
   const filteredModelData = Object.entries(groupedModels)
@@ -69,36 +68,39 @@ const Footer: React.FC = () => {
           provider.toLowerCase().includes(searchQuery.toLowerCase()),
       ),
     }))
-    .filter((provider) => provider.models.length > 0)
+    .filter((provider) => provider.models.length > 0);
 
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false)
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
       }
-    }
+    };
 
     if (isDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
       // Focus search input when dropdown opens
       setTimeout(() => {
-        searchInputRef.current?.focus()
-      }, 10)
+        searchInputRef.current?.focus();
+      }, 10);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [isDropdownOpen])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   const handleModelChange = (modelId: string) => {
-    setModel(modelId)
-    addRecentModel(modelId)
-    setIsDropdownOpen(false)
-  }
+    setModel(modelId);
+    addRecentModel(modelId);
+    setIsDropdownOpen(false);
+  };
 
-  const selectedModel = getSelectedModelInfo()
+  const selectedModel = getSelectedModelInfo();
 
   return (
     <FooterContainer>
@@ -114,7 +116,9 @@ const Footer: React.FC = () => {
         <ModelSelectorButton onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
           <ModelInfo>
             {selectedModel.name}
-            <SourceBadge $sourceType={selectedModel.sourceType}>{getSourceLabel(selectedModel.sourceType)}</SourceBadge>
+            <SourceBadge $sourceType={selectedModel.sourceType}>
+              {getSourceLabel(selectedModel.sourceType)}
+            </SourceBadge>
           </ModelInfo>
           <ChevronDownIcon />
         </ModelSelectorButton>
@@ -145,8 +149,12 @@ const Footer: React.FC = () => {
                     >
                       <ModelOptionContent>
                         <span>{modelOption.name}</span>
-                        <SourceBadge $sourceType={getModelSourceType(modelOption.provider)}>
-                          {getSourceLabel(getModelSourceType(modelOption.provider))}
+                        <SourceBadge
+                          $sourceType={getModelSourceType(modelOption.provider)}
+                        >
+                          {getSourceLabel(
+                            getModelSourceType(modelOption.provider),
+                          )}
                         </SourceBadge>
                       </ModelOptionContent>
                     </ModelOption>
@@ -160,7 +168,7 @@ const Footer: React.FC = () => {
         )}
       </ModelSelectorContainer>
     </FooterContainer>
-  )
-}
+  );
+};
 
-export default Footer
+export default Footer;

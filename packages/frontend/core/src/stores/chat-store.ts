@@ -3,7 +3,14 @@
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { Chat, ChatMode, ContextItem, Message, ToolCall } from "../types";
+import type {
+  Chat,
+  ChatMode,
+  ContextItem,
+  Message,
+  MessageContent,
+  ToolCall,
+} from "../types";
 import { fetchChats } from "../services";
 import {
   processChatStream,
@@ -11,7 +18,6 @@ import {
   type StreamCallbacks,
 } from "../services"; // Import the new service
 import { MessageSegmentBuilder } from "../services/message-segment-builder.ts";
-import type { MessageContent } from "@chara/widget/src/store/types.ts";
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [

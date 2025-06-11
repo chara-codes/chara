@@ -1,5 +1,5 @@
 import type React from "react";
-import type { ToolCall, ToolResult } from "../../../../../frontend/core/src/stores/types.ts";
+import type { ToolCall, ToolResult } from "@chara/core";
 
 export const getPreviewContent = (item: {
   type: string;

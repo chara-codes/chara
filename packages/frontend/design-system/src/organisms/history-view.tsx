@@ -52,12 +52,12 @@ const HistoryView: React.FC<HistoryViewProps> = ({
       ? chats
       : chats.filter(
           (chat) =>
-            (chat.title &&
-              chat.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (chat.messages &&
-              chat.messages.some((m) =>
-                m.content.toLowerCase().includes(searchQuery.toLowerCase()),
-              )),
+            chat.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            chat.messages?.some((m) =>
+              typeof m.content === "string"
+                ? m.content.toLowerCase().includes(searchQuery.toLowerCase())
+                : false,
+            ),
         );
 
   return (

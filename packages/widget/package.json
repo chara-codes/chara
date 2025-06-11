@@ -7,13 +7,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
+    "build:check": "bun run typecheck && vite build",
     "lint": "eslint .",
     "preview": "vite preview --port 3000 --host 0.0.0.0",
     "test": "vitest run"
   },
   "dependencies": {
     "@ai-sdk/react": "^1.2.12",
+    "@chara/core": "workspace:*",
+    "@chara/design-system": "workspace:*",
     "@r2wc/react-to-web-component": "^2.0.4",
     "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/vite": "^4.1.8",
