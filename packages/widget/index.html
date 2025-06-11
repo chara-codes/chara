@@ -33,6 +33,27 @@
         font-weight: bold;
       }
       .hero-section {
+        background: linear-gradient(135deg, #0f2027, #1a3440);
+        padding: 60px 20px;
+        color: white;
+      }
+
+      .hero-section h2 {
+        font-size: 3em;
+        animation: fadeIn 2s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .hero-section {
         background-color: #e9f5ff;
         padding: 40px;
         border-radius: 5px;

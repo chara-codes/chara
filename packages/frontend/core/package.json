@@ -12,9 +12,10 @@
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
   "dependencies": {
-    "zustand": "^5.0.5",
     "date-fns": "^4.1.0",
-    "zod": "^3.25.51"
+    "vitest": "^3.2.3",
+    "zod": "^3.25.51",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "typescript": "^5.8.3",

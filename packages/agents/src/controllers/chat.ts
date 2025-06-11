@@ -1,5 +1,6 @@
 import { createDataStreamResponse, type CoreMessage } from "ai";
 import { chatAgent } from "../agents/chat-agent";
+import { logger } from "@chara/logger";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -16,13 +17,19 @@ export const chatController = {
     };
 
     return createDataStreamResponse({
-      headers: CORS_HEADERS,
+      headers: { ...CORS_HEADERS, "accept-encoding": "" },
       execute: async (dataStream) => {
         const result = await chatAgent({
           model,
           messages,
         });
         result.mergeIntoDataStream(dataStream);
+      },
+      onError: (error) => {
+        logger.dump(error);
+        // Error messages are masked by default for security reasons.
+        // If you want to expose the error message to the client, you can do so here:
+        return error instanceof Error ? error.message : String(error);
       },
     });
   },
