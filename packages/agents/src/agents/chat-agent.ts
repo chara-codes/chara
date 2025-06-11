@@ -26,7 +26,7 @@ export const chatAgent = async (
     ...options,
     system: "You are a helpful assistant.",
     tools: {
-      ...mcpWrapper.getTools(),
+      // ...mcpWrapper.getTools(),
       ...tools,
     },
     model: aiModel,

@@ -1,7 +1,8 @@
 import { tool } from "ai";
 import z from "zod";
 import { readdir, stat } from "node:fs/promises";
-import { join, basename, dirname } from "node:path";
+import { join, basename } from "node:path";
+import { readFile } from "node:fs/promises";
 
 interface GrepMatch {
   file: string;
@@ -120,7 +121,6 @@ class GrepEngine {
 
   async searchFile(filePath: string): Promise<GrepResult[]> {
     try {
-      const { readFile } = await import("node:fs/promises");
       const content = await readFile(filePath, "utf-8");
       const lines = content.split("\n");
 
