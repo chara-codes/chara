@@ -15,6 +15,7 @@ import "./get-file-info.test";
 import "./terminal.test";
 import "./grep.test";
 import "./thinking.test";
+import "./init-git.test";
 
 // Import all tools to verify they export correctly
 import { tools } from "../index";
@@ -37,6 +38,7 @@ describe("Tools Index", () => {
       "terminal",
       "grep",
       "thinking",
+      "init-git",
     ];
 
     expectedTools.forEach((toolName) => {
@@ -50,7 +52,7 @@ describe("Tools Index", () => {
   });
 
   test("should have correct number of tools", () => {
-    expect(Object.keys(tools)).toHaveLength(15);
+    expect(Object.keys(tools)).toHaveLength(16);
   });
 
   test("should not have duplicate tool names", () => {

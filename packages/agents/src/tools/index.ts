@@ -13,6 +13,7 @@ import { fetchTool } from "./fetch";
 import { terminal } from "./terminal";
 import { grep } from "./grep";
 import { thinking } from "./thinking";
+import { initGit } from "./init-git";
 
 export const tools = {
   "read-file": readFile,
@@ -30,4 +31,5 @@ export const tools = {
   terminal: terminal,
   grep: grep,
   thinking: thinking,
+  "init-git": initGit,
 };

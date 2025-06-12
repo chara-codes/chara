@@ -21,6 +21,7 @@ Each tool has its own test file following the naming convention `{tool-name}.tes
 - `terminal.test.ts` - Tests for terminal command execution tool
 - `grep.test.ts` - Tests for grep pattern search tool
 - `thinking.test.ts` - Tests for thinking/problem-solving tool
+- `init-git.test.ts` - Tests for git initialization tool
 
 ## Test Utilities
 
@@ -67,6 +68,11 @@ bun test src/tools/__tests__/grep.test.ts
 Run thinking tool tests:
 ```bash
 bun test src/tools/__tests__/thinking.test.ts
+```
+
+Run init-git tool tests:
+```bash
+bun test src/tools/__tests__/init-git.test.ts
 ```
 
 ## Test Framework
@@ -202,6 +208,23 @@ The thinking tool tests include:
 
 Note: Thinking tests verify both the logical flow of problem-solving and the visual presentation of thoughts.
 
+## Init-Git Tool Tests
+
+The init-git tool tests include:
+
+- **Git repository initialization**: Basic git init with isomorphic-git in .chara/history
+- **Skip logic**: Avoiding re-initialization of existing repositories
+- **Directory creation**: Creating .chara/history structure automatically
+- **Working directory**: Using current directory when not specified
+- **Default branch**: Using 'main' as default branch name
+- **Error handling**: Invalid paths and permission errors
+- **Concurrent initialization**: Handling multiple simultaneous init attempts
+- **Deep paths**: Working with nested directory structures
+- **Special characters**: Handling paths with special characters
+- **File system integration**: Proper integration with Node.js fs module
+
+Note: Init-git tests use real isomorphic-git operations but are isolated in temporary directories.
+
 ## Adding New Tests
 
 When adding new tools:
@@ -212,3 +235,14 @@ When adding new tools:
 4. Cover all major functionality and edge cases
 5. Update the `index.test.ts` to include the new tool
 6. Update this README if needed
+
+## Tool Dependencies
+
+Some tools require external dependencies:
+
+- **init-git**: Requires `isomorphic-git` package for git operations
+- **fetch**: Uses built-in `fetch` API for HTTP requests
+- **terminal**: Uses Node.js `spawn` for shell command execution
+- **grep**: Uses Node.js file system APIs for pattern searching
+
+When adding tools with external dependencies, ensure they are properly mocked in tests or use real implementations in isolated environments.
