@@ -4,6 +4,7 @@ import git from "isomorphic-git";
 import fs from "node:fs";
 import { join } from "node:path";
 import { readdir } from "node:fs/promises";
+import { logger } from "@chara/logger";
 
 // Helper function to get all files in working directory
 async function getAllFiles(dir: string, relativePath = ""): Promise<string[]> {
@@ -19,7 +20,8 @@ async function getAllFiles(dir: string, relativePath = ""): Promise<string[]> {
         : entry.name;
 
       // Skip .chara folder
-      if (fullPath.startsWith(".chara/")) continue;
+      if (fullPath.startsWith(".chara/") || fullPath.startsWith(".git/"))
+        continue;
 
       if (entry.isDirectory()) {
         const subFiles = await getAllFiles(dir, fullPath);
@@ -74,13 +76,13 @@ export const saveToHistory = tool({
 
       // Check each file for changes and add only those that need to be committed
       const addedFiles: string[] = [];
-      console.log(
+      logger.debug(
         `Processing ${allFiles.length} files: ${allFiles.join(", ")}`,
       );
 
       for (const filepath of allFiles) {
         try {
-          console.log(`Checking file: ${filepath}`);
+          logger.debug(`Checking file: ${filepath}`);
 
           // Check if file is ignored by .gitignore
           const ignored = await git.isIgnored({
@@ -90,7 +92,7 @@ export const saveToHistory = tool({
             filepath,
           });
           if (ignored) {
-            console.log(`File ${filepath} is ignored by gitignore`);
+            logger.debug(`File ${filepath} is ignored by gitignore`);
             continue;
           }
 
@@ -110,7 +112,7 @@ export const saveToHistory = tool({
             } else if (status === "added") {
               // File was committed but might have been modified since
               // Check if current content differs from committed content
-              console.log(
+              logger.debug(
                 `File ${filepath} has 'added' status, checking content...`,
               );
               try {
@@ -132,12 +134,12 @@ export const saveToHistory = tool({
                 const committedContent = new TextDecoder().decode(blob);
 
                 hasChanges = currentContent !== committedContent;
-                console.log(
+                logger.debug(
                   `Content comparison for ${filepath}: current="${currentContent}", committed="${committedContent}", different=${hasChanges}`,
                 );
               } catch (error) {
                 // File doesn't exist in commit or error reading - no changes
-                console.log(
+                logger.debug(
                   `Error reading committed content for ${filepath}:`,
                   error,
                 );
@@ -148,23 +150,23 @@ export const saveToHistory = tool({
               hasChanges = true;
             }
 
-            console.log(
+            logger.debug(
               `File ${filepath}: status=${status}, hasChanges=${hasChanges}`,
             );
           } catch (error) {
             // If status check fails, assume it's a new file that should be added
             hasChanges = true;
-            console.log(
+            logger.debug(
               `File ${filepath}: status check failed, assuming new file`,
             );
           }
 
           if (hasChanges) {
-            console.log(`Adding file: ${filepath}`);
+            logger.debug(`Adding file: ${filepath}`);
             await git.add({ fs, dir: cwd, gitdir: gitDir, filepath });
             addedFiles.push(filepath);
           } else {
-            console.log(`Skipping file: ${filepath} (no changes)`);
+            logger.debug(`Skipping file: ${filepath} (no changes)`);
           }
         } catch (error) {
           // Skip files that can't be processed
