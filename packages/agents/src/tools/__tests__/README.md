@@ -20,6 +20,7 @@ Each tool has its own test file following the naming convention `{tool-name}.tes
 - `fetch.test.ts` - Tests for URL fetching tool
 - `terminal.test.ts` - Tests for terminal command execution tool
 - `grep.test.ts` - Tests for grep pattern search tool
+- `thinking.test.ts` - Tests for thinking/problem-solving tool
 
 ## Test Utilities
 
@@ -61,6 +62,11 @@ bun test src/tools/__tests__/terminal.test.ts
 Run grep tool tests:
 ```bash
 bun test src/tools/__tests__/grep.test.ts
+```
+
+Run thinking tool tests:
+```bash
+bun test src/tools/__tests__/thinking.test.ts
 ```
 
 ## Test Framework
@@ -177,6 +183,24 @@ The grep tool tests include:
 - **Error handling**: Invalid regex patterns, missing files, permission errors
 
 Note: Grep tests use the Bun file system APIs and handle various edge cases for robust pattern searching.
+
+## Thinking Tool Tests
+
+The thinking tool tests include:
+
+- **Sequential thinking**: Basic thought progression with numbered steps
+- **Revision handling**: Ability to revise and reconsider previous thoughts
+- **Branching logic**: Exploring alternative approaches from previous thoughts
+- **State management**: Maintaining context across multiple thought steps
+- **Dynamic adjustment**: Changing total thought estimates as understanding evolves
+- **Parameter validation**: Ensuring proper relationships between revision/branch parameters
+- **Complex scenarios**: Multi-step problems with revisions and branches
+- **Output formatting**: Visual thought representation with borders and context
+- **JSON summaries**: Structured progress tracking and metadata
+- **Unicode support**: Handling international characters and emojis in thoughts
+- **Edge cases**: Very long thoughts, multiline content, and state persistence
+
+Note: Thinking tests verify both the logical flow of problem-solving and the visual presentation of thoughts.
 
 ## Adding New Tests
 

@@ -12,6 +12,7 @@ import { getFileInfo } from "./get-file-info";
 import { fetchTool } from "./fetch";
 import { terminal } from "./terminal";
 import { grep } from "./grep";
+import { thinking } from "./thinking";
 
 export const tools = {
   "read-file": readFile,
@@ -28,4 +29,5 @@ export const tools = {
   fetch: fetchTool,
   terminal: terminal,
   grep: grep,
+  thinking: thinking,
 };
