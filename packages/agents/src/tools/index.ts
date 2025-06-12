@@ -14,6 +14,7 @@ import { terminal } from "./terminal";
 import { grep } from "./grep";
 import { thinking } from "./thinking";
 import { initGit } from "./init-git";
+import { saveToHistory } from "./save-to-history";
 
 export const tools = {
   "read-file": readFile,
@@ -32,4 +33,5 @@ export const tools = {
   grep: grep,
   thinking: thinking,
   "init-git": initGit,
+  "save-to-history": saveToHistory,
 };

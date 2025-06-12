@@ -1,5 +1,6 @@
 import { tool } from "ai";
 import z from "zod";
+import { mkdir } from "node:fs/promises";
 
 export const createDirectory = tool({
   description:
@@ -9,10 +10,11 @@ export const createDirectory = tool({
   }),
   execute: async ({ path }) => {
     try {
-      await Bun.write(`${path}/.gitkeep`, "");
+      await mkdir(path, { recursive: true });
       return {
         status: "success",
         message: `Successfully created directory: ${path}`,
+        path,
       };
     } catch (error) {
       const errorMessage =

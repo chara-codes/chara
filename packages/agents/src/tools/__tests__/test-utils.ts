@@ -1,6 +1,6 @@
-import { mkdtemp, rm } from "fs/promises";
-import { join } from "path";
-import { tmpdir } from "os";
+import { mkdtemp, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 export class TestFileSystem {
   private tempDir: string | null = null;
@@ -17,7 +17,7 @@ export class TestFileSystem {
     }
   }
 
-  getPath(relativePath: string = ""): string {
+  getPath(relativePath = ""): string {
     if (!this.tempDir) {
       throw new Error("TestFileSystem not initialized. Call setup() first.");
     }

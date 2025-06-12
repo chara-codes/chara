@@ -17,6 +17,7 @@ const MODEL_WHITELIST = [
   "gemini-2.5-pro-preview-05-06",
   "DeepSeek-R1-Distill-Qwen-14B",
   "gpt-4.1-2025-04-14",
+  "gpt-4.1-mini-2025-04-14",
 
   // Claude models
   "claude-opus-4-20250514",

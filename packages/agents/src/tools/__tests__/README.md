@@ -22,6 +22,7 @@ Each tool has its own test file following the naming convention `{tool-name}.tes
 - `grep.test.ts` - Tests for grep pattern search tool
 - `thinking.test.ts` - Tests for thinking/problem-solving tool
 - `init-git.test.ts` - Tests for git initialization tool
+- `save-to-history.test.ts` - Tests for git history saving tool
 
 ## Test Utilities
 
@@ -73,6 +74,11 @@ bun test src/tools/__tests__/thinking.test.ts
 Run init-git tool tests:
 ```bash
 bun test src/tools/__tests__/init-git.test.ts
+```
+
+Run save-to-history tool tests:
+```bash
+bun test src/tools/__tests__/save-to-history.test.ts
 ```
 
 ## Test Framework
@@ -225,6 +231,26 @@ The init-git tool tests include:
 
 Note: Init-git tests use real isomorphic-git operations but are isolated in temporary directories.
 
+## Save-to-History Tool Tests
+
+The save-to-history tool tests include:
+
+- **Change detection**: Identifying new, modified, and deleted files
+- **Git staging**: Adding files to the git staging area
+- **Commit creation**: Creating commits with proper author information
+- **Gitignore respect**: Honoring .gitignore rules for excluded files
+- **Chara folder exclusion**: Automatically excluding .chara folder from commits
+- **Custom messages**: Supporting custom commit messages vs default timestamps
+- **No changes handling**: Graceful handling when no changes exist
+- **Multiple commits**: Sequential commit operations
+- **File operations**: Handling new files, modifications, and deletions
+- **Special characters**: Unicode and special character support in filenames
+- **Nested structures**: Deep directory hierarchies and complex project layouts
+- **Error handling**: Git repository initialization checks and error scenarios
+- **Concurrent operations**: Multiple simultaneous save attempts
+
+Note: Save-to-history tests use real isomorphic-git operations but are isolated in temporary directories and work with the .chara/history git repository structure.
+
 ## Adding New Tests
 
 When adding new tools:
@@ -241,8 +267,11 @@ When adding new tools:
 Some tools require external dependencies:
 
 - **init-git**: Requires `isomorphic-git` package for git operations
+- **save-to-history**: Requires `isomorphic-git` package for git operations
 - **fetch**: Uses built-in `fetch` API for HTTP requests
 - **terminal**: Uses Node.js `spawn` for shell command execution
 - **grep**: Uses Node.js file system APIs for pattern searching
 
 When adding tools with external dependencies, ensure they are properly mocked in tests or use real implementations in isolated environments.
+
+The save-to-history tool works in conjunction with init-git and requires a properly initialized git repository in .chara/history before it can commit changes.

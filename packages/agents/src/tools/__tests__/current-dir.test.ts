@@ -3,7 +3,10 @@ import { currentDir } from "../current-dir";
 
 describe("currentDir tool", () => {
   test("should return current working directory", async () => {
-    const result = await currentDir.execute({});
+    const result = await currentDir.execute({} as any, {
+      toolCallId: "test",
+      messages: [],
+    });
 
     expect(typeof result).toBe("string");
     expect(result).toBeTruthy();
@@ -17,7 +20,9 @@ describe("currentDir tool", () => {
   });
 
   test("should have correct tool metadata", () => {
-    expect(currentDir.description).toBe("Show path to the current working directory");
+    expect(currentDir.description).toBe(
+      "Show path to the current working directory",
+    );
     expect(currentDir.parameters).toBeDefined();
   });
 

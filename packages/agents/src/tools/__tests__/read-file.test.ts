@@ -17,7 +17,10 @@ describe("readFile tool", () => {
     const content = "Hello, World!";
     const filePath = await testFS.createFile("test.txt", content);
 
-    const result = await readFile.execute({ path: filePath });
+    const result = await readFile.execute({ path: filePath } as any, {
+      toolCallId: "test",
+      messages: [],
+    });
 
     expect(result).toBe(content);
   });
@@ -25,7 +28,10 @@ describe("readFile tool", () => {
   test("should read empty file", async () => {
     const filePath = await testFS.createFile("empty.txt", "");
 
-    const result = await readFile.execute({ path: filePath });
+    const result = await readFile.execute({ path: filePath } as any, {
+      toolCallId: "test",
+      messages: [],
+    });
 
     expect(result).toBe("");
   });
@@ -34,7 +40,10 @@ describe("readFile tool", () => {
     const content = "Special chars: éñü 🚀 \n\t<>&\"'";
     const filePath = await testFS.createFile("special.txt", content);
 
-    const result = await readFile.execute({ path: filePath });
+    const result = await readFile.execute({ path: filePath } as any, {
+      toolCallId: "test",
+      messages: [],
+    });
 
     expect(result).toBe(content);
   });
@@ -43,7 +52,10 @@ describe("readFile tool", () => {
     const content = "Line 1\nLine 2\nLine 3\n";
     const filePath = await testFS.createFile("multiline.txt", content);
 
-    const result = await readFile.execute({ path: filePath });
+    const result = await readFile.execute({ path: filePath } as any, {
+      toolCallId: "test",
+      messages: [],
+    });
 
     expect(result).toBe(content);
   });
@@ -52,7 +64,10 @@ describe("readFile tool", () => {
     const content = '{"name": "test", "value": 123}';
     const filePath = await testFS.createFile("data.json", content);
 
-    const result = await readFile.execute({ path: filePath });
+    const result = await readFile.execute({ path: filePath } as any, {
+      toolCallId: "test",
+      messages: [],
+    });
 
     expect(result).toBe(content);
   });
@@ -60,13 +75,23 @@ describe("readFile tool", () => {
   test("should throw error for non-existent file", async () => {
     const nonExistentPath = testFS.getPath("does-not-exist.txt");
 
-    await expect(readFile.execute({ path: nonExistentPath })).rejects.toThrow();
+    await expect(
+      readFile.execute({ path: nonExistentPath } as any, {
+        toolCallId: "test",
+        messages: [],
+      }),
+    ).rejects.toThrow();
   });
 
   test("should throw error when trying to read directory", async () => {
     const dirPath = await testFS.createDir("test-dir");
 
-    await expect(readFile.execute({ path: dirPath })).rejects.toThrow();
+    await expect(
+      readFile.execute({ path: dirPath } as any, {
+        toolCallId: "test",
+        messages: [],
+      }),
+    ).rejects.toThrow();
   });
 
   test("should have correct tool metadata", () => {
@@ -78,7 +103,10 @@ describe("readFile tool", () => {
     const largeContent = "x".repeat(10000);
     const filePath = await testFS.createFile("large.txt", largeContent);
 
-    const result = await readFile.execute({ path: filePath });
+    const result = await readFile.execute({ path: filePath } as any, {
+      toolCallId: "test",
+      messages: [],
+    });
 
     expect(result).toBe(largeContent);
     expect(result.length).toBe(10000);
@@ -88,7 +116,10 @@ describe("readFile tool", () => {
     const content = "Line 1\r\nLine 2\r\nLine 3";
     const filePath = await testFS.createFile("windows.txt", content);
 
-    const result = await readFile.execute({ path: filePath });
+    const result = await readFile.execute({ path: filePath } as any, {
+      toolCallId: "test",
+      messages: [],
+    });
 
     expect(result).toBe(content);
   });
