@@ -193,8 +193,8 @@ export const saveToHistory = tool({
         dir: gitDir,
         message,
         author: {
-          name: "Chara Agent",
-          email: "agent@chara.dev",
+          name: "Chara Codes",
+          email: "agent@chara-ai.dev",
         },
       });
 

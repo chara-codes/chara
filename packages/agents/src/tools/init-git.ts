@@ -6,9 +6,13 @@ import { join } from "node:path";
 import { mkdir } from "node:fs/promises";
 
 export const initGit = tool({
-  description: "Initialize git repository using isomorphic-git in .chara/history directory. Skips if already initialized.",
+  description:
+    "Initialize git repository using isomorphic-git in .chara/history directory. Skips if already initialized.",
   parameters: z.object({
-    workingDir: z.string().optional().describe("Working directory (defaults to current working directory)"),
+    workingDir: z
+      .string()
+      .optional()
+      .describe("Working directory (defaults to current working directory)"),
   }),
   execute: async ({ workingDir }) => {
     const cwd = workingDir || process.cwd();
@@ -24,9 +28,10 @@ export const initGit = tool({
         return {
           status: "skipped",
           message: "Git repository already initialized in .chara/history",
-          path: gitDir
+          path: gitDir,
         };
       } catch {
+        // Bun.write(".gitkeep", "");
         // Git is not initialized, proceed with initialization
       }
 
@@ -34,17 +39,17 @@ export const initGit = tool({
       await git.init({
         fs,
         dir: gitDir,
-        defaultBranch: "main"
+        defaultBranch: "main",
       });
-
+      await Bun.write(".gitkeep", "");
       return {
         status: "success",
         message: "Successfully initialized git repository in .chara/history",
-        path: gitDir
+        path: gitDir,
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to initialize git repository: ${errorMessage}`);
     }
   },

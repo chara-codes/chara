@@ -3,6 +3,7 @@ import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
 import { mcpWrapper } from "../mcp/mcp-client";
 import { tools } from "../tools";
+import { chatPrompt } from "../prompts/chat";
 
 export const chatAgent = async (
   {
@@ -33,6 +34,6 @@ export const chatAgent = async (
     toolCallStreaming: true,
     experimental_continueSteps: true,
     maxSteps: 500,
-    messages: [{ role: "system", content: "Be funny" }, ...messages],
+    messages: [{ role: "system", content: chatPrompt() }, ...messages],
   });
 };
