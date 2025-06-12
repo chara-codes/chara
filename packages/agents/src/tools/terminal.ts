@@ -4,17 +4,12 @@ import z from "zod";
 const COMMAND_OUTPUT_LIMIT = 16 * 1024; // 16KB limit
 
 export const terminal = tool({
-  description: `Executes a shell one-liner and returns the combined output.
-
-This tool spawns a process using the user's shell, reads from stdout and stderr (preserving the order of writes), and returns a string with the combined output result.
-
-The output results will be shown to the user already, only list it again if necessary, avoid being redundant.
-
-Make sure you use the cd parameter to navigate to one of the root directories of the project. NEVER do it as part of the command itself, otherwise it will error.
-
-Do not use this tool for commands that run indefinitely, such as servers (like npm run start, npm run dev, python -m http.server, etc) or file watchers that don't terminate on their own.
-
-Remember that each invocation of this tool will spawn a new shell process, so you can't rely on any state from previous invocations.`,
+  description: `Executes a shell one-liner and returns its combined output.
+  This tool launches a process in the user’s shell, capturing both stdout and stderr streams—preserving their original write order—and returns them together in a single string.
+  Unless there’s a specific need to display it again, avoid redundantly listing the output since the result will already be shown to the user.
+  Always use the cd parameter to switch to one of the project’s root directories; do not include directory changes directly in the shell command, or it may cause errors.
+  Do not use this tool for commands that don’t terminate on their own, such as launching servers (e.g., npm run start, npm run dev, python -m http.server) or persistent file watchers.
+  Each time this tool is used, it starts a new shell process—no previous state is preserved between runs.`,
   parameters: z.object({
     command: z.string().describe("The one-liner command to execute"),
     cd: z

@@ -284,9 +284,7 @@ describe("terminal tool", () => {
   test("should have correct tool metadata", () => {
     expect(terminal.description).toContain("Executes a shell one-liner");
     expect(terminal.description).toContain("cd parameter");
-    expect(terminal.description).toContain(
-      "NEVER do it as part of the command",
-    );
+    expect(terminal.description).toContain("Do not use this tool for commands");
     expect(terminal.parameters).toBeDefined();
   });
 

@@ -2,7 +2,7 @@ import { tool } from "ai";
 import z from "zod";
 
 const DEFAULT_USER_AGENT =
-  "Chara-Agent/1.0 (+https://github.com/chara-ai/chara)";
+  "Chara-Codes/1.0 (+https://github.com/chara-ai/chara)";
 const DEFAULT_MAX_LENGTH = 5000;
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
 
