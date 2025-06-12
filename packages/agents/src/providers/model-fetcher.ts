@@ -175,7 +175,6 @@ export namespace ModelFetcher {
       }
 
       const data = (await response.json()) as OpenAIModelsResponse;
-      logger.dump(data);
       return data.data
         .filter((model: OpenAIModel) => model.id.indexOf("embedding") === -1)
         .map((model: OpenAIModel) => ({
@@ -198,6 +197,51 @@ export namespace ModelFetcher {
         { id: "llama-3.2-3b-instruct", name: "Llama 3.2 3B Instruct" },
         { id: "llama-3.1-8b-instruct", name: "Llama 3.1 8B Instruct" },
         { id: "mistral-7b-instruct", name: "Mistral 7B Instruct" },
+      ];
+    }
+  }
+
+  /**
+   * Fetches available models from DIAL API
+   * @param baseUrl - Base URL for DIAL server
+   * @returns Array of DIAL models or fallback models if API fails
+   */
+  export async function fetchDIALModels(baseUrl: string): Promise<ModelInfo[]> {
+    try {
+      const rootDomain = new URL(baseUrl).origin;
+      const response = await fetch(`${rootDomain}/openai/models`, {
+        headers: {
+          "Api-Key": `${process.env.DIAL_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `DIAL API error: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const data = (await response.json()) as OpenAIModelsResponse;
+      return data.data.map((model: OpenAIModel) => ({
+        id: model.id,
+        name: model.id,
+        created: model.created,
+        ownedBy: model.owned_by,
+      }));
+    } catch (error) {
+      logger.warning(
+        "Failed to fetch DIAL models from API, using fallback models:",
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      );
+
+      // Fallback to known models if API fails
+      return [
+        { id: "dial-model", name: "DIAL Model" },
+        { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" },
+        { id: "gpt-4", name: "GPT-4" },
       ];
     }
   }

@@ -1,5 +1,6 @@
 import { openai, createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createAzure } from "@ai-sdk/azure";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
@@ -222,6 +223,40 @@ export class ProviderConfigs extends BaseProviderInitializer {
   }
 
   /**
+   * Initialize DIAL provider
+   */
+  public initializeDIAL(): ProviderConfig | null {
+    if (!this.validateApiKey(process.env.DIAL_API_KEY, "DIAL")) {
+      return null;
+    }
+
+    if (!process.env.DIAL_API_BASE_URL) {
+      logger.warning("DIAL_API_BASE_URL is required for DIAL provider");
+      return null;
+    }
+
+    return this.safeInitialize("DIAL", () => {
+      const baseURL = process.env.DIAL_API_BASE_URL;
+      if (!baseURL) {
+        throw new Error("DIAL_API_BASE_URL is required");
+      }
+      // Validate URL format
+      new URL(baseURL);
+      const dialProvider = createAzure({
+        apiKey: process.env.DIAL_API_KEY as string,
+        baseURL,
+        apiVersion: "2024-02-01",
+      });
+      return {
+        name: "DIAL",
+        provider: (modelId: string) => dialProvider(modelId),
+        isAvailable: true,
+        fetchModels: () => ModelFetcher.fetchDIALModels(baseURL),
+      };
+    });
+  }
+
+  /**
    * Initialize HuggingFace provider (placeholder)
    */
   public initializeHuggingFace(): ProviderConfig | null {
@@ -245,7 +280,10 @@ export class ProviderConfigs extends BaseProviderInitializer {
   /**
    * Get all provider initialization methods
    */
-  public getAllProviderInitializers(): Record<string, () => ProviderConfig | null> {
+  public getAllProviderInitializers(): Record<
+    string,
+    () => ProviderConfig | null
+  > {
     return {
       openai: () => this.initializeOpenAI(),
       anthropic: () => this.initializeAnthropic(),
@@ -257,6 +295,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
       lmstudio: () => this.initializeLMStudio(),
       xai: () => this.initializeXAI(),
       bedrock: () => this.initializeBedrock(),
+      dial: () => this.initializeDIAL(),
       huggingface: () => this.initializeHuggingFace(),
     };
   }

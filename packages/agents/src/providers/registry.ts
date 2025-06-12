@@ -20,6 +20,7 @@ import type { LanguageModelV1 } from "ai";
  * - OLLAMA_API_BASE_URL: Local Ollama instance (specify model when calling getModel)
  * - LMSTUDIO_API_BASE_URL: Local LMStudio instance (specify model when calling getModel)
  * - AWS_BEDROCK_CONFIG: AWS Bedrock (JSON config, specify model when calling getModel)
+ * - DIAL_API_KEY + DIAL_API_BASE_URL: DIAL compatible API endpoint (specify model when calling getModel)
  * - HuggingFace_API_KEY: HuggingFace models (placeholder, not yet implemented)
  *
  * @example
@@ -184,7 +185,6 @@ export class ProvidersRegistry {
     const availableProviders = this.getAvailableProviders().filter(
       (p) => p.fetchModels,
     );
-
     const fetchPromises = availableProviders.map(async (provider) => {
       const providerName = provider.name.toLowerCase();
       try {

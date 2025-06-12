@@ -23,7 +23,7 @@ This folder contains example code demonstrating how to use the AI providers regi
    # Add other providers as needed
    ```
 
-3. **Ensure you have valid API keys** for at least one provider to see the demos in action.
+3. **Ensure you have valid API keys** for at least one provider to see the demos in action. For DIAL examples, both `DIAL_API_KEY` and `DIAL_API_BASE_URL` are required.
 
 ## Available Examples
 
@@ -39,6 +39,7 @@ A comprehensive demonstration of the providers registry featuring:
 - **Error Handling**: Shows proper error handling for unavailable providers
 - **Provider Comparison**: Compares responses from different providers
 - **Dynamic Selection**: Selects providers based on task requirements
+- **DIAL Integration**: Shows how to use the DIAL provider for advanced models
 
 ### `model-fetching-demo.ts`
 
@@ -49,6 +50,36 @@ A focused demonstration of the model fetching capabilities:
 - **Model Analysis**: Analyzes and categorizes available models by type
 - **Error Handling**: Demonstrates proper error handling for model fetching
 - **Statistics**: Shows model counts and availability across providers
+
+### `dial-example.ts`
+
+A demonstration of using the DIAL provider:
+
+- **Model Discovery**: Fetches and displays available DIAL models
+- **Text Generation**: Tests basic text generation with DIAL models
+- **Streaming Response**: Shows real-time streaming responses
+- **Multi-turn Conversations**: Demonstrates conversation handling
+- **Advanced Features**: Uses models with thinking/reasoning capabilities
+
+### `dial-agent-call.ts`
+
+A demonstration of using DIAL models with the chat agent:
+
+- **Agent Integration**: Uses DIAL models with the chat agent architecture
+- **Model Selection**: Automatically finds and uses available DIAL models
+- **Multi-turn Conversations**: Shows how to handle conversation context
+- **Thinking Models**: Demonstrates models with explicit reasoning capabilities
+- **Error Handling**: Shows proper error handling for DIAL-specific scenarios
+
+### `dial-tools-example.ts`
+
+A demonstration of using DIAL models with various AI SDK features:
+
+- **Simple Prompting**: Shows basic Q&A with DIAL models
+- **System Prompts**: Demonstrates guiding the model with system instructions
+- **Structured Output**: Shows how to request JSON-formatted responses
+- **Model Selection**: Automatically selects from available DIAL models
+- **Error Handling**: Demonstrates proper error handling for DIAL models
 </edits>
 
 <edits>
@@ -234,7 +265,24 @@ MISTRAL_API_KEY=your_mistral_key_here
 GROQ_API_KEY=your_groq_key_here
 OPEN_ROUTER_API_KEY=your_openrouter_key_here
 XAI_API_KEY=your_xai_key_here
+DIAL_API_KEY=your_dial_key_here
+DIAL_API_BASE_URL=your_dial_base_url_here
 OLLAMA_API_BASE_URL=http://127.0.0.1:11434
+```
+
+## Running DIAL Examples
+
+To run the DIAL examples, make sure you have set both `DIAL_API_KEY` and `DIAL_API_BASE_URL` in your `.env` file, then:
+
+```bash
+# Run the basic DIAL provider demo
+bun run examples/dial-example.ts
+
+# Run the DIAL chat agent demo
+bun run examples/dial-agent-call.ts
+
+# Run the DIAL features demo
+bun run examples/dial-tools-example.ts
 ```
 
 For detailed configuration instructions, see `../src/providers-config.md`.

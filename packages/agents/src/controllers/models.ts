@@ -2,6 +2,22 @@ import { fetchAllModels } from "../providers";
 
 // Whitelist of high-quality models
 const MODEL_WHITELIST = [
+  //DIAL
+  "anthropic.claude-opus-4-20250514-v1:0-with-thinking",
+  "anthropic.claude-opus-4-20250514-v1:0",
+  "anthropic.claude-sonnet-4-20250514-v1:0-with-thinking",
+  "anthropic.claude-sonnet-4-20250514-v1:0",
+  "anthropic.claude-3-7-sonnet-20250219-v1:0-with-thinking",
+  "anthropic.claude-3-7-sonnet-20250219-v1:0",
+  "o4-mini-2025-04-16",
+  "o3-2025-04-16",
+  "deepseek-r1",
+  "claude-sonnet-4@20250514",
+  "gemini-2.5-flash-preview-05-20",
+  "gemini-2.5-pro-preview-05-06",
+  "DeepSeek-R1-Distill-Qwen-14B",
+  "gpt-4.1-2025-04-14",
+
   // Claude models
   "claude-opus-4-20250514",
   "claude-sonnet-4-20250514",

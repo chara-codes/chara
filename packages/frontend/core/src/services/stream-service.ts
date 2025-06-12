@@ -395,11 +395,19 @@ export async function processChatStream(
               }
               break;
             }
-            case "3": // Tool result/response
-              console.log("Stream Service: Tool result received", parsedData);
-              // Handle tool execution results
-              if (callbacks.onToolCall) {
-                callbacks.onToolCall(parsedData);
+            case "3": // Error message or tool result/response
+              console.log("Stream Service: Type 3 chunk received", parsedData);
+              // Check if this is an error message (string) or tool result (object)
+              if (typeof parsedData === "string") {
+                // Handle error message
+                console.error("Stream Service: Error message received:", parsedData);
+                callbacks.onStreamError(parsedData);
+              } else {
+                // Handle tool execution results
+                console.log("Stream Service: Tool result received", parsedData);
+                if (callbacks.onToolCall) {
+                  callbacks.onToolCall(parsedData);
+                }
               }
               break;
             case "4": // Metadata
