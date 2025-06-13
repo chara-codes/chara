@@ -50,12 +50,7 @@ export namespace ModelFetcher {
       );
 
       // Fallback to known models if API fails
-      return [
-        { id: "gpt-4o", name: "GPT-4o" },
-        { id: "gpt-4o-mini", name: "GPT-4o Mini" },
-        { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
-        { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" },
-      ];
+      return [];
     }
   }
 
@@ -95,16 +90,7 @@ export namespace ModelFetcher {
       );
 
       // Fallback to known popular models if API fails
-      return [
-        { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet" },
-        { id: "openai/gpt-4o", name: "GPT-4o" },
-        { id: "openai/gpt-4o-mini", name: "GPT-4o Mini" },
-        {
-          id: "meta-llama/llama-3.1-8b-instruct",
-          name: "Llama 3.1 8B Instruct",
-        },
-        { id: "google/gemini-pro-1.5", name: "Gemini Pro 1.5" },
-      ];
+      return [];
     }
   }
 
@@ -144,12 +130,7 @@ export namespace ModelFetcher {
       );
 
       // Fallback to known popular models if API fails
-      return [
-        { id: "llama3.2", name: "Llama 3.2" },
-        { id: "llama3.1", name: "Llama 3.1" },
-        { id: "mistral", name: "Mistral" },
-        { id: "codellama", name: "Code Llama" },
-      ];
+      return [];
     }
   }
 
@@ -192,12 +173,7 @@ export namespace ModelFetcher {
       );
 
       // Fallback to known popular models if API fails
-      return [
-        { id: "local-model", name: "Local Model" },
-        { id: "llama-3.2-3b-instruct", name: "Llama 3.2 3B Instruct" },
-        { id: "llama-3.1-8b-instruct", name: "Llama 3.1 8B Instruct" },
-        { id: "mistral-7b-instruct", name: "Mistral 7B Instruct" },
-      ];
+      return [];
     }
   }
 
@@ -238,11 +214,7 @@ export namespace ModelFetcher {
       );
 
       // Fallback to known models if API fails
-      return [
-        { id: "dial-model", name: "DIAL Model" },
-        { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" },
-        { id: "gpt-4", name: "GPT-4" },
-      ];
+      return [];
     }
   }
 
@@ -281,13 +253,7 @@ export namespace ModelFetcher {
       );
 
       // Fallback to known models if API fails
-      return [
-        { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet" },
-        { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku" },
-        { id: "claude-3-opus-20240229", name: "Claude 3 Opus" },
-        { id: "claude-3-sonnet-20240229", name: "Claude 3 Sonnet" },
-        { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku" },
-      ];
+      return [];
     }
   }
 

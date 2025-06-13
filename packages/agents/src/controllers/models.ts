@@ -3,20 +3,7 @@ import { fetchAllModels } from "../providers";
 // Whitelist of high-quality models
 const MODEL_WHITELIST = [
   //DIAL
-  "anthropic.claude-opus-4-20250514-v1:0-with-thinking",
-  "anthropic.claude-opus-4-20250514-v1:0",
-  "anthropic.claude-sonnet-4-20250514-v1:0-with-thinking",
-  "anthropic.claude-sonnet-4-20250514-v1:0",
-  "anthropic.claude-3-7-sonnet-20250219-v1:0-with-thinking",
-  "anthropic.claude-3-7-sonnet-20250219-v1:0",
-  "o4-mini-2025-04-16",
-  "o3-2025-04-16",
   "deepseek-r1",
-  "claude-sonnet-4@20250514",
-  "gemini-2.5-flash-preview-05-20",
-  "gemini-2.5-pro-preview-05-06",
-  "DeepSeek-R1-Distill-Qwen-14B",
-  "gpt-4.1-2025-04-14",
   "gpt-4.1-mini-2025-04-14",
 
   // Claude models
@@ -36,8 +23,6 @@ const MODEL_WHITELIST = [
   "openai/gpt-4.1-mini",
   "openai/gpt-4.1-nano",
   "openai/gpt-4o",
-  "openai/gpt-4o-mini",
-  "openai/gpt-4o:extended",
 
   // GPT-4 variants from OpenAI provider
   "gpt-4.1",
@@ -46,42 +31,16 @@ const MODEL_WHITELIST = [
   "gpt-4o",
   "gpt-4o-mini",
 
-  // O1, O3, O4 models from OpenRouter
-  "openai/o1",
-  "openai/o1-pro",
-  "openai/o1-preview",
-  "openai/o1-mini",
-  "openai/o3",
-  "openai/o3-mini",
-  "openai/o3-mini-high",
-  "openai/o4-mini",
-  "openai/o4-mini-high",
-
-  // O1, O3, O4 models from OpenAI provider
-  "o1",
-  "o1-pro",
-  "o1-preview",
-  "o1-mini",
-  "o3",
-  "o3-mini",
-  "o4-mini",
-
   // Mistral models
-  "mistralai/mistral-large",
-  "mistralai/mistral-medium",
-  "mistralai/mistral-small",
-  "mistralai/mistral-nemo",
   "mistralai/mistral-nemo:free",
-  "mistralai/mistral-tiny",
+  // "mistralai/devstral-small:free",
+  // "mistralai/devstral-small",
+  "mistralai/mistral-large",
   "mistralai/codestral-2501",
 
   // Gemini models
   "google/gemini-2.5-pro-preview",
   "google/gemini-2.5-flash-preview",
-  "google/gemini-2.5-flash-preview:thinking",
-  "google/gemini-pro-1.5",
-  "google/gemini-flash-1.5",
-  "google/gemini-flash-1.5-8b",
 
   // DeepSeek R1 models
   "deepseek/deepseek-r1",

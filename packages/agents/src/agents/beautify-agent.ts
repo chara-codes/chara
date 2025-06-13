@@ -21,12 +21,12 @@ export const beautifyAgent = (
       "You are a helpful assistant, the main goal is beautify users prompts.",
     model: aiModel,
     messages: [
+      ...messages,
       {
         role: "system",
         content:
           "Use previous messages and the current user prompt to generate a better, implementation-focused answer. Limit the response to 300 symbols, make it actionable for development, and use plain text only. Prioritize clarity and practical instructions.",
       },
-      ...messages,
     ],
   });
 };

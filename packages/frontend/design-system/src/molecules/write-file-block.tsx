@@ -1,21 +1,23 @@
 "use client";
 
-import React from "react";
+import type React from "react";
 import { useState, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import { FileIcon } from "../atoms";
 import { CloseIcon } from "../atoms/icons/close-icon";
+import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 
 interface WriteFileBlockProps {
   filePath: string;
   content: string;
   isGenerating?: boolean;
   isVisible?: boolean;
-  onClose?: () => void;
   streamingSpeed?: number; // milliseconds between characters
   showLineNumbers?: boolean;
   maxHeight?: number;
 }
+
+type ViewMode = "collapsed" | "limited" | "full";
 
 const typewriter = keyframes`
   from {
@@ -73,6 +75,25 @@ const WriteFileTitle = styled.div`
 const WriteFileActions = styled.div`
   display: flex;
   gap: 8px;
+  align-items: center;
+`;
+
+const ExpandCollapseButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  font-size: 11px;
+  border-radius: 4px;
+
+  &:hover {
+    background-color: #e5e7eb;
+    color: #4b5563;
+  }
 `;
 
 const StyledWriteFileButton = styled.button`
@@ -93,18 +114,21 @@ const StyledWriteFileButton = styled.button`
   }
 `;
 
-const WriteFileContent = styled.div<{ maxHeight: number }>`
-  max-height: ${({ maxHeight }) => maxHeight}px;
-  overflow-y: auto;
-  padding: 12px;
+const WriteFileContent = styled.div<{ maxHeight: number; viewMode: ViewMode }>`
+  max-height: ${({ maxHeight, viewMode }) =>
+    viewMode === "full" ? "none" : `${maxHeight}px`};
+  overflow-y: ${({ viewMode }) => (viewMode === "full" ? "visible" : "auto")};
+  padding: 0;
   background-color: #f9fafb;
+  border-width: 0;
+  display: ${({ viewMode }) => (viewMode === "collapsed" ? "none" : "block")};
 `;
 
 const CodeContainer = styled.div<{ showLineNumbers: boolean }>`
   display: flex;
   background-color: #ffffff;
   border-radius: 4px;
-  border: 1px solid #e5e7eb;
+  border: 0px solid #e5e7eb;
   overflow: hidden;
 
   ${({ showLineNumbers }) =>
@@ -126,33 +150,50 @@ const LineNumbers = styled.div`
   border-right: 1px solid #e5e7eb;
   background-color: #f9fafb;
   min-width: 40px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
 `;
 
 const LineNumber = styled.div`
   font-size: 12px;
   line-height: 1.5;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 18px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
 `;
 
-const CodeContent = styled.pre<{ isGenerating?: boolean }>`
-  margin: 0;
-  padding: 8px 12px;
-  white-space: pre-wrap;
-  word-break: break-word;
+const SimpleCodeContainer = styled.div`
   flex: 1;
+  padding: 8px 12px;
   font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   font-size: 12px;
   line-height: 1.5;
   color: #374151;
   background-color: #ffffff;
+  white-space: pre;
+  overflow-x: auto;
   position: relative;
+`;
 
-  &::after {
-    content: "${({ isGenerating }) => (isGenerating ? "|" : "")}";
-    animation: ${({ isGenerating }) => (isGenerating ? blink : "none")} 1s
-      infinite;
-    color: #4b5563;
-    font-weight: bold;
-  }
+const CodeLine = styled.div`
+  font-size: 12px;
+  line-height: 1.5;
+  height: 18px;
+  min-height: 18px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  display: flex;
+  align-items: center;
+`;
+
+const CodeContent = styled.div<{ isGenerating?: boolean }>`
+  margin: 0;
+  padding: 8px 12px;
+  flex: 1;
+  color: #374151;
+  background-color: #ffffff;
+  position: relative;
 `;
 
 const StatusBadge = styled.div<{
@@ -193,14 +234,42 @@ const StatusBadge = styled.div<{
   }};
 `;
 
-const GenerationStats = styled.div`
-  display: flex;
+const GenerationStats = styled.div<{ viewMode: ViewMode }>`
+  display: ${({ viewMode }) => (viewMode === "collapsed" ? "none" : "flex")};
   gap: 12px;
   padding: 8px 12px;
   border-bottom: 1px solid #e5e7eb;
   background-color: #f9fafb;
   font-size: 11px;
   color: #6b7280;
+`;
+
+const ViewModeToggle = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+`;
+
+const ViewModeButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+
+  &:hover {
+    background-color: #e5e7eb;
+    color: #4b5563;
+  }
 `;
 
 const StatItem = styled.div`
@@ -214,7 +283,6 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
   content,
   isGenerating = false,
   isVisible = true,
-  onClose = () => {},
   streamingSpeed = 20,
   showLineNumbers = true,
   maxHeight = 500,
@@ -233,6 +301,7 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
   }
   const [displayedContent, setDisplayedContent] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>("limited");
 
   useEffect(() => {
     if (isGenerating && currentIndex < content.length) {
@@ -245,7 +314,9 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
       ); // Ensure minimum 1ms delay
 
       return () => clearTimeout(timer);
-    } else if (!isGenerating) {
+    }
+
+    if (!isGenerating) {
       setDisplayedContent(content);
       setCurrentIndex(content.length);
     }
@@ -263,7 +334,7 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
         setDisplayedContent("");
       }
     }
-  }, [content]);
+  }, [content, currentIndex, isGenerating]);
 
   const lineCount = displayedContent.split("\n").length;
   const characterCount = displayedContent.length;
@@ -279,6 +350,19 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
 
   const fileExtension = getFileExtension(filePath);
   const fileName = filePath.split("/").pop() || filePath;
+
+  // Calculate if content fits within limited height
+  const contentLines = displayedContent.split("\n").length;
+  const estimatedContentHeight = contentLines * 18 + 16; // 18px per line + padding
+  const contentFitsInLimitedView = estimatedContentHeight <= maxHeight;
+
+  const toggleCollapse = () => {
+    setViewMode(viewMode === "collapsed" ? "limited" : "collapsed");
+  };
+
+  const toggleViewMode = () => {
+    setViewMode(viewMode === "limited" ? "full" : "limited");
+  };
 
   return (
     <WriteFileContainer isVisible={isVisible}>
@@ -298,13 +382,17 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
           </StatusBadge>
         </WriteFileTitle>
         <WriteFileActions>
-          <StyledWriteFileButton onClick={onClose}>
-            <CloseIcon size={12} />
-          </StyledWriteFileButton>
+          <ExpandCollapseButton onClick={toggleCollapse}>
+            {viewMode === "collapsed" ? (
+              <ChevronRight size={12} />
+            ) : (
+              <ChevronDown size={12} />
+            )}
+          </ExpandCollapseButton>
         </WriteFileActions>
       </WriteFileHeader>
 
-      <GenerationStats>
+      <GenerationStats viewMode={viewMode}>
         <StatItem>
           <span>Lines:</span>
           <span>
@@ -329,20 +417,56 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
         )}
       </GenerationStats>
 
-      <WriteFileContent maxHeight={maxHeight}>
+      <WriteFileContent maxHeight={maxHeight} viewMode={viewMode}>
         <CodeContainer showLineNumbers={showLineNumbers}>
           {showLineNumbers && (
             <LineNumbers>
               {displayedContent.split("\n").map((_, index) => (
-                <LineNumber key={`line-${index}`}>{index + 1}</LineNumber>
+                <LineNumber key={`line-${index}-${displayedContent.length}`}>
+                  {index + 1}
+                </LineNumber>
               ))}
             </LineNumbers>
           )}
-          <CodeContent isGenerating={isGenerating}>
-            {displayedContent}
-          </CodeContent>
+          <SimpleCodeContainer>
+            {displayedContent.split("\n").map((line, index, lines) => (
+              <CodeLine key={`code-line-${index}-${line.length}`}>
+                <span>{line || "\u00A0"}</span>
+                {isGenerating && index === lines.length - 1 && (
+                  <span
+                    style={{
+                      animation: `${blink} 1s infinite`,
+                      color: "#4b5563",
+                      fontWeight: "bold",
+                      marginLeft: "1px",
+                    }}
+                  >
+                    |
+                  </span>
+                )}
+              </CodeLine>
+            ))}
+          </SimpleCodeContainer>
         </CodeContainer>
       </WriteFileContent>
+
+      {viewMode !== "collapsed" && !contentFitsInLimitedView && (
+        <ViewModeToggle>
+          <ViewModeButton onClick={toggleViewMode}>
+            {viewMode === "limited" ? (
+              <>
+                <Maximize2 size={12} />
+                Show Full File
+              </>
+            ) : (
+              <>
+                <Minimize2 size={12} />
+                Show Limited
+              </>
+            )}
+          </ViewModeButton>
+        </ViewModeToggle>
+      )}
     </WriteFileContainer>
   );
 };
