@@ -25,7 +25,10 @@ export const chatAgent = async (
 
   return streamText({
     ...options,
-    system: "You are a helpful assistant.",
+    system: chatPrompt({
+      hasTools: !!Object.keys(tools).length,
+      hasTool: (name) => Object.keys(tools).includes(name),
+    }),
     tools: {
       // ...mcpWrapper.getTools(),
       ...tools,
@@ -34,6 +37,6 @@ export const chatAgent = async (
     toolCallStreaming: true,
     experimental_continueSteps: true,
     maxSteps: 500,
-    messages: [{ role: "system", content: chatPrompt() }, ...messages],
+    messages,
   });
 };
