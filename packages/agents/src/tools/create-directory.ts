@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import z from "zod";
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export const createDirectory = tool({
   description:
@@ -11,6 +12,10 @@ export const createDirectory = tool({
   execute: async ({ path }) => {
     try {
       await mkdir(path, { recursive: true });
+
+      // Create a .gitkeep file in the directory
+      await writeFile(join(path, ".gitkeep"), "");
+
       return {
         status: "success",
         message: `Successfully created directory: ${path}`,

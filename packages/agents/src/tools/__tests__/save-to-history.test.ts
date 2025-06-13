@@ -182,7 +182,7 @@ describe("saveToHistory tool", () => {
       const result = await saveToHistory.execute({});
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(1);
+      expect(result.filesProcessed).toBe(2); // 2 files because .gitkeep is also added now
       expect(result.files).toContain("cwd-test.txt");
     } finally {
       process.chdir(originalCwd);

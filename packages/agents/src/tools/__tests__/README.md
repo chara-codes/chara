@@ -23,6 +23,7 @@ Each tool has its own test file following the naming convention `{tool-name}.tes
 - `thinking.test.ts` - Tests for thinking/problem-solving tool
 - `init-git.test.ts` - Tests for git initialization tool
 - `save-to-history.test.ts` - Tests for git history saving tool
+- `diff.test.ts` - Tests for diff/change visualization tool
 
 ## Test Utilities
 
@@ -79,6 +80,11 @@ bun test src/tools/__tests__/init-git.test.ts
 Run save-to-history tool tests:
 ```bash
 bun test src/tools/__tests__/save-to-history.test.ts
+```
+
+Run diff tool tests:
+```bash
+bun test src/tools/__tests__/diff.test.ts
 ```
 
 ## Test Framework
@@ -268,6 +274,7 @@ Some tools require external dependencies:
 
 - **init-git**: Requires `isomorphic-git` package for git operations
 - **save-to-history**: Requires `isomorphic-git` package for git operations
+- **diff**: Uses git operations for git-based diffs, file system for file comparisons
 - **fetch**: Uses built-in `fetch` API for HTTP requests
 - **terminal**: Uses Node.js `spawn` for shell command execution
 - **grep**: Uses Node.js file system APIs for pattern searching
@@ -275,3 +282,10 @@ Some tools require external dependencies:
 When adding tools with external dependencies, ensure they are properly mocked in tests or use real implementations in isolated environments.
 
 The save-to-history tool works in conjunction with init-git and requires a properly initialized git repository in .chara/history before it can commit changes.
+
+The diff tool provides three modes:
+- **files**: Compare two files directly and show unified diff
+- **git-status**: Show changes in working directory (staged or unstaged)
+- **git-commit**: Compare current files with specific git commit
+
+The diff tool supports context lines, file filtering, and handles various edge cases like new files, deletions, and unicode content.

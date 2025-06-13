@@ -50,7 +50,14 @@ export const saveToHistory = tool({
       .describe("Custom commit message (defaults to timestamp-based message)"),
   }),
   execute: async ({ workingDir, commitMessage }) => {
-    const cwd = workingDir || process.cwd();
+    let cwd = workingDir || process.cwd();
+    // Ensure that the cwd exists and has expected structure
+    try {
+      await fs.promises.access(cwd);
+    } catch (error) {
+      // Fallback to current working directory
+      cwd = process.cwd();
+    }
     const gitDir = join(cwd, ".chara", "history");
 
     try {
@@ -193,8 +200,8 @@ export const saveToHistory = tool({
         dir: gitDir,
         message,
         author: {
-          name: "Chara Codes",
-          email: "agent@chara-ai.dev",
+          name: "Chara Agent",
+          email: "agent@chara.dev",
         },
       });
 
