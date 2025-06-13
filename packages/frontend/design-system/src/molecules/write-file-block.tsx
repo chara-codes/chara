@@ -422,7 +422,7 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
           {showLineNumbers && (
             <LineNumbers>
               {displayedContent.split("\n").map((_, index) => (
-                <LineNumber key={`line-${index}-${displayedContent.length}`}>
+                <LineNumber key={`line-${displayedContent.length}-${index}`}>
                   {index + 1}
                 </LineNumber>
               ))}
@@ -430,7 +430,7 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
           )}
           <SimpleCodeContainer>
             {displayedContent.split("\n").map((line, index, lines) => (
-              <CodeLine key={`code-line-${index}-${line.length}`}>
+              <CodeLine key={`code-line-${displayedContent.length}-${index}`}>
                 <span>{line || "\u00A0"}</span>
                 {isGenerating && index === lines.length - 1 && (
                   <span

@@ -8,6 +8,7 @@ import {
   providersController,
   chatController,
 } from "./controllers";
+import { resolve } from "node:path";
 
 async function startServer() {
   // Initialize MCP before starting server
@@ -76,6 +77,14 @@ async function startServer() {
   const protocol = serverConfig.tls ? "https" : "http";
   logger.server(`Server started on ${protocol}://localhost:${server.port}`);
   logger.info("🎉 Server fully ready to accept requests");
+}
+// Check if current working directory is the parent directory and change to ../tmp if so
+const currentDir = process.cwd();
+const parentDir = resolve(__dirname, "..");
+if (currentDir === parentDir) {
+  const tmpDir = resolve(parentDir, "tmp");
+  process.chdir(tmpDir);
+  logger.debug(`📁 Changed working directory to: ${tmpDir}`);
 }
 
 // Start the server

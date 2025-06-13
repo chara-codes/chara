@@ -3,6 +3,19 @@ import type { Message, FileDiff, MessageContent } from "../types"; // Assuming t
 import { MessageSegmentBuilder } from "./message-segment-builder.ts";
 import { THINKING_TAG_REGEX } from "../utils";
 
+// Type definitions for edit operations
+interface EditOperation {
+  oldText: string;
+  newText: string;
+  status?: "pending" | "applying" | "complete" | "error";
+  error?: string;
+}
+
+interface EditFileArgs {
+  path: string;
+  edits: EditOperation[];
+}
+
 export interface StreamCallbacks {
   onTextDelta: (delta: string) => void;
   onThinkingDelta: (delta: string) => void;
@@ -275,6 +288,25 @@ export async function processChatStream(
                     if (pending.argsText.trim()) {
                       const partialArgs = JSON.parse(pending.argsText);
                       pending.arguments = partialArgs;
+
+                      // For edit-file tool calls, process streaming edits
+                      if (
+                        pending.name === "edit-file" ||
+                        pending.name === "edit_file"
+                      ) {
+                        const edits = partialArgs.edits || [];
+                        // Add streaming status to each edit operation
+                        const processedEdits = Array.isArray(edits)
+                          ? edits.map((edit: EditOperation) => ({
+                              ...edit,
+                              status: "applying" as const,
+                            }))
+                          : [];
+                        pending.arguments = {
+                          ...partialArgs,
+                          edits: processedEdits,
+                        };
+                      }
                     }
                   } catch {
                     // Keep building arguments text
@@ -399,9 +431,55 @@ export async function processChatStream(
               console.log("Stream Service: Type 3 chunk received", parsedData);
               // Check if this is an error message (string) or tool result (object)
               if (typeof parsedData === "string") {
-                // Handle error message
-                console.error("Stream Service: Error message received:", parsedData);
-                callbacks.onStreamError(parsedData);
+                // Handle error message - could be a tool call error
+                console.error(
+                  "Stream Service: Error message received:",
+                  parsedData,
+                );
+
+                // Try to find which tool call this error belongs to
+                let errorHandled = false;
+                for (const [
+                  toolCallId,
+                  pending,
+                ] of pendingToolCalls.entries()) {
+                  if (pending.status === "in-progress") {
+                    // Mark edits as failed for edit-file tool calls
+                    if (
+                      pending.name === "edit-file" ||
+                      pending.name === "edit_file"
+                    ) {
+                      const edits = pending.arguments?.edits || [];
+                      const failedEdits = Array.isArray(edits)
+                        ? edits.map((edit: EditOperation) => ({
+                            ...edit,
+                            status: "error" as const,
+                            error: parsedData,
+                          }))
+                        : [];
+                      pending.arguments = {
+                        ...pending.arguments,
+                        edits: failedEdits,
+                      };
+                    }
+
+                    pending.status = "error";
+                    pending.result = { error: parsedData };
+
+                    // Update segment builder
+                    segmentBuilder.errorToolCall(toolCallId, parsedData);
+                    if (callbacks.onSegmentUpdate) {
+                      callbacks.onSegmentUpdate(segmentBuilder.getSegments());
+                    }
+
+                    errorHandled = true;
+                    break;
+                  }
+                }
+
+                if (!errorHandled) {
+                  callbacks.onStreamError(parsedData);
+                }
               } else {
                 // Handle tool execution results
                 console.log("Stream Service: Tool result received", parsedData);
@@ -438,10 +516,28 @@ export async function processChatStream(
                   pending.arguments = parsedData.args;
                   pending.status = "in-progress";
 
+                  // For edit-file tool calls, mark edits as pending before execution
+                  if (
+                    pending.name === "edit-file" ||
+                    pending.name === "edit_file"
+                  ) {
+                    const edits = parsedData.args.edits || [];
+                    const processedEdits = Array.isArray(edits)
+                      ? edits.map((edit: EditOperation) => ({
+                          ...edit,
+                          status: "pending" as const,
+                        }))
+                      : [];
+                    pending.arguments = {
+                      ...parsedData.args,
+                      edits: processedEdits,
+                    };
+                  }
+
                   // Update segment builder with arguments
                   segmentBuilder.updateToolCallArgs(
                     parsedData.toolCallId,
-                    parsedData.args,
+                    pending.arguments || {},
                   );
                   if (callbacks.onSegmentUpdate) {
                     callbacks.onSegmentUpdate(segmentBuilder.getSegments());
@@ -456,14 +552,47 @@ export async function processChatStream(
                 const pending = pendingToolCalls.get(parsedData.toolCallId);
                 if (pending) {
                   pending.result = parsedData.result;
-                  pending.status = "success";
+
+                  // Determine success/error status based on result
+                  const hasError =
+                    parsedData.result &&
+                    typeof parsedData.result === "object" &&
+                    "error" in parsedData.result;
+
+                  pending.status = hasError ? "error" : "success";
+
+                  // For edit-file tool calls, update edit statuses based on result
+                  if (
+                    pending.name === "edit-file" ||
+                    pending.name === "edit_file"
+                  ) {
+                    const edits = pending.arguments?.edits || [];
+                    const finalEdits = Array.isArray(edits)
+                      ? edits.map((edit: EditOperation) => ({
+                          ...edit,
+                          status: hasError
+                            ? ("error" as const)
+                            : ("complete" as const),
+                          error: hasError
+                            ? String(
+                                (parsedData.result as { error?: string })
+                                  ?.error,
+                              )
+                            : undefined,
+                        }))
+                      : [];
+                    pending.arguments = {
+                      ...pending.arguments,
+                      edits: finalEdits,
+                    };
+                  }
 
                   // Send final tool call with result
                   const toolCall = {
                     id: pending.id,
                     name: pending.name,
                     arguments: pending.arguments || {},
-                    status: "success",
+                    status: pending.status,
                     result: parsedData.result,
                     timestamp: pending.timestamp,
                   };

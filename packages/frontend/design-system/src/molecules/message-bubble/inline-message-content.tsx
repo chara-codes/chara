@@ -7,6 +7,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { ToolIcon } from "./icons";
 import { cleanThinkingTags, type ToolCall } from "@chara/core";
 import WriteFileBlock from "../write-file-block";
+import EditFileBlock, { type EditOperation } from "../edit-file-block";
 
 interface ContentSegment {
   type: "text" | "tool-call";
@@ -125,61 +126,27 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
   };
 
   // Check if this is a write-file tool call
-  // Supports common variations: write-file, write_file, edit-file, edit_file
   const isWriteFileTool =
-    toolCall.name === "write-file" ||
-    toolCall.name === "write_file" ||
-    toolCall.name === "edit-file" ||
-    toolCall.name === "edit_file";
+    toolCall.name === "write-file" || toolCall.name === "write_file";
 
-  // For write-file tools, render the WriteFileBlock component instead of generic tool display
-  // This provides a better visual representation with syntax highlighting, line numbers,
-  // and streaming animation for file generation
+  // Check if this is an edit-file tool call
+  const isEditFileTool =
+    toolCall.name === "edit-file" || toolCall.name === "edit_file";
+
+  // Handle write-file tool calls
   if (isWriteFileTool) {
-    const filePath =
+    const filePath = String(
       toolCall.arguments?.path ||
-      toolCall.arguments?.file_path ||
-      toolCall.arguments?.filePath ||
-      "Unknown file";
-
-    // Extract content from tool call arguments or result
-    // Content can be provided in multiple ways depending on the tool implementation:
-    // 1. toolCall.arguments.content - content passed as argument
-    // 2. toolCall.result.content - content returned as result
-    // 3. toolCall.result (string) - result is the content itself
-    let content = "";
-    let streamingContent = "";
-
-    // Handle streaming/partial content for real-time display during generation
-    if (toolCall.arguments?.content) {
-      content = toolCall.arguments.content;
-    } else if (toolCall.result?.content) {
-      content = toolCall.result.content;
-    } else if (typeof toolCall.result === "string") {
-      content = toolCall.result;
-    }
-
-    // Check for streaming content updates (for real-time file generation display)
-    // This allows the UI to show content as it's being generated character by character
-    if (toolCall.streamingContent) {
-      streamingContent = toolCall.streamingContent;
-    } else if (toolCall.partialContent) {
-      streamingContent = toolCall.partialContent;
-    }
-
-    // Use streaming content if available (during generation), otherwise use final content
-    const displayContent = streamingContent || content;
+        toolCall.arguments?.file_path ||
+        toolCall.arguments?.filePath ||
+        "Unknown file",
+    );
 
     // Determine if the file is currently being generated based on tool call status
-    // This controls the streaming animation and progress indicators
     const isGenerating =
-      toolCall.status === "running" ||
-      toolCall.status === "pending" ||
-      toolCall.status === "in_progress" ||
-      toolCall.status === "streaming";
+      toolCall.status === "pending" || toolCall.status === "in-progress";
 
     // Fallback to generic tool display if we don't have essential file data
-    // This ensures we still show something useful even with malformed tool calls
     if (!filePath || filePath === "Unknown file") {
       return (
         <ToolCallInline status={toolCall.status} onClick={handleToggle}>
@@ -216,19 +183,129 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
       );
     }
 
-    // Render the WriteFileBlock component with streaming support
-    // This provides a rich code display with syntax highlighting, line numbers,
-    // generation progress, and real-time streaming animation
+    // Extract content from tool call arguments or result
+    let content = "";
+
+    // Handle streaming/partial content for real-time display during generation
+    if (
+      toolCall.arguments?.content &&
+      typeof toolCall.arguments.content === "string"
+    ) {
+      content = toolCall.arguments.content;
+    } else if (
+      toolCall.result?.content &&
+      typeof toolCall.result.content === "string"
+    ) {
+      content = toolCall.result.content;
+    } else if (typeof toolCall.result === "string") {
+      content = toolCall.result;
+    }
+
+    // Ensure content is always a string
+    const displayContent = content || "";
+
     return (
       <WriteFileBlock
         filePath={filePath}
         content={displayContent}
         isGenerating={isGenerating}
         isVisible={true}
-        streamingSpeed={isGenerating ? 20 : 0} // 20ms between characters for smooth streaming
-        onClose={() => {}} // No-op close handler in inline context
-        showLineNumbers={true} // Always show line numbers for code files
-        maxHeight={400} // Slightly smaller height for inline display
+        streamingSpeed={isGenerating ? 20 : 0}
+        showLineNumbers={true}
+        maxHeight={400}
+      />
+    );
+  }
+
+  // Handle edit-file tool calls
+  if (isEditFileTool) {
+    const filePath = String(
+      toolCall.arguments?.path ||
+        toolCall.arguments?.file_path ||
+        toolCall.arguments?.filePath ||
+        "Unknown file",
+    );
+
+    // Determine if the file is currently being edited based on tool call status
+    const isGenerating =
+      toolCall.status === "pending" || toolCall.status === "in-progress";
+
+    // Extract tool call error if present
+    const toolCallError =
+      toolCall.result &&
+      typeof toolCall.result === "object" &&
+      "error" in toolCall.result
+        ? String(toolCall.result.error)
+        : undefined;
+
+    // Fallback to generic tool display if we don't have essential file data
+    if (!filePath || filePath === "Unknown file") {
+      return (
+        <ToolCallInline status={toolCall.status} onClick={handleToggle}>
+          <ToolCallHeader>
+            <ToolCallName>
+              <ToolIcon /> {toolCall.name}
+            </ToolCallName>
+            <ChevronIcon isExpanded={isExpanded}>
+              {isExpanded ? (
+                <ChevronDown size={8} />
+              ) : (
+                <ChevronRight size={8} />
+              )}
+            </ChevronIcon>
+          </ToolCallHeader>
+
+          <ToolCallDetails isExpanded={isExpanded}>
+            <ToolCallSection>
+              <ToolCallLabel>Error</ToolCallLabel>
+              <ToolCallContent>
+                Invalid edit-file tool call: missing file path
+              </ToolCallContent>
+            </ToolCallSection>
+            {Object.keys(toolCall.arguments).length > 0 && (
+              <ToolCallSection>
+                <ToolCallLabel>Arguments</ToolCallLabel>
+                <ToolCallContent>
+                  {JSON.stringify(toolCall.arguments, null, 2)}
+                </ToolCallContent>
+              </ToolCallSection>
+            )}
+          </ToolCallDetails>
+        </ToolCallInline>
+      );
+    }
+
+    // Extract edit operations from tool call arguments
+    const edits = Array.isArray(toolCall.arguments?.edits)
+      ? toolCall.arguments.edits
+      : [];
+    const processedEdits = edits.map(
+      (
+        edit: { oldText?: string; newText?: string },
+        index: number,
+      ): EditOperation => ({
+        oldText: edit.oldText || "",
+        newText: edit.newText || "",
+        status:
+          toolCall.status === "success"
+            ? "complete"
+            : toolCall.status === "error"
+              ? "error"
+              : isGenerating
+                ? "applying"
+                : "pending",
+      }),
+    );
+
+    return (
+      <EditFileBlock
+        filePath={filePath}
+        edits={processedEdits}
+        isGenerating={isGenerating}
+        isVisible={true}
+        showLineNumbers={true}
+        maxHeight={400}
+        toolCallError={toolCallError}
       />
     );
   }

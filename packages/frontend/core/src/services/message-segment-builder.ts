@@ -1,5 +1,13 @@
 import type { ToolCall, ToolResult } from "../types";
 
+// Type definition for edit operations
+interface EditOperation {
+  oldText: string;
+  newText: string;
+  status?: "pending" | "applying" | "complete" | "error";
+  error?: string;
+}
+
 interface ContentSegment {
   type: "text" | "tool-call";
   content: string;
@@ -50,6 +58,20 @@ export class MessageSegmentBuilder {
       toolCall.arguments = args;
       toolCall.status = "in-progress";
 
+      // For edit-file tool calls, ensure edits have proper status
+      if (toolCall.name === "edit-file" || toolCall.name === "edit_file") {
+        const edits = args.edits || [];
+        if (Array.isArray(edits)) {
+          toolCall.arguments = {
+            ...args,
+            edits: edits.map((edit: EditOperation) => ({
+              ...edit,
+              status: edit.status || "applying",
+            })),
+          };
+        }
+      }
+
       // Update the segment with the new tool call data
       const position = this.toolCallInsertionPositions.get(toolCallId);
       if (
@@ -65,10 +87,26 @@ export class MessageSegmentBuilder {
     const toolCall = this.pendingToolCalls.get(toolCallId);
     if (toolCall) {
       toolCall.result = result;
-      toolCall.status =
-        result && typeof result === "object" && "error" in result
-          ? "error"
-          : "success";
+      const hasError =
+        result && typeof result === "object" && "error" in result;
+      toolCall.status = hasError ? "error" : "success";
+
+      // For edit-file tool calls, update edit statuses based on completion
+      if (toolCall.name === "edit-file" || toolCall.name === "edit_file") {
+        const edits = toolCall.arguments?.edits || [];
+        if (Array.isArray(edits)) {
+          toolCall.arguments = {
+            ...toolCall.arguments,
+            edits: edits.map((edit: EditOperation) => ({
+              ...edit,
+              status: hasError ? "error" : "complete",
+              error: hasError
+                ? String((result as { error?: string })?.error)
+                : undefined,
+            })),
+          };
+        }
+      }
 
       // Update the segment with the final tool call data
       const position = this.toolCallInsertionPositions.get(toolCallId);
@@ -90,6 +128,21 @@ export class MessageSegmentBuilder {
     if (toolCall) {
       toolCall.result = { error };
       toolCall.status = "error";
+
+      // For edit-file tool calls, mark all edits as failed
+      if (toolCall.name === "edit-file" || toolCall.name === "edit_file") {
+        const edits = toolCall.arguments?.edits || [];
+        if (Array.isArray(edits)) {
+          toolCall.arguments = {
+            ...toolCall.arguments,
+            edits: edits.map((edit: EditOperation) => ({
+              ...edit,
+              status: "error",
+              error: error,
+            })),
+          };
+        }
+      }
 
       // Update the segment with the error
       const position = this.toolCallInsertionPositions.get(toolCallId);
