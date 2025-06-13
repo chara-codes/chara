@@ -1,9 +1,6 @@
 import { tool } from "ai";
 import z from "zod";
-import git from "isomorphic-git";
-import fs from "node:fs";
-import { join } from "node:path";
-import { mkdir } from "node:fs/promises";
+import { isoGitService } from "../services/isogit.js";
 
 export const initGit = tool({
   description:
@@ -16,37 +13,9 @@ export const initGit = tool({
   }),
   execute: async ({ workingDir }) => {
     const cwd = workingDir || process.cwd();
-    const gitDir = join(cwd, ".chara", "history");
 
     try {
-      // Create .chara/history directory if it doesn't exist
-      await mkdir(gitDir, { recursive: true });
-
-      // Check if git is already initialized by trying to get the current branch
-      try {
-        await git.currentBranch({ fs, dir: gitDir });
-        return {
-          status: "skipped",
-          message: "Git repository already initialized in .chara/history",
-          path: gitDir,
-        };
-      } catch {
-        // Bun.write(".gitkeep", "");
-        // Git is not initialized, proceed with initialization
-      }
-
-      // Initialize git repository
-      await git.init({
-        fs,
-        dir: gitDir,
-        defaultBranch: "main",
-      });
-      await Bun.write(".gitkeep", "");
-      return {
-        status: "success",
-        message: "Successfully initialized git repository in .chara/history",
-        path: gitDir,
-      };
+      return await isoGitService.initializeRepository(cwd);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);

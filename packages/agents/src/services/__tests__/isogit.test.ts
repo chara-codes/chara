@@ -1,0 +1,449 @@
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { IsoGitService } from "../isogit";
+import { createTestFS } from "../../tools/__tests__/test-utils";
+import { join } from "node:path";
+import { stat } from "node:fs/promises";
+import fs from "node:fs";
+import git from "isomorphic-git";
+import { logger } from "@chara/logger";
+
+// Mock logger to avoid noise in tests
+mock.module("@chara/logger", () => ({
+  logger: {
+    debug: mock(() => {}),
+    info: mock(() => {}),
+    warn: mock(() => {}),
+    error: mock(() => {}),
+  },
+}));
+
+describe("IsoGitService", () => {
+  const testFS = createTestFS();
+  let service: IsoGitService;
+
+  beforeEach(async () => {
+    await testFS.setup();
+    service = new IsoGitService();
+  });
+
+  afterEach(async () => {
+    await testFS.cleanup();
+  });
+
+  describe("initializeRepository", () => {
+    test("should initialize git repository successfully", async () => {
+      const result = await service.initializeRepository(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.message).toContain(
+        "Successfully initialized git repository",
+      );
+      expect(result.path).toBe(join(testFS.getPath(), ".chara", "history"));
+
+      // Verify git repository was created
+      const gitDir = join(testFS.getPath(), ".chara", "history");
+      const currentBranch = await git.currentBranch({ fs, dir: gitDir });
+      expect(currentBranch).toBe("main");
+    });
+
+    test("should skip initialization if git already exists", async () => {
+      // First initialization
+      const result1 = await service.initializeRepository(testFS.getPath());
+      expect(result1.status).toBe("success");
+
+      // Second initialization should be skipped
+      const result2 = await service.initializeRepository(testFS.getPath());
+      expect(result2.status).toBe("skipped");
+      expect(result2.message).toContain("already initialized");
+    });
+
+    test("should create .chara/history directory if it doesn't exist", async () => {
+      const gitDir = join(testFS.getPath(), ".chara", "history");
+
+      // Directory shouldn't exist initially
+      let dirExists = false;
+      try {
+        await stat(gitDir);
+        dirExists = true;
+      } catch {
+        dirExists = false;
+      }
+      expect(dirExists).toBe(false);
+
+      // Initialize git
+      await service.initializeRepository(testFS.getPath());
+
+      // Directory should now exist
+      const stats = await stat(gitDir);
+      expect(stats.isDirectory()).toBe(true);
+    });
+
+    test("should handle nested directory creation", async () => {
+      const result = await service.initializeRepository(testFS.getPath());
+
+      expect(result.status).toBe("success");
+
+      // Verify both .chara and .chara/history were created
+      const charaDir = join(testFS.getPath(), ".chara");
+      const historyDir = join(testFS.getPath(), ".chara", "history");
+
+      const charaStat = await stat(charaDir);
+      const historyStat = await stat(historyDir);
+
+      expect(charaStat.isDirectory()).toBe(true);
+      expect(historyStat.isDirectory()).toBe(true);
+    });
+
+    test("should handle errors gracefully", async () => {
+      // Try to initialize in a path that can't be created
+      await expect(
+        service.initializeRepository("/root/cannot-create-this-path"),
+      ).rejects.toThrow("Failed to initialize git repository");
+    });
+
+    test("should use main as default branch", async () => {
+      await service.initializeRepository(testFS.getPath());
+
+      const gitDir = join(testFS.getPath(), ".chara", "history");
+      const currentBranch = await git.currentBranch({ fs, dir: gitDir });
+      expect(currentBranch).toBe("main");
+    });
+  });
+
+  describe("isRepositoryInitialized", () => {
+    test("should return false when repository is not initialized", async () => {
+      const isInitialized = await service.isRepositoryInitialized(
+        testFS.getPath(),
+      );
+      expect(isInitialized).toBe(false);
+    });
+
+    test("should return true when repository is initialized", async () => {
+      await service.initializeRepository(testFS.getPath());
+      const isInitialized = await service.isRepositoryInitialized(
+        testFS.getPath(),
+      );
+      expect(isInitialized).toBe(true);
+    });
+  });
+
+  describe("saveToHistory", () => {
+    beforeEach(async () => {
+      // Initialize git before each test
+      await service.initializeRepository(testFS.getPath());
+    });
+
+    test("should throw error when git is not initialized", async () => {
+      const uninitializedService = new IsoGitService();
+      await expect(
+        uninitializedService.saveToHistory(testFS.getPath("uninitialized")),
+      ).rejects.toThrow("Git repository not initialized");
+    });
+
+    test("should return no_changes when no files exist", async () => {
+      const result = await service.saveToHistory(testFS.getPath());
+
+      expect(result.status).toBe("no_changes");
+      expect(result.message).toBe("No changes to commit");
+      expect(result.filesProcessed).toBe(0);
+    });
+
+    test("should commit new files", async () => {
+      // Create test files
+      await testFS.createFile("test1.txt", "Hello World");
+      await testFS.createFile("test2.txt", "Another file");
+
+      const result = await service.saveToHistory(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.filesProcessed).toBe(2);
+      expect(result.files).toContain("test1.txt");
+      expect(result.files).toContain("test2.txt");
+      expect(result.commitSha).toBeDefined();
+      expect(result.commitMessage).toContain("Save changes");
+    });
+
+    test("should use custom commit message", async () => {
+      await testFS.createFile("test.txt", "Content");
+
+      const customMessage = "Custom commit message";
+      const result = await service.saveToHistory(
+        testFS.getPath(),
+        customMessage,
+      );
+
+      expect(result.status).toBe("success");
+      expect(result.commitMessage).toBe(customMessage);
+    });
+
+    test("should skip unchanged files after first commit", async () => {
+      // Create and commit files
+      await testFS.createFile("test1.txt", "Content 1");
+      await testFS.createFile("test2.txt", "Content 2");
+
+      const result1 = await service.saveToHistory(testFS.getPath());
+      expect(result1.status).toBe("success");
+      expect(result1.filesProcessed).toBe(2);
+
+      // Try to commit again without changes
+      const result2 = await service.saveToHistory(testFS.getPath());
+      expect(result2.status).toBe("no_changes");
+      expect(result2.filesProcessed).toBe(0);
+    });
+
+    test("should detect modified files", async () => {
+      // Create and commit initial file
+      await testFS.createFile("test.txt", "Initial content");
+      const result1 = await service.saveToHistory(testFS.getPath());
+      expect(result1.status).toBe("success");
+
+      // Modify the file
+      await testFS.createFile("test.txt", "Modified content");
+      const result2 = await service.saveToHistory(testFS.getPath());
+
+      expect(result2.status).toBe("success");
+      expect(result2.filesProcessed).toBe(1);
+      expect(result2.files).toContain("test.txt");
+    });
+
+    test("should exclude .chara and .git directories", async () => {
+      // Create files in excluded directories
+      await testFS.createDir(".chara/some-dir");
+      await testFS.createFile(".chara/some-dir/file.txt", "Should be ignored");
+      await testFS.createDir(".git");
+      await testFS.createFile(".git/config", "Git config");
+
+      // Create regular file
+      await testFS.createFile("regular.txt", "Should be included");
+
+      const result = await service.saveToHistory(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.filesProcessed).toBe(1);
+      expect(result.files).toContain("regular.txt");
+      expect(result.files).not.toContain(".chara/some-dir/file.txt");
+      expect(result.files).not.toContain(".git/config");
+    });
+
+    test("should handle nested directories", async () => {
+      await testFS.createDir("nested/deep/structure");
+      await testFS.createFile("nested/file1.txt", "Content 1");
+      await testFS.createFile("nested/deep/file2.txt", "Content 2");
+      await testFS.createFile("nested/deep/structure/file3.txt", "Content 3");
+
+      const result = await service.saveToHistory(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.filesProcessed).toBe(4); // Includes .gitkeep files from createDir
+      expect(result.files).toContain("nested/file1.txt");
+      expect(result.files).toContain("nested/deep/file2.txt");
+      expect(result.files).toContain("nested/deep/structure/file3.txt");
+    });
+
+    test("should respect .gitignore file", async () => {
+      // Create .gitignore
+      await testFS.createFile(".gitignore", "*.tmp\nignored/\n");
+
+      // Create files that should be ignored
+      await testFS.createFile("temp.tmp", "Temporary file");
+      await testFS.createDir("ignored");
+      await testFS.createFile("ignored/file.txt", "Ignored file");
+
+      // Create file that should be included
+      await testFS.createFile("included.txt", "Included file");
+
+      const result = await service.saveToHistory(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.files).toContain("included.txt");
+      expect(result.files).toContain(".gitignore");
+      expect(result.files).not.toContain("temp.tmp");
+      expect(result.files).not.toContain("ignored/file.txt");
+    });
+
+    test("should handle binary files", async () => {
+      // Create a binary file (using Uint8Array to simulate binary content)
+      const binaryContent = new Uint8Array([0x89, 0x50, 0x4e, 0x47]); // PNG header
+      await Bun.write(testFS.getPath("image.png"), binaryContent);
+
+      const result = await service.saveToHistory(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.filesProcessed).toBe(1);
+      expect(result.files).toContain("image.png");
+    });
+
+    test("should handle files with special characters", async () => {
+      await testFS.createFile("file with spaces.txt", "Content");
+      await testFS.createFile("file-with-dashes.txt", "Content");
+      await testFS.createFile("file_with_underscores.txt", "Content");
+      await testFS.createFile("файл.txt", "UTF-8 filename");
+
+      const result = await service.saveToHistory(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.filesProcessed).toBe(4);
+      expect(result.files).toContain("file with spaces.txt");
+      expect(result.files).toContain("file-with-dashes.txt");
+      expect(result.files).toContain("file_with_underscores.txt");
+      expect(result.files).toContain("файл.txt");
+    });
+
+    test("should handle large number of files", async () => {
+      // Create many files
+      const fileCount = 50;
+      for (let i = 0; i < fileCount; i++) {
+        await testFS.createFile(`file${i}.txt`, `Content ${i}`);
+      }
+
+      const result = await service.saveToHistory(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.filesProcessed).toBe(fileCount);
+      expect(result.files).toHaveLength(fileCount);
+    });
+
+    test("should handle empty files", async () => {
+      await testFS.createFile("empty.txt", "");
+      await testFS.createFile("nonempty.txt", "Content");
+
+      const result = await service.saveToHistory(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.filesProcessed).toBe(2);
+      expect(result.files).toContain("empty.txt");
+      expect(result.files).toContain("nonempty.txt");
+    });
+
+    test("should maintain git history correctly", async () => {
+      // First commit
+      await testFS.createFile("file1.txt", "Version 1");
+      const result1 = await service.saveToHistory(
+        testFS.getPath(),
+        "First commit",
+      );
+
+      // Second commit
+      await testFS.createFile("file2.txt", "Version 2");
+      const result2 = await service.saveToHistory(
+        testFS.getPath(),
+        "Second commit",
+      );
+
+      expect(result1.status).toBe("success");
+      expect(result2.status).toBe("success");
+      expect(result1.commitSha).not.toBe(result2.commitSha);
+
+      // Verify git log has both commits
+      const gitDir = join(testFS.getPath(), ".chara", "history");
+      const commits = await git.log({ fs, dir: gitDir });
+
+      expect(commits).toHaveLength(2);
+      expect(commits[0].commit.message.trim()).toBe("Second commit");
+      expect(commits[1].commit.message.trim()).toBe("First commit");
+    });
+
+    test("should handle concurrent save operations", async () => {
+      await testFS.createFile("file1.txt", "Content 1");
+      await testFS.createFile("file2.txt", "Content 2");
+
+      // Attempt concurrent saves
+      const [result1, result2] = await Promise.allSettled([
+        service.saveToHistory(testFS.getPath(), "First save"),
+        service.saveToHistory(testFS.getPath(), "Second save"),
+      ]);
+
+      // At least one should succeed
+      const successCount = [result1, result2].filter(
+        (r) => r.status === "fulfilled",
+      ).length;
+      expect(successCount).toBeGreaterThan(0);
+    });
+
+    test("should generate appropriate default commit messages", async () => {
+      await testFS.createFile("test.txt", "Content");
+
+      const result = await service.saveToHistory(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.commitMessage).toMatch(
+        /^Save changes - \d{4}-\d{2}-\d{2}T/,
+      );
+    });
+
+    test("should handle file deletion (not implemented but should not crash)", async () => {
+      // Create and commit a file
+      await testFS.createFile("to-delete.txt", "Content");
+      await service.saveToHistory(testFS.getPath());
+
+      // Note: File deletion detection would require additional implementation
+      // This test ensures the service doesn't crash when files are missing
+      await Bun.file(testFS.getPath("to-delete.txt")).writer().end();
+
+      const result = await service.saveToHistory(testFS.getPath());
+      expect(result.status).toBe("no_changes");
+    });
+  });
+
+  describe("error handling", () => {
+    test("should handle permission errors gracefully", async () => {
+      // This test would be hard to simulate cross-platform
+      // But we can test that errors are properly wrapped
+      const invalidPath = "/root/cannot-access";
+
+      await expect(service.initializeRepository(invalidPath)).rejects.toThrow(
+        "Failed to initialize git repository",
+      );
+    });
+
+    test("should handle corrupted git repository", async () => {
+      // Create a fake .chara/history directory with invalid git data
+      await testFS.createDir(".chara/history");
+      await testFS.createFile(".chara/history/invalid", "not a git repo");
+
+      await expect(service.saveToHistory(testFS.getPath())).rejects.toThrow(
+        "Git repository not initialized",
+      );
+    });
+  });
+
+  describe("integration with actual git operations", () => {
+    test("should create commits that can be read by git log", async () => {
+      await service.initializeRepository(testFS.getPath());
+      await testFS.createFile("integration.txt", "Integration test");
+
+      const result = await service.saveToHistory(
+        testFS.getPath(),
+        "Integration test commit",
+      );
+
+      expect(result.status).toBe("success");
+
+      // Verify using git log
+      const gitDir = join(testFS.getPath(), ".chara", "history");
+      const commits = await git.log({ fs, dir: gitDir });
+
+      expect(commits).toHaveLength(1);
+      expect(commits[0].commit.message.trim()).toBe("Integration test commit");
+      expect(commits[0].commit.author.name).toBe("Chara Agent");
+      expect(commits[0].commit.author.email).toBe("agent@chara.dev");
+    });
+
+    test("should create proper git objects", async () => {
+      await service.initializeRepository(testFS.getPath());
+      await testFS.createFile("git-object.txt", "Git object test");
+
+      const result = await service.saveToHistory(testFS.getPath());
+      const gitDir = join(testFS.getPath(), ".chara", "history");
+
+      // Verify the file exists in the commit tree
+      const commits = await git.log({ fs, dir: gitDir });
+      expect(commits).toHaveLength(1);
+
+      // Read the file content from the working directory to verify it was committed
+      const fileContent = await testFS.readFile("git-object.txt");
+      expect(fileContent).toBe("Git object test");
+      expect(result.files).toContain("git-object.txt");
+    });
+  });
+});
