@@ -50,7 +50,7 @@ export const terminal = tool({
       proc.stdin.end();
 
       // Read output with timeout
-      const timeout = 30000; // 30 seconds
+      const timeout = 300000;
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(
           () => reject(new Error("Command timed out after 30 seconds")),

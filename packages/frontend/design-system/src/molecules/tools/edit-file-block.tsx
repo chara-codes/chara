@@ -3,8 +3,8 @@
 import type React from "react";
 import { useState } from "react";
 import styled, { keyframes } from "styled-components";
-import { FileIcon } from "../atoms";
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
+import { FileIcon } from "../../atoms/icons";
 
 interface EditOperation {
   oldText: string;

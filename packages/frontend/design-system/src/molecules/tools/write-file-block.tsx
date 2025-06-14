@@ -3,8 +3,7 @@
 import type React from "react";
 import { useState, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
-import { FileIcon } from "../atoms";
-import { CloseIcon } from "../atoms/icons/close-icon";
+import { FileIcon } from "../../atoms";
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 
 interface WriteFileBlockProps {

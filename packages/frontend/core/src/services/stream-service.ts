@@ -11,11 +11,6 @@ interface EditOperation {
   error?: string;
 }
 
-interface EditFileArgs {
-  path: string;
-  edits: EditOperation[];
-}
-
 export interface StreamCallbacks {
   onTextDelta: (delta: string) => void;
   onThinkingDelta: (delta: string) => void;

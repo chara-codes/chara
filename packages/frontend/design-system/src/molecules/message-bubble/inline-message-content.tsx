@@ -6,8 +6,9 @@ import styled from "styled-components";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { ToolIcon } from "./icons";
 import { cleanThinkingTags, type ToolCall } from "@chara/core";
-import WriteFileBlock from "../write-file-block";
-import EditFileBlock, { type EditOperation } from "../edit-file-block";
+import WriteFileBlock from "../tools/write-file-block";
+import EditFileBlock, { type EditOperation } from "../tools/edit-file-block";
+import { TerminalToolBlock } from "../tools/terminal-tool-block";
 
 interface ContentSegment {
   type: "text" | "tool-call";
@@ -132,6 +133,9 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
   // Check if this is an edit-file tool call
   const isEditFileTool =
     toolCall.name === "edit-file" || toolCall.name === "edit_file";
+
+  // Check if this is a terminal tool call
+  const isTerminalTool = toolCall.name === "terminal";
 
   // Handle write-file tool calls
   if (isWriteFileTool) {
@@ -304,6 +308,95 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         isGenerating={isGenerating}
         isVisible={true}
         showLineNumbers={true}
+        maxHeight={400}
+        toolCallError={toolCallError}
+      />
+    );
+  }
+
+  // Handle terminal tool calls
+  if (isTerminalTool) {
+    const command = String(toolCall.arguments?.command || "");
+    const workingDirectory = String(toolCall.arguments?.cd || "");
+
+    // Determine if the command is currently running based on tool call status
+    const isGenerating =
+      toolCall.status === "pending" || toolCall.status === "in-progress";
+
+    // Extract output from tool call result
+    let output = "";
+    if (toolCall.result) {
+      if (typeof toolCall.result === "string") {
+        output = toolCall.result;
+      } else if (
+        typeof toolCall.result === "object" &&
+        toolCall.result !== null &&
+        "content" in toolCall.result
+      ) {
+        output = String(toolCall.result.content);
+      } else if (
+        typeof toolCall.result === "object" &&
+        toolCall.result !== null &&
+        "output" in toolCall.result
+      ) {
+        output = String(toolCall.result.output);
+      }
+    }
+
+    // Extract tool call error if present
+    const toolCallError =
+      toolCall.result &&
+      typeof toolCall.result === "object" &&
+      "error" in toolCall.result
+        ? String(toolCall.result.error)
+        : undefined;
+
+    // Fallback to generic tool display if we don't have essential command data
+    if (!command) {
+      return (
+        <ToolCallInline status={toolCall.status} onClick={handleToggle}>
+          <ToolCallHeader>
+            <ToolCallName>
+              <ToolIcon /> {toolCall.name}
+            </ToolCallName>
+            <ChevronIcon isExpanded={isExpanded}>
+              {isExpanded ? (
+                <ChevronDown size={8} />
+              ) : (
+                <ChevronRight size={8} />
+              )}
+            </ChevronIcon>
+          </ToolCallHeader>
+
+          <ToolCallDetails isExpanded={isExpanded}>
+            <ToolCallSection>
+              <ToolCallLabel>Error</ToolCallLabel>
+              <ToolCallContent>
+                Invalid terminal tool call: missing command
+              </ToolCallContent>
+            </ToolCallSection>
+            {Object.keys(toolCall.arguments).length > 0 && (
+              <ToolCallSection>
+                <ToolCallLabel>Arguments</ToolCallLabel>
+                <ToolCallContent>
+                  {JSON.stringify(toolCall.arguments, null, 2)}
+                </ToolCallContent>
+              </ToolCallSection>
+            )}
+          </ToolCallDetails>
+        </ToolCallInline>
+      );
+    }
+
+    return (
+      <TerminalToolBlock
+        command={command}
+        workingDirectory={workingDirectory}
+        output={output}
+        status={toolCall.status}
+        isGenerating={isGenerating}
+        isVisible={true}
+        streamingSpeed={isGenerating ? 20 : 0}
         maxHeight={400}
         toolCallError={toolCallError}
       />
