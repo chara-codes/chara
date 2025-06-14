@@ -12,6 +12,7 @@ export enum Screen {
   TECH_STACKS = "tech_stacks",
   ADD_TECH_STACK = "add_tech_stack", // New screen for adding tech stacks
   EDIT_TECH_STACK = "edit_tech_stack", // New screen for editing tech stacks
+  TERMINAL = "terminal", // New screen for terminal interface
 }
 
 // Define the routing state interface
@@ -38,6 +39,7 @@ interface RoutingState {
   navigateToAddTechStack: () => void;
   navigateToEditTechStack: (techStackId: string) => void;
   navigateToConversation: () => void;
+  navigateToTerminal: () => void;
   resetNavigation: () => void;
 }
 
@@ -112,6 +114,10 @@ export const useRoutingStore = create<RoutingState>()(
         get().navigateToScreen(Screen.CONVERSATION);
       },
 
+      navigateToTerminal: () => {
+        get().navigateToScreen(Screen.TERMINAL);
+      },
+
       // Reset navigation to initial state
       resetNavigation: () => {
         set({
@@ -151,5 +157,7 @@ export const useNavigateToEditTechStack = () =>
   useRoutingStore((state) => state.navigateToEditTechStack);
 export const useNavigateToConversation = () =>
   useRoutingStore((state) => state.navigateToConversation);
+export const useNavigateToTerminal = () =>
+  useRoutingStore((state) => state.navigateToTerminal);
 export const useNavigateBack = () =>
   useRoutingStore((state) => state.navigateBack);

@@ -9,3 +9,4 @@ export * from "./recent-history";
 export * from "./settings-view";
 export * from "./tech-stack-detail-view";
 export * from "./tech-stacks-view";
+export * from "./terminal-view";

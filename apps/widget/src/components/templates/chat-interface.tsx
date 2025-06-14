@@ -10,6 +10,7 @@ import SettingsView from "../organisms/settings-view";
 import TechStacksView from "../organisms/tech-stacks-view";
 import AddTechStackView from "../organisms/add-tech-stack-view";
 import EditTechStackView from "../organisms/edit-tech-stack-view";
+import TerminalView from "../organisms/terminal-view";
 import { useChatStore } from "../../store/chat-store";
 import { useModelsStore } from "../../store/models-store";
 import {
@@ -234,6 +235,60 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
       case Screen.EDIT_TECH_STACK:
         return <EditTechStackView />;
+
+      case Screen.TERMINAL:
+        // Sample terminal logs for demonstration
+        const sampleLogs = [
+          {
+            id: "log-1",
+            type: "input" as const,
+            content: "npm install @chara/core",
+            timestamp: new Date(Date.now() - 60000),
+          },
+          {
+            id: "log-2",
+            type: "output" as const,
+            content:
+              "✓ Installing dependencies...\n✓ @chara/core@1.0.0 installed successfully",
+            timestamp: new Date(Date.now() - 58000),
+          },
+          {
+            id: "log-3",
+            type: "input" as const,
+            content: "npm run build",
+            timestamp: new Date(Date.now() - 45000),
+          },
+          {
+            id: "log-4",
+            type: "output" as const,
+            content:
+              "Building application...\n✓ Build completed in 2.3s\n✓ Output: dist/",
+            timestamp: new Date(Date.now() - 43000),
+          },
+          {
+            id: "log-5",
+            type: "input" as const,
+            content: "git status",
+            timestamp: new Date(Date.now() - 30000),
+          },
+          {
+            id: "log-6",
+            type: "output" as const,
+            content:
+              "On branch main\nYour branch is up to date with 'origin/main'.\n\nnothing to commit, working tree clean",
+            timestamp: new Date(Date.now() - 29000),
+          },
+          {
+            id: "log-7",
+            type: "error" as const,
+            content:
+              "Error: Command 'deploy' failed with exit code 1\nPermission denied: /var/www/html",
+            timestamp: new Date(Date.now() - 15000),
+          },
+        ];
+        return (
+          <TerminalView onBack={navigateToConversation} logs={sampleLogs} />
+        );
 
       default:
         return <ConversationView />;

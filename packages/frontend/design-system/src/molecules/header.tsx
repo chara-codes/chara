@@ -8,12 +8,14 @@ import {
   SettingsIcon,
   PlusIcon,
   LayersIcon, // Import the LayersIcon
+  TerminalIcon, // Import the TerminalIcon
 } from "../atoms/icons";
 import {
   useNavigateToHistory,
   useNavigateToSettings,
   useNavigateToNewThread,
   useNavigateToTechStacks, // Import the new navigation hook
+  useNavigateToTerminal, // Import the terminal navigation hook
   useCurrentScreen,
   Screen,
 } from "@chara/core";
@@ -80,6 +82,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   const navigateToSettings = useNavigateToSettings();
   const navigateToNewThread = useNavigateToNewThread();
   const navigateToTechStacks = useNavigateToTechStacks(); // Get the new navigation action
+  const navigateToTerminal = useNavigateToTerminal(); // Get the terminal navigation action
   const currentScreen = useCurrentScreen();
 
   // Get title based on current screen
@@ -94,6 +97,8 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
       case Screen.ADD_TECH_STACK:
       case Screen.EDIT_TECH_STACK:
         return "Stacks";
+      case Screen.TERMINAL:
+        return "Terminal";
       case Screen.SETTINGS:
         return "Settings";
       default:
@@ -118,6 +123,10 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
     navigateToTechStacks();
   }, [navigateToTechStacks]);
 
+  const handleTerminalClick = useCallback(() => {
+    navigateToTerminal();
+  }, [navigateToTerminal]);
+
   return (
     <HeaderContainer>
       <Title>{title || getScreenTitle()}</Title>
@@ -138,6 +147,13 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
           $active={currentScreen === Screen.TECH_STACKS}
         >
           <LayersIcon width={16} height={16} />
+        </HeaderButton>
+        <HeaderButton
+          onClick={handleTerminalClick}
+          title="Terminal"
+          $active={currentScreen === Screen.TERMINAL}
+        >
+          <TerminalIcon width={16} height={16} />
         </HeaderButton>
         <HeaderButton
           onClick={handleSettingsClick}
