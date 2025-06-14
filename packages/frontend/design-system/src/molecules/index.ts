@@ -7,7 +7,6 @@ export * from "./file-changes-list";
 export * from "./file-diff";
 export * from "./file-input";
 export * from "./tools";
-export * from "./tools/edit-file-block";
 export * from "./footer";
 export * from "./header";
 export * from "./input-area";
