@@ -1,6 +1,5 @@
 import type { z } from "zod";
 import { type LinkRow, techSchema } from "../dto/stack";
-import type { LinkType } from "../types.ts";
 
 export type TechInput = z.infer<typeof techSchema>;
 
@@ -9,20 +8,14 @@ export type TechInput = z.infer<typeof techSchema>;
  */
 export function techsToLinks(techs: TechInput[], stackId: number) {
   return techs
-    .flatMap((t) => [
-      t.docsUrl && {
-        title: t.name,
-        url: t.docsUrl,
-        kind: "docs" as LinkType,
+    .flatMap((tech) =>
+      tech.links.map((link) => ({
+        title: tech.name,
+        url: link.url,
+        description: link.type,
         stackId,
-      },
-      t.codeUrl && {
-        title: t.name,
-        url: t.codeUrl,
-        kind: "code" as LinkType,
-        stackId,
-      },
-    ])
+      })),
+    )
     .filter(Boolean) as Omit<LinkRow, "id" | "createdAt">[];
 }
 
@@ -32,13 +25,19 @@ export function techsToLinks(techs: TechInput[], stackId: number) {
 export function linksToTechs(rows: LinkRow[]): TechInput[] {
   const map = new Map<string, TechInput>();
 
-  for (const l of rows) {
-    const tech = map.get(l.title) ?? { name: l.title };
+  for (const link of rows) {
+    const tech = map.get(link.title) ?? {
+      name: link.title,
+      links: [],
+    };
 
-    if (l.kind === "code") tech.codeUrl = l.url;
-    if (l.kind === "docs") tech.docsUrl = l.url;
+    tech.links.push({
+      url: link.url,
+      type: link.description || undefined,
+    });
 
-    map.set(l.title, tech);
+    map.set(link.title, tech);
   }
+
   return [...map.values()];
 }

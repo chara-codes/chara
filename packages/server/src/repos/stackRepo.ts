@@ -1,7 +1,8 @@
 import { db } from "../api/db";
-import { stacks, links } from "../db/schema";
+import { stacks, links, mcp } from "../db/schema";
 import { eq, like, sql } from "drizzle-orm";
 import { techsToLinks } from "../utils/techLinks";
+import { mcpsToDb } from "../utils/mcpUtils";
 import {
   createStackSchema,
   updateStackSchema,
@@ -22,7 +23,12 @@ type Conn = typeof db | TransactionType;
 
 // ——— Queries ———
 export async function listWithLinks(conn: Conn = db): Promise<StackDTO[]> {
-  const rows = await conn.query.stacks.findMany({ with: { links: true } });
+  const rows = await conn.query.stacks.findMany({
+    with: {
+      links: true,
+      mcps: true,
+    },
+  });
   return rows.map(toStackDTO);
 }
 
@@ -32,7 +38,10 @@ export async function findById(
 ): Promise<StackDTO | null> {
   const row = await conn.query.stacks.findFirst({
     where: eq(stacks.id, id),
-    with: { links: true },
+    with: {
+      links: true,
+      mcps: true,
+    },
   });
   return row ? toStackDTO(row) : null;
 }
@@ -47,7 +56,11 @@ export async function create(
       .values({
         title: input.title,
         type: input.type,
+        shortDescription: input.shortDescription,
         description: input.description,
+        icon: input.icon,
+        isNew: input.isNew ?? true,
+        popularity: input.popularity ?? 0,
       })
       .returning();
 
@@ -56,6 +69,10 @@ export async function create(
         .insert(links)
         .values(techsToLinks(input.technologies, stack.id))
         .run();
+    }
+
+    if (input.mcps.length) {
+      await tx.insert(mcp).values(mcpsToDb(input.mcps, stack.id)).run();
     }
 
     const full = await findById(stack.id, tx);
@@ -72,8 +89,12 @@ export async function update(
       .update(stacks)
       .set({
         title: input.title,
+        shortDescription: input.shortDescription,
         description: input.description,
         type: input.type,
+        icon: input.icon,
+        isNew: input.isNew,
+        popularity: input.popularity,
         updatedAt: new Date(),
       })
       .where(eq(stacks.id, input.id))
@@ -85,6 +106,11 @@ export async function update(
         .insert(links)
         .values(techsToLinks(input.technologies, input.id))
         .run();
+    }
+
+    await tx.delete(mcp).where(eq(mcp.stackId, input.id));
+    if (input.mcps.length) {
+      await tx.insert(mcp).values(mcpsToDb(input.mcps, input.id)).run();
     }
 
     const full = await findById(stack.id, tx);
@@ -117,7 +143,15 @@ export async function duplicate(id: number): Promise<StackDTO> {
     // Insert clone row
     const [clone] = await tx
       .insert(stacks)
-      .values({ title, type: src.type, description: src.description })
+      .values({
+        title,
+        type: src.type,
+        shortDescription: src.shortDescription,
+        description: src.description,
+        icon: src.icon,
+        isNew: src.isNew,
+        popularity: src.popularity,
+      })
       .returning();
 
     // Clone links
@@ -126,6 +160,11 @@ export async function duplicate(id: number): Promise<StackDTO> {
         .insert(links)
         .values(techsToLinks(src.technologies, clone.id))
         .run();
+    }
+
+    // Clone mcps
+    if (src.mcps.length) {
+      await tx.insert(mcp).values(mcpsToDb(src.mcps, clone.id)).run();
     }
 
     const full = await findById(clone.id, tx);
