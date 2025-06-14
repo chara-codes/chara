@@ -3,6 +3,7 @@ import { chatAgent } from "../agents/chat-agent";
 import { logger } from "@chara/logger";
 import { isoGitService } from "../services/isogit";
 import { gitAgent } from "../agents/git-agent";
+import { appEvents } from "../services/events";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -18,21 +19,24 @@ export const chatController = {
       messages: CoreMessage[];
     };
 
+    const workingDir = process.cwd();
+    if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
+      isoGitService.initializeRepository(process.cwd());
+    }
+
+    const commitMessage = await gitAgent({
+      model,
+      messages,
+    });
+
+    isoGitService.saveToHistory(workingDir, commitMessage.toString());
+
     return createDataStreamResponse({
       headers: { ...CORS_HEADERS, "accept-encoding": "" },
       execute: async (dataStream) => {
-        const workingDir = process.cwd();
-        if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
-          isoGitService.initializeRepository(process.cwd());
-        }
-
-        const commitMessage = await gitAgent({
-          model,
-          messages,
+        appEvents.on("tool:calling", (...args) => {
+          logger.dump(args);
         });
-
-        isoGitService.saveToHistory(workingDir, commitMessage.toString());
-
         const result = await chatAgent({
           model,
           messages,

@@ -1,5 +1,6 @@
 import { tool } from "ai";
 import z from "zod";
+import { appEvents } from "../services/events";
 
 const COMMAND_OUTPUT_LIMIT = 16 * 1024; // 16KB limit
 
@@ -18,7 +19,7 @@ export const terminal = tool({
         "Working directory for the command. This must be one of the root directories of the project",
       ),
   }),
-  execute: async ({ command, cd }) => {
+  execute: async ({ command, cd }, context) => {
     try {
       // Determine shell based on platform
       const shell = process.platform === "win32" ? "cmd" : "/bin/bash";
@@ -49,35 +50,100 @@ export const terminal = tool({
       // Close stdin to prevent hanging on interactive commands
       proc.stdin.end();
 
-      // Read output with timeout
+      // Stream output with timeout
       const timeout = 300000;
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(
-          () => reject(new Error("Command timed out after 30 seconds")),
+          () => reject(new Error("Command timed out after 300 seconds")),
           timeout,
         );
       });
 
-      const outputPromise = Promise.all([
-        new Response(proc.stdout).text(),
-        new Response(proc.stderr).text(),
-      ]);
+      // Create readable streams for stdout and stderr
+      const stdoutReader = proc.stdout.getReader();
+      const stderrReader = proc.stderr.getReader();
 
-      const [stdout, stderr] = await Promise.race([
-        outputPromise,
+      let stdout = "";
+      let stderr = "";
+      let combinedOutput = "";
+
+      // Stream stdout
+      const stdoutPromise = (async () => {
+        const decoder = new TextDecoder();
+        try {
+          while (true) {
+            const { done, value } = await stdoutReader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            stdout += chunk;
+            combinedOutput += chunk;
+
+            // Emit stdout chunk
+            appEvents.emit("tool:calling", {
+              name: "terminal",
+              toolCallId: context?.toolCallId || "unknown",
+              data: {
+                type: "stdout",
+                chunk,
+                command,
+                cd,
+              },
+            });
+          }
+        } finally {
+          stdoutReader.releaseLock();
+        }
+      })();
+
+      // Stream stderr
+      const stderrPromise = (async () => {
+        const decoder = new TextDecoder();
+        try {
+          while (true) {
+            const { done, value } = await stderrReader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            stderr += chunk;
+            combinedOutput += chunk;
+
+            // Emit stderr chunk
+            appEvents.emit("tool:calling", {
+              name: "terminal",
+              toolCallId: context?.toolCallId || "unknown",
+              data: {
+                type: "stderr",
+                chunk,
+                command,
+                cd,
+              },
+            });
+          }
+        } finally {
+          stderrReader.releaseLock();
+        }
+      })();
+
+      // Wait for both streams to complete
+      await Promise.race([
+        Promise.all([stdoutPromise, stderrPromise]),
         timeoutPromise,
       ]);
+
       const exitCode = await proc.exited;
 
-      // Combine stdout and stderr
-      let combinedOutput = "";
-      if (stdout.trim()) {
-        combinedOutput += stdout;
-      }
-      if (stderr.trim()) {
-        if (combinedOutput) combinedOutput += "\n";
-        combinedOutput += stderr;
-      }
+      // Emit completion event
+      appEvents.emit("tool:calling", {
+        name: "terminal",
+        toolCallId: context?.toolCallId || "unknown",
+        data: {
+          type: "complete",
+          exitCode,
+          command,
+          cd,
+        },
+      });
 
       // Process the output
       const { processedContent, wasEmpty } = processContent(
