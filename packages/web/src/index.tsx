@@ -6,7 +6,7 @@ import {
   theme,
   PreviewToolbar,
 } from "@chara/design-system";
-import { UIStoreProvider } from "@chara/core";
+import { UIStoreProvider, TrpcProvider, TechStacksProvider } from "@chara/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const WorkspaceContainer = styled.div`
@@ -446,39 +446,43 @@ export const CharaWeb = () => {
 
   return (
     <>
-      <UIStoreProvider>
-        <ThemeProvider theme={theme}>
-          <WorkspaceContainer>
-            {/* Chat Panel */}
-            <ChatColumn $width={chatWidth}>
-              <ChatInterface />
-            </ChatColumn>
+      <TrpcProvider>
+        <TechStacksProvider>
+          <UIStoreProvider>
+            <ThemeProvider theme={theme}>
+              <WorkspaceContainer>
+                {/* Chat Panel */}
+                <ChatColumn $width={chatWidth}>
+                  <ChatInterface />
+                </ChatColumn>
 
-            {/* Resize Handle */}
-            <ResizeHandle
-              onMouseDown={handleResizeStart}
-              title="Drag to resize"
-              aria-label="Resize panel"
-            />
+                {/* Resize Handle */}
+                <ResizeHandle
+                  onMouseDown={handleResizeStart}
+                  title="Drag to resize"
+                  aria-label="Resize panel"
+                />
 
-            {/* Preview Column */}
-            <PreviewColumn>
-              <PreviewContent>{renderPreviewContent()}</PreviewContent>
-            </PreviewColumn>
+                {/* Preview Column */}
+                <PreviewColumn>
+                  <PreviewContent>{renderPreviewContent()}</PreviewContent>
+                </PreviewColumn>
 
-            {/* Toolbar Column */}
-            <ToolbarColumn>
-              <PreviewToolbar
-                activeType={activePreviewType}
-                onTypeChange={setActivePreviewType}
-              />
-            </ToolbarColumn>
+                {/* Toolbar Column */}
+                <ToolbarColumn>
+                  <PreviewToolbar
+                    activeType={activePreviewType}
+                    onTypeChange={setActivePreviewType}
+                  />
+                </ToolbarColumn>
 
-            {/* Overlay to prevent interactions during resize */}
-            <ResizeOverlay $active={isResizing} />
-          </WorkspaceContainer>
-        </ThemeProvider>
-      </UIStoreProvider>
+                {/* Overlay to prevent interactions during resize */}
+                <ResizeOverlay $active={isResizing} />
+              </WorkspaceContainer>
+            </ThemeProvider>
+          </UIStoreProvider>
+        </TechStacksProvider>
+      </TrpcProvider>
     </>
   );
 };

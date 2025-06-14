@@ -3,6 +3,9 @@
 import { TechStackDetail } from "../types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { type ReactNode, useEffect } from "react";
+import { StackType } from "@chara/server";
+import { trpc } from "../services";
 
 // Define the tech stacks state interface
 interface TechStacksState {
@@ -16,220 +19,31 @@ interface TechStacksState {
   error: string | null;
 
   // Actions
+  setTechStacks: (stacks: TechStackDetail[]) => void;
+  setLoading: (isLoading: boolean) => void;
   addTechStack: (techStack: TechStackDetail) => void;
   updateTechStack: (techStack: TechStackDetail) => void;
   deleteTechStack: (id: string) => void;
   getTechStackById: (id: string) => TechStackDetail | undefined;
 }
 
-// Sample tech stacks data with extended details
-const initialTechStacks: TechStackDetail[] = [
-  // Frontend Frameworks
-  {
-    id: "react",
-    name: "React",
-    category: "Frontend",
-    description: "A JavaScript library for building user interfaces",
-    longDescription:
-      "React is a declarative, efficient, and flexible JavaScript library for building user interfaces. It lets you compose complex UIs from small and isolated pieces of code called 'components'. React has been designed from the start for gradual adoption, and you can use as little or as much React as you need. It can also render on the server using Node and power mobile apps using React Native.",
-    icon: "code",
-    popularity: 9,
-    version: "18.2.0",
-    releaseDate: "2022-06-14",
-    documentationLinks: [
-      {
-        name: "React Documentation",
-        url: "https://reactjs.org/docs/getting-started.html",
-        description:
-          "Official React documentation with guides, API reference, and examples",
-      },
-      {
-        name: "React GitHub Repository",
-        url: "https://github.com/facebook/react",
-        description: "Source code and issue tracking",
-      },
-      {
-        name: "Create React App",
-        url: "https://create-react-app.dev/",
-        description: "Set up a modern web app by running one command",
-      },
-    ],
-    mcpServers: [
-      {
-        name: "react-app-server-01",
-        configuration: {
-          command: "npx",
-          args: ["-y", "@modelcontextprotocol/server-puppeteer"],
-        },
-      },
-      {
-        name: "react-app-server-02",
-        configuration: {
-          command: "npx",
-          args: ["-y", "@modelcontextprotocol/server-puppeteer"],
-        },
-      },
-      {
-        name: "react-staging-server",
-        configuration: {
-          command: "npx",
-          args: ["-y", "@modelcontextprotocol/server-puppeteer"],
-        },
-      },
-    ],
-  },
-  {
-    id: "vue",
-    name: "Vue.js",
-    category: "Frontend",
-    description: "Progressive JavaScript framework for UIs",
-    longDescription:
-      "Vue.js is a progressive, incrementally-adoptable JavaScript framework for building UI on the web. Unlike other monolithic frameworks, Vue is designed from the ground up to be incrementally adoptable. The core library is focused on the view layer only, and is easy to pick up and integrate with other libraries or existing projects.",
-    icon: "code",
-    popularity: 7,
-    version: "3.2.47",
-    documentationLinks: [
-      {
-        name: "Vue.js Documentation",
-        url: "https://vuejs.org/guide/introduction.html",
-        description:
-          "Official Vue.js documentation with guides and API reference",
-      },
-      {
-        name: "Vue CLI",
-        url: "https://cli.vuejs.org/",
-        description: "Standard tooling for Vue.js development",
-      },
-    ],
-    mcpServers: [
-      {
-        name: "vue-app-server-01",
-        configuration: {
-          command: "npx",
-          args: ["-y", "@modelcontextprotocol/server-puppeteer"],
-        },
-      },
-    ],
-  },
-  {
-    id: "angular",
-    name: "Angular",
-    category: "Frontend",
-    description: "Platform for building mobile & desktop web apps",
-    icon: "code",
-    popularity: 6,
-  },
-  {
-    id: "svelte",
-    name: "Svelte",
-    category: "Frontend",
-    description: "Cybernetically enhanced web apps",
-    icon: "code",
-    popularity: 5,
-    isNew: true,
-  },
-
-  // Backend Frameworks
-  {
-    id: "node",
-    name: "Node.js",
-    category: "Backend",
-    description: "JavaScript runtime built on Chrome's V8 engine",
-    longDescription:
-      "Node.js is an open-source, cross-platform JavaScript runtime environment that executes JavaScript code outside a web browser. Node.js lets developers use JavaScript to write command line tools and for server-side scripting—running scripts server-side to produce dynamic web page content before the page is sent to the user's web browser.",
-    icon: "server",
-    popularity: 9,
-    version: "18.12.1",
-    documentationLinks: [
-      {
-        name: "Node.js Documentation",
-        url: "https://nodejs.org/en/docs/",
-        description:
-          "Official Node.js documentation with guides and API reference",
-      },
-      {
-        name: "Node.js GitHub Repository",
-        url: "https://github.com/nodejs/node",
-        description: "Source code and issue tracking",
-      },
-    ],
-    mcpServers: [
-      {
-        name: "node-api-server-01",
-        configuration: {
-          command: "npx",
-          args: ["-y", "@modelcontextprotocol/server-puppeteer"],
-          flags: ["--no-sandbox", "--disable-setuid-sandbox"],
-          timeout: 30000,
-        },
-      },
-      {
-        name: "node-api-server-02",
-        configuration: {
-          command: "npx",
-          args: ["-y", "@modelcontextprotocol/server-puppeteer"],
-          flags: ["--no-sandbox", "--disable-setuid-sandbox"],
-          timeout: 30000,
-        },
-      },
-    ],
-  },
-  {
-    id: "express",
-    name: "Express",
-    category: "Backend",
-    description: "Fast, unopinionated web framework for Node.js",
-    icon: "server",
-    popularity: 8,
-  },
-
-  // Databases
-  {
-    id: "mongodb",
-    name: "MongoDB",
-    category: "Database",
-    description: "Document-oriented NoSQL database",
-    icon: "database",
-    popularity: 8,
-  },
-  {
-    id: "postgres",
-    name: "PostgreSQL",
-    category: "Database",
-    description: "Powerful, open source object-relational database",
-    icon: "database",
-    popularity: 9,
-  },
-
-  // Full Stack
-  {
-    id: "next",
-    name: "Next.js",
-    category: "Full Stack",
-    description: "React framework for production",
-    icon: "layers",
-    popularity: 9,
-    isNew: true,
-  },
-
-  // API
-  {
-    id: "graphql",
-    name: "GraphQL",
-    category: "API",
-    description: "Query language for your API",
-    icon: "globe",
-    popularity: 7,
-  },
-];
-
 export const useTechStacksStore = create<TechStacksState>()(
   devtools(
     (set, get) => ({
       // Initial state
-      techStacks: initialTechStacks,
+      techStacks: [],
       isLoading: false,
       error: null,
+
+      // Set tech stacks from external source
+      setTechStacks: (techStacks: TechStackDetail[]) => {
+        set({ techStacks });
+      },
+
+      // Set loading state
+      setLoading: (isLoading: boolean) => {
+        set({ isLoading });
+      },
 
       // Add a new tech stack
       addTechStack: (techStack: TechStackDetail) => {
@@ -276,3 +90,130 @@ export const useDeleteTechStack = () =>
   useTechStacksStore((state) => state.deleteTechStack);
 export const useGetTechStackById = () =>
   useTechStacksStore((state) => state.getTechStackById);
+export const useTechStacksLoading = () =>
+  useTechStacksStore((state) => state.isLoading);
+
+/**
+ * TechStacksProvider component
+ *
+ * Wrap your application with this component to provide tech stacks data loading
+ * via trpc. This is meant to be a replacement for the StacksProvider from StacksContext.
+ */
+export function TechStacksProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Use the data loading hook to fetch tech stacks when the component mounts
+  useTechStacksData();
+
+  return <>{children}</>;
+}
+
+// LEGACY, for testing purposes
+export interface Technology {
+  name: string;
+  docsUrl?: string;
+  codeUrl?: string;
+}
+
+export interface TechStack {
+  id: string;
+  name: string;
+  type: StackType;
+  description: string;
+  technologies: Technology[];
+  icon?: ReactNode;
+}
+
+export const serverToClient = (row: {
+  id: number;
+  title: string;
+  description: string | null;
+  technologies: Technology[];
+  type: StackType;
+}): TechStack => ({
+  id: String(row.id),
+  name: row.title,
+  description: row.description ?? "",
+  type: row.type,
+  technologies: row.technologies,
+});
+
+/**
+ * This hook loads tech stacks from the trpc API and updates the Zustand store
+ * It handles the mapping from server format to TechStackDetail format, including mocking of missing fields
+ */
+export function useTechStacksData() {
+  const setTechStacks = useTechStacksStore((state) => state.setTechStacks);
+  const setLoading = useTechStacksStore((state) => state.setLoading);
+
+  const { data: serverStacks = [], isFetching } = trpc.stacks.list.useQuery(
+    undefined,
+    {
+      select: (rows) => rows.map(serverToClient),
+      initialData: [],
+    },
+  );
+
+  useEffect(() => {
+    setLoading(isFetching);
+  }, [isFetching]);
+
+  useEffect(() => {
+    const res = serverStacks.map((stack) => {
+      return mapServerStackToDetail(stack);
+    });
+
+    setTechStacks(res);
+    setLoading(false);
+  }, [serverStacks]);
+}
+
+/**
+ * Helper function to map server stack format to TechStackDetail
+ */
+function mapServerStackToDetail(serverStack: any): TechStackDetail {
+  // Extract basic fields that exist in both formats
+  const { id, name, description } = serverStack;
+
+  // Map type to category (field name change)
+  const category = serverStack.type || "Other";
+
+  // Create TechStackDetail with required fields and mock the missing ones
+  return {
+    id,
+    name,
+    category,
+    description,
+    // Mock additional fields required by TechStackDetail
+    icon: getIconForCategory(category),
+    popularity: Math.floor(Math.random() * 10) + 1, // Random popularity 1-10
+    version: "1.0.0", // Default version
+    // Add other optional fields as needed
+    documentationLinks: [],
+    mcpServers: [],
+  };
+}
+
+/**
+ * Helper function to choose an appropriate icon based on category
+ */
+function getIconForCategory(
+  category: string,
+): "code" | "server" | "database" | "layers" | "globe" {
+  switch (category.toLowerCase()) {
+    case "frontend":
+      return "code";
+    case "backend":
+      return "server";
+    case "database":
+      return "database";
+    case "full stack":
+      return "layers";
+    case "api":
+      return "globe";
+    default:
+      return "code";
+  }
+}
