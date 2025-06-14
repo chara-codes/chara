@@ -4,6 +4,7 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
+import { TerminalIcon } from "../../atoms/icons";
 
 interface TerminalToolBlockProps {
   command: string;
@@ -228,32 +229,6 @@ const ErrorBanner = styled.div`
   white-space: pre-wrap;
 `;
 
-const TerminalIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <title>Terminal Icon</title>
-    <path
-      d="M4 17L10 11L4 5"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M12 19H20"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 const LoadingIndicator = styled.span<{ isGenerating: boolean }>`
   display: ${({ isGenerating }) => (isGenerating ? "inline" : "none")};
   animation: ${blink} 1s infinite;
@@ -263,7 +238,6 @@ const LoadingIndicator = styled.span<{ isGenerating: boolean }>`
 
 const TerminalToolBlock: React.FC<TerminalToolBlockProps> = ({
   command,
-  workingDirectory,
   output = "",
   status = "pending",
   isGenerating = false,
@@ -293,7 +267,8 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = ({
         },
         Math.max(1, streamingSpeed),
       );
-      return null;
+
+      return () => clearTimeout(timer);
     }
 
     if (!isGenerating) {
@@ -321,19 +296,17 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = ({
   const characterCount = displayedOutput.length;
   const totalCharacters = output.length;
 
-    // Sync status
-    useEffect(() => {
-      setCurrentStatus(status);
-    }, [status]);
+  // Calculate if content fits within limited height
+  const estimatedContentHeight = outputLines * 18 + 60; // 18px per line + padding
+  const contentFitsInLimitedView = estimatedContentHeight <= maxHeight;
 
-    const outputLines = displayedOutput.split("\n").length;
-    const totalOutputLines = effectiveOutput.split("\n").length;
-    const characterCount = displayedOutput.length;
-    const totalCharacters = effectiveOutput.length;
+  const toggleCollapse = () => {
+    setViewMode(viewMode === "collapsed" ? "limited" : "collapsed");
+  };
 
-    // Calculate if content fits within limited height
-    const estimatedContentHeight = outputLines * 18 + 60; // 18px per line + padding
-    const contentFitsInLimitedView = estimatedContentHeight <= maxHeight;
+  const toggleViewMode = () => {
+    setViewMode(viewMode === "limited" ? "full" : "limited");
+  };
 
   const getStatusText = () => {
     switch (status) {
@@ -369,41 +342,18 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = ({
         </TerminalActions>
       </TerminalHeader>
 
-    const getStatusText = () => {
-      switch (effectiveStatus) {
-        case "pending":
-          return "Pending";
-        case "in-progress":
-          return "Running...";
-        case "success":
-          return "Complete";
-        case "error":
-          return "Error";
-        default:
-          return "Unknown";
-      }
-    };
+      {toolCallError && viewMode !== "collapsed" && (
+        <ErrorBanner>
+          <strong>Tool Call Error:</strong> {toolCallError}
+        </ErrorBanner>
+      )}
 
-    return (
-      <TerminalContainer isVisible={isVisible}>
-        <TerminalHeader>
-          <TerminalTitle>
-            <TerminalIcon />
-            Terminal
-            <StatusBadge $status={effectiveStatus}>
-              {getStatusText()}
-            </StatusBadge>
-          </TerminalTitle>
-          <TerminalActions>
-            <ExpandCollapseButton onClick={toggleCollapse}>
-              {viewMode === "collapsed" ? (
-                <ChevronRight size={12} />
-              ) : (
-                <ChevronDown size={12} />
-              )}
-            </ExpandCollapseButton>
-          </TerminalActions>
-        </TerminalHeader>
+      <CommandSection>
+        <CommandPrompt>
+          <span>$</span>
+          <CommandText>{command}</CommandText>
+        </CommandPrompt>
+      </CommandSection>
 
       <GenerationStats viewMode={viewMode}>
         <StatItem>
@@ -430,6 +380,7 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = ({
             <span>{Math.round((currentIndex / output.length) * 100)}%</span>
           </StatItem>
         )}
+      </GenerationStats>
 
       <TerminalContent maxHeight={maxHeight} viewMode={viewMode}>
         <OutputSection viewMode={viewMode}>
