@@ -1,15 +1,8 @@
 "use client";
 
+import { TechStackDetail } from "../types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import {
-  CodeIcon,
-  ServerIcon,
-  DatabaseIcon,
-  GlobeIcon,
-  LayersIcon,
-} from "../atoms";
-import type { TechStackDetail } from "../organisms";
 
 // Define the tech stacks state interface
 interface TechStacksState {
@@ -39,7 +32,7 @@ const initialTechStacks: TechStackDetail[] = [
     description: "A JavaScript library for building user interfaces",
     longDescription:
       "React is a declarative, efficient, and flexible JavaScript library for building user interfaces. It lets you compose complex UIs from small and isolated pieces of code called 'components'. React has been designed from the start for gradual adoption, and you can use as little or as much React as you need. It can also render on the server using Node and power mobile apps using React Native.",
-    icon: <CodeIcon width={20} height={20} />,
+    icon: "code",
     popularity: 9,
     version: "18.2.0",
     releaseDate: "2022-06-14",
@@ -92,7 +85,7 @@ const initialTechStacks: TechStackDetail[] = [
     description: "Progressive JavaScript framework for UIs",
     longDescription:
       "Vue.js is a progressive, incrementally-adoptable JavaScript framework for building UI on the web. Unlike other monolithic frameworks, Vue is designed from the ground up to be incrementally adoptable. The core library is focused on the view layer only, and is easy to pick up and integrate with other libraries or existing projects.",
-    icon: <CodeIcon width={20} height={20} />,
+    icon: "code",
     popularity: 7,
     version: "3.2.47",
     documentationLinks: [
@@ -123,7 +116,7 @@ const initialTechStacks: TechStackDetail[] = [
     name: "Angular",
     category: "Frontend",
     description: "Platform for building mobile & desktop web apps",
-    icon: <CodeIcon width={20} height={20} />,
+    icon: "code",
     popularity: 6,
   },
   {
@@ -131,7 +124,7 @@ const initialTechStacks: TechStackDetail[] = [
     name: "Svelte",
     category: "Frontend",
     description: "Cybernetically enhanced web apps",
-    icon: <CodeIcon width={20} height={20} />,
+    icon: "code",
     popularity: 5,
     isNew: true,
   },
@@ -144,7 +137,7 @@ const initialTechStacks: TechStackDetail[] = [
     description: "JavaScript runtime built on Chrome's V8 engine",
     longDescription:
       "Node.js is an open-source, cross-platform JavaScript runtime environment that executes JavaScript code outside a web browser. Node.js lets developers use JavaScript to write command line tools and for server-side scripting—running scripts server-side to produce dynamic web page content before the page is sent to the user's web browser.",
-    icon: <ServerIcon width={20} height={20} />,
+    icon: "server",
     popularity: 9,
     version: "18.12.1",
     documentationLinks: [
@@ -186,7 +179,7 @@ const initialTechStacks: TechStackDetail[] = [
     name: "Express",
     category: "Backend",
     description: "Fast, unopinionated web framework for Node.js",
-    icon: <ServerIcon width={20} height={20} />,
+    icon: "server",
     popularity: 8,
   },
 
@@ -196,7 +189,7 @@ const initialTechStacks: TechStackDetail[] = [
     name: "MongoDB",
     category: "Database",
     description: "Document-oriented NoSQL database",
-    icon: <DatabaseIcon width={20} height={20} />,
+    icon: "database",
     popularity: 8,
   },
   {
@@ -204,7 +197,7 @@ const initialTechStacks: TechStackDetail[] = [
     name: "PostgreSQL",
     category: "Database",
     description: "Powerful, open source object-relational database",
-    icon: <DatabaseIcon width={20} height={20} />,
+    icon: "database",
     popularity: 9,
   },
 
@@ -214,7 +207,7 @@ const initialTechStacks: TechStackDetail[] = [
     name: "Next.js",
     category: "Full Stack",
     description: "React framework for production",
-    icon: <LayersIcon width={20} height={20} />,
+    icon: "layers",
     popularity: 9,
     isNew: true,
   },
@@ -225,7 +218,7 @@ const initialTechStacks: TechStackDetail[] = [
     name: "GraphQL",
     category: "API",
     description: "Query language for your API",
-    icon: <GlobeIcon width={20} height={20} />,
+    icon: "globe",
     popularity: 7,
   },
 ];

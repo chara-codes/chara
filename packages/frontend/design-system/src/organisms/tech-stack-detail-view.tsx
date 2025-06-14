@@ -4,40 +4,8 @@ import type React from "react";
 import styled from "styled-components";
 import { ArrowLeftIcon, ExternalLinkIcon } from "../atoms/icons";
 import Button from "../atoms/button";
-import type { Theme } from '@/theme';
-
-// Extended TechStack interface with additional details
-export interface TechStackDetail {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  longDescription?: string;
-  icon: React.ReactNode;
-  popularity?: number; // 1-10 scale
-  isNew?: boolean;
-  version?: string;
-  releaseDate?: string;
-  documentationLinks?: {
-    name: string;
-    url: string;
-    description?: string;
-  }[];
-  /** Management Control Panel server configurations */
-  mcpServers?: {
-    name: string;
-    configuration: {
-      command: string;
-      args: string[];
-      [key: string]:
-        | string
-        | string[]
-        | number
-        | boolean
-        | Record<string, unknown>;
-    };
-  }[];
-}
+import type { Theme } from "@/theme";
+import { TechStackDetail } from "@chara/core";
 
 const DetailContainer = styled.div`
   display: flex;

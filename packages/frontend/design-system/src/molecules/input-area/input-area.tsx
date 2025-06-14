@@ -29,7 +29,7 @@ import { useElementSelector } from "../../hooks";
 import { createDropdownItems } from "./dropdown-items";
 import styled from "styled-components";
 import AnimatedButton from "./animated-button";
-import { useUIStore } from "../../stores"; // Updated to use the corrected context hook
+import { useUIStore } from "@chara/core";
 import { type InputAreaProps, useChatStore } from "@chara/core";
 
 const RoundedIconButton = styled(IconButton)`

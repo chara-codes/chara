@@ -4,9 +4,9 @@ import {
   PreviewType,
   type Theme,
   theme,
-  UIStoreProvider,
   PreviewToolbar,
 } from "@chara/design-system";
+import { UIStoreProvider } from "@chara/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const WorkspaceContainer = styled.div`

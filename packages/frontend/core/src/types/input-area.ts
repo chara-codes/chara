@@ -38,6 +38,6 @@ export interface DropdownItem {
 export interface ButtonConfig {
   enabled?: boolean;
   id?: string;
-  icon?: FC;
+  icon?: 'plus' | 'pointer' | 'clip';
   tooltip?: string;
 }
