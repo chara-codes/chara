@@ -21,6 +21,11 @@ export const directoryTree = tool({
         const result: TreeEntry[] = [];
 
         for (const entry of entries) {
+          // Skip directories that start with '.chara'
+          if (entry.isDirectory() && entry.name.startsWith(".chara")) {
+            continue;
+          }
+
           const entryData: TreeEntry = {
             name: entry.name,
             type: entry.isDirectory() ? "directory" : "file",

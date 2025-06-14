@@ -25,9 +25,9 @@ describe("directoryTree tool", () => {
     expect(Array.isArray(tree)).toBe(true);
     expect(tree).toHaveLength(3);
 
-    const file1 = tree.find(item => item.name === "file1.txt");
-    const file2 = tree.find(item => item.name === "file2.js");
-    const subdir = tree.find(item => item.name === "subdir");
+    const file1 = tree.find((item) => item.name === "file1.txt");
+    const file2 = tree.find((item) => item.name === "file2.js");
+    const subdir = tree.find((item) => item.name === "subdir");
 
     expect(file1).toEqual({ name: "file1.txt", type: "file" });
     expect(file2).toEqual({ name: "file2.js", type: "file" });
@@ -58,8 +58,8 @@ describe("directoryTree tool", () => {
     expect(level1.type).toBe("directory");
     expect(level1.children).toHaveLength(2);
 
-    const file1 = level1.children.find(item => item.name === "file1.txt");
-    const level2 = level1.children.find(item => item.name === "level2");
+    const file1 = level1.children.find((item) => item.name === "file1.txt");
+    const level2 = level1.children.find((item) => item.name === "level2");
 
     expect(file1).toEqual({ name: "file1.txt", type: "file" });
     expect(level2.name).toBe("level2");
@@ -96,7 +96,10 @@ describe("directoryTree tool", () => {
     current = current.children[0]; // 'e'
     expect(current.name).toBe("e");
     expect(current.type).toBe("directory");
-    expect(current.children[0]).toEqual({ name: "deep-file.txt", type: "file" });
+    expect(current.children[0]).toEqual({
+      name: "deep-file.txt",
+      type: "file",
+    });
   });
 
   test("should handle mixed content types", async () => {
@@ -113,14 +116,14 @@ describe("directoryTree tool", () => {
 
     expect(tree).toHaveLength(5);
 
-    const files = tree.filter(item => item.type === "file");
-    const directories = tree.filter(item => item.type === "directory");
+    const files = tree.filter((item) => item.type === "file");
+    const directories = tree.filter((item) => item.type === "directory");
 
     expect(files).toHaveLength(3);
     expect(directories).toHaveLength(2);
 
-    const srcDir = directories.find(dir => dir.name === "src");
-    const docsDir = directories.find(dir => dir.name === "docs");
+    const srcDir = directories.find((dir) => dir.name === "src");
+    const docsDir = directories.find((dir) => dir.name === "docs");
 
     expect(srcDir.children).toHaveLength(1);
     expect(srcDir.children[0]).toEqual({ name: "index.js", type: "file" });
@@ -140,9 +143,9 @@ describe("directoryTree tool", () => {
 
     expect(tree).toHaveLength(3);
 
-    const envFile = tree.find(item => item.name === ".env");
-    const gitignoreFile = tree.find(item => item.name === ".gitignore");
-    const gitDir = tree.find(item => item.name === ".git");
+    const envFile = tree.find((item) => item.name === ".env");
+    const gitignoreFile = tree.find((item) => item.name === ".gitignore");
+    const gitDir = tree.find((item) => item.name === ".git");
 
     expect(envFile).toEqual({ name: ".env", type: "file" });
     expect(gitignoreFile).toEqual({ name: ".gitignore", type: "file" });
@@ -164,7 +167,7 @@ describe("directoryTree tool", () => {
 
     expect(tree).toHaveLength(5);
 
-    const names = tree.map(item => item.name);
+    const names = tree.map((item) => item.name);
     expect(names).toContain("file with spaces.txt");
     expect(names).toContain("file-with-dashes.txt");
     expect(names).toContain("file_with_underscores.txt");
@@ -181,27 +184,29 @@ describe("directoryTree tool", () => {
     const result = await directoryTree.execute({ path: testFS.getPath() });
     const tree = JSON.parse(result);
 
-    const names = tree.map(item => item.name);
+    const names = tree.map((item) => item.name);
     expect(names).toContain("测试.txt");
     expect(names).toContain("🚀rocket.txt");
     expect(names).toContain("München");
 
-    const munichDir = tree.find(item => item.name === "München");
+    const munichDir = tree.find((item) => item.name === "München");
     expect(munichDir.children[0]).toEqual({ name: "straße.txt", type: "file" });
   });
 
   test("should throw error for non-existent directory", async () => {
     const nonExistentPath = testFS.getPath("does-not-exist");
 
-    await expect(directoryTree.execute({ path: nonExistentPath }))
-      .rejects.toThrow("Failed to build directory tree");
+    await expect(
+      directoryTree.execute({ path: nonExistentPath }),
+    ).rejects.toThrow("Failed to build directory tree");
   });
 
   test("should throw error when trying to get tree of a file", async () => {
     const filePath = await testFS.createFile("not-a-directory.txt", "content");
 
-    await expect(directoryTree.execute({ path: filePath }))
-      .rejects.toThrow("Failed to read directory");
+    await expect(directoryTree.execute({ path: filePath })).rejects.toThrow(
+      "Failed to read directory",
+    );
   });
 
   test("should return valid JSON with proper formatting", async () => {
@@ -215,7 +220,7 @@ describe("directoryTree tool", () => {
 
     // Should be formatted with 2-space indentation
     expect(result).toContain("  ");
-    expect(result.split('\n').length).toBeGreaterThan(1);
+    expect(result.split("\n").length).toBeGreaterThan(1);
   });
 
   test("should handle large directory structures", async () => {
@@ -231,14 +236,14 @@ describe("directoryTree tool", () => {
 
     expect(tree).toHaveLength(40); // 20 files + 20 directories
 
-    const files = tree.filter(item => item.type === "file");
-    const directories = tree.filter(item => item.type === "directory");
+    const files = tree.filter((item) => item.type === "file");
+    const directories = tree.filter((item) => item.type === "directory");
 
     expect(files).toHaveLength(20);
     expect(directories).toHaveLength(20);
 
     // Each directory should have one child
-    directories.forEach(dir => {
+    directories.forEach((dir) => {
       expect(dir.children).toHaveLength(1);
       expect(dir.children[0].type).toBe("file");
     });
@@ -252,16 +257,26 @@ describe("directoryTree tool", () => {
     const result = await directoryTree.execute({ path: testFS.getPath() });
     const tree = JSON.parse(result);
 
-    const emptyDir = tree.find(item => item.name === "empty-dir");
-    const parentDir = tree.find(item => item.name === "parent");
+    const emptyDir = tree.find((item) => item.name === "empty-dir");
+    const parentDir = tree.find((item) => item.name === "parent");
 
-    expect(emptyDir).toEqual({ name: "empty-dir", type: "directory", children: [] });
+    expect(emptyDir).toEqual({
+      name: "empty-dir",
+      type: "directory",
+      children: [],
+    });
     expect(parentDir.children).toHaveLength(1);
-    expect(parentDir.children[0]).toEqual({ name: "empty-child", type: "directory", children: [] });
+    expect(parentDir.children[0]).toEqual({
+      name: "empty-child",
+      type: "directory",
+      children: [],
+    });
   });
 
   test("should have correct tool metadata", () => {
-    expect(directoryTree.description).toBe("Get a recursive tree view of files and directories as a JSON structure");
+    expect(directoryTree.description).toBe(
+      "Get a recursive tree view of files and directories as a JSON structure",
+    );
     expect(directoryTree.parameters).toBeDefined();
   });
 
@@ -276,8 +291,14 @@ describe("directoryTree tool", () => {
     await testFS.createFile("package.json", '{"name": "test"}');
     await testFS.createFile("README.md", "# Test Project");
     await testFS.createFile("src/index.js", "console.log('main')");
-    await testFS.createFile("src/components/Button.js", "export default Button");
-    await testFS.createFile("src/utils/helpers.js", "export const helper = () => {}");
+    await testFS.createFile(
+      "src/components/Button.js",
+      "export default Button",
+    );
+    await testFS.createFile(
+      "src/utils/helpers.js",
+      "export const helper = () => {}",
+    );
     await testFS.createFile("tests/index.test.js", "test('works', () => {})");
     await testFS.createFile("docs/api.md", "# API Documentation");
 
@@ -286,14 +307,16 @@ describe("directoryTree tool", () => {
 
     expect(tree).toHaveLength(5); // 2 files + 3 directories
 
-    const srcDir = tree.find(item => item.name === "src");
+    const srcDir = tree.find((item) => item.name === "src");
     expect(srcDir.children).toHaveLength(3); // index.js + 2 subdirs
 
-    const componentsDir = srcDir.children.find(item => item.name === "components");
+    const componentsDir = srcDir.children.find(
+      (item) => item.name === "components",
+    );
     expect(componentsDir.children).toHaveLength(1);
     expect(componentsDir.children[0].name).toBe("Button.js");
 
-    const utilsDir = srcDir.children.find(item => item.name === "utils");
+    const utilsDir = srcDir.children.find((item) => item.name === "utils");
     expect(utilsDir.children).toHaveLength(1);
     expect(utilsDir.children[0].name).toBe("helpers.js");
   });
@@ -302,7 +325,106 @@ describe("directoryTree tool", () => {
     // Try to access a restricted directory
     const restrictedPath = "/root";
 
-    await expect(directoryTree.execute({ path: restrictedPath }))
-      .rejects.toThrow("Failed to build directory tree");
+    await expect(
+      directoryTree.execute({ path: restrictedPath }),
+    ).rejects.toThrow("Failed to build directory tree");
+  });
+
+  test("should skip directories starting with .chara", async () => {
+    await testFS.createFile("regular-file.txt", "content");
+    await mkdir(testFS.getPath(".chara"));
+    await testFS.createFile(".chara/config.json", "{}");
+    await mkdir(testFS.getPath(".chara-cache"));
+    await testFS.createFile(".chara-cache/data.txt", "cache data");
+    await mkdir(testFS.getPath(".chara-old"));
+    await testFS.createFile(".chara-old/old-config.json", "{}");
+    await mkdir(testFS.getPath("normal-dir"));
+    await testFS.createFile("normal-dir/file.txt", "normal content");
+
+    const result = await directoryTree.execute({ path: testFS.getPath() });
+    const tree = JSON.parse(result);
+
+    // Should only contain regular-file.txt and normal-dir
+    expect(tree).toHaveLength(2);
+
+    const names = tree.map((item) => item.name);
+    expect(names).toContain("regular-file.txt");
+    expect(names).toContain("normal-dir");
+    expect(names).not.toContain(".chara");
+    expect(names).not.toContain(".chara-cache");
+    expect(names).not.toContain(".chara-old");
+
+    const normalDir = tree.find((item) => item.name === "normal-dir");
+    expect(normalDir.children).toHaveLength(1);
+    expect(normalDir.children[0].name).toBe("file.txt");
+  });
+
+  test("should skip .chara directories in nested structures", async () => {
+    await mkdir(testFS.getPath("project"));
+    await mkdir(testFS.getPath("project/.chara"));
+    await testFS.createFile("project/.chara/settings.json", "{}");
+    await mkdir(testFS.getPath("project/src"));
+    await testFS.createFile("project/src/index.js", "console.log('hello')");
+    await mkdir(testFS.getPath("project/src/.chara-temp"));
+    await testFS.createFile("project/src/.chara-temp/temp.txt", "temp");
+
+    const result = await directoryTree.execute({ path: testFS.getPath() });
+    const tree = JSON.parse(result);
+
+    expect(tree).toHaveLength(1);
+    const projectDir = tree[0];
+    expect(projectDir.name).toBe("project");
+    expect(projectDir.children).toHaveLength(1); // Only src, not .chara
+
+    const srcDir = projectDir.children[0];
+    expect(srcDir.name).toBe("src");
+    expect(srcDir.children).toHaveLength(1); // Only index.js, not .chara-temp
+    expect(srcDir.children[0].name).toBe("index.js");
+  });
+
+  test("should not skip directories that contain but don't start with .chara", async () => {
+    await mkdir(testFS.getPath("my-.chara-folder"));
+    await testFS.createFile("my-.chara-folder/file.txt", "content");
+    await mkdir(testFS.getPath("folder-.chara"));
+    await testFS.createFile("folder-.chara/file.txt", "content");
+    await mkdir(testFS.getPath("chara-folder"));
+    await testFS.createFile("chara-folder/file.txt", "content");
+
+    const result = await directoryTree.execute({ path: testFS.getPath() });
+    const tree = JSON.parse(result);
+
+    expect(tree).toHaveLength(3);
+    const names = tree.map((item) => item.name);
+    expect(names).toContain("my-.chara-folder");
+    expect(names).toContain("folder-.chara");
+    expect(names).toContain("chara-folder");
+
+    // Verify each directory has its file
+    tree.forEach((dir) => {
+      expect(dir.children).toHaveLength(1);
+      expect(dir.children[0].name).toBe("file.txt");
+    });
+  });
+
+  test("should handle .chara directories mixed with other hidden directories", async () => {
+    await mkdir(testFS.getPath(".git"));
+    await testFS.createFile(".git/config", "[core]");
+    await mkdir(testFS.getPath(".chara"));
+    await testFS.createFile(".chara/config.json", "{}");
+    await mkdir(testFS.getPath(".vscode"));
+    await testFS.createFile(".vscode/settings.json", "{}");
+    await mkdir(testFS.getPath(".chara-backup"));
+    await testFS.createFile(".chara-backup/backup.json", "{}");
+
+    const result = await directoryTree.execute({ path: testFS.getPath() });
+    const tree = JSON.parse(result);
+
+    // Should contain .git and .vscode but not .chara or .chara-backup
+    expect(tree).toHaveLength(2);
+    const names = tree.map((item) => item.name);
+    expect(names).toContain(".git");
+    expect(names).toContain(".vscode");
+    expect(names).not.toContain(".chara");
+    expect(names).not.toContain(".chara-backup");
   });
 });
