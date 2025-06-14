@@ -293,8 +293,7 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = ({
         },
         Math.max(1, streamingSpeed),
       );
-
-      return () => clearTimeout(timer);
+      return null;
     }
 
     if (!isGenerating) {
@@ -322,17 +321,19 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = ({
   const characterCount = displayedOutput.length;
   const totalCharacters = output.length;
 
-  // Calculate if content fits within limited height
-  const estimatedContentHeight = outputLines * 18 + 60; // 18px per line + padding
-  const contentFitsInLimitedView = estimatedContentHeight <= maxHeight;
+    // Sync status
+    useEffect(() => {
+      setCurrentStatus(status);
+    }, [status]);
 
-  const toggleCollapse = () => {
-    setViewMode(viewMode === "collapsed" ? "limited" : "collapsed");
-  };
+    const outputLines = displayedOutput.split("\n").length;
+    const totalOutputLines = effectiveOutput.split("\n").length;
+    const characterCount = displayedOutput.length;
+    const totalCharacters = effectiveOutput.length;
 
-  const toggleViewMode = () => {
-    setViewMode(viewMode === "limited" ? "full" : "limited");
-  };
+    // Calculate if content fits within limited height
+    const estimatedContentHeight = outputLines * 18 + 60; // 18px per line + padding
+    const contentFitsInLimitedView = estimatedContentHeight <= maxHeight;
 
   const getStatusText = () => {
     switch (status) {
@@ -368,18 +369,41 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = ({
         </TerminalActions>
       </TerminalHeader>
 
-      {toolCallError && viewMode !== "collapsed" && (
-        <ErrorBanner>
-          <strong>Tool Call Error:</strong> {toolCallError}
-        </ErrorBanner>
-      )}
+    const getStatusText = () => {
+      switch (effectiveStatus) {
+        case "pending":
+          return "Pending";
+        case "in-progress":
+          return "Running...";
+        case "success":
+          return "Complete";
+        case "error":
+          return "Error";
+        default:
+          return "Unknown";
+      }
+    };
 
-      <CommandSection>
-        <CommandPrompt>
-          <span>$</span>
-          <CommandText>{command}</CommandText>
-        </CommandPrompt>
-      </CommandSection>
+    return (
+      <TerminalContainer isVisible={isVisible}>
+        <TerminalHeader>
+          <TerminalTitle>
+            <TerminalIcon />
+            Terminal
+            <StatusBadge $status={effectiveStatus}>
+              {getStatusText()}
+            </StatusBadge>
+          </TerminalTitle>
+          <TerminalActions>
+            <ExpandCollapseButton onClick={toggleCollapse}>
+              {viewMode === "collapsed" ? (
+                <ChevronRight size={12} />
+              ) : (
+                <ChevronDown size={12} />
+              )}
+            </ExpandCollapseButton>
+          </TerminalActions>
+        </TerminalHeader>
 
       <GenerationStats viewMode={viewMode}>
         <StatItem>
@@ -406,7 +430,6 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = ({
             <span>{Math.round((currentIndex / output.length) * 100)}%</span>
           </StatItem>
         )}
-      </GenerationStats>
 
       <TerminalContent maxHeight={maxHeight} viewMode={viewMode}>
         <OutputSection viewMode={viewMode}>

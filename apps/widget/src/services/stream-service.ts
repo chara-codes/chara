@@ -134,7 +134,10 @@ export async function processChatStream(
               // Handle thinking tags with proper text segmentation
               const processTextWithThinkingTags = (text: string) => {
                 // Use shared thinking tag regex for consistent handling
-                const thinkingTagRegex = new RegExp(THINKING_TAG_REGEX.source, THINKING_TAG_REGEX.flags);
+                const thinkingTagRegex = new RegExp(
+                  THINKING_TAG_REGEX.source,
+                  THINKING_TAG_REGEX.flags,
+                );
 
                 let currentIndex = 0;
                 let match: RegExpExecArray | null;
@@ -142,7 +145,7 @@ export async function processChatStream(
                 // Check if text ends with a partial tag that might be completed in next chunk
                 const partialTagRegex = /<\/?think(?:ing)?(?:\s[^>]*)?$/i;
                 const partialMatch = partialTagRegex.exec(text);
-                
+
                 // If we have a partial tag at the end, process everything except the partial tag
                 let textToProcess = text;
                 if (partialMatch) {
@@ -157,7 +160,10 @@ export async function processChatStream(
 
                   // Process text before the tag
                   if (match.index > currentIndex) {
-                    const beforeTag = textToProcess.slice(currentIndex, match.index);
+                    const beforeTag = textToProcess.slice(
+                      currentIndex,
+                      match.index,
+                    );
                     if (beforeTag) {
                       if (isThinking) {
                         callbacks.onThinkingDelta(beforeTag);
@@ -277,7 +283,10 @@ export async function processChatStream(
                   }
 
                   // Tool call arguments are being built, will send to UI when completed
-                  console.log("Stream Service: Tool call arguments updated", parsedData.toolCallId);
+                  console.log(
+                    "Stream Service: Tool call arguments updated",
+                    parsedData.toolCallId,
+                  );
 
                   // Update segment builder
                   segmentBuilder.updateToolCallArgs(
@@ -354,40 +363,40 @@ export async function processChatStream(
               // This indicates the message is complete
               // The parsedData typically contains messageId
               break;
-            case "d": // Done signal with completion stats
-              {
-                console.log("Stream Service: Stream done", parsedData);
-                // This indicates the stream is done with finish reason and usage stats
-                // parsedData contains: finishReason, usage (promptTokens, completionTokens)
+            case "d": {
+              // Done signal with completion stats
+              console.log("Stream Service: Stream done", parsedData);
+              // This indicates the stream is done with finish reason and usage stats
+              // parsedData contains: finishReason, usage (promptTokens, completionTokens)
 
-                // Finalize segments when stream completes
-                const finalSegments = segmentBuilder.finalize();
-                if (callbacks.onSegmentUpdate) {
-                  callbacks.onSegmentUpdate(finalSegments);
-                }
-
-                if (callbacks.onCompletion) {
-                  callbacks.onCompletion(parsedData);
-                }
-                break;
+              // Finalize segments when stream completes
+              const finalSegments = segmentBuilder.finalize();
+              if (callbacks.onSegmentUpdate) {
+                callbacks.onSegmentUpdate(finalSegments);
               }
-            case "e": // Stream completion/end with usage stats
-              {
-                console.log("Stream Service: Stream completed", parsedData);
-                // This indicates the stream is complete with finish reason and usage stats
-                // parsedData contains: finishReason, usage (promptTokens, completionTokens), isContinued
 
-                // Finalize segments when stream completes
-                const finalSegmentsE = segmentBuilder.finalize();
-                if (callbacks.onSegmentUpdate) {
-                  callbacks.onSegmentUpdate(finalSegmentsE);
-                }
-
-                if (callbacks.onCompletion) {
-                  callbacks.onCompletion(parsedData);
-                }
-                break;
+              if (callbacks.onCompletion) {
+                callbacks.onCompletion(parsedData);
               }
+              break;
+            }
+            case "e": {
+              // Stream completion/end with usage stats
+              console.log("Stream Service: Stream completed", parsedData);
+              // This indicates the stream is complete with finish reason and usage stats
+              // parsedData contains: finishReason, usage (promptTokens, completionTokens), isContinued
+
+              // Finalize segments when stream completes
+              const finalSegmentsE = segmentBuilder.finalize();
+              if (callbacks.onSegmentUpdate) {
+                callbacks.onSegmentUpdate(finalSegmentsE);
+              }
+
+              if (callbacks.onCompletion) {
+                callbacks.onCompletion(parsedData);
+              }
+              break;
+            }
             case "3": // Tool result/response
               console.log("Stream Service: Tool result received", parsedData);
               // Handle tool execution results

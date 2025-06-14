@@ -3,7 +3,14 @@
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { Chat, ChatMode, ContextItem, Message, MessageContent, ToolCall } from "./types";
+import type {
+  Chat,
+  ChatMode,
+  ContextItem,
+  Message,
+  MessageContent,
+  ToolCall,
+} from "./types";
 import { fetchChats } from "../services/data-service";
 import {
   processChatStream,
@@ -66,7 +73,7 @@ interface ChatState {
     currentPrompt: string,
     onTextDelta: (delta: string) => void,
     onComplete: (finalText: string) => void,
-    onError: (error: Error) => void
+    onError: (error: Error) => void,
   ) => void;
 }
 
@@ -162,31 +169,39 @@ export const useChatStore = create<ChatState>()(
 
           // Create message content - automatically include context if available
           let messageContent: string | MessageContent[];
-          
+
           if (contextItems.length > 0) {
             // Create multi-part content with text and context items
             messageContent = [
               {
-                type: 'text',
+                type: "text",
                 text: content,
               },
-              ...contextItems.map(item => {
-                if (item.type === 'file' && item.data) {
+              ...contextItems.map((item) => {
+                if (item.type === "file" && item.data) {
                   return {
-                    type: 'file' as const,
-                    data: typeof item.data === 'string' ? item.data : JSON.stringify(item.data),
-                    mimeType: item.name.endsWith('.pdf') ? 'application/pdf' : 
-                             item.name.endsWith('.png') ? 'image/png' :
-                             item.name.endsWith('.jpg') || item.name.endsWith('.jpeg') ? 'image/jpeg' :
-                             item.name.endsWith('.txt') ? 'text/plain' :
-                             'application/octet-stream',
+                    type: "file" as const,
+                    data:
+                      typeof item.data === "string"
+                        ? item.data
+                        : JSON.stringify(item.data),
+                    mimeType: item.name.endsWith(".pdf")
+                      ? "application/pdf"
+                      : item.name.endsWith(".png")
+                        ? "image/png"
+                        : item.name.endsWith(".jpg") ||
+                            item.name.endsWith(".jpeg")
+                          ? "image/jpeg"
+                          : item.name.endsWith(".txt")
+                            ? "text/plain"
+                            : "application/octet-stream",
                   };
                 }
                 return {
-                  type: 'text' as const,
-                  text: `Context: ${item.name}\n${typeof item.data === 'string' ? item.data : JSON.stringify(item.data)}`,
+                  type: "text" as const,
+                  text: `Context: ${item.name}\n${typeof item.data === "string" ? item.data : JSON.stringify(item.data)}`,
                 };
-              })
+              }),
             ];
           } else {
             // Use simple string content if not including context
@@ -279,15 +294,17 @@ export const useChatStore = create<ChatState>()(
             messages: updatedMessages.map((m) => ({
               // Send current message history
               role: m.isUser ? "user" : "assistant",
-              content: Array.isArray(m.content) ? m.content : [{ type: 'text', text: m.content }],
+              content: Array.isArray(m.content)
+                ? m.content
+                : [{ type: "text", text: m.content }],
               // Include tool calls in message history
-              tool_calls: m.toolCalls?.map(tc => ({
+              tool_calls: m.toolCalls?.map((tc) => ({
                 id: tc.id,
                 type: "function",
                 function: {
                   name: tc.name,
-                  arguments: JSON.stringify(tc.arguments)
-                }
+                  arguments: JSON.stringify(tc.arguments),
+                },
               })),
             })),
             model: model, // Send selected model
@@ -347,30 +364,41 @@ export const useChatStore = create<ChatState>()(
                 },
                 onToolCall: (toolCall) => {
                   console.log("Store: Tool Call received", toolCall);
-                  
+
                   const incomingToolCall = toolCall as ToolCall;
-                  
-                  updateAIMessageInStore(msg => {
+
+                  updateAIMessageInStore((msg) => {
                     const existingToolCalls = msg.toolCalls || [];
                     console.log("Store: Current tool calls", existingToolCalls);
-                    
+
                     // Find existing tool call with same ID
-                    const existingIndex = existingToolCalls.findIndex(tc => tc.id === incomingToolCall.id);
-                    console.log("Store: Existing tool call index", existingIndex);
-                    
+                    const existingIndex = existingToolCalls.findIndex(
+                      (tc) => tc.id === incomingToolCall.id,
+                    );
+                    console.log(
+                      "Store: Existing tool call index",
+                      existingIndex,
+                    );
+
                     if (existingIndex >= 0) {
                       // Update existing tool call
                       const updatedToolCalls = [...existingToolCalls];
                       updatedToolCalls[existingIndex] = incomingToolCall;
-                      console.log("Store: Updated tool calls", updatedToolCalls);
-                      return { 
+                      console.log(
+                        "Store: Updated tool calls",
+                        updatedToolCalls,
+                      );
+                      return {
                         toolCalls: updatedToolCalls,
                       };
                     }
                     // Add new tool call
-                    const newToolCalls = [...existingToolCalls, incomingToolCall];
+                    const newToolCalls = [
+                      ...existingToolCalls,
+                      incomingToolCall,
+                    ];
                     console.log("Store: New tool calls", newToolCalls);
-                    return { 
+                    return {
                       toolCalls: newToolCalls,
                     };
                   });
@@ -426,16 +454,16 @@ export const useChatStore = create<ChatState>()(
                 },
                 onSegmentUpdate: (segments) => {
                   updateAIMessageInStore(() => ({
-                    segments: segments as Message['segments'],
+                    segments: segments as Message["segments"],
                   }));
                 },
                 onCompletion: (data) => {
                   // Finalize segments when stream completes
                   const finalSegments = segmentBuilder.finalize();
                   updateAIMessageInStore(() => ({
-                    segments: finalSegments as Message['segments'],
+                    segments: finalSegments as Message["segments"],
                   }));
-                  
+
                   console.log("Chat Store: Stream completed", data);
                   // Handle completion with usage statistics
                   // data contains: finishReason, usage (promptTokens, completionTokens), isContinued
@@ -585,9 +613,10 @@ export const useChatStore = create<ChatState>()(
           }, 30000); // 30 second timeout
 
           try {
-            const agentBaseUrl = import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
+            const agentBaseUrl =
+              import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
             const apiUrl = `${agentBaseUrl}api/beautify`;
-            
+
             // Use recent messages for context (last 5 messages max)
             const recentMessages = state.messages.slice(-5).map((message) => ({
               role: message.isUser ? "user" : "assistant",
@@ -600,7 +629,7 @@ export const useChatStore = create<ChatState>()(
                 {
                   role: "user",
                   content: `Please improve and beautify the following text while preserving its meaning and intent. Return only the improved text without any additional explanation:\n\n${currentPrompt}`,
-                }
+                },
               ],
               model: state.model,
             };
@@ -634,8 +663,13 @@ export const useChatStore = create<ChatState>()(
               },
             };
 
-            await processChatStream(apiUrl, payload, callbacks, abortController.signal);
-            
+            await processChatStream(
+              apiUrl,
+              payload,
+              callbacks,
+              abortController.signal,
+            );
+
             // Check for errors
             if (streamError) {
               throw new Error(`Beautify stream error: ${streamError}`);
@@ -650,23 +684,28 @@ export const useChatStore = create<ChatState>()(
             return result || currentPrompt;
           } catch (error) {
             console.error("Failed to beautify prompt:", error);
-            
+
             // Return original text on any error
             if (error instanceof Error && error.name === "AbortError") {
               throw new Error("Beautify request timed out");
             }
-            
+
             throw new Error(
-              error instanceof Error 
-                ? `Failed to beautify text: ${error.message}` 
-                : "Failed to beautify text"
+              error instanceof Error
+                ? `Failed to beautify text: ${error.message}`
+                : "Failed to beautify text",
             );
           } finally {
             clearTimeout(timeoutId);
           }
         },
 
-        beautifyPromptStream: async (currentPrompt, onTextDelta, onComplete, onError) => {
+        beautifyPromptStream: async (
+          currentPrompt,
+          onTextDelta,
+          onComplete,
+          onError,
+        ) => {
           const state = get();
           if (!currentPrompt.trim()) {
             onComplete(currentPrompt);
@@ -679,9 +718,10 @@ export const useChatStore = create<ChatState>()(
           }, 30000); // 30 second timeout
 
           try {
-            const agentBaseUrl = import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
+            const agentBaseUrl =
+              import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
             const apiUrl = `${agentBaseUrl}api/beautify`;
-            
+
             // Use recent messages for context (last 5 messages max)
             const recentMessages = state.messages.slice(-5).map((message) => ({
               role: message.isUser ? "user" : "assistant",
@@ -694,7 +734,7 @@ export const useChatStore = create<ChatState>()(
                 {
                   role: "user",
                   content: `Please improve and beautify the following text while preserving its meaning and intent. Return only the improved text without any additional explanation:\n\n${currentPrompt}`,
-                }
+                },
               ],
               model: state.model,
             };
@@ -731,8 +771,13 @@ export const useChatStore = create<ChatState>()(
               },
             };
 
-            await processChatStream(apiUrl, payload, callbacks, abortController.signal);
-            
+            await processChatStream(
+              apiUrl,
+              payload,
+              callbacks,
+              abortController.signal,
+            );
+
             // Check for errors after stream completion
             if (streamError) {
               throw new Error(`Beautify stream error: ${streamError}`);
@@ -741,19 +786,20 @@ export const useChatStore = create<ChatState>()(
             if (abortController.signal.aborted) {
               throw new Error("Beautify request timed out");
             }
-
           } catch (error) {
             console.error("Failed to beautify prompt:", error);
-            
+
             // Handle errors appropriately
             if (error instanceof Error && error.name === "AbortError") {
               onError(new Error("Beautify request timed out"));
             } else {
-              onError(new Error(
-                error instanceof Error 
-                  ? `Failed to beautify text: ${error.message}` 
-                  : "Failed to beautify text"
-              ));
+              onError(
+                new Error(
+                  error instanceof Error
+                    ? `Failed to beautify text: ${error.message}`
+                    : "Failed to beautify text",
+                ),
+              );
             }
           } finally {
             clearTimeout(timeoutId);
