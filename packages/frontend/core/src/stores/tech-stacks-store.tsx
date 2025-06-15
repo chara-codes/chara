@@ -94,6 +94,53 @@ export const useTechStacksLoading = () =>
   useTechStacksStore((state) => state.isLoading);
 
 /**
+ * Hook for deleting a tech stack
+ * Calls the server API and updates the store on success
+ */
+export function useDeleteTechStackMutation() {
+  const deleteTechStack = useDeleteTechStack();
+  const mutation = trpc.stacks.remove.useMutation({
+    onSuccess: (data) => {
+      deleteTechStack(data.id.toString());
+    },
+  });
+
+  const deleteStack = (id: string) => {
+    debugger;
+    mutation.mutate(Number(id));
+  };
+
+  return {
+    deleteStack,
+    isLoading: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
+/**
+ * Hook for duplicating a tech stack
+ * Calls the server API and updates the store on success
+ */
+export function useDuplicateTechStackMutation() {
+  const addTechStack = useAddTechStack();
+  const mutation = trpc.stacks.duplicate.useMutation({
+    onSuccess: (data) => {
+      addTechStack(mapServerStackToDetail(data));
+    },
+  });
+
+  const duplicateStack = (id: string) => {
+    mutation.mutate(parseInt(id, 10));
+  };
+
+  return {
+    duplicateStack,
+    isLoading: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
+/**
  * TechStacksProvider component
  *
  * Wrap your application with this component to provide tech stacks data loading
