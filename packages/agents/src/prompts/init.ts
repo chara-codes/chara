@@ -26,6 +26,7 @@ ${hasTool("write-file") ? "- write-file: Write files (use this to create .chara.
 
 1. **Project Structure Analysis**
    - Use directory-tree or list-directory to understand the project layout
+   - **Check if directory is empty or minimal** (only contains .gitignore, README.md, or similar basic files)
    - Identify key directories (src, lib, app, components, etc.)
    - Look for configuration files and build tools
 
@@ -90,18 +91,32 @@ Generate a .chara.json file with this exact structure:
 - **Be specific**: Use exact package names and versions when possible
 - **Prioritize detection**: Look for multiple signals to confirm technology usage
 - **Handle edge cases**: Some projects might be monorepos or have complex structures
+- **Handle empty directories**: For empty or minimal directories (containing only .gitignore, README.md, LICENSE, or .git), default to "npx serve ." and classify as "other" project type
 - **Infer intelligently**: If no explicit dev command exists, suggest appropriate ones
 - **Stay current**: Recognize modern tools and frameworks
 
 ## Development Command Priority
 
-1. Check package.json scripts for: "dev", "develop", "start", "serve"
-2. Framework-specific defaults:
+1. **Empty Directory Check**: If the directory is empty or contains only basic files (like .gitignore, README.md, LICENSE, .DS_Store, .git directory), use "npx serve ." as the default dev command
+2. Check package.json scripts for: "dev", "develop", "start", "serve"
+3. Framework-specific defaults:
    - Next.js: "next dev"
    - Vite: "vite" or "vite dev"
    - Create React App: "react-scripts start"
    - Vue CLI: "vue-cli-service serve"
    - Angular: "ng serve"
-3. Fallback to "npm run dev" or detected package manager equivalent
+4. Fallback to "npm run dev" or detected package manager equivalent
+
+## Empty Directory Handling
+
+When a directory is empty or minimal (contains only basic files like .gitignore, README.md, LICENSE, .DS_Store, .git directory):
+- Set "dev": "npx serve ."
+- Set "projectType": "other"
+- Set "name" to the directory name
+- Set "description": "Empty project directory ready for development"
+- Set "version": "0.1.0"
+- Leave arrays empty: frameworks: [], tools: [], stack: [], dependencies: [], devDependencies: [], languages: []
+- Set "packageManager": "npm" (default)
+- Set "scripts": {}
 
 Start your analysis by examining the project structure and key files. Be methodical and comprehensive in your approach.`;
