@@ -10,6 +10,18 @@ import {
 } from "./controllers";
 import { resolve } from "node:path";
 
+// Export agents for programmatic use
+export { chatAgent } from "./agents/chat-agent.js";
+export { initAgent } from "./agents/init-agent.js";
+export { beautifyAgent } from "./agents/beautify-agent.js";
+export { gitAgent } from "./agents/git-agent.js";
+
+// Export tools for external use
+export { tools } from "./tools/index.js";
+
+// Export providers for external use
+export { providersRegistry } from "./providers/index.js";
+
 async function startServer() {
   // Initialize MCP before starting server
   logger.info("🚀 Starting server initialization...");
@@ -32,10 +44,6 @@ async function startServer() {
     );
   }
 
-  // Check for HTTPS configuration
-  const certPath = process.env.CERT_PATH;
-  const keyPath = process.env.KEY_PATH;
-
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const serverConfig: any = {
     port: 3031,
@@ -56,23 +64,7 @@ async function startServer() {
     // Required if Bun's version < 1.2.3
     fetch: miscController.fallback,
   };
-
-  // Add HTTPS configuration if certificates are available
-  if (certPath && keyPath) {
-    try {
-      serverConfig.tls = {
-        cert: Bun.file(certPath),
-        key: Bun.file(keyPath),
-      };
-      logger.info("🔒 HTTPS configuration loaded successfully");
-    } catch (error) {
-      logger.error("❌ Failed to load SSL certificates:", error);
-      logger.warning("⚠️ Falling back to HTTP server");
-    }
-  } else {
-    logger.info("🌐 Starting HTTP server (no SSL certificates provided)");
-  }
-
+  logger.info("🌐 Starting HTTP server ");
   const server = Bun.serve(serverConfig);
   const protocol = serverConfig.tls ? "https" : "http";
   logger.server(`Server started on ${protocol}://localhost:${server.port}`);

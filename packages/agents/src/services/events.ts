@@ -15,6 +15,88 @@ export interface AppEvents {
         }
       | any;
   };
+  "runner:started": {
+    processId: string;
+    serverInfo: {
+      name: string;
+      command: string;
+      cwd: string;
+      pid: number;
+      serverUrl?: string;
+      os: string;
+      shell: string;
+      startTime: Date;
+    };
+  };
+  "runner:stopped": {
+    processId: string;
+    exitCode: number;
+    serverInfo: {
+      name: string;
+      command: string;
+      cwd: string;
+      uptime?: number;
+    };
+  };
+  "runner:output": {
+    processId: string;
+    type: "stdout" | "stderr";
+    chunk: string;
+    command: string;
+    cwd: string;
+  };
+  "runner:error": {
+    processId: string;
+    error: string;
+    serverInfo: {
+      name: string;
+      command: string;
+      cwd: string;
+    };
+  };
+  "runner:status": {
+    processId: string;
+    status: "starting" | "active" | "stopped" | "error";
+    serverInfo: {
+      name: string;
+      command: string;
+      cwd: string;
+      pid?: number;
+      uptime?: number;
+    };
+  };
+  "runner:restarted": {
+    processId: string;
+    oldCommand: string;
+    newCommand: string;
+    serverInfo: {
+      name: string;
+      command: string;
+      cwd: string;
+      pid?: number;
+    };
+  };
+  "runner:info-updated": {
+    processId: string;
+    updates: Partial<{
+      name: string;
+      serverUrl: string;
+    }>;
+    serverInfo: {
+      name: string;
+      command: string;
+      cwd: string;
+      pid?: number;
+      serverUrl?: string;
+    };
+  };
+  "runner:get-status": {
+    processId?: string; // If provided, get specific process status; if not, get all
+  };
+  "runner:restart": {
+    processId: string;
+    newCommand?: string; // Optional new command to use for restart
+  };
 }
 
 type EventMap = Record<string, any>;

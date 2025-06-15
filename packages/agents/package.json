@@ -3,9 +3,9 @@
   "module": "src/index.ts",
   "scripts": {
     "dev": "bun --hot src/index.ts",
-    "test": "bun test src/tools/__tests__",
-    "test:watch": "bun test --watch src/tools/__tests__",
-    "test:coverage": "bun test --coverage src/tools/__tests__"
+    "test": "bun test src/tools/__tests__ src/services/__tests__",
+    "test:watch": "bun test --watch src/tools/__tests__ src/services/__tests__",
+    "test:coverage": "bun test --coverage src/tools/__tests__ src/services/__tests__"
   },
   "type": "module",
   "devDependencies": {
