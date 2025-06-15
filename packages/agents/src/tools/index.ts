@@ -16,6 +16,7 @@ import { thinking } from "./thinking";
 import { initGit } from "./init-git";
 import { saveToHistory } from "./save-to-history";
 import { diff } from "./diff";
+import { envInfo } from "./env-info";
 
 export const tools = {
   "read-file": readFile,
@@ -36,4 +37,5 @@ export const tools = {
   "init-git": initGit,
   "save-to-history": saveToHistory,
   diff: diff,
+  "env-info": envInfo,
 };

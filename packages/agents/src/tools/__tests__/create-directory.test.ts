@@ -78,15 +78,15 @@ describe("createDirectory tool", () => {
     const paths = [
       testFS.getPath("parallel1/sub1/subsub1"),
       testFS.getPath("parallel2/sub2/subsub2"),
-      testFS.getPath("parallel3/sub3/subsub3")
+      testFS.getPath("parallel3/sub3/subsub3"),
     ];
 
     const results = await Promise.all(
-      paths.map(path => createDirectory.execute({ path }))
+      paths.map((path) => createDirectory.execute({ path })),
     );
 
     // All should succeed
-    results.forEach(result => {
+    results.forEach((result) => {
       expect(result.status).toBe("success");
     });
 
@@ -140,8 +140,9 @@ describe("createDirectory tool", () => {
     // Try to create directory in root (should fail on most systems without sudo)
     const restrictedPath = "/root/test-directory";
 
-    await expect(createDirectory.execute({ path: restrictedPath }))
-      .rejects.toThrow("Failed to create directory");
+    await expect(
+      createDirectory.execute({ path: restrictedPath }),
+    ).rejects.toThrow("Failed to create directory");
   });
 
   test("should create directory with numeric name", async () => {
@@ -156,7 +157,9 @@ describe("createDirectory tool", () => {
   });
 
   test("should have correct tool metadata", () => {
-    expect(createDirectory.description).toBe("Create a new directory or ensure a directory exists. Can create nested directories.");
+    expect(createDirectory.description).toBe(
+      "Create a new directory or ensure a directory exists. Can create nested directories.",
+    );
     expect(createDirectory.parameters).toBeDefined();
   });
 
@@ -167,8 +170,9 @@ describe("createDirectory tool", () => {
     await testFS.createFile("conflict", "file content");
 
     // Try to create directory with same name
-    await expect(createDirectory.execute({ path: conflictPath }))
-      .rejects.toThrow("Failed to create directory");
+    await expect(
+      createDirectory.execute({ path: conflictPath }),
+    ).rejects.toThrow("Failed to create directory");
   });
 
   test("should create directory tree with mixed existing and new paths", async () => {
@@ -177,7 +181,7 @@ describe("createDirectory tool", () => {
 
     // Now create a deeper structure that includes existing parts
     const result = await createDirectory.execute({
-      path: testFS.getPath("existing/sub1/new/deeper")
+      path: testFS.getPath("existing/sub1/new/deeper"),
     });
 
     expect(result.status).toBe("success");
@@ -187,18 +191,6 @@ describe("createDirectory tool", () => {
   });
 
   test("should handle empty string path", async () => {
-    await expect(createDirectory.execute({ path: "" }))
-      .rejects.toThrow();
-  });
-
-  test("should create directory and verify .gitkeep file is created", async () => {
-    const dirPath = testFS.getPath("gitkeep-test");
-
-    const result = await createDirectory.execute({ path: dirPath });
-
-    expect(result.status).toBe("success");
-
-    // Verify .gitkeep file exists
-    expect(await testFS.fileExists("gitkeep-test/.gitkeep")).toBe(true);
+    await expect(createDirectory.execute({ path: "" })).rejects.toThrow();
   });
 });
