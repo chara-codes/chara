@@ -82,9 +82,9 @@ export const useTechStacksStore = create<TechStacksState>()(
 // Selector hooks for common use cases
 export const useTechStacks = () =>
   useTechStacksStore((state) => state.techStacks);
-export const useAddTechStack = () =>
+export const useAddTechStackStore = () =>
   useTechStacksStore((state) => state.addTechStack);
-export const useUpdateTechStack = () =>
+export const useUpdateTechStackStore = () =>
   useTechStacksStore((state) => state.updateTechStack);
 export const useDeleteTechStack = () =>
   useTechStacksStore((state) => state.deleteTechStack);
@@ -106,7 +106,6 @@ export function useDeleteTechStackMutation() {
   });
 
   const deleteStack = (id: string) => {
-    debugger;
     mutation.mutate(Number(id));
   };
 
@@ -117,12 +116,8 @@ export function useDeleteTechStackMutation() {
   };
 }
 
-/**
- * Hook for duplicating a tech stack
- * Calls the server API and updates the store on success
- */
 export function useDuplicateTechStackMutation() {
-  const addTechStack = useAddTechStack();
+  const addTechStack = useAddTechStackStore();
   const mutation = trpc.stacks.duplicate.useMutation({
     onSuccess: (data) => {
       addTechStack(mapServerStackToDetail(data));
@@ -140,12 +135,6 @@ export function useDuplicateTechStackMutation() {
   };
 }
 
-/**
- * TechStacksProvider component
- *
- * Wrap your application with this component to provide tech stacks data loading
- * via trpc. This is meant to be a replacement for the StacksProvider from StacksContext.
- */
 export function TechStacksProvider({
   children,
 }: {
@@ -157,17 +146,6 @@ export function TechStacksProvider({
   return <>{children}</>;
 }
 
-// LEGACY, for testing purposes
-export interface Technology {
-  name: string;
-  docsUrl?: string;
-  codeUrl?: string;
-}
-
-/**
- * This hook loads tech stacks from the trpc API and updates the Zustand store
- * It handles the mapping from server format to TechStackDetail format, including mocking of missing fields
- */
 export function useTechStacksData() {
   const setTechStacks = useTechStacksStore((state) => state.setTechStacks);
   const setLoading = useTechStacksStore((state) => state.setLoading);
@@ -194,9 +172,112 @@ export function useTechStacksData() {
   }, [serverStacks]);
 }
 
-/**
- * Helper function to map server stack format to TechStackDetail
- */
+export function useCreateTechStack() {
+  const addTechStack = useAddTechStackStore();
+  const utils = trpc.useUtils();
+  const invalidateList = () => utils.stacks.list.invalidate();
+
+  const mutation = trpc.stacks.create.useMutation({
+    onSuccess: (row) => {
+      addTechStack(mapServerStackToDetail(row));
+      // toast({ title: "Stack created", description: row.title });
+      invalidateList();
+    },
+    onError: () => {
+      // toast({ title: "Failed to create stack", description: err.message });
+    },
+  });
+
+  return {
+    createStack: (s: Omit<TechStackDetail, "id">) => {
+      mutation.mutate(detailToCreateInput(s));
+    },
+    isLoading: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
+export function useUpdateTechStack() {
+  const updateTechStack = useUpdateTechStackStore();
+  const utils = trpc.useUtils();
+  const invalidateList = () => utils.stacks.list.invalidate();
+
+  const mutation = trpc.stacks.update.useMutation({
+    onSuccess: (row) => {
+      updateTechStack(mapServerStackToDetail(row));
+      // toast({ title: "Stack updated", description: row.title });
+      invalidateList();
+    },
+    onError: () => {
+      // toast({ title: "Failed to update stack", description: err.message });
+    },
+  });
+
+  return {
+    updateStack: (s: TechStackDetail) =>
+      mutation.mutate(detailToUpdateInput(s)),
+    isLoading: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
+function detailToUpdateInput(s: TechStackDetail): any {
+  return {
+    id: Number(s.id),
+    ...detailToCreateInput(s),
+  };
+}
+
+function categoryToServerEnum(category: string): string {
+  switch (category) {
+    case "Frontend":
+      return "frontend";
+    case "Backend":
+      return "backend";
+    case "Database":
+      return "database";
+    case "Full Stack":
+      return "fullstack";
+    case "API":
+      return "api";
+    case "DevOps":
+      return "devops";
+    case "Mobile":
+      return "mobile";
+    case "Other":
+      return "others";
+    default:
+      return "others";
+  }
+}
+
+function detailToCreateInput(s: Omit<TechStackDetail, "id">): any {
+  return {
+    title: s.name,
+    type: categoryToServerEnum(s.category),
+    shortDescription: s.description ?? null,
+    longDescription: s.longDescription ?? null,
+    icon: s.icon ?? null,
+    isNew: s.isNew ?? true,
+    popularity: s.popularity ?? 0,
+    links:
+      s.documentationLinks?.map((l) => ({
+        title: l.name,
+        url: l.url,
+        description: l.description ?? null,
+      })) ?? [],
+    mcps:
+      s.mcpServers?.map((m) => ({
+        name: m.name,
+        serverConfig: {
+          command: m.configuration.command,
+          args: m.configuration.args,
+          env: m.configuration.env,
+        },
+      })) ?? [],
+  };
+}
+
 function mapServerStackToDetail(serverStack: StackDTO): TechStackDetail {
   const {
     id,

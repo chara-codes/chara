@@ -12,8 +12,7 @@ import {
   LayersIcon,
   PlusIcon,
 } from "../atoms/icons";
-import type { TechStackDetail } from "./tech-stack-detail-view";
-import { useAddTechStack } from "@chara/core";
+import { TechStackDetail, useCreateTechStack } from "@chara/core";
 import {
   InputBase,
   TextAreaBase,
@@ -208,7 +207,7 @@ const AddTechStackView: React.FC = () => {
   const navigateToTechStacks = useNavigateToTechStacks();
 
   // Get add tech stack action
-  const addTechStack = useAddTechStack();
+  const { createStack } = useCreateTechStack();
 
   // Form state
   const [formData, setFormData] = useState<Partial<TechStackDetail>>({
@@ -217,7 +216,7 @@ const AddTechStackView: React.FC = () => {
     category: "Frontend",
     description: "",
     longDescription: "",
-    icon: iconOptions[0].component,
+    icon: "code",
     isNew: false,
     documentationLinks: [],
     mcpServers: [], // MCP = Model Context Protocol
@@ -270,7 +269,10 @@ const AddTechStackView: React.FC = () => {
     setSelectedIconId(iconId);
     const selectedIcon = iconOptions.find((option) => option.id === iconId);
     if (selectedIcon) {
-      setFormData((prev) => ({ ...prev, icon: selectedIcon.component }));
+      setFormData((prev) => ({
+        ...prev,
+        icon: selectedIcon.id as TechStackDetail["icon"],
+      }));
     }
   }, []);
 
@@ -418,7 +420,7 @@ const AddTechStackView: React.FC = () => {
         category: formData.category || "Other",
         description: formData.description || "",
         longDescription: formData.longDescription || "",
-        icon: formData.icon || iconOptions[0].component,
+        icon: (formData.icon as TechStackDetail["icon"]) || iconOptions[0].id,
         isNew: formData.isNew || false,
         documentationLinks: (formData.documentationLinks || []).filter(
           (link) => link.name || link.url,
@@ -427,12 +429,12 @@ const AddTechStackView: React.FC = () => {
       };
 
       // Add tech stack to store
-      addTechStack(techStack);
+      createStack(techStack);
 
       // Navigate back to tech stacks view
       navigateToTechStacks();
     }
-  }, [formData, validateForm, addTechStack, navigateToTechStacks]);
+  }, [formData, validateForm, createStack, navigateToTechStacks]);
 
   return (
     <ThemeProvider theme={theme}>

@@ -215,7 +215,7 @@ const EditTechStackView: React.FC = () => {
   const getTechStackById = useGetTechStackById();
 
   // Get update tech stack action
-  const updateTechStack = useUpdateTechStack();
+  const { updateStack } = useUpdateTechStack();
 
   // Get the tech stack to edit
   const techStack = selectedTechStackId
@@ -455,12 +455,12 @@ const EditTechStackView: React.FC = () => {
       };
 
       // Update tech stack in store
-      updateTechStack(updatedTechStack);
+      updateStack(updatedTechStack);
 
       // Navigate back to tech stacks view
       navigateToTechStacks();
     }
-  }, [formData, validateForm, updateTechStack, navigateToTechStacks]);
+  }, [formData, validateForm, updateStack, navigateToTechStacks]);
 
   // If no tech stack is selected, navigate back
   useEffect(() => {
