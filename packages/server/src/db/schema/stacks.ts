@@ -1,9 +1,6 @@
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { stackIconTypes, stackTypes } from "../../types.ts";
-import { relations } from "drizzle-orm";
-import { links } from "./links";
-import { mcp } from "./mcp";
 
 export const stacks = sqliteTable("stacks", {
   /** Unique identifier for the technology stack */
@@ -31,8 +28,3 @@ export const stacks = sqliteTable("stacks", {
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
 });
-
-export const stacksToOtherRelations = relations(stacks, ({ many }) => ({
-  links: many(links),
-  mcps: many(mcp),
-}));
