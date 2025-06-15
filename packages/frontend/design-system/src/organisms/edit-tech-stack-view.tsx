@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import { ReactElement } from "react";
 import { useState, useCallback, useEffect } from "react";
 import styled, { ThemeProvider } from "styled-components";
 import {
@@ -12,17 +12,14 @@ import {
   LayersIcon,
   PlusIcon,
 } from "../atoms/icons";
-import type { TechStackDetail } from "./tech-stack-detail-view";
 import {
+  TechStackDetail,
   useNavigateBack,
   useNavigateToTechStacks,
   useSelectedTechStackId,
-} from '@chara/core';
+} from "@chara/core";
 
-import {
-  useGetTechStackById,
-  useUpdateTechStack,
-} from '../stores';
+import { useGetTechStackById, useUpdateTechStack } from "@chara/core";
 import {
   InputBase,
   TextAreaBase,
@@ -37,8 +34,8 @@ import {
   CheckboxBase,
   IconSelectorBase,
   IconOptionBase,
-} from '../atoms';
-import { theme } from '../theme';
+} from "../atoms";
+import { theme } from "../theme";
 
 const { colors, typography, spacing, borderRadius, shadows, breakpoints } =
   theme;
@@ -185,13 +182,14 @@ const categories = [
 ];
 
 // Icon options with their components
-const iconOptions = [
-  { id: "code", component: <CodeIcon width={16} height={16} /> },
-  { id: "server", component: <ServerIcon width={16} height={16} /> },
-  { id: "database", component: <DatabaseIcon width={16} height={16} /> },
-  { id: "globe", component: <GlobeIcon width={16} height={16} /> },
-  { id: "layers", component: <LayersIcon width={16} height={16} /> },
-];
+const iconOptions: { id: TechStackDetail["icon"]; component: ReactElement }[] =
+  [
+    { id: "code", component: <CodeIcon width={16} height={16} /> },
+    { id: "server", component: <ServerIcon width={16} height={16} /> },
+    { id: "database", component: <DatabaseIcon width={16} height={16} /> },
+    { id: "globe", component: <GlobeIcon width={16} height={16} /> },
+    { id: "layers", component: <LayersIcon width={16} height={16} /> },
+  ];
 
 // Default empty documentation link
 const emptyDocLink = { name: "", url: "", description: "" };
@@ -231,7 +229,7 @@ const EditTechStackView: React.FC = () => {
     category: "Frontend",
     description: "",
     longDescription: "",
-    icon: iconOptions[0].component,
+    icon: iconOptions[0].id,
     isNew: false,
     documentationLinks: [],
     mcpServers: [],
@@ -303,7 +301,7 @@ const EditTechStackView: React.FC = () => {
     setSelectedIconId(iconId);
     const selectedIcon = iconOptions.find((option) => option.id === iconId);
     if (selectedIcon) {
-      setFormData((prev) => ({ ...prev, icon: selectedIcon.component }));
+      setFormData((prev) => ({ ...prev, icon: selectedIcon.id }));
     }
   }, []);
 
@@ -448,7 +446,7 @@ const EditTechStackView: React.FC = () => {
         category: formData.category || "Other",
         description: formData.description || "",
         longDescription: formData.longDescription || "",
-        icon: formData.icon || iconOptions[0].component,
+        icon: formData.icon || iconOptions[0].id,
         isNew: formData.isNew || false,
         documentationLinks: (formData.documentationLinks || []).filter(
           (link) => link.name || link.url,

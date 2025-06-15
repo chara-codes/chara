@@ -4,19 +4,34 @@ import type React from "react";
 import { useState, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import ViewNavigation from "../molecules/view-navigation";
-import { PlusIcon, EditIcon } from "../atoms";
+import {
+  ButtonBase,
+  PlusIcon,
+  EditIcon,
+  CodeIcon,
+  ServerIcon,
+  DatabaseIcon,
+  LayersIcon,
+  GlobeIcon,
+} from "../atoms";
 import type { Theme } from "../theme";
-import TechStackDetailView, {
-  type TechStackDetail,
-} from "./tech-stack-detail-view";
-import { ButtonBase } from "../atoms";
+import TechStackDetailView from "./tech-stack-detail-view";
 import {
   useNavigateToAddTechStack,
   useNavigateToEditTechStack,
   useNavigateBack,
+  TechStackDetail,
 } from "@chara/core";
-import { useTechStacks } from "../stores";
+import { useTechStacks } from "@chara/core";
 import Tooltip from "../atoms/tooltip";
+
+const iconComponents = {
+  code: CodeIcon,
+  server: ServerIcon,
+  database: DatabaseIcon,
+  layers: LayersIcon,
+  globe: GlobeIcon,
+} as const;
 
 const TechStacksContainer = styled.div`
   display: flex;
@@ -316,6 +331,19 @@ const TechStacksView: React.FC = () => {
     );
   }
 
+  const TechStackIconWrapper: React.FC<{ iconName: string }> = ({
+    iconName,
+  }) => {
+    const IconComponent =
+      iconComponents[iconName as keyof typeof iconComponents];
+
+    return (
+      <TechStackIcon>
+        {IconComponent ? <IconComponent width={20} height={20} /> : null}
+      </TechStackIcon>
+    );
+  };
+
   // Otherwise, show the list view
   return (
     <TechStacksContainer>
@@ -346,7 +374,7 @@ const TechStacksView: React.FC = () => {
                     <EditButton onClick={(e) => handleEditTechStack(e, stack)}>
                       <EditIcon width={14} height={14} />
                     </EditButton>
-                    <TechStackIcon>{stack.icon}</TechStackIcon>
+                    <TechStackIconWrapper iconName={stack.icon} />
                     <TechStackName>{stack.name}</TechStackName>
                     <TechStackDescription>
                       {stack.description}

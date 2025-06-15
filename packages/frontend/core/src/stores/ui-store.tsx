@@ -4,12 +4,7 @@ import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import type React from "react";
 import { createContext, useContext, useRef, type ReactNode } from "react";
-import type { ButtonConfig } from '@chara/core';
-import {
-  PlusIcon,
-  ClipIcon,
-  PointerIcon,
-} from "../atoms";
+import type { ButtonConfig } from '../index.ts';
 
 // Define min and max width constraints
 export const PANEL_WIDTH_CONSTRAINTS = {
@@ -76,14 +71,14 @@ const defaultKeyboardShortcuts: KeyboardShortcut[] = [
 
 // Default input button configuration
 const defaultInputButtonConfig: ButtonConfig[] = [
-  { id: "add-context", icon: PlusIcon, tooltip: "Add context", enabled: true },
+  { id: "add-context", icon: 'plus', tooltip: "Add context", enabled: true },
   {
     id: "select-element",
-    icon: PointerIcon,
+    icon: 'pointer',
     tooltip: "Select element",
     enabled: true,
   },
-  { id: "upload-file", icon: ClipIcon, tooltip: "Upload file", enabled: true },
+  { id: "upload-file", icon: 'clip', tooltip: "Upload file", enabled: true },
 ];
 
 export const useUIStore = create<UIState>()(

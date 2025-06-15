@@ -13,7 +13,7 @@ import {
   PlusIcon,
 } from "../atoms/icons";
 import type { TechStackDetail } from "./tech-stack-detail-view";
-import { useAddTechStack } from "../stores";
+import { useAddTechStack } from "@chara/core";
 import {
   InputBase,
   TextAreaBase,

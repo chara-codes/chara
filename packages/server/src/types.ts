@@ -4,10 +4,22 @@ export const stackTypes = [
   "all",
   "frontend",
   "backend",
+  "database",
+  "fullstack",
+  "api",
+  "devops",
   "mobile",
   "others",
 ] as const;
-export const linkTypes = ["docs", "code"] as const;
 
-export type LinkType = (typeof linkTypes)[number];
 export type StackType = (typeof stackTypes)[number];
+
+export const stackIconTypes = [
+  "code",
+  "globe",
+  "layers",
+  "server",
+  "database",
+] as const;
+
+export type StackIconType = (typeof stackIconTypes)[number];

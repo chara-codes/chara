@@ -2,42 +2,26 @@
 
 import type React from "react";
 import styled from "styled-components";
-import { ArrowLeftIcon, ExternalLinkIcon } from "../atoms/icons";
+import {
+  ArrowLeftIcon,
+  ExternalLinkIcon,
+  CodeIcon,
+  ServerIcon,
+  DatabaseIcon,
+  LayersIcon,
+  GlobeIcon,
+} from "../atoms/icons";
 import Button from "../atoms/button";
-import type { Theme } from '@/theme';
+import type { Theme } from "@/theme";
+import { TechStackDetail } from "@chara/core";
 
-// Extended TechStack interface with additional details
-export interface TechStackDetail {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  longDescription?: string;
-  icon: React.ReactNode;
-  popularity?: number; // 1-10 scale
-  isNew?: boolean;
-  version?: string;
-  releaseDate?: string;
-  documentationLinks?: {
-    name: string;
-    url: string;
-    description?: string;
-  }[];
-  /** Management Control Panel server configurations */
-  mcpServers?: {
-    name: string;
-    configuration: {
-      command: string;
-      args: string[];
-      [key: string]:
-        | string
-        | string[]
-        | number
-        | boolean
-        | Record<string, unknown>;
-    };
-  }[];
-}
+const iconComponents = {
+  code: CodeIcon,
+  server: ServerIcon,
+  database: DatabaseIcon,
+  layers: LayersIcon,
+  globe: GlobeIcon,
+} as const;
 
 const DetailContainer = styled.div`
   display: flex;
@@ -281,7 +265,10 @@ const TechStackDetailView: React.FC<TechStackDetailViewProps> = ({
         </BackButton>
         <HeaderContent>
           <HeaderTitle>
-            {techStack.icon}
+            {(() => {
+              const IconComponent = iconComponents[techStack.icon as keyof typeof iconComponents];
+              return IconComponent ? <IconComponent width={18} height={18} style={{ marginRight: "8px" }} /> : null;
+            })()}
             {techStack.name}
             {techStack.version && (
               <VersionBadge>v{techStack.version}</VersionBadge>
