@@ -21,6 +21,7 @@ class MCPWrapper {
   private sessionId: string | null = null;
   private isInitialized = false;
   private toolsCache: Record<string, any> = {};
+  private initializationPromise: Promise<void> | null = null;
 
   constructor(baseUrl?: string) {
     this.baseUrl =
@@ -29,9 +30,68 @@ class MCPWrapper {
 
   /**
    * Initialize MCP client and fetch all tools
-   * Called once on server startup
+   * Can be called multiple times - will return the same promise
    */
   async initialize(): Promise<void> {
+    if (this.isInitialized) return;
+
+    // If initialization is already in progress, return the existing promise
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    // Start initialization
+    this.initializationPromise = this.doInitialize();
+    return this.initializationPromise;
+  }
+
+  /**
+   * Get tools synchronously (returns empty object if not ready)
+   */
+  getToolsSync(): Record<string, any> {
+    if (!this.isInitialized) {
+      return {};
+    }
+    return this.toolsCache;
+  }
+
+  /**
+   * Get ready AI SDK tools (waits for initialization if needed)
+   */
+  async getTools(): Promise<Record<string, any>> {
+    if (!this.isInitialized && !this.initializationPromise) {
+      // Start initialization if not already started
+      await this.initialize();
+    } else if (this.initializationPromise) {
+      // Wait for ongoing initialization
+      await this.initializationPromise;
+    }
+
+    return this.toolsCache;
+  }
+
+  /**
+   * Check if MCP is ready without waiting
+   */
+  isReady(): boolean {
+    return this.isInitialized;
+  }
+
+  /**
+   * Start initialization in background
+   */
+  initializeInBackground(): void {
+    if (!this.isInitialized && !this.initializationPromise) {
+      this.initialize().catch((error) => {
+        logger.error("Background MCP initialization failed:", error);
+      });
+    }
+  }
+
+  /**
+   * Internal initialization logic
+   */
+  private async doInitialize(): Promise<void> {
     if (this.isInitialized) return;
 
     const maxRetries = 10;
@@ -40,7 +100,7 @@ class MCPWrapper {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         logger.info(
-          `🚀 Initializing MCP client... (attempt ${attempt}/${maxRetries})`,
+          `🚀 Initializing MCP client... (attempt ${attempt}/${maxRetries})`
         );
 
         // Get sessionId
@@ -59,14 +119,14 @@ class MCPWrapper {
 
         this.isInitialized = true;
         logger.info(
-          `✅ MCP client initialized with ${Object.keys(this.toolsCache).length} tools`,
+          `✅ MCP client initialized with ${Object.keys(this.toolsCache).length} tools`
         );
         return; // Success - exit retry loop
       } catch (error) {
         logger.warning(`⚠️ MCP initialization attempt ${attempt} failed:`);
         logger.warning(
           "Error message:",
-          error instanceof Error ? error.message : String(error),
+          error instanceof Error ? error.message : String(error)
         );
 
         if (attempt === maxRetries) {
@@ -74,18 +134,16 @@ class MCPWrapper {
           logger.error("Error details:", error);
           logger.error(
             "Error stack:",
-            error instanceof Error ? error.stack : "No stack",
+            error instanceof Error ? error.stack : "No stack"
           );
 
-          // Use fallback tools
-          logger.info(
-            "🔄 Using fallback tools due to MCP initialization failure",
+          // MCP initialization failed - continue with empty tools
+          logger.warning(
+            "⚠️ MCP initialization failed - will use only local tools"
           );
-          this.toolsCache = this.getFallbackTools();
+          this.toolsCache = {};
           this.isInitialized = true;
-          logger.info(
-            `⚠️ Initialized with ${Object.keys(this.toolsCache).length} fallback tools`,
-          );
+
           return;
         }
 
@@ -94,17 +152,6 @@ class MCPWrapper {
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
     }
-  }
-
-  /**
-   * Get ready AI SDK tools (cached)
-   */
-  getTools(): Record<string, any> {
-    if (!this.isInitialized) {
-      logger.error("MCP not initialized, using fallback tools");
-      return this.getFallbackTools();
-    }
-    return this.toolsCache;
   }
 
   /**
@@ -145,7 +192,7 @@ class MCPWrapper {
 
                 // Search for sessionId in chunks
                 const sessionIdMatch = chunk.match(
-                  /sessionId[=:][\s]*([a-f0-9\-]+)/i,
+                  /sessionId[=:][\s]*([a-f0-9\-]+)/i
                 );
                 if (sessionIdMatch && sessionIdMatch[1]) {
                   this.sessionId = sessionIdMatch[1];
@@ -201,7 +248,7 @@ class MCPWrapper {
               method: "tools/list",
               params: {},
             }),
-          },
+          }
         );
 
         logger.info(`📤 MCP tools request status: ${response.status}`);
@@ -216,7 +263,7 @@ class MCPWrapper {
         logger.info("Using fetch stream for SSE...");
 
         const sseResponse = await fetch(
-          `${this.baseUrl}/sse?sessionId=${this.sessionId}`,
+          `${this.baseUrl}/sse?sessionId=${this.sessionId}`
         );
         if (!sseResponse.body) {
           throw new Error("No SSE response body");
@@ -246,7 +293,7 @@ class MCPWrapper {
               if (message.trim()) {
                 logger.info(
                   "📡 Complete SSE message:",
-                  message.substring(0, 150),
+                  message.substring(0, 150)
                 );
 
                 // Parse SSE format: event: xxx\ndata: yyy
@@ -261,7 +308,7 @@ class MCPWrapper {
                       if (jsonData.result && jsonData.result.tools) {
                         const tools = jsonData.result.tools;
                         logger.info(
-                          `🎯 Got ${tools.length} tools from SSE stream`,
+                          `🎯 Got ${tools.length} tools from SSE stream`
                         );
 
                         clearTimeout(timeout);
@@ -271,7 +318,7 @@ class MCPWrapper {
                       }
                     } catch (parseError) {
                       logger.info(
-                        "Could not parse SSE data as JSON, continuing...",
+                        "Could not parse SSE data as JSON, continuing..."
                       );
                     }
                   }
@@ -314,7 +361,7 @@ class MCPWrapper {
     }
 
     logger.info(
-      `Converted ${Object.keys(aiTools).length} MCP tools for AI SDK`,
+      `Converted ${Object.keys(aiTools).length} MCP tools for AI SDK`
     );
     return aiTools;
   }
@@ -324,7 +371,7 @@ class MCPWrapper {
    */
   private async callMCPTool(
     name: string,
-    arguments_: Record<string, any>,
+    arguments_: Record<string, any>
   ): Promise<any> {
     if (!this.sessionId) {
       throw new Error("No sessionId available for tool call");
@@ -350,7 +397,7 @@ class MCPWrapper {
               arguments: arguments_,
             },
           }),
-        },
+        }
       );
 
       logger.info(`📤 Tool call response status: ${response.status}`);
@@ -383,7 +430,7 @@ class MCPWrapper {
         const responseText = await response.text();
         logger.error(
           `Unexpected tool call status ${response.status}:`,
-          responseText,
+          responseText
         );
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -402,7 +449,7 @@ class MCPWrapper {
    * Convert JSON Schema to Zod schema
    */
   private convertToZodSchema(
-    inputSchema: MCPTool["inputSchema"],
+    inputSchema: MCPTool["inputSchema"]
   ): z.ZodType<any> {
     if (inputSchema.type !== "object") {
       return z.any();
@@ -445,37 +492,6 @@ class MCPWrapper {
   }
 
   /**
-   * Fallback tools if MCP is unavailable
-   */
-  private getFallbackTools(): Record<string, any> {
-    return {
-      weather: tool({
-        description: "Get the weather in a location (fallback)",
-        parameters: z.object({
-          location: z.string().describe("The location to get the weather for"),
-        }),
-        execute: async ({ location }) => ({
-          location,
-          temperature: 72 + Math.floor(Math.random() * 21) - 10,
-          note: "This is a fallback response - real MCP server not available",
-        }),
-      }),
-
-      saveFile: tool({
-        description: "Save a file (fallback)",
-        parameters: z.object({
-          name: z.string().describe("The name of the file"),
-          content: z.string().describe("The content of the file"),
-        }),
-        execute: async ({ name, content }) => {
-          await Bun.write(name, content);
-          return { success: true, name, note: "Fallback tool used" };
-        },
-      }),
-    };
-  }
-
-  /**
    * Clear cache and restart
    */
   reset(): void {
@@ -493,5 +509,3 @@ export const mcpClient = {
   getAISDKTools: () => mcpWrapper.getTools(),
   reset: () => mcpWrapper.reset(),
 };
-
-export const fallbackTools = mcpWrapper["getFallbackTools"]();
