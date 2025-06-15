@@ -1,26 +1,8 @@
 import { streamText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
-import { tools } from "../tools";
+import { initTools } from "../tools/init-tools";
 import { initPrompt } from "../prompts/init.js";
-
-interface ProjectInfo {
-  dev?: string;
-  info: {
-    name?: string;
-    description?: string;
-    version?: string;
-    frameworks?: string[];
-    tools?: string[];
-    stack?: string[];
-    packageManager?: string;
-    scripts?: Record<string, string>;
-    dependencies?: string[];
-    devDependencies?: string[];
-    languages?: string[];
-    projectType?: string;
-  };
-}
 
 export const initAgent = async (
   {
@@ -75,11 +57,11 @@ Start by analyzing the project directory structure, then examine key files like 
     ...options,
     system: initPrompt({
       workingDir: cwd,
-      hasTools: !!Object.keys(tools).length,
-      hasTool: (name: string) => Object.keys(tools).includes(name),
+      hasTools: !!Object.keys(initTools).length,
+      hasTool: (name: string) => Object.keys(initTools).includes(name),
     }),
     tools: {
-      ...tools,
+      ...initTools,
     },
     model: aiModel,
     toolCallStreaming: true,

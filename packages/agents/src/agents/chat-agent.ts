@@ -2,7 +2,7 @@ import { streamText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
 import { mcpWrapper } from "../mcp/mcp-client";
-import { tools } from "../tools";
+import { chatTools } from "../tools/chat-tools";
 import { chatPrompt } from "../prompts/chat";
 
 export const chatAgent = async (
@@ -21,17 +21,17 @@ export const chatAgent = async (
   logger.info(providerName, modelName);
 
   // Get ready tools from MCP wrapper (already initialized)
-  logger.info(`Using ${Object.keys(tools).length} tools for chat`);
+  logger.info(`Using ${Object.keys(chatTools).length} tools for chat`);
 
   return streamText({
     ...options,
     system: chatPrompt({
-      hasTools: !!Object.keys(tools).length,
-      hasTool: (name) => Object.keys(tools).includes(name),
+      hasTools: !!Object.keys(chatTools).length,
+      hasTool: (name) => Object.keys(chatTools).includes(name),
     }),
     tools: {
       // ...mcpWrapper.getTools(),
-      ...tools,
+      ...chatTools,
     },
     model: aiModel,
     toolCallStreaming: true,
