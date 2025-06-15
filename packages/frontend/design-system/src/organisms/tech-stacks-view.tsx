@@ -387,8 +387,8 @@ const TechStacksView: React.FC = () => {
           ))
         ) : (
           <NoResultsMessage>
-            No tech stacks found for &quot;{searchQuery}&quot;. Try a different
-            search term.
+            No tech stacks found. Try a different search term or create a new
+            tech stack.
           </NoResultsMessage>
         )}
       </TechStacksContent>

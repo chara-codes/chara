@@ -12,7 +12,7 @@ export const stacks = sqliteTable("stacks", {
   /** Short description of the technology stack */
   shortDescription: text("shortDescription"),
   /** Detailed description of the technology stack and its components */
-  description: text("description"),
+  longDescription: text("long_description"),
   /** Tech stack icon */
   icon: text("icon", { enum: stackIconTypes }).notNull().default("code"),
   /** Indicates if the stack is new */

@@ -8,7 +8,7 @@ import {
   updateStackSchema,
   toStackDTO,
   type StackDTO,
-} from "../dto/stack";
+} from "../dto";
 
 export class StackNotFoundError extends Error {
   constructor() {
@@ -57,18 +57,15 @@ export async function create(
         title: input.title,
         type: input.type,
         shortDescription: input.shortDescription,
-        description: input.description,
+        longDescription: input.longDescription,
         icon: input.icon,
         isNew: input.isNew ?? true,
         popularity: input.popularity ?? 0,
       })
       .returning();
 
-    if (input.technologies.length) {
-      await tx
-        .insert(links)
-        .values(techsToLinks(input.technologies, stack.id))
-        .run();
+    if (input.links.length) {
+      await tx.insert(links).values(techsToLinks(input.links, stack.id)).run();
     }
 
     if (input.mcps.length) {
@@ -90,7 +87,7 @@ export async function update(
       .set({
         title: input.title,
         shortDescription: input.shortDescription,
-        description: input.description,
+        longDescription: input.longDescription,
         type: input.type,
         icon: input.icon,
         isNew: input.isNew,
@@ -101,11 +98,8 @@ export async function update(
       .returning();
 
     await tx.delete(links).where(eq(links.stackId, input.id));
-    if (input.technologies.length) {
-      await tx
-        .insert(links)
-        .values(techsToLinks(input.technologies, input.id))
-        .run();
+    if (input.links.length) {
+      await tx.insert(links).values(techsToLinks(input.links, input.id)).run();
     }
 
     await tx.delete(mcp).where(eq(mcp.stackId, input.id));
@@ -147,7 +141,7 @@ export async function duplicate(id: number): Promise<StackDTO> {
         title,
         type: src.type,
         shortDescription: src.shortDescription,
-        description: src.description,
+        longDescription: src.longDescription,
         icon: src.icon,
         isNew: src.isNew,
         popularity: src.popularity,
@@ -155,11 +149,8 @@ export async function duplicate(id: number): Promise<StackDTO> {
       .returning();
 
     // Clone links
-    if (src.technologies.length) {
-      await tx
-        .insert(links)
-        .values(techsToLinks(src.technologies, clone.id))
-        .run();
+    if (src.links.length) {
+      await tx.insert(links).values(techsToLinks(src.links, clone.id)).run();
     }
 
     // Clone mcps

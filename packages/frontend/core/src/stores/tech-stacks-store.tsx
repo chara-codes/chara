@@ -3,9 +3,9 @@
 import { TechStackDetail } from "../types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { type ReactNode, useEffect } from "react";
-import { StackType } from "@chara/server";
+import { useEffect } from "react";
 import { trpc } from "../services";
+import type { StackDTO } from "@chara/server";
 
 // Define the tech stacks state interface
 interface TechStacksState {
@@ -117,29 +117,6 @@ export interface Technology {
   codeUrl?: string;
 }
 
-export interface TechStack {
-  id: string;
-  name: string;
-  type: StackType;
-  description: string;
-  technologies: Technology[];
-  icon?: ReactNode;
-}
-
-export const serverToClient = (row: {
-  id: number;
-  title: string;
-  description: string | null;
-  technologies: Technology[];
-  type: StackType;
-}): TechStack => ({
-  id: String(row.id),
-  name: row.title,
-  description: row.description ?? "",
-  type: row.type,
-  technologies: row.technologies,
-});
-
 /**
  * This hook loads tech stacks from the trpc API and updates the Zustand store
  * It handles the mapping from server format to TechStackDetail format, including mocking of missing fields
@@ -151,7 +128,7 @@ export function useTechStacksData() {
   const { data: serverStacks = [], isFetching } = trpc.stacks.list.useQuery(
     undefined,
     {
-      select: (rows) => rows.map(serverToClient),
+      select: (rows) => rows,
       initialData: [],
     },
   );
@@ -173,47 +150,42 @@ export function useTechStacksData() {
 /**
  * Helper function to map server stack format to TechStackDetail
  */
-function mapServerStackToDetail(serverStack: any): TechStackDetail {
-  // Extract basic fields that exist in both formats
-  const { id, name, description } = serverStack;
-
-  // Map type to category (field name change)
-  const category = serverStack.type || "Other";
-
-  // Create TechStackDetail with required fields and mock the missing ones
-  return {
+function mapServerStackToDetail(serverStack: StackDTO): TechStackDetail {
+  const {
     id,
-    name,
-    category,
-    description,
-    // Mock additional fields required by TechStackDetail
-    icon: getIconForCategory(category),
-    popularity: Math.floor(Math.random() * 10) + 1, // Random popularity 1-10
-    version: "1.0.0", // Default version
-    // Add other optional fields as needed
-    documentationLinks: [],
-    mcpServers: [],
-  };
-}
+    title,
+    type,
+    shortDescription,
+    longDescription,
+    icon,
+    isNew,
+    popularity,
+    links,
+    mcps,
+  } = serverStack;
 
-/**
- * Helper function to choose an appropriate icon based on category
- */
-function getIconForCategory(
-  category: string,
-): "code" | "server" | "database" | "layers" | "globe" {
-  switch (category.toLowerCase()) {
-    case "frontend":
-      return "code";
-    case "backend":
-      return "server";
-    case "database":
-      return "database";
-    case "full stack":
-      return "layers";
-    case "api":
-      return "globe";
-    default:
-      return "code";
-  }
+  return {
+    id: id.toString(),
+    name: title,
+    category: type,
+    description: shortDescription ?? "",
+    longDescription: longDescription ?? undefined,
+    icon,
+    isNew: isNew ?? false,
+    popularity: popularity ?? 0,
+    documentationLinks: links.map((link: any) => ({
+      name: link.title,
+      url: link.url,
+      description: link.description ?? undefined,
+    })),
+    mcpServers:
+      mcps?.map((mcp: any) => ({
+        name: mcp.name,
+        configuration: {
+          command: mcp.serverConfig.command,
+          args: mcp.serverConfig.args ?? [],
+          env: mcp.serverConfig.env ?? {},
+        },
+      })) ?? [],
+  };
 }
