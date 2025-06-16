@@ -1,4 +1,5 @@
 export * from "./command-terminal";
+export * from "./confirm-dialog";
 export * from "./context-item";
 export * from "./context-tooltip";
 export * from "./conversation-suggestions";
@@ -6,10 +7,10 @@ export * from "./dropdown-menu";
 export * from "./file-changes-list";
 export * from "./file-diff";
 export * from "./file-input";
-export * from "./tools";
 export * from "./footer";
 export * from "./header";
 export * from "./input-area";
 export * from "./message-bubble";
 export * from "./preview-toolbar";
+export * from "./tools";
 export * from "./view-navigation";

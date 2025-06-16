@@ -7,12 +7,8 @@ import { mcpsToStack, type McpInput } from "../utils/mcpUtils";
 // ——— Input validation schemas ———
 export const linkSchema = z.object({
   url: z.string().url().min(1),
-  type: z.string().optional(),
-});
-
-export const techSchema = z.object({
-  name: z.string().min(1),
-  links: z.array(linkSchema).default([]),
+  title: z.string().optional(),
+  description: z.string().optional(),
 });
 
 export const mcpSchema = z.object({
@@ -27,12 +23,12 @@ export const mcpSchema = z.object({
 export const createStackSchema = z.object({
   title: z.string().min(1),
   shortDescription: z.string().optional(),
-  description: z.string().optional(),
+  longDescription: z.string().optional(),
   type: z.enum(stackTypes).default("others"),
   icon: z.enum(stackIconTypes).default("code"),
   isNew: z.boolean().default(true),
   popularity: z.number().min(0).max(10).default(0),
-  technologies: z.array(techSchema).default([]),
+  links: z.array(linkSchema).default([]),
   mcps: z.array(mcpSchema).default([]),
 });
 
@@ -51,7 +47,7 @@ export type StackDTO = Omit<StackRow, "type"> & {
   type: (typeof stackTypes)[number];
   isNew: boolean;
   popularity: number;
-  technologies: TechDTO[];
+  links: TechDTO[];
   mcps: McpDTO[];
 };
 
@@ -66,13 +62,13 @@ export function toStackDTO(
     title: row.title,
     type: row.type,
     shortDescription: row.shortDescription,
-    description: row.description,
+    longDescription: row.longDescription,
     icon: row.icon,
     isNew: row.isNew,
     popularity: row.popularity,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-    technologies: linksToTechs(row.links ?? []),
+    links: linksToTechs(row.links ?? []),
     mcps: mcpsToStack(row.mcps ?? []),
   };
 }

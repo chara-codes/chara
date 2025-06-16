@@ -41,7 +41,7 @@ export const mcp = sqliteTable("mcp", {
   /** Foreign key reference to the stack this MCP belongs to */
   stackId: int()
     .notNull()
-    .references(() => stacks.id),
+    .references(() => stacks.id, { onDelete: "cascade" }),
 });
 export const stackMcpRelations = relations(stacks, ({ many }) => ({
   mcps: many(mcp),

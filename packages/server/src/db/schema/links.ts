@@ -17,10 +17,10 @@ export const links = sqliteTable("links", {
   id: integer("id").primaryKey({
     autoIncrement: true,
   }),
-  /** Display title for the linked content */
+  /** Display title for the link */
   title: text("title").notNull(),
-  /** Display title for the linked content */
-  description: text("title"),
+  /** Display description for the link */
+  description: text("description"),
   /** The complete URL pointing to the linked content */
   url: text("url").notNull(),
   /** Timestamp when this link was created */

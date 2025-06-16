@@ -13,6 +13,7 @@ import {
   DatabaseIcon,
   LayersIcon,
   GlobeIcon,
+  TrashIcon,
 } from "../atoms";
 import type { Theme } from "../theme";
 import TechStackDetailView from "./tech-stack-detail-view";
@@ -21,9 +22,13 @@ import {
   useNavigateToEditTechStack,
   useNavigateBack,
   TechStackDetail,
+  useDeleteTechStackMutation,
+  useDuplicateTechStackMutation,
 } from "@chara/core";
 import { useTechStacks } from "@chara/core";
 import Tooltip from "../atoms/tooltip";
+import { CopyIcon } from "lucide-react";
+import { ConfirmDialog } from "../molecules";
 
 const iconComponents = {
   code: CodeIcon,
@@ -184,18 +189,24 @@ const NoResultsMessage = styled.div`
   font-size: 14px;
 `;
 
-const EditButton = styled.button`
+const ButtonsWrapper = styled.div`
+  display: flex;
   position: absolute;
   top: 8px;
   right: 8px;
+  gap: 8px;
+  z-index: 10;
+`;
+
+const CardActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 24px;
   height: 24px;
   border-radius: 4px;
   background-color: rgba(255, 255, 255, 0.8);
   border: 1px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: #6b7280;
   cursor: pointer;
   opacity: 0;
@@ -231,6 +242,9 @@ const TechStacksView: React.FC = () => {
   const navigateToEditTechStack = useNavigateToEditTechStack();
   const navigateBack = useNavigateBack();
 
+  const { deleteStack } = useDeleteTechStackMutation();
+  const { duplicateStack } = useDuplicateTechStackMutation();
+
   // Handle search query change
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
@@ -259,6 +273,34 @@ const TechStacksView: React.FC = () => {
     },
     [navigateToEditTechStack],
   );
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [stackToDelete, setStackToDelete] = useState<TechStackDetail | null>(
+    null,
+  );
+
+  const handleDeleteTechStack = (
+    e: React.MouseEvent,
+    stack: TechStackDetail,
+  ) => {
+    e.stopPropagation();
+    setStackToDelete(stack);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (stackToDelete) {
+      deleteStack(stackToDelete.id);
+    }
+  };
+
+  const handleDuplicateTechStack = (
+    e: React.MouseEvent,
+    stack: TechStackDetail,
+  ) => {
+    e.stopPropagation();
+    duplicateStack(stack.id);
+  };
 
   // Filter tech stacks based on search query
   const filteredTechStacks = useMemo(() => {
@@ -371,9 +413,29 @@ const TechStacksView: React.FC = () => {
                     $isNew={stack.isNew}
                     onClick={() => handleSelectTechStack(stack)}
                   >
-                    <EditButton onClick={(e) => handleEditTechStack(e, stack)}>
-                      <EditIcon width={14} height={14} />
-                    </EditButton>
+                    <ButtonsWrapper>
+                      <Tooltip text="Duplicate Tech Stack" position="bottom">
+                        <CardActionButton
+                          onClick={(e) => handleDuplicateTechStack(e, stack)}
+                        >
+                          <CopyIcon width={14} height={14} />
+                        </CardActionButton>
+                      </Tooltip>
+                      <Tooltip text="Remove Tech Stack" position="bottom">
+                        <CardActionButton
+                          onClick={(e) => handleDeleteTechStack(e, stack)}
+                        >
+                          <TrashIcon width={14} height={14} />
+                        </CardActionButton>
+                      </Tooltip>
+                      <Tooltip text="Edit Tech Stack" position="bottom">
+                        <CardActionButton
+                          onClick={(e) => handleEditTechStack(e, stack)}
+                        >
+                          <EditIcon width={14} height={14} />
+                        </CardActionButton>
+                      </Tooltip>
+                    </ButtonsWrapper>
                     <TechStackIconWrapper iconName={stack.icon} />
                     <TechStackName>{stack.name}</TechStackName>
                     <TechStackDescription>
@@ -387,10 +449,20 @@ const TechStacksView: React.FC = () => {
           ))
         ) : (
           <NoResultsMessage>
-            No tech stacks found for &quot;{searchQuery}&quot;. Try a different
-            search term.
+            No tech stacks found. Try a different search term or create a new
+            tech stack.
           </NoResultsMessage>
         )}
+
+        <ConfirmDialog
+          title="Delete Tech Stack"
+          description={`Are you sure you want to delete "${stackToDelete?.name}"? This action cannot be undone.`}
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={confirmDelete}
+          confirmText="Delete"
+          cancelText="Cancel"
+        />
       </TechStacksContent>
     </TechStacksContainer>
   );

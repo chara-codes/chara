@@ -3,9 +3,9 @@
 import { TechStackDetail } from "../types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { type ReactNode, useEffect } from "react";
-import { StackType } from "@chara/server";
+import { useEffect } from "react";
 import { trpc } from "../services";
+import type { StackDTO } from "@chara/server";
 
 // Define the tech stacks state interface
 interface TechStacksState {
@@ -82,9 +82,9 @@ export const useTechStacksStore = create<TechStacksState>()(
 // Selector hooks for common use cases
 export const useTechStacks = () =>
   useTechStacksStore((state) => state.techStacks);
-export const useAddTechStack = () =>
+export const useAddTechStackStore = () =>
   useTechStacksStore((state) => state.addTechStack);
-export const useUpdateTechStack = () =>
+export const useUpdateTechStackStore = () =>
   useTechStacksStore((state) => state.updateTechStack);
 export const useDeleteTechStack = () =>
   useTechStacksStore((state) => state.deleteTechStack);
@@ -94,11 +94,47 @@ export const useTechStacksLoading = () =>
   useTechStacksStore((state) => state.isLoading);
 
 /**
- * TechStacksProvider component
- *
- * Wrap your application with this component to provide tech stacks data loading
- * via trpc. This is meant to be a replacement for the StacksProvider from StacksContext.
+ * Hook for deleting a tech stack
+ * Calls the server API and updates the store on success
  */
+export function useDeleteTechStackMutation() {
+  const deleteTechStack = useDeleteTechStack();
+  const mutation = trpc.stacks.remove.useMutation({
+    onSuccess: (data) => {
+      deleteTechStack(data.id.toString());
+    },
+  });
+
+  const deleteStack = (id: string) => {
+    mutation.mutate(Number(id));
+  };
+
+  return {
+    deleteStack,
+    isLoading: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
+export function useDuplicateTechStackMutation() {
+  const addTechStack = useAddTechStackStore();
+  const mutation = trpc.stacks.duplicate.useMutation({
+    onSuccess: (data) => {
+      addTechStack(mapServerStackToDetail(data));
+    },
+  });
+
+  const duplicateStack = (id: string) => {
+    mutation.mutate(parseInt(id, 10));
+  };
+
+  return {
+    duplicateStack,
+    isLoading: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
 export function TechStacksProvider({
   children,
 }: {
@@ -110,40 +146,6 @@ export function TechStacksProvider({
   return <>{children}</>;
 }
 
-// LEGACY, for testing purposes
-export interface Technology {
-  name: string;
-  docsUrl?: string;
-  codeUrl?: string;
-}
-
-export interface TechStack {
-  id: string;
-  name: string;
-  type: StackType;
-  description: string;
-  technologies: Technology[];
-  icon?: ReactNode;
-}
-
-export const serverToClient = (row: {
-  id: number;
-  title: string;
-  description: string | null;
-  technologies: Technology[];
-  type: StackType;
-}): TechStack => ({
-  id: String(row.id),
-  name: row.title,
-  description: row.description ?? "",
-  type: row.type,
-  technologies: row.technologies,
-});
-
-/**
- * This hook loads tech stacks from the trpc API and updates the Zustand store
- * It handles the mapping from server format to TechStackDetail format, including mocking of missing fields
- */
 export function useTechStacksData() {
   const setTechStacks = useTechStacksStore((state) => state.setTechStacks);
   const setLoading = useTechStacksStore((state) => state.setLoading);
@@ -151,7 +153,7 @@ export function useTechStacksData() {
   const { data: serverStacks = [], isFetching } = trpc.stacks.list.useQuery(
     undefined,
     {
-      select: (rows) => rows.map(serverToClient),
+      select: (rows) => rows,
       initialData: [],
     },
   );
@@ -170,50 +172,148 @@ export function useTechStacksData() {
   }, [serverStacks]);
 }
 
-/**
- * Helper function to map server stack format to TechStackDetail
- */
-function mapServerStackToDetail(serverStack: any): TechStackDetail {
-  // Extract basic fields that exist in both formats
-  const { id, name, description } = serverStack;
+export function useCreateTechStack() {
+  const addTechStack = useAddTechStackStore();
+  const utils = trpc.useUtils();
+  const invalidateList = () => utils.stacks.list.invalidate();
 
-  // Map type to category (field name change)
-  const category = serverStack.type || "Other";
+  const mutation = trpc.stacks.create.useMutation({
+    onSuccess: (row) => {
+      addTechStack(mapServerStackToDetail(row));
+      // toast({ title: "Stack created", description: row.title });
+      invalidateList();
+    },
+    onError: () => {
+      // toast({ title: "Failed to create stack", description: err.message });
+    },
+  });
 
-  // Create TechStackDetail with required fields and mock the missing ones
   return {
-    id,
-    name,
-    category,
-    description,
-    // Mock additional fields required by TechStackDetail
-    icon: getIconForCategory(category),
-    popularity: Math.floor(Math.random() * 10) + 1, // Random popularity 1-10
-    version: "1.0.0", // Default version
-    // Add other optional fields as needed
-    documentationLinks: [],
-    mcpServers: [],
+    createStack: (s: Omit<TechStackDetail, "id">) => {
+      mutation.mutate(detailToCreateInput(s));
+    },
+    isLoading: mutation.isPending,
+    error: mutation.error,
   };
 }
 
-/**
- * Helper function to choose an appropriate icon based on category
- */
-function getIconForCategory(
-  category: string,
-): "code" | "server" | "database" | "layers" | "globe" {
-  switch (category.toLowerCase()) {
-    case "frontend":
-      return "code";
-    case "backend":
-      return "server";
-    case "database":
+export function useUpdateTechStack() {
+  const updateTechStack = useUpdateTechStackStore();
+  const utils = trpc.useUtils();
+  const invalidateList = () => utils.stacks.list.invalidate();
+
+  const mutation = trpc.stacks.update.useMutation({
+    onSuccess: (row) => {
+      updateTechStack(mapServerStackToDetail(row));
+      // toast({ title: "Stack updated", description: row.title });
+      invalidateList();
+    },
+    onError: () => {
+      // toast({ title: "Failed to update stack", description: err.message });
+    },
+  });
+
+  return {
+    updateStack: (s: TechStackDetail) =>
+      mutation.mutate(detailToUpdateInput(s)),
+    isLoading: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
+function detailToUpdateInput(s: TechStackDetail): any {
+  return {
+    id: Number(s.id),
+    ...detailToCreateInput(s),
+  };
+}
+
+function categoryToServerEnum(category: string): string {
+  switch (category) {
+    case "Frontend":
+      return "frontend";
+    case "Backend":
+      return "backend";
+    case "Database":
       return "database";
-    case "full stack":
-      return "layers";
-    case "api":
-      return "globe";
+    case "Full Stack":
+      return "fullstack";
+    case "API":
+      return "api";
+    case "DevOps":
+      return "devops";
+    case "Mobile":
+      return "mobile";
+    case "Other":
+      return "others";
     default:
-      return "code";
+      return "others";
   }
+}
+
+function detailToCreateInput(s: Omit<TechStackDetail, "id">): any {
+  return {
+    title: s.name,
+    type: categoryToServerEnum(s.category),
+    shortDescription: s.description ?? null,
+    longDescription: s.longDescription ?? null,
+    icon: s.icon ?? null,
+    isNew: s.isNew ?? true,
+    popularity: s.popularity ?? 0,
+    links:
+      s.documentationLinks?.map((l) => ({
+        title: l.name,
+        url: l.url,
+        description: l.description ?? null,
+      })) ?? [],
+    mcps:
+      s.mcpServers?.map((m) => ({
+        name: m.name,
+        serverConfig: {
+          command: m.configuration.command,
+          args: m.configuration.args,
+          env: m.configuration.env,
+        },
+      })) ?? [],
+  };
+}
+
+function mapServerStackToDetail(serverStack: StackDTO): TechStackDetail {
+  const {
+    id,
+    title,
+    type,
+    shortDescription,
+    longDescription,
+    icon,
+    isNew,
+    popularity,
+    links,
+    mcps,
+  } = serverStack;
+
+  return {
+    id: id.toString(),
+    name: title,
+    category: type,
+    description: shortDescription ?? "",
+    longDescription: longDescription ?? undefined,
+    icon,
+    isNew: isNew ?? false,
+    popularity: popularity ?? 0,
+    documentationLinks: links.map((link: any) => ({
+      name: link.title,
+      url: link.url,
+      description: link.description ?? undefined,
+    })),
+    mcpServers:
+      mcps?.map((mcp: any) => ({
+        name: mcp.name,
+        configuration: {
+          command: mcp.serverConfig.command,
+          args: mcp.serverConfig.args ?? [],
+          env: mcp.serverConfig.env ?? {},
+        },
+      })) ?? [],
+  };
 }

@@ -1,5 +1,6 @@
 import { logger } from "@chara/logger";
 import { mcpWrapper } from "./mcp/mcp-client";
+import { localTools } from "./tools/local-tools";
 import {
   statusController,
   miscController,
@@ -23,26 +24,35 @@ export { tools } from "./tools/index.js";
 export { providersRegistry } from "./providers/index.js";
 
 async function startServer() {
-  // Initialize MCP before starting server
+  // Start MCP initialization in the background (don't wait)
   logger.info("🚀 Starting server initialization...");
-  logger.info("🔧 Initializing MCP client...");
+  logger.info("🔧 Starting MCP client initialization in background...");
 
-  await mcpWrapper.initialize();
+  // Initialize MCP in background - don't await it
+  mcpWrapper.initializeInBackground();
 
-  // Verify tools are ready
-  const tools = mcpWrapper.getTools();
+  // Show initial tool status
+  const localCount = Object.keys(localTools).length;
   logger.info(
-    `✅ MCP initialization complete. Available tools: ${Object.keys(tools).length}`,
+    `📦 Starting with ${localCount} local tools (MCP loading in background)`
   );
 
-  if (Object.keys(tools).length === 2) {
-    logger.warning("⚠️ Only 2 tools found - using fallback tools!");
-  } else {
-    logger.info(
-      "🎯 MCP tools loaded successfully:",
-      Object.keys(tools).slice(0, 3),
-    );
-  }
+  // Log when MCP is fully ready (don't wait for it)
+  mcpWrapper
+    .initialize()
+    .then(() => {
+      const mcpTools = mcpWrapper.getToolsSync();
+      const mcpCount = Object.keys(mcpTools).length;
+      logger.info(
+        `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${localCount + mcpCount} total`
+      );
+    })
+    .catch((error) => {
+      logger.warning(
+        "⚠️ MCP initialization failed, continuing with local tools only:",
+        error.message
+      );
+    });
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const serverConfig: any = {
