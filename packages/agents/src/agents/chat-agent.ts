@@ -2,8 +2,7 @@ import { streamText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
 import { mcpWrapper } from "../mcp/mcp-client";
-
-import { localTools } from "../tools/local-tools";
+import { chatTools } from "../tools";
 
 export const chatAgent = async (
   {
@@ -13,7 +12,7 @@ export const chatAgent = async (
     model: string;
     messages: CoreMessage[];
   },
-  options: { headers?: Record<string, string> } = {}
+  options: { headers?: Record<string, string> } = {},
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");
@@ -22,9 +21,9 @@ export const chatAgent = async (
 
   // Always start with local tools
   const mcpTools = mcpWrapper.getToolsSync();
-  const allTools = { ...localTools, ...mcpTools };
+  const allTools = { ...chatTools, ...mcpTools };
 
-  const localCount = Object.keys(localTools).length;
+  const localCount = Object.keys(chatTools).length;
   const mcpCount = Object.keys(mcpTools).length;
   const total = Object.keys(allTools).length;
 

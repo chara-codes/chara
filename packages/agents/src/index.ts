@@ -10,13 +10,14 @@ import {
   chatController,
 } from "./controllers";
 import { resolve } from "node:path";
+import { initAgent } from "./agents";
+import { mkdir } from "node:fs/promises";
 
 // Export agents for programmatic use
 export { chatAgent } from "./agents/chat-agent";
 export { initAgent } from "./agents/init-agent";
 export { beautifyAgent } from "./agents/beautify-agent";
 export { gitAgent } from "./agents/git-agent";
-export { toolsAgent, type ToolSelectionOptions } from "./agents/tools-agent";
 
 // Export tools for external use
 export { tools } from "./tools/";
@@ -55,6 +56,12 @@ async function startServer() {
       );
     });
 
+  // const charaConfig = Bun.file(".chara.json");
+  // if (!charaConfig.exists()) {
+  //   const init = initAgent({
+  //     model: "openai:::gpt-4.1",
+  //   });
+  // }
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const serverConfig: any = {
     port: 3031,
@@ -85,6 +92,7 @@ async function startServer() {
 const currentDir = process.cwd();
 const parentDir = resolve(__dirname, "..");
 if (currentDir === parentDir) {
+  mkdir("tmp");
   const tmpDir = resolve(parentDir, "tmp");
   process.chdir(tmpDir);
   logger.debug(`📁 Changed working directory to: ${tmpDir}`);
