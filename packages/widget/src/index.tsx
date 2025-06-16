@@ -5,8 +5,8 @@ import {
   useUIStore,
   TrpcProvider,
   TechStacksProvider,
+  Toaster,
 } from "@chara/core";
-import type React from "react";
 
 // Configuration interface
 export interface CharaWidgetConfig {
@@ -36,6 +36,7 @@ export const CharaWidgetPanel = (config: CharaWidgetConfig) => {
                 defaultOpen={config?.defaultOpen}
                 position={config?.position || "right"}
               />
+              <Toaster />
             </ThemeProvider>
           </UIStoreProvider>
         </TechStacksProvider>
