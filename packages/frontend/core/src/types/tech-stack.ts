@@ -11,12 +11,14 @@ export interface TechStackDetail {
   version?: string;
   releaseDate?: string;
   documentationLinks?: {
+    id: string
     name: string;
     url: string;
     description?: string;
   }[];
   /** Management Control Panel server configurations */
   mcpServers?: {
+    id: string;
     name: string;
     configuration: {
       command: string;

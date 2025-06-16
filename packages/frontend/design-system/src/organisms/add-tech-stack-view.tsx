@@ -294,7 +294,7 @@ const AddTechStackView: React.FC = () => {
       ...prev,
       documentationLinks: [
         ...(prev.documentationLinks || []),
-        { ...emptyDocLink },
+        { ...emptyDocLink, id: crypto.randomUUID() },
       ],
     }));
   }, []);
@@ -356,7 +356,10 @@ const AddTechStackView: React.FC = () => {
   const handleAddMcpServer = useCallback(() => {
     setFormData((prev) => ({
       ...prev,
-      mcpServers: [...(prev.mcpServers || []), { ...emptyMcpServer }],
+      mcpServers: [
+        ...(prev.mcpServers || []),
+        { ...emptyMcpServer, id: crypto.randomUUID() },
+      ],
     }));
   }, []);
 
@@ -548,7 +551,7 @@ const AddTechStackView: React.FC = () => {
             <SectionTitleBase>Documentation Links</SectionTitleBase>
 
             {(formData.documentationLinks || []).map((link, index) => (
-              <LinkItem key={`${link.name}${index}`}>
+              <LinkItem key={link.id}>
                 <LinkFields>
                   <FormGroupBase $fullWidth>
                     <LabelBase htmlFor={`docLink_${index}_name`}>
@@ -628,7 +631,7 @@ const AddTechStackView: React.FC = () => {
             <SectionTitleBase>MCP Servers</SectionTitleBase>
 
             {(formData.mcpServers || []).map((server, index) => (
-              <LinkItem key={`mcpServer_${index}_${server.name}`}>
+              <LinkItem key={server.id}>
                 <LinkFields>
                   <FormGroupBase $fullWidth>
                     <LabelBase htmlFor={`mcpServer_${index}_name`}>
