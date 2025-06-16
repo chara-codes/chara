@@ -12,16 +12,17 @@ import {
 import { resolve } from "node:path";
 
 // Export agents for programmatic use
-export { chatAgent } from "./agents/chat-agent.js";
-export { initAgent } from "./agents/init-agent.js";
-export { beautifyAgent } from "./agents/beautify-agent.js";
-export { gitAgent } from "./agents/git-agent.js";
+export { chatAgent } from "./agents/chat-agent";
+export { initAgent } from "./agents/init-agent";
+export { beautifyAgent } from "./agents/beautify-agent";
+export { gitAgent } from "./agents/git-agent";
+export { toolsAgent, type ToolSelectionOptions } from "./agents/tools-agent";
 
 // Export tools for external use
-export { tools } from "./tools/index.js";
+export { tools } from "./tools/";
 
 // Export providers for external use
-export { providersRegistry } from "./providers/index.js";
+export { providersRegistry } from "./providers/";
 
 async function startServer() {
   // Start MCP initialization in the background (don't wait)
@@ -34,7 +35,7 @@ async function startServer() {
   // Show initial tool status
   const localCount = Object.keys(localTools).length;
   logger.info(
-    `📦 Starting with ${localCount} local tools (MCP loading in background)`
+    `📦 Starting with ${localCount} local tools (MCP loading in background)`,
   );
 
   // Log when MCP is fully ready (don't wait for it)
@@ -44,13 +45,13 @@ async function startServer() {
       const mcpTools = mcpWrapper.getToolsSync();
       const mcpCount = Object.keys(mcpTools).length;
       logger.info(
-        `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${localCount + mcpCount} total`
+        `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${localCount + mcpCount} total`,
       );
     })
     .catch((error) => {
       logger.warning(
         "⚠️ MCP initialization failed, continuing with local tools only:",
-        error.message
+        error.message,
       );
     });
 

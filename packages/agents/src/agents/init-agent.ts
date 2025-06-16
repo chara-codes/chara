@@ -2,7 +2,7 @@ import { streamText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
 import { initTools } from "../tools/init-tools";
-import { initPrompt } from "../prompts/init.js";
+import { initPrompt } from "../prompts/init";
 
 export const initAgent = async (
   {

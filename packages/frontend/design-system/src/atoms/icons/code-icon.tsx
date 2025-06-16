@@ -1,10 +1,11 @@
-import type React from "react"
+import type React from "react";
 
 export interface CodeIconProps {
-  width?: number
-  height?: number
-  color?: string
-  className?: string
+  width?: number;
+  height?: number;
+  color?: string;
+  style?: Record<string, string>;
+  className?: string;
 }
 
 /**
@@ -14,6 +15,7 @@ export interface CodeIconProps {
  * @param {number} height - The height of the icon
  * @param {string} color - The color of the icon
  * @param {string} className - Additional CSS classes
+ * @param {string} Record<string, string> - Additional CSS styles
  * @returns {JSX.Element} - Rendered component
  */
 export const CodeIcon: React.FC<CodeIconProps> = ({
@@ -21,6 +23,7 @@ export const CodeIcon: React.FC<CodeIconProps> = ({
   height = 24,
   color = "currentColor",
   className = "",
+  style = {},
 }) => {
   return (
     <svg
@@ -30,6 +33,7 @@ export const CodeIcon: React.FC<CodeIconProps> = ({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      style={style}
     >
       <path
         d="M16 18L22 12L16 6M8 6L2 12L8 18"
@@ -39,5 +43,5 @@ export const CodeIcon: React.FC<CodeIconProps> = ({
         strokeLinejoin="round"
       />
     </svg>
-  )
-}
+  );
+};
