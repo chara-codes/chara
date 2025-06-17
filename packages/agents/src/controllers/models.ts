@@ -17,7 +17,7 @@ const MODEL_WHITELIST = [
   "anthropic/claude-3.7-sonnet",
   "anthropic/claude-3.5-sonnet",
   "anthropic/claude-3.7-sonnet:thinking",
-  "anthropic/claude-3.5-haiku"
+  "anthropic/claude-3.5-haiku",
 
   // GPT-4 variants from OpenRouter
   "openai/gpt-4.1",
