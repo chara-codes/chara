@@ -6,6 +6,7 @@ import { devtools } from "zustand/middleware";
 import { useEffect } from "react";
 import { trpc } from "../services";
 import type { StackDTO } from "@chara/server";
+import { toast } from "../components";
 
 // Define the tech stacks state interface
 interface TechStacksState {
@@ -102,6 +103,7 @@ export function useDeleteTechStackMutation() {
   const mutation = trpc.stacks.remove.useMutation({
     onSuccess: (data) => {
       deleteTechStack(data.id.toString());
+      toast({ title: "Stack deleted", description: "" });
     },
   });
 
@@ -121,6 +123,7 @@ export function useDuplicateTechStackMutation() {
   const mutation = trpc.stacks.duplicate.useMutation({
     onSuccess: (data) => {
       addTechStack(mapServerStackToDetail(data));
+      toast({ title: "Stack duplicated", description: "" });
     },
   });
 
@@ -180,11 +183,11 @@ export function useCreateTechStack() {
   const mutation = trpc.stacks.create.useMutation({
     onSuccess: (row) => {
       addTechStack(mapServerStackToDetail(row));
-      // toast({ title: "Stack created", description: row.title });
+      toast({ title: "Stack created", description: row.title });
       invalidateList();
     },
-    onError: () => {
-      // toast({ title: "Failed to create stack", description: err.message });
+    onError: (err) => {
+      toast({ title: "Failed to create stack", description: err.message });
     },
   });
 
@@ -205,11 +208,11 @@ export function useUpdateTechStack() {
   const mutation = trpc.stacks.update.useMutation({
     onSuccess: (row) => {
       updateTechStack(mapServerStackToDetail(row));
-      // toast({ title: "Stack updated", description: row.title });
+      toast({ title: "Stack updated", description: row.title });
       invalidateList();
     },
-    onError: () => {
-      // toast({ title: "Failed to update stack", description: err.message });
+    onError: (err) => {
+      toast({ title: "Failed to update stack", description: err.message });
     },
   });
 

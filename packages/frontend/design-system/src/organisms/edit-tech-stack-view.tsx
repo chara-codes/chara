@@ -323,7 +323,7 @@ const EditTechStackView: React.FC = () => {
       ...prev,
       documentationLinks: [
         ...(prev.documentationLinks || []),
-        { ...emptyDocLink },
+        { ...emptyDocLink, id: crypto.randomUUID() },
       ],
     }));
   }, []);
@@ -385,7 +385,10 @@ const EditTechStackView: React.FC = () => {
   const handleAddMcpServer = useCallback(() => {
     setFormData((prev) => ({
       ...prev,
-      mcpServers: [...(prev.mcpServers || []), { ...emptyMcpServer }],
+      mcpServers: [
+        ...(prev.mcpServers || []),
+        { ...emptyMcpServer, id: crypto.randomUUID() },
+      ],
     }));
   }, []);
 
@@ -581,7 +584,7 @@ const EditTechStackView: React.FC = () => {
             <SectionTitleBase>Documentation Links</SectionTitleBase>
 
             {(formData.documentationLinks || []).map((link, index) => (
-              <LinkItem key={link.url}>
+              <LinkItem key={link.id}>
                 <LinkFields>
                   <FormGroupBase $fullWidth>
                     <LabelBase htmlFor={`docLink_${index}_name`}>
