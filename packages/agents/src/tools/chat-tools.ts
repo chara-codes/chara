@@ -13,6 +13,7 @@ import { thinking } from "./thinking";
 import { saveToHistory } from "./save-to-history";
 import { diff } from "./diff";
 import { envInfo } from "./env-info";
+import { searchFiles } from "./search-files";
 
 // Tools specifically for chat agent - focused on interactive development
 export const chatTools = {
@@ -31,4 +32,5 @@ export const chatTools = {
   "save-to-history": saveToHistory,
   diff: diff,
   "env-info": envInfo,
+  "search-files": searchFiles,
 };
