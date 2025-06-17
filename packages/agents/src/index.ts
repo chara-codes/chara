@@ -12,6 +12,7 @@ import {
 import { resolve } from "node:path";
 import { initAgent } from "./agents";
 import { mkdir } from "node:fs/promises";
+import { logWithPreset } from "./utils";
 
 // Export agents for programmatic use
 export { chatAgent } from "./agents/chat-agent";
@@ -26,6 +27,17 @@ export { tools } from "./tools/";
 export { providersRegistry } from "./providers/";
 
 async function startServer() {
+  const charaConfig = Bun.file(".chara.json");
+  if (!(await charaConfig.exists())) {
+    const init = initAgent({
+      model: "openai:::gpt-4.1-mini",
+    });
+    logger.info("🛠️  Initializing Chara configuration...");
+    for await (const chunk of init.fullStream) {
+      logWithPreset(chunk, "minimal");
+    }
+  }
+
   // Start MCP initialization in the background (don't wait)
   logger.info("🚀 Starting server initialization...");
   logger.info("🔧 Starting MCP client initialization in background...");
@@ -56,12 +68,6 @@ async function startServer() {
       );
     });
 
-  // const charaConfig = Bun.file(".chara.json");
-  // if (!charaConfig.exists()) {
-  //   const init = initAgent({
-  //     model: "openai:::gpt-4.1",
-  //   });
-  // }
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const serverConfig: any = {
     port: 3031,

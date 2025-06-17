@@ -29,9 +29,10 @@ ${hasTool("write-file") ? "- write-file: Write files (use this to create .chara.
    - **Check if directory is empty or minimal** (only contains .gitignore, README.md, or similar basic files)
    - Identify key directories (src, lib, app, components, etc.)
    - Look for configuration files and build tools
+   - **Exclude analysis of**: \`.git\`, \`.chara\`, \`node_modules\`, \`logs\`, \`dist\`, \`build\`, \`.next\`, \`.nuxt\`, and directories listed in \`.gitignore\`
 
 2. **Package Management Detection**
-   - Check for package.json, yarn.lock, pnpm-lock.yaml, bun.lockb
+   - Check for package.json
    - Read package.json to understand dependencies, scripts, and metadata
    - Identify the package manager being used
 
@@ -54,11 +55,13 @@ ${hasTool("write-file") ? "- write-file: Write files (use this to create .chara.
    - desktop: Electron, Tauri apps
    - other: Anything that doesn't fit above categories
 
-6. **Additional Files to Check**
+6. **Key Files to Analyze**
    - README.md: Project description and setup instructions
+   - package.json: Dependencies, scripts, and project metadata
    - docker-compose.yml, Dockerfile: Containerization
    - .env files: Environment configuration
    - Configuration files: eslint, prettier, tsconfig, etc.
+   - **Do NOT analyze**: Lock files (package-lock.json, yarn.lock, pnpm-lock.yaml), build outputs, or generated files
 
 ## Output Format
 
@@ -66,18 +69,14 @@ Generate a .chara.json file with this exact structure:
 
 \`\`\`json
 {
-  "dev": "command to start development server",
+  "dev": "command to start development server (prefer npm run dev, yarn dev, etc.)",
+  "diagnostic": "command to check project quality (build, test, lint, or combination)"
   "info": {
-    "name": "project name from package.json or directory name",
-    "description": "project description from package.json or README",
-    "version": "version from package.json",
+    "description": "project description based on package.json and README",
     "frameworks": ["react", "nextjs", "vue", "angular", "svelte", "etc"],
     "tools": ["vite", "webpack", "rollup", "esbuild", "turbo", "etc"],
     "stack": ["typescript", "nodejs", "python", "rust", "go", "etc"],
     "packageManager": "npm|yarn|pnpm|bun",
-    "scripts": {"key": "command", "from": "package.json"},
-    "dependencies": ["production dependencies"],
-    "devDependencies": ["development dependencies"],
     "languages": ["typescript", "javascript", "python", "rust", "etc"],
     "projectType": "web|api|library|cli|mobile|desktop|other"
   }
@@ -86,7 +85,7 @@ Generate a .chara.json file with this exact structure:
 
 ## Analysis Rules
 
-- **Be thorough**: Examine the entire project structure before making conclusions
+- **Be thorough**: Examine key project files before making conclusions
 - **Be accurate**: Only include technologies that are actually present
 - **Be specific**: Use exact package names and versions when possible
 - **Prioritize detection**: Look for multiple signals to confirm technology usage
@@ -94,27 +93,38 @@ Generate a .chara.json file with this exact structure:
 - **Handle empty directories**: For empty or minimal directories (containing only .gitignore, README.md, LICENSE, or .git), default to "npx serve ." and classify as "other" project type
 - **Infer intelligently**: If no explicit dev command exists, suggest appropriate ones
 - **Stay current**: Recognize modern tools and frameworks
+- **Focus on essentials**: Don't duplicate package.json content in info section - summarize and highlight key points
+- **Analyze efficiently**: Focus on main configuration files, avoid deep code analysis
 
 ## Development Command Priority
 
 1. **Empty Directory Check**: If the directory is empty or contains only basic files (like .gitignore, README.md, LICENSE, .DS_Store, .git directory), use "npx serve ." as the default dev command
-2. Check package.json scripts for: "dev", "develop", "start", "serve"
+2. **Prefer script commands**: Use "npm run dev", "yarn dev", "pnpm dev", or "bun dev" when available
+3. Check package.json scripts for: "dev", "develop", "start", "serve"
+4. Framework-specific defaults only if no script available:
+   - Next.js: "npm run dev" (or "next dev" if no script)
+   - Vite: "npm run dev" (or "vite dev" if no script)
+   - Create React App: "npm start" (or "react-scripts start" if no script)
+   - Vue CLI: "npm run serve" (or "vue-cli-service serve" if no script)
+   - Angular: "npm start" (or "ng serve" if no script)
+5. Fallback to "npm run dev" or detected package manager equivalent
+
+## Diagnostic Command Priority
+
+1. Check package.json scripts for: "build", "test", "lint", "type-check", "check"
+2. Combine multiple quality checks when available: "npm run build && npm run test && npm run lint"
 3. Framework-specific defaults:
-   - Next.js: "next dev"
-   - Vite: "vite" or "vite dev"
-   - Create React App: "react-scripts start"
-   - Vue CLI: "vue-cli-service serve"
-   - Angular: "ng serve"
-4. Fallback to "npm run dev" or detected package manager equivalent
+   - TypeScript projects: Include "tsc --noEmit" or "npm run type-check"
+   - React/Vue/Angular: Include build command
+   - Libraries: Include "npm run build" and "npm run test"
+4. Fallback to "npm run build" or most relevant single command
 
 ## Empty Directory Handling
 
 When a directory is empty or minimal (contains only basic files like .gitignore, README.md, LICENSE, .DS_Store, .git directory):
 - Set "dev": "npx serve ."
 - Set "projectType": "other"
-- Set "name" to the directory name
 - Set "description": "Empty project directory ready for development"
-- Set "version": "0.1.0"
 - Leave arrays empty: frameworks: [], tools: [], stack: [], dependencies: [], devDependencies: [], languages: []
 - Set "packageManager": "npm" (default)
 - Set "scripts": {}
