@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import React, { ReactElement } from "react";
 import { useState, useCallback } from "react";
 import styled, { ThemeProvider } from "styled-components";
 import {
@@ -165,24 +165,25 @@ const Footer = styled.div`
 
 // Available categories
 const categories = [
-  "Frontend",
-  "Backend",
-  "Database",
-  "Full Stack",
-  "API",
-  "DevOps",
-  "Mobile",
-  "Other",
-];
+  { label: "Frontend", value: "frontend" },
+  { label: "Backend", value: "backend" },
+  { label: "Database", value: "database" },
+  { label: "Full Stack", value: "fullstack" },
+  { label: "API", value: "api" },
+  { label: "DevOps", value: "devops" },
+  { label: "Mobile", value: "mobile" },
+  { label: "Other", value: "others" },
+] as const;
 
 // Icon options with their components
-const iconOptions = [
-  { id: "code", component: <CodeIcon width={16} height={16} /> },
-  { id: "server", component: <ServerIcon width={16} height={16} /> },
-  { id: "database", component: <DatabaseIcon width={16} height={16} /> },
-  { id: "globe", component: <GlobeIcon width={16} height={16} /> },
-  { id: "layers", component: <LayersIcon width={16} height={16} /> },
-];
+const iconOptions: { id: TechStackDetail["icon"]; component: ReactElement }[] =
+  [
+    { id: "code", component: <CodeIcon width={16} height={16} /> },
+    { id: "server", component: <ServerIcon width={16} height={16} /> },
+    { id: "database", component: <DatabaseIcon width={16} height={16} /> },
+    { id: "globe", component: <GlobeIcon width={16} height={16} /> },
+    { id: "layers", component: <LayersIcon width={16} height={16} /> },
+  ];
 
 // Default empty documentation link
 const emptyDocLink = { name: "", url: "", description: "" };
@@ -213,13 +214,13 @@ const AddTechStackView: React.FC = () => {
   const [formData, setFormData] = useState<Partial<TechStackDetail>>({
     id: "",
     name: "",
-    category: "Frontend",
+    category: "frontend",
     description: "",
     longDescription: "",
     icon: "code",
     isNew: false,
     documentationLinks: [],
-    mcpServers: [], // MCP = Model Context Protocol
+    mcpServers: [],
   });
 
   // Selected icon ID
@@ -479,9 +480,9 @@ const AddTechStackView: React.FC = () => {
                   onChange={handleChange}
                   $hasError={!!errors.category}
                 >
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
+                  {categories.map(({ label, value }) => (
+                    <option key={value} value={value}>
+                      {label}
                     </option>
                   ))}
                 </SelectBase>

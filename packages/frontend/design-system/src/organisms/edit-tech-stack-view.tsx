@@ -171,15 +171,15 @@ const Footer = styled.div`
 
 // Available categories
 const categories = [
-  "Frontend",
-  "Backend",
-  "Database",
-  "Full Stack",
-  "API",
-  "DevOps",
-  "Mobile",
-  "Other",
-];
+  { label: "Frontend", value: "frontend" },
+  { label: "Backend", value: "backend" },
+  { label: "Database", value: "database" },
+  { label: "Full Stack", value: "fullstack" },
+  { label: "API", value: "api" },
+  { label: "DevOps", value: "devops" },
+  { label: "Mobile", value: "mobile" },
+  { label: "Other", value: "others" },
+] as const;
 
 // Icon options with their components
 const iconOptions: { id: TechStackDetail["icon"]; component: ReactElement }[] =
@@ -226,7 +226,7 @@ const EditTechStackView: React.FC = () => {
   const [formData, setFormData] = useState<Partial<TechStackDetail>>({
     id: "",
     name: "",
-    category: "Frontend",
+    category: "frontend",
     description: "",
     longDescription: "",
     icon: iconOptions[0].id,
@@ -255,11 +255,7 @@ const EditTechStackView: React.FC = () => {
 
       // Find the icon ID
       const iconId =
-        iconOptions.find(
-          (option) =>
-            JSON.stringify(option.component.toString()) ===
-            JSON.stringify(techStack.icon?.toString()),
-        )?.id || "code";
+        iconOptions.find(({ id }) => id === techStack?.icon)?.id || "code";
 
       setSelectedIconId(iconId);
     }
@@ -512,9 +508,9 @@ const EditTechStackView: React.FC = () => {
                   onChange={handleChange}
                   $hasError={!!errors.category}
                 >
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
+                  {categories.map(({ label, value }) => (
+                    <option key={value} value={value}>
+                      {label}
                     </option>
                   ))}
                 </SelectBase>
