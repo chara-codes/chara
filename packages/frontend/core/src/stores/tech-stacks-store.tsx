@@ -3,20 +3,15 @@
 import { TechStackDetail } from "../types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { useEffect } from "react";
+import { ReactNode, useEffect } from "react";
 import { trpc } from "../services";
 import type { StackDTO } from "@chara/server";
 import { toast } from "../components";
 
-// Define the tech stacks state interface
 interface TechStacksState {
-  // All tech stacks
+  // State
   techStacks: TechStackDetail[];
-
-  // Loading state
   isLoading: boolean;
-
-  // Error state
   error: string | null;
 
   // Actions
@@ -94,6 +89,39 @@ export const useGetTechStackById = () =>
 export const useTechStacksLoading = () =>
   useTechStacksStore((state) => state.isLoading);
 
+export function TechStacksProvider({ children }: { children: ReactNode }) {
+  // Use the data loading hook to fetch tech stacks when the component mounts
+  useTechStacksData();
+
+  return <>{children}</>;
+}
+
+export function useTechStacksData() {
+  const setTechStacks = useTechStacksStore((state) => state.setTechStacks);
+  const setLoading = useTechStacksStore((state) => state.setLoading);
+
+  const { data: serverStacks = [], isFetching } = trpc.stacks.list.useQuery(
+    undefined,
+    {
+      select: (rows) => rows,
+      initialData: [],
+    },
+  );
+
+  useEffect(() => {
+    setLoading(isFetching);
+  }, [isFetching]);
+
+  useEffect(() => {
+    const res = serverStacks.map((stack) => {
+      return mapServerStackToDetail(stack);
+    });
+
+    setTechStacks(res);
+    setLoading(false);
+  }, [serverStacks]);
+}
+
 /**
  * Hook for deleting a tech stack
  * Calls the server API and updates the store on success
@@ -136,43 +164,6 @@ export function useDuplicateTechStackMutation() {
     isLoading: mutation.isPending,
     error: mutation.error,
   };
-}
-
-export function TechStacksProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  // Use the data loading hook to fetch tech stacks when the component mounts
-  useTechStacksData();
-
-  return <>{children}</>;
-}
-
-export function useTechStacksData() {
-  const setTechStacks = useTechStacksStore((state) => state.setTechStacks);
-  const setLoading = useTechStacksStore((state) => state.setLoading);
-
-  const { data: serverStacks = [], isFetching } = trpc.stacks.list.useQuery(
-    undefined,
-    {
-      select: (rows) => rows,
-      initialData: [],
-    },
-  );
-
-  useEffect(() => {
-    setLoading(isFetching);
-  }, [isFetching]);
-
-  useEffect(() => {
-    const res = serverStacks.map((stack) => {
-      return mapServerStackToDetail(stack);
-    });
-
-    setTechStacks(res);
-    setLoading(false);
-  }, [serverStacks]);
 }
 
 export function useCreateTechStack() {
@@ -218,46 +209,19 @@ export function useUpdateTechStack() {
 
   return {
     updateStack: (s: TechStackDetail) =>
-      mutation.mutate(detailToUpdateInput(s)),
+      mutation.mutate({
+        id: Number(s.id),
+        ...detailToCreateInput(s),
+      }),
     isLoading: mutation.isPending,
     error: mutation.error,
   };
 }
 
-function detailToUpdateInput(s: TechStackDetail): any {
-  return {
-    id: Number(s.id),
-    ...detailToCreateInput(s),
-  };
-}
-
-function categoryToServerEnum(category: string): string {
-  switch (category) {
-    case "Frontend":
-      return "frontend";
-    case "Backend":
-      return "backend";
-    case "Database":
-      return "database";
-    case "Full Stack":
-      return "fullstack";
-    case "API":
-      return "api";
-    case "DevOps":
-      return "devops";
-    case "Mobile":
-      return "mobile";
-    case "Other":
-      return "others";
-    default:
-      return "others";
-  }
-}
-
 function detailToCreateInput(s: Omit<TechStackDetail, "id">): any {
   return {
     title: s.name,
-    type: categoryToServerEnum(s.category),
+    type: s.category,
     shortDescription: s.description ?? null,
     longDescription: s.longDescription ?? null,
     icon: s.icon ?? null,
@@ -281,36 +245,25 @@ function detailToCreateInput(s: Omit<TechStackDetail, "id">): any {
   };
 }
 
-function mapServerStackToDetail(serverStack: StackDTO): TechStackDetail {
-  const {
-    id,
-    title,
-    type,
-    shortDescription,
-    longDescription,
-    icon,
-    isNew,
-    popularity,
-    links,
-    mcps,
-  } = serverStack;
-
+function mapServerStackToDetail(s: StackDTO): TechStackDetail {
   return {
-    id: id.toString(),
-    name: title,
-    category: type,
-    description: shortDescription ?? "",
-    longDescription: longDescription ?? undefined,
-    icon,
-    isNew: isNew ?? false,
-    popularity: popularity ?? 0,
-    documentationLinks: links.map((link: any) => ({
+    id: s.id.toString(),
+    name: s.title,
+    category: s.type,
+    description: s.shortDescription ?? "",
+    longDescription: s.longDescription ?? undefined,
+    icon: s.icon,
+    isNew: s.isNew ?? false,
+    popularity: s.popularity ?? 0,
+    documentationLinks: s.links.map((link: any) => ({
+      id: crypto.randomUUID(),
       name: link.title,
       url: link.url,
       description: link.description ?? undefined,
     })),
     mcpServers:
-      mcps?.map((mcp: any) => ({
+      s.mcps?.map((mcp: any) => ({
+        id: crypto.randomUUID(),
         name: mcp.name,
         configuration: {
           command: mcp.serverConfig.command,

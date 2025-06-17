@@ -6,7 +6,12 @@ import {
   theme,
   PreviewToolbar,
 } from "@chara/design-system";
-import { UIStoreProvider, TrpcProvider, TechStacksProvider } from "@chara/core";
+import {
+  UIStoreProvider,
+  TrpcProvider,
+  TechStacksProvider,
+  Toaster,
+} from "@chara/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const WorkspaceContainer = styled.div`
@@ -478,6 +483,8 @@ export const CharaWeb = () => {
 
                 {/* Overlay to prevent interactions during resize */}
                 <ResizeOverlay $active={isResizing} />
+
+                <Toaster />
               </WorkspaceContainer>
             </ThemeProvider>
           </UIStoreProvider>
