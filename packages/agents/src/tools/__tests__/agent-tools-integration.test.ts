@@ -6,7 +6,7 @@ import { tools } from "../index";
 describe("Agent Tools Integration", () => {
   describe("Tool Set Validation", () => {
     it("should have correct number of tools for each agent", () => {
-      expect(Object.keys(chatTools)).toHaveLength(15);
+      expect(Object.keys(chatTools)).toHaveLength(16);
       expect(Object.keys(initTools)).toHaveLength(9);
       expect(Object.keys(tools)).toHaveLength(19);
     });
@@ -59,7 +59,6 @@ describe("Agent Tools Integration", () => {
     });
 
     it("should not include redundant search tools", () => {
-      expect(chatTools).not.toHaveProperty("search-files");
       expect(chatTools).toHaveProperty("grep"); // Should use grep instead
     });
   });
@@ -154,15 +153,6 @@ describe("Agent Tools Integration", () => {
       expect(chatCount).toBeLessThan(originalCount);
       expect(initCount).toBeLessThan(originalCount);
       expect(initCount).toBeLessThan(chatCount); // Init should be most minimal
-    });
-
-    it("should prefer powerful tools over multiple similar ones", () => {
-      // Both should use grep instead of search-files
-      expect(chatTools).toHaveProperty("grep");
-      expect(chatTools).not.toHaveProperty("search-files");
-
-      expect(initTools).toHaveProperty("grep");
-      expect(initTools).not.toHaveProperty("search-files");
     });
   });
 

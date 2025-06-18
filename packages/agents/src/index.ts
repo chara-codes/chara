@@ -13,6 +13,9 @@ import { resolve } from "node:path";
 import { initAgent } from "./agents";
 import { mkdir } from "node:fs/promises";
 import { logWithPreset } from "./utils";
+import { runnerService } from "./services/runner";
+import { appEvents } from "./services/events";
+import { setInterval } from "node:timers";
 
 // Export agents for programmatic use
 export { chatAgent } from "./agents/chat-agent";
@@ -26,9 +29,8 @@ export { tools } from "./tools/";
 // Export providers for external use
 export { providersRegistry } from "./providers/";
 
-async function startServer() {
-  const charaConfig = Bun.file(".chara.json");
-  if (!(await charaConfig.exists())) {
+async function startServer(charaConfigFile = ".chara.json") {
+  if (!(await Bun.file(charaConfigFile).exists())) {
     const init = initAgent({
       model: "openai:::gpt-4.1-mini",
     });
@@ -37,6 +39,20 @@ async function startServer() {
       logWithPreset(chunk, "minimal");
     }
   }
+  if (!(await Bun.file(charaConfigFile).exists())) {
+    const fallbackConfig = { dev: "npx serve ." };
+    Bun.write(charaConfigFile, JSON.stringify(fallbackConfig));
+  }
+  const charaConfig = await Bun.file(charaConfigFile).json();
+
+  appEvents.on("runner:status", (status) => {
+    logger.dump(status);
+    setInterval(() => {
+      appEvents.emit("runner:get-status", { processId: status.processId });
+    }, 3000);
+  });
+
+  runnerService.start({ command: charaConfig.dev || "npx serve ." });
 
   // Start MCP initialization in the background (don't wait)
   logger.info("🚀 Starting server initialization...");

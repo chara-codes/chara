@@ -63,6 +63,9 @@ export interface AppEvents {
       cwd: string;
       pid?: number;
       uptime?: number;
+      serverUrl?: string;
+      host?: string;
+      port?: number;
     };
   };
   "runner:restarted": {

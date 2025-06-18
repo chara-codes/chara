@@ -62,7 +62,6 @@ describe("RunnerService", () => {
       expect(typeof runner.stop).toBe("function");
       expect(typeof runner.getServerInfo).toBe("function");
       expect(typeof runner.getAllProcesses).toBe("function");
-      expect(typeof runner.sendInput).toBe("function");
       expect(typeof runner.isRunning).toBe("function");
       expect(typeof runner.stopAll).toBe("function");
       expect(typeof runner.restart).toBe("function");
@@ -86,11 +85,6 @@ describe("RunnerService", () => {
 
     it("should return false when stopping non-existent process", async () => {
       const result = await runner.stop("non-existent-id");
-      expect(result).toBe(false);
-    });
-
-    it("should return false when sending input to non-existent process", async () => {
-      const result = await runner.sendInput("non-existent-id", "test");
       expect(result).toBe(false);
     });
 
