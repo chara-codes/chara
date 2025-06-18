@@ -16,6 +16,7 @@ interface TerminalToolBlockProps {
   streamingSpeed?: number; // milliseconds between characters
   maxHeight?: number;
   toolCallError?: string;
+  toolCallId?: string;
 }
 
 type ViewMode = "collapsed" | "limited" | "full";
@@ -245,6 +246,7 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = ({
   streamingSpeed = 20,
   maxHeight = 300,
   toolCallError,
+  toolCallId,
 }) => {
   // Validate props
   if (!command || typeof command !== "string") {

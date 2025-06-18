@@ -21,6 +21,7 @@ interface EditFileBlockProps {
   showLineNumbers?: boolean;
   maxHeight?: number;
   toolCallError?: string;
+  toolCallId?: string;
 }
 
 type ViewMode = "collapsed" | "limited" | "full";
@@ -300,6 +301,7 @@ const EditFileBlock: React.FC<EditFileBlockProps> = ({
   isVisible = true,
   maxHeight = 500,
   toolCallError,
+  toolCallId,
 }) => {
   // Validate props
   if (!filePath || typeof filePath !== "string") {
@@ -314,7 +316,7 @@ const EditFileBlock: React.FC<EditFileBlockProps> = ({
     return null;
   }
 
-  const [viewMode, setViewMode] = useState<ViewMode>("limited");
+  const [viewMode, setViewMode] = useState<ViewMode>("collapsed");
 
   const completedEdits = edits.filter(
     (edit) => edit.status === "complete",
@@ -410,7 +412,7 @@ const EditFileBlock: React.FC<EditFileBlockProps> = ({
         <EditsList>
           {edits.map((edit, index) => (
             <EditBlock
-              key={`edit-${edit.oldText.slice(0, 50)}-${index}`}
+              key={`edit-${toolCallId || "unknown"}-${index}`}
               status={edit.status}
             >
               <EditContent>

@@ -14,6 +14,7 @@ interface WriteFileBlockProps {
   streamingSpeed?: number; // milliseconds between characters
   showLineNumbers?: boolean;
   maxHeight?: number;
+  toolCallId?: string;
 }
 
 type ViewMode = "collapsed" | "limited" | "full";
@@ -285,6 +286,7 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
   streamingSpeed = 20,
   showLineNumbers = true,
   maxHeight = 500,
+  toolCallId,
 }) => {
   // Validate props
   if (!filePath || typeof filePath !== "string") {
@@ -300,7 +302,7 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
   }
   const [displayedContent, setDisplayedContent] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [viewMode, setViewMode] = useState<ViewMode>("limited");
+  const [viewMode, setViewMode] = useState<ViewMode>("collapsed");
 
   useEffect(() => {
     if (isGenerating && currentIndex < content.length) {
@@ -421,7 +423,7 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
           {showLineNumbers && (
             <LineNumbers>
               {displayedContent.split("\n").map((_, index) => (
-                <LineNumber key={`line-${displayedContent.length}-${index}`}>
+                <LineNumber key={`line-${toolCallId || "unknown"}-${index}`}>
                   {index + 1}
                 </LineNumber>
               ))}
@@ -429,7 +431,7 @@ const WriteFileBlock: React.FC<WriteFileBlockProps> = ({
           )}
           <SimpleCodeContainer>
             {displayedContent.split("\n").map((line, index, lines) => (
-              <CodeLine key={`code-line-${displayedContent.length}-${index}`}>
+              <CodeLine key={`code-line-${toolCallId || "unknown"}-${index}`}>
                 <span>{line || "\u00A0"}</span>
                 {isGenerating && index === lines.length - 1 && (
                   <span

@@ -70,7 +70,7 @@ import {
   ToolCallItemHeader,
 } from "./styles";
 import { getPreviewContent } from "./utils";
-import { cleanThinkingTags, FileDiff, ToolResult } from "@chara/core";
+import { cleanThinkingTags, type FileDiff, type ToolResult } from "@chara/core";
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
 
 // Helper function to get the main message content (first text part)
@@ -475,38 +475,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               </ContextDetailsPanel>
             )}
           </>
-        )}
-
-        {!isUser && hasToolCalls && (!segments || segments.length === 0) && (
-          <ToolCallsContainer>
-            {toolCalls.map((toolCall) => (
-              <ToolCallItem key={toolCall.id} isExpanded={isToolCallsExpanded}>
-                <ToolCallItemHeader>
-                  <ToolCallName>
-                    <ToolIcon />
-                    {toolCall.name}
-                  </ToolCallName>
-                  <ToolCallStatus status={toolCall.status}>
-                    {toolCall.status}
-                  </ToolCallStatus>
-                </ToolCallItemHeader>
-                <ToolCallArguments>
-                  <ToolCallArgumentsLabel>Arguments</ToolCallArgumentsLabel>
-                  <ToolCallArgumentsContent>
-                    {JSON.stringify(toolCall.arguments, null, 2)}
-                  </ToolCallArgumentsContent>
-                </ToolCallArguments>
-                {toolCall.result && (
-                  <ToolCallResult>
-                    <ToolCallResultLabel>Result</ToolCallResultLabel>
-                    <ToolCallResultContent hasError={!!toolCall.result.error}>
-                      {formatToolCallResult(toolCall.result)}
-                    </ToolCallResultContent>
-                  </ToolCallResult>
-                )}
-              </ToolCallItem>
-            ))}
-          </ToolCallsContainer>
         )}
 
         {!isUser && hasFilesToChange && !hasGenerationDetails && (

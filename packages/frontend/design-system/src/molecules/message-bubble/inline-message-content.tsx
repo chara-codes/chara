@@ -3,8 +3,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import styled from "styled-components";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { ToolIcon } from "./icons";
+import { ChevronDown, ChevronRight, EditIcon, FileImage } from "lucide-react";
+import { TerminalIcon, ToolIcon } from "./icons";
 import { cleanThinkingTags, type ToolCall } from "@chara/core";
 import WriteFileBlock from "../tools/write-file-block";
 import EditFileBlock, { type EditOperation } from "../tools/edit-file-block";
@@ -156,33 +156,9 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         <ToolCallInline status={toolCall.status} onClick={handleToggle}>
           <ToolCallHeader>
             <ToolCallName>
-              <ToolIcon /> {toolCall.name}
+              <FileImage width={12} height={12} /> {toolCall.name}: {filePath}
             </ToolCallName>
-            <ChevronIcon isExpanded={isExpanded}>
-              {isExpanded ? (
-                <ChevronDown size={8} />
-              ) : (
-                <ChevronRight size={8} />
-              )}
-            </ChevronIcon>
           </ToolCallHeader>
-
-          <ToolCallDetails isExpanded={isExpanded}>
-            <ToolCallSection>
-              <ToolCallLabel>Error</ToolCallLabel>
-              <ToolCallContent>
-                Invalid write-file tool call: missing file path
-              </ToolCallContent>
-            </ToolCallSection>
-            {Object.keys(toolCall.arguments).length > 0 && (
-              <ToolCallSection>
-                <ToolCallLabel>Arguments</ToolCallLabel>
-                <ToolCallContent>
-                  {JSON.stringify(toolCall.arguments, null, 2)}
-                </ToolCallContent>
-              </ToolCallSection>
-            )}
-          </ToolCallDetails>
         </ToolCallInline>
       );
     }
@@ -217,6 +193,7 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         streamingSpeed={isGenerating ? 20 : 0}
         showLineNumbers={true}
         maxHeight={400}
+        toolCallId={toolCall.toolCallId}
       />
     );
   }
@@ -248,33 +225,9 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         <ToolCallInline status={toolCall.status} onClick={handleToggle}>
           <ToolCallHeader>
             <ToolCallName>
-              <ToolIcon /> {toolCall.name}
+              <EditIcon width={12} height={12} /> {toolCall.name} {filePath}
             </ToolCallName>
-            <ChevronIcon isExpanded={isExpanded}>
-              {isExpanded ? (
-                <ChevronDown size={8} />
-              ) : (
-                <ChevronRight size={8} />
-              )}
-            </ChevronIcon>
           </ToolCallHeader>
-
-          <ToolCallDetails isExpanded={isExpanded}>
-            <ToolCallSection>
-              <ToolCallLabel>Error</ToolCallLabel>
-              <ToolCallContent>
-                Invalid edit-file tool call: missing file path
-              </ToolCallContent>
-            </ToolCallSection>
-            {Object.keys(toolCall.arguments).length > 0 && (
-              <ToolCallSection>
-                <ToolCallLabel>Arguments</ToolCallLabel>
-                <ToolCallContent>
-                  {JSON.stringify(toolCall.arguments, null, 2)}
-                </ToolCallContent>
-              </ToolCallSection>
-            )}
-          </ToolCallDetails>
         </ToolCallInline>
       );
     }
@@ -310,6 +263,7 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         showLineNumbers={true}
         maxHeight={400}
         toolCallError={toolCallError}
+        toolCallId={toolCall.toolCallId}
       />
     );
   }
@@ -357,33 +311,9 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         <ToolCallInline status={toolCall.status} onClick={handleToggle}>
           <ToolCallHeader>
             <ToolCallName>
-              <ToolIcon /> {toolCall.name}
+              <TerminalIcon /> {toolCall.name}
             </ToolCallName>
-            <ChevronIcon isExpanded={isExpanded}>
-              {isExpanded ? (
-                <ChevronDown size={8} />
-              ) : (
-                <ChevronRight size={8} />
-              )}
-            </ChevronIcon>
           </ToolCallHeader>
-
-          <ToolCallDetails isExpanded={isExpanded}>
-            <ToolCallSection>
-              <ToolCallLabel>Error</ToolCallLabel>
-              <ToolCallContent>
-                Invalid terminal tool call: missing command
-              </ToolCallContent>
-            </ToolCallSection>
-            {Object.keys(toolCall.arguments).length > 0 && (
-              <ToolCallSection>
-                <ToolCallLabel>Arguments</ToolCallLabel>
-                <ToolCallContent>
-                  {JSON.stringify(toolCall.arguments, null, 2)}
-                </ToolCallContent>
-              </ToolCallSection>
-            )}
-          </ToolCallDetails>
         </ToolCallInline>
       );
     }
@@ -399,6 +329,7 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         streamingSpeed={isGenerating ? 20 : 0}
         maxHeight={400}
         toolCallError={toolCallError}
+        toolCallId={toolCall.toolCallId}
       />
     );
   }
@@ -458,7 +389,8 @@ export const InlineMessageContent = ({
       );
     }
     if (segment.type === "tool-call" && segment.toolCall) {
-      return <InlineToolCall key={index} toolCall={segment.toolCall} />;
+      const key = segment.toolCall.toolCallId || `tool-call-${index}`;
+      return <InlineToolCall key={key} toolCall={segment.toolCall} />;
     }
     return null;
   };
