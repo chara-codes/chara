@@ -15,7 +15,6 @@ import { mkdir } from "node:fs/promises";
 import { logWithPreset } from "./utils";
 import { runnerService } from "./services/runner";
 import { appEvents } from "./services/events";
-import { setInterval } from "node:timers";
 
 // Export agents for programmatic use
 export { chatAgent } from "./agents/chat-agent";
@@ -47,9 +46,6 @@ async function startServer(charaConfigFile = ".chara.json") {
 
   appEvents.on("runner:status", (status) => {
     logger.dump(status);
-    setInterval(() => {
-      appEvents.emit("runner:get-status", { processId: status.processId });
-    }, 3000);
   });
 
   runnerService.start({ command: charaConfig.dev || "npx serve ." });

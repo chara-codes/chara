@@ -46,6 +46,9 @@ const MODEL_WHITELIST = [
   // DeepSeek R1 models
   "deepseek/deepseek-r1",
   "deepseek/deepseek-chat",
+
+  // other models
+  "moonshotai/kimi-dev-72b:free",
 ];
 
 export const modelsController = {
