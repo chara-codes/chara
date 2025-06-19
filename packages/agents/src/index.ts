@@ -14,6 +14,7 @@ import { initAgent } from "./agents";
 import { logWithPreset } from "./utils";
 import { runnerService } from "./services/runner";
 import { appEvents } from "./services/events";
+import type { ServerWebSocket } from "bun";
 
 // Export agents for programmatic use
 export { chatAgent } from "./agents/chat-agent";
@@ -26,6 +27,9 @@ export { tools } from "./tools/";
 
 // Export providers for external use
 export { providersRegistry } from "./providers/";
+
+// Store connected WebSocket clients
+const wsClients = new Set<ServerWebSocket<unknown>>();
 
 async function startServer(charaConfigFile = ".chara.json") {
   if (!(await Bun.file(charaConfigFile).exists())) {
@@ -42,6 +46,24 @@ async function startServer(charaConfigFile = ".chara.json") {
     Bun.write(charaConfigFile, JSON.stringify(fallbackConfig));
   }
   const charaConfig = await Bun.file(charaConfigFile).json();
+
+  // Set up WebSocket broadcasting for runner events
+  const broadcastToClients = (eventName: string, data: any) => {
+    const message = JSON.stringify({ event: eventName, data });
+    for (const client of wsClients) {
+      if (client.readyState === 1) {
+        // WebSocket.OPEN
+        client.send(message);
+      }
+    }
+  };
+
+  // Subscribe to runner events using pattern matching
+  appEvents.onPattern("runner:*", (eventName: string, data: any) => {
+    if (eventName !== "runner:get-status" && eventName !== "runner:restart") {
+      broadcastToClients(eventName, data);
+    }
+  });
 
   appEvents.on("runner:status", (status) => {
     logger.dump(status);
@@ -102,14 +124,66 @@ async function startServer(charaConfigFile = ".chara.json") {
       "/api/*": miscController.notFound,
     },
 
-    // (optional) fallback for unmatched routes:
-    // Required if Bun's version < 1.2.3
-    fetch: miscController.fallback,
+    // WebSocket upgrade handler
+    fetch(req, server) {
+      const url = new URL(req.url);
+
+      // Handle WebSocket upgrade for /ws endpoint
+      if (url.pathname === "/ws") {
+        const success = server.upgrade(req);
+        if (success) {
+          return undefined; // Bun automatically returns 101 Switching Protocols
+        }
+        return new Response("WebSocket upgrade failed", { status: 400 });
+      }
+
+      // Handle other routes normally
+      return miscController.fallback(req, server);
+    },
+
+    // WebSocket configuration
+    websocket: {
+      message(ws, message) {
+        try {
+          const data = JSON.parse(message.toString());
+          logger.debug("WebSocket message received:", data);
+
+          // Handle runner commands from client
+          if (data.event === "runner:get-status") {
+            appEvents.emit("runner:get-status", data.data || {});
+          } else if (data.event === "runner:restart") {
+            appEvents.emit("runner:restart", data.data || {});
+          }
+        } catch (error) {
+          logger.error("Failed to parse WebSocket message:", error);
+        }
+      },
+
+      open(ws) {
+        wsClients.add(ws);
+        logger.info(
+          `WebSocket client connected. Total clients: ${wsClients.size}`,
+        );
+      },
+
+      close(ws) {
+        wsClients.delete(ws);
+        logger.info(
+          `WebSocket client disconnected. Total clients: ${wsClients.size}`,
+        );
+      },
+
+      error(ws, error) {
+        logger.error("WebSocket error:", error);
+        wsClients.delete(ws);
+      },
+    },
   };
   logger.info("🌐 Starting HTTP server ");
   const server = Bun.serve(serverConfig);
   const protocol = serverConfig.tls ? "https" : "http";
   logger.server(`Server started on ${protocol}://localhost:${server.port}`);
+  logger.info(`🔌 WebSocket server ready at ws://localhost:${server.port}/ws`);
   logger.info("🎉 Server fully ready to accept requests");
 }
 // Check if current working directory is the parent directory and change to ../tmp if so

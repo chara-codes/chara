@@ -1,9 +1,18 @@
 "use client";
 
 import type React from "react";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import ViewNavigation from "../molecules/view-navigation";
+import {
+  useActiveRunnerProcess,
+  useRunnerConnection,
+  useRunnerConnect,
+  useRunnerClearOutput,
+  useRunnerRestart,
+  useRunnerGetStatus,
+} from "@chara/core/stores";
+import Button from "../atoms/button";
 
 const TerminalContainer = styled.div`
   display: flex;
@@ -159,34 +168,89 @@ export interface TerminalEntry {
 }
 
 export interface ServerInfo {
-  serverUrl: string;
+  serverUrl?: string;
   name: string;
   status: string;
-  os: string;
-  shell: string;
+  os?: string;
+  shell?: string;
   cwd: string;
   command: string;
 }
 
 interface TerminalViewProps {
   onBack: () => void;
+  // Optional props for fallback when runner store is not available
   logs?: TerminalEntry[];
   serverInfo?: ServerInfo;
 }
 
 const TerminalView: React.FC<TerminalViewProps> = ({
   onBack,
-  logs = [],
-  serverInfo,
+  logs: fallbackLogs = [],
+  serverInfo: fallbackServerInfo,
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
 
+  // Runner store hooks
+  const activeProcess = useActiveRunnerProcess();
+  const { isConnected, isConnecting, connectionError } = useRunnerConnection();
+  const connect = useRunnerConnect();
+  const clearOutput = useRunnerClearOutput();
+  const restart = useRunnerRestart();
+  const getStatus = useRunnerGetStatus();
+
+  // Use runner store data if available, otherwise use fallback props
+  const logs = activeProcess?.output || fallbackLogs;
+  const serverInfo = activeProcess
+    ? {
+        serverUrl: activeProcess.serverInfo.serverUrl,
+        name: activeProcess.serverInfo.name,
+        status: activeProcess.status,
+        os: activeProcess.serverInfo.os,
+        shell: activeProcess.serverInfo.shell,
+        cwd: activeProcess.serverInfo.cwd,
+        command: activeProcess.serverInfo.command,
+      }
+    : fallbackServerInfo;
+
+  // Connect to runner service on mount
+  useEffect(() => {
+    if (!isConnected && !isConnecting) {
+      connect().catch(console.error);
+    }
+  }, [isConnected, isConnecting]);
+
   // Auto-scroll to bottom when new logs are added
   useEffect(() => {
-    if (contentRef.current) {
+    if (contentRef.current && logs.length > 0) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
-  }, [logs]);
+  }, [logs.length]);
+
+  // Handlers for terminal actions
+  const handleClearOutput = useCallback(() => {
+    if (activeProcess) {
+      clearOutput(activeProcess.processId);
+    }
+  }, [activeProcess, clearOutput]);
+
+  const handleRestart = useCallback(() => {
+    if (activeProcess) {
+      restart(activeProcess.processId);
+    }
+  }, [activeProcess, restart]);
+
+  const handleRefresh = useCallback(() => {
+    if (activeProcess) {
+      getStatus(activeProcess.processId);
+    } else {
+      getStatus();
+    }
+  }, [activeProcess, getStatus]);
+
+  // Show connection status if not connected
+  const showConnectionStatus =
+    !isConnected && (isConnecting || connectionError);
 
   return (
     <TerminalContainer>
@@ -198,9 +262,95 @@ const TerminalView: React.FC<TerminalViewProps> = ({
         showSearch={false}
       />
 
+      {showConnectionStatus && (
+        <ServerInfoWrapper>
+          <ServerInfoBlock>
+            <ServerInfoTitle>
+              {isConnecting
+                ? "🔄 Connecting to Runner..."
+                : "❌ Connection Failed"}
+            </ServerInfoTitle>
+            {connectionError && (
+              <ServerInfoRow>
+                <span className="label">Error:</span>
+                <span className="value" style={{ color: "#ff6b6b" }}>
+                  {connectionError}
+                </span>
+              </ServerInfoRow>
+            )}
+            <ServerInfoRow>
+              <Button
+                onClick={handleRefresh}
+                style={{
+                  background: "#2a2a2a",
+                  border: "1px solid #4a4a4a",
+                  color: "#ffffff",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                }}
+              >
+                Retry Connection
+              </Button>
+            </ServerInfoRow>
+          </ServerInfoBlock>
+        </ServerInfoWrapper>
+      )}
+
       {serverInfo && (
         <ServerInfoWrapper>
           <ServerInfoBlock>
+            <ServerInfoTitle>
+              🚀 Server Information
+              <div style={{ float: "right", display: "flex", gap: "8px" }}>
+                <Button
+                  onClick={handleClearOutput}
+                  style={{
+                    background: "#2a2a2a",
+                    border: "1px solid #4a4a4a",
+                    color: "#ffffff",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "11px",
+                  }}
+                  title="Clear output"
+                >
+                  Clear
+                </Button>
+                <Button
+                  onClick={handleRestart}
+                  style={{
+                    background: "#2a2a2a",
+                    border: "1px solid #4a4a4a",
+                    color: "#ffffff",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "11px",
+                  }}
+                  title="Restart process"
+                >
+                  Restart
+                </Button>
+                <Button
+                  onClick={handleRefresh}
+                  style={{
+                    background: "#2a2a2a",
+                    border: "1px solid #4a4a4a",
+                    color: "#ffffff",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "11px",
+                  }}
+                  title="Refresh status"
+                >
+                  Refresh
+                </Button>
+              </div>
+            </ServerInfoTitle>
             <ServerInfoRow>
               <span className="label">Status:</span>
               <span className="value">
@@ -212,31 +362,37 @@ const TerminalView: React.FC<TerminalViewProps> = ({
               <span className="label">Name:</span>
               <span className="value">{serverInfo.name}</span>
             </ServerInfoRow>
-            <ServerInfoRow>
-              <span className="label">URL:</span>
-              <span className="value">
-                <a
-                  href={serverInfo.serverUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="url-link"
-                >
-                  {serverInfo.serverUrl}
-                </a>
-              </span>
-            </ServerInfoRow>
+            {serverInfo.serverUrl && (
+              <ServerInfoRow>
+                <span className="label">URL:</span>
+                <span className="value">
+                  <a
+                    href={serverInfo.serverUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="url-link"
+                  >
+                    {serverInfo.serverUrl}
+                  </a>
+                </span>
+              </ServerInfoRow>
+            )}
             <ServerInfoRow>
               <span className="label">Command:</span>
               <span className="value">{serverInfo.command}</span>
             </ServerInfoRow>
-            <ServerInfoRow>
-              <span className="label">OS:</span>
-              <span className="value">{serverInfo.os}</span>
-            </ServerInfoRow>
-            <ServerInfoRow>
-              <span className="label">Shell:</span>
-              <span className="value">{serverInfo.shell}</span>
-            </ServerInfoRow>
+            {serverInfo.os && (
+              <ServerInfoRow>
+                <span className="label">OS:</span>
+                <span className="value">{serverInfo.os}</span>
+              </ServerInfoRow>
+            )}
+            {serverInfo.shell && (
+              <ServerInfoRow>
+                <span className="label">Shell:</span>
+                <span className="value">{serverInfo.shell}</span>
+              </ServerInfoRow>
+            )}
             <ServerInfoRow>
               <span className="label">CWD:</span>
               <span className="value">{serverInfo.cwd}</span>
@@ -249,9 +405,15 @@ const TerminalView: React.FC<TerminalViewProps> = ({
         {logs.length === 0 ? (
           <EmptyState>
             <div className="icon">📋</div>
-            <div>No execution logs available</div>
+            <div>
+              {isConnected
+                ? "No execution logs available"
+                : "Waiting for connection..."}
+            </div>
             <div style={{ fontSize: "12px", marginTop: "4px" }}>
-              Command logs will appear here when available
+              {isConnected
+                ? "Command logs will appear here when available"
+                : "Terminal output will appear here once connected"}
             </div>
           </EmptyState>
         ) : (
@@ -261,6 +423,11 @@ const TerminalView: React.FC<TerminalViewProps> = ({
               $type={entry.type}
               $exitCode={entry.exitCode}
             >
+              <span
+                style={{ color: "#666", fontSize: "11px", marginRight: "8px" }}
+              >
+                {entry.timestamp.toLocaleTimeString()}
+              </span>
               {entry.content}
               {entry.exitCode !== undefined && entry.exitCode !== 0 && (
                 <span

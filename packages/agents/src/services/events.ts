@@ -107,6 +107,10 @@ type EventMap = Record<string, any>;
 export class TypedEventEmitter<
   TEventMap extends EventMap = EventMap,
 > extends EventEmitter {
+  private patternListeners: Map<
+    string,
+    ((eventName: string, data: any) => void)[]
+  > = new Map();
   /**
    * Add an event listener for the specified event
    */
@@ -144,7 +148,18 @@ export class TypedEventEmitter<
     event: K,
     data: TEventMap[K],
   ): boolean {
-    return super.emit(event as string, data);
+    const eventName = event as string;
+
+    // Call pattern listeners
+    for (const [pattern, listeners] of this.patternListeners.entries()) {
+      if (this.matchesPattern(eventName, pattern)) {
+        for (const listener of listeners) {
+          listener(eventName, data);
+        }
+      }
+    }
+
+    return super.emit(eventName, data);
   }
 
   /**
@@ -206,6 +221,51 @@ export class TypedEventEmitter<
    */
   override eventNames(): (keyof TEventMap)[] {
     return super.eventNames() as (keyof TEventMap)[];
+  }
+
+  /**
+   * Subscribe to events matching a pattern (e.g., "runner:*")
+   */
+  onPattern(
+    pattern: string,
+    listener: (eventName: string, data: any) => void,
+  ): this {
+    if (!this.patternListeners.has(pattern)) {
+      this.patternListeners.set(pattern, []);
+    }
+    this.patternListeners.get(pattern)!.push(listener);
+    return this;
+  }
+
+  /**
+   * Remove a pattern-based event listener
+   */
+  offPattern(
+    pattern: string,
+    listener: (eventName: string, data: any) => void,
+  ): this {
+    const listeners = this.patternListeners.get(pattern);
+    if (listeners) {
+      const index = listeners.indexOf(listener);
+      if (index !== -1) {
+        listeners.splice(index, 1);
+      }
+      if (listeners.length === 0) {
+        this.patternListeners.delete(pattern);
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Check if an event name matches a pattern
+   */
+  private matchesPattern(eventName: string, pattern: string): boolean {
+    if (pattern.endsWith("*")) {
+      const prefix = pattern.slice(0, -1);
+      return eventName.startsWith(prefix);
+    }
+    return eventName === pattern;
   }
 
   /**
