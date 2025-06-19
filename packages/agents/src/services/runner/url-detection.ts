@@ -3,25 +3,41 @@ import type { ProcessData } from "./types.js";
 
 /**
  * URL patterns commonly found in development server output
+ * Ordered by preference - local URLs first, then public URLs
  */
-const URL_PATTERNS = [
+const LOCAL_URL_PATTERNS = [
+  // Nuxt: "  ➜ Local:    http://localhost:3000/"
+  /➜\s+Local:\s+(https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:\/[^\s]*)?)/i,
   // Next.js: "- Local:        http://localhost:3000"
-  /(?:Local|local):\s*(?:https?:\/\/[^\s]+)/i,
+  /(?:Local|local):\s*(https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:\/[^\s]*)?)/i,
   // Vite: "Local:   http://localhost:5173/"
-  /Local:\s*(https?:\/\/[^\s]+)/i,
+  /Local:\s*(https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:\/[^\s]*)?)/i,
   // Generic: "Server running on http://localhost:3000"
-  /(?:running|listening|available).*?(https?:\/\/[^\s\)]+)/i,
+  /(?:running|listening|available).*?(https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:\/[^\s]*)?)/i,
   // Serve: "   http://localhost:3000"
-  /^\s+(https?:\/\/[^\s]+)/i,
+  /^\s+(https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:\/[^\s]*)?)/i,
   // Serve: "Accepting connections at http://localhost:3000"
-  /(?:Accepting connections at|INFO\s+).*?(https?:\/\/[^\s\)]+)/i,
+  /(?:Accepting connections at|INFO\s+).*?(https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:\/[^\s]*)?)/i,
   // Python HTTP server: "Serving HTTP on :: port 8000 (http://[::]:8000/) ..."
-  /Serving HTTP on.*?\((https?:\/\/[^\)]+)\)/i,
-  // Generic: "http://localhost:3000"
+  /Serving HTTP on.*?\((https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1?\])(?::\d+)?(?:\/[^\)]*)?)\)/i,
+  // Generic: "http://localhost:3000" (but not in URLs like content.nuxt.com/docs/...)
   /(https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:\/[^\s]*)?)/i,
-  // Webpack dev server: "webpack compiled with 1 warning" followed by URL
-  /(https?:\/\/[^\s]+)/i,
 ];
+
+const PUBLIC_URL_PATTERNS = [
+  // Nuxt: "  ➜ Network:  http://192.168.1.100:3000/"
+  /➜\s+Network:\s+(https?:\/\/[^\s]+)/i,
+  // Next.js: "- Network:      http://192.168.1.100:3000"
+  /(?:Network|network):\s*(https?:\/\/[^\s]+)/i,
+];
+
+/**
+ * Remove ANSI color codes from text
+ */
+function stripAnsiColors(text: string): string {
+  // Remove ANSI escape sequences including color codes
+  return text.replace(/\x1b\[[0-9;]*m/g, "");
+}
 
 /**
  * Clean up detected URL by removing trailing characters
@@ -48,8 +64,12 @@ function extractHostAndPort(url: URL): { host: string; port: number } {
  * Detect URL from process output chunk
  */
 function detectUrlFromChunk(chunk: string): string | null {
-  for (const pattern of URL_PATTERNS) {
-    const match = chunk.match(pattern);
+  // Strip ANSI color codes before processing
+  const cleanChunk = stripAnsiColors(chunk);
+
+  // First try to find local URLs
+  for (const pattern of LOCAL_URL_PATTERNS) {
+    const match = cleanChunk.match(pattern);
     if (match) {
       let detectedUrl = match[1] || match[0];
       detectedUrl = cleanupUrl(detectedUrl);
@@ -63,13 +83,43 @@ function detectUrlFromChunk(chunk: string): string | null {
       }
     }
   }
+
+  // If no local URL found, try public URLs
+  for (const pattern of PUBLIC_URL_PATTERNS) {
+    const match = cleanChunk.match(pattern);
+    if (match) {
+      let detectedUrl = match[1] || match[0];
+      detectedUrl = cleanupUrl(detectedUrl);
+
+      // Validate it's a proper URL and ensure it's not a local URL
+      try {
+        const url = new URL(detectedUrl);
+        const isLocal = [
+          "localhost",
+          "127.0.0.1",
+          "0.0.0.0",
+          "::1",
+          "::",
+        ].includes(url.hostname);
+        if (!isLocal) {
+          return detectedUrl;
+        }
+      } catch {
+        // Invalid URL, continue searching
+      }
+    }
+  }
+
   return null;
 }
 
 /**
  * Update process data with detected URL information
  */
-function updateProcessWithUrl(processData: ProcessData, detectedUrl: string): void {
+function updateProcessWithUrl(
+  processData: ProcessData,
+  detectedUrl: string,
+): void {
   try {
     const url = new URL(detectedUrl);
     const { host, port } = extractHostAndPort(url);
@@ -86,7 +136,10 @@ function updateProcessWithUrl(processData: ProcessData, detectedUrl: string): vo
 /**
  * Emit events when URL is detected
  */
-function emitUrlDetectionEvents(processId: string, processData: ProcessData): void {
+function emitUrlDetectionEvents(
+  processId: string,
+  processData: ProcessData,
+): void {
   // Emit updated server info
   appEvents.emit("runner:started", {
     processId,
@@ -126,7 +179,7 @@ function emitUrlDetectionEvents(processId: string, processData: ProcessData): vo
  */
 export function setupUrlDetection(
   processId: string,
-  processData: ProcessData
+  processData: ProcessData,
 ): void {
   // Create URL detection handler
   const detectUrl = (chunk: string) => {
@@ -139,7 +192,7 @@ export function setupUrlDetection(
 
   // Intercept output events for this process
   const outputHandler = (event: any) => {
-    if (event.processId === processId) {
+    if (event.processId === processId && event.stream !== "stderr") {
       detectUrl(event.chunk);
     }
   };

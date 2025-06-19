@@ -239,7 +239,7 @@ const TerminalView: React.FC<TerminalViewProps> = ({
       const errorEntry: TerminalEntry = {
         id: `process-error-${activeProcess.processId}`,
         type: "error",
-        content: `PROCESS ERROR: ${activeProcess.error}`,
+        content: `ERROR: ${activeProcess.error}`,
         timestamp: new Date(),
         processId: activeProcess.processId,
       };
