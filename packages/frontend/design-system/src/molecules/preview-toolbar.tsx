@@ -31,16 +31,17 @@ interface PreviewToolbarProps {
 const ToolbarContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
   align-items: center;
+  padding: 16px 12px;
 `;
 
 const ToolbarButton = styled.button<{ $isActive: boolean }>`
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   background-color: ${({ $isActive, theme }) =>
     $isActive ? (theme as Theme).colors.primary : "transparent"};
   color: ${({ $isActive, theme }) =>
@@ -49,28 +50,70 @@ const ToolbarButton = styled.button<{ $isActive: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  border: 2px solid
+    ${({ $isActive, theme }) =>
+      $isActive ? (theme as Theme).colors.primary : "transparent"};
+  box-shadow: ${({ $isActive }) =>
+    $isActive
+      ? "0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08)"
+      : "0 2px 4px rgba(0, 0, 0, 0.04)"};
 
   &:hover {
     background-color: ${({ $isActive, theme }) =>
       $isActive
-        ? (theme as Theme).colors.background
+        ? (theme as Theme).colors.primary
         : (theme as Theme).colors.backgroundSecondary};
     color: ${({ $isActive, theme }) =>
       $isActive ? "#ffffff" : (theme as Theme).colors.text};
+    transform: translateY(-1px);
+    box-shadow: ${({ $isActive }) =>
+      $isActive
+        ? "0 6px 16px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.1)"
+        : "0 4px 8px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.06)"};
+    border-color: ${({ $isActive, theme }) =>
+      $isActive
+        ? (theme as Theme).colors.primary
+        : (theme as Theme).colors.border};
   }
 
   &:active {
-    transform: scale(0.95);
+    transform: translateY(0px) scale(0.96);
+    transition: all 0.1s ease;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px ${({ theme }) => (theme as Theme).colors.primary}33;
   }
 `;
 
 const Divider = styled.div`
-  width: 24px;
+  width: 28px;
   height: 1px;
-  background-color: ${({ theme }) => (theme as Theme).colors.border};
-  margin: 8px 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    ${({ theme }) => (theme as Theme).colors.border} 20%,
+    ${({ theme }) => (theme as Theme).colors.border} 80%,
+    transparent
+  );
+  margin: 4px 0;
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    background-color: ${({ theme }) => (theme as Theme).colors.border};
+    border-radius: 50%;
+    opacity: 0.6;
+  }
 `;
 
 export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
