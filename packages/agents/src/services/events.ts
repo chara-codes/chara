@@ -67,6 +67,13 @@ export interface AppEvents {
       host?: string;
       port?: number;
     };
+    logs?: Array<{
+      id: string;
+      timestamp: Date;
+      type: "stdout" | "stderr" | "error";
+      content: string;
+      processId?: string;
+    }>;
   };
   "runner:restarted": {
     processId: string;

@@ -1,3 +1,11 @@
+export interface LogEntry {
+  id: string;
+  timestamp: Date;
+  type: "stdout" | "stderr" | "error";
+  content: string;
+  processId?: string;
+}
+
 export interface ServerInfo {
   serverUrl?: string;
   host?: string;
@@ -11,6 +19,7 @@ export interface ServerInfo {
   pid?: number;
   startTime?: Date;
   uptime?: number;
+  logs?: LogEntry[];
 }
 
 export interface RunnerOptions {
@@ -21,4 +30,5 @@ export interface RunnerOptions {
 export interface ProcessData {
   subprocess: any;
   info: ServerInfo;
+  logBuffer: LogEntry[];
 }

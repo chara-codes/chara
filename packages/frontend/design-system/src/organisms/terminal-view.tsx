@@ -217,18 +217,29 @@ const TerminalView: React.FC<TerminalViewProps> = ({
   const getStatus = useRunnerGetStatus();
 
   // Use runner store data if available, otherwise use fallback props
-  const logs = activeProcess?.output || fallbackLogs;
+  const logs = useMemo(() => {
+    if (activeProcess?.output) {
+      return activeProcess.output.map((log) => ({
+        id: log.id,
+        type: log.type,
+        content: log.content,
+        timestamp: log.timestamp,
+        processId: activeProcess.processId,
+      }));
+    }
+    return fallbackLogs;
+  }, [activeProcess?.output, activeProcess?.processId, fallbackLogs]);
 
   // Add error messages to logs if there are any
   const enhancedLogs = useMemo(() => {
     const baseLogs = [...logs];
 
-    // Add error as a log entry if process has an error
+    // Add error as a log entry if process has an error and it's not already in logs
     if (activeProcess?.error) {
       const errorEntry: TerminalEntry = {
-        id: `error-${activeProcess.processId}`,
+        id: `process-error-${activeProcess.processId}`,
         type: "error",
-        content: `ERROR: ${activeProcess.error}`,
+        content: `PROCESS ERROR: ${activeProcess.error}`,
         timestamp: new Date(),
         processId: activeProcess.processId,
       };

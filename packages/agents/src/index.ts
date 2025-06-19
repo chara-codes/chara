@@ -66,13 +66,12 @@ async function startServer(charaConfigFile = ".chara.json") {
   });
 
   appEvents.on("runner:status", (status) => {
-    logger.dump(status);
+    logger.dumpDebug(status);
     // setInterval(() => {
     //   appEvents.emit("runner:get-status", { processId: status.processId });
     // }, 3000);
   });
 
-  logger.dump(process.cwd());
   runnerService.start({
     command: charaConfig.dev || "npx serve .",
     cwd: process.cwd(),
@@ -143,7 +142,7 @@ async function startServer(charaConfigFile = ".chara.json") {
 
     // WebSocket configuration
     websocket: {
-      message(ws, message) {
+      message(ws: any, message: any) {
         try {
           const data = JSON.parse(message.toString());
           logger.debug("WebSocket message received:", data);
@@ -159,16 +158,16 @@ async function startServer(charaConfigFile = ".chara.json") {
         }
       },
 
-      open(ws) {
+      open(ws: any) {
         wsClients.add(ws);
-        logger.info(
+        logger.debug(
           `WebSocket client connected. Total clients: ${wsClients.size}`,
         );
       },
 
       close(ws) {
         wsClients.delete(ws);
-        logger.info(
+        logger.debug(
           `WebSocket client disconnected. Total clients: ${wsClients.size}`,
         );
       },

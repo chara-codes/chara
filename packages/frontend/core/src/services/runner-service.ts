@@ -63,6 +63,13 @@ export interface RunnerServiceCallbacks {
       host?: string;
       port?: number;
     };
+    logs?: Array<{
+      id: string;
+      timestamp: Date;
+      type: "stdout" | "stderr" | "error";
+      content: string;
+      processId?: string;
+    }>;
   }) => void;
   onRunnerRestarted?: (data: {
     processId: string;

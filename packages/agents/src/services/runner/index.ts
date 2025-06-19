@@ -1,7 +1,12 @@
 import os from "node:os";
 import { v4 as uuidv4 } from "uuid";
 import { appEvents } from "../events.js";
-import type { ServerInfo, RunnerOptions, ProcessData } from "./types.js";
+import type {
+  ServerInfo,
+  RunnerOptions,
+  ProcessData,
+  LogEntry,
+} from "./types.js";
 import { setupUrlDetection } from "./url-detection.js";
 import { generateProcessName } from "./process-names.js";
 import { streamOutput } from "./output-streaming.js";
@@ -15,6 +20,7 @@ class RunnerService {
   private processes = new Map<string, ProcessData>();
   private defaultShell = "/bin/bash";
   private defaultCwd = process.cwd();
+  private readonly LOG_BUFFER_SIZE = 100; // Maximum number of logs to keep in buffer
 
   constructor() {
     this.setupEventListeners();
@@ -43,6 +49,7 @@ class RunnerService {
               host: serverInfo.host,
               port: serverInfo.port,
             },
+            logs: this.getProcessLogs(event.processId),
           });
         }
       } else {
@@ -65,6 +72,7 @@ class RunnerService {
               host: info.host,
               port: info.port,
             },
+            logs: this.getProcessLogs(id),
           });
         } else {
           // Return all processes if multiple exist
@@ -82,6 +90,7 @@ class RunnerService {
                 host: info.host,
                 port: info.port,
               },
+              logs: this.getProcessLogs(id),
             });
           }
         }
@@ -163,7 +172,11 @@ class RunnerService {
       serverInfo.status = "active";
 
       // Store the process
-      const processData: ProcessData = { subprocess, info: serverInfo };
+      const processData: ProcessData = {
+        subprocess,
+        info: serverInfo,
+        logBuffer: [],
+      };
       this.processes.set(processId, processData);
 
       // Setup URL detection from output
@@ -185,10 +198,22 @@ class RunnerService {
       });
 
       // Stream stdout
-      streamOutput(processId, subprocess.stdout, "stdout", this.processes);
+      streamOutput(
+        processId,
+        subprocess.stdout,
+        "stdout",
+        this.processes,
+        this.addLogToBuffer.bind(this),
+      );
 
       // Stream stderr
-      streamOutput(processId, subprocess.stderr, "stderr", this.processes);
+      streamOutput(
+        processId,
+        subprocess.stderr,
+        "stderr",
+        this.processes,
+        this.addLogToBuffer.bind(this),
+      );
 
       // Handle process exit
       subprocess.exited.then((exitCode) => {
@@ -219,8 +244,21 @@ class RunnerService {
 
       // Update status to error
       serverInfo.status = "error";
-      const processData: ProcessData = { subprocess: null, info: serverInfo };
+      const processData: ProcessData = {
+        subprocess: null,
+        info: serverInfo,
+        logBuffer: [],
+      };
       this.processes.set(processId, processData);
+
+      // Add error to log buffer
+      this.addLogToBuffer(processId, {
+        id: uuidv4(),
+        timestamp: new Date(),
+        type: "error",
+        content: String(error),
+        processId,
+      });
 
       // Emit error event
       appEvents.emit("runner:error", {
@@ -264,10 +302,20 @@ class RunnerService {
           host: processData.info.host,
           port: processData.info.port,
         },
+        logs: this.getProcessLogs(processId),
       });
 
       return true;
     } catch (error) {
+      // Add error to log buffer
+      this.addLogToBuffer(processId, {
+        id: uuidv4(),
+        timestamp: new Date(),
+        type: "error",
+        content: String(error),
+        processId,
+      });
+
       appEvents.emit("runner:error", {
         processId,
         error: String(error),
@@ -323,6 +371,15 @@ class RunnerService {
 
       return true;
     } catch (error) {
+      // Add error to log buffer
+      this.addLogToBuffer(processId, {
+        id: uuidv4(),
+        timestamp: new Date(),
+        type: "error",
+        content: String(error),
+        processId,
+      });
+
       appEvents.emit("runner:error", {
         processId,
         error: String(error),
@@ -424,6 +481,42 @@ class RunnerService {
     );
     await Promise.all(promises);
   }
+
+  /**
+   * Add a log entry to the process buffer
+   */
+  addLogToBuffer(processId: string, logEntry: LogEntry): void {
+    const processData = this.processes.get(processId);
+    if (!processData) {
+      return;
+    }
+
+    // Add log to buffer
+    processData.logBuffer.push(logEntry);
+
+    // Maintain buffer size limit
+    if (processData.logBuffer.length > this.LOG_BUFFER_SIZE) {
+      processData.logBuffer.shift(); // Remove oldest log
+    }
+  }
+
+  /**
+   * Get logs for a specific process
+   */
+  getProcessLogs(processId: string): LogEntry[] {
+    const processData = this.processes.get(processId);
+    return processData ? [...processData.logBuffer] : [];
+  }
+
+  /**
+   * Clear logs for a specific process
+   */
+  clearProcessLogs(processId: string): void {
+    const processData = this.processes.get(processId);
+    if (processData) {
+      processData.logBuffer = [];
+    }
+  }
 }
 
 // Export the class for testing
@@ -482,4 +575,8 @@ export const requestRestart = (
   newCommand?: string,
 ): void => {
   appEvents.emit("runner:restart", { processId, newCommand });
+};
+
+export const clearLogs = (processId: string): void => {
+  runnerService.clearProcessLogs(processId);
 };

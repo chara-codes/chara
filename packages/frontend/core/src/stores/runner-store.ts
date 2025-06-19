@@ -174,6 +174,18 @@ export const useRunnerStore = create<RunnerState>()(
 
           onRunnerStatus: (data) => {
             const existingProcess = get().processes[data.processId];
+
+            // Convert logs from status to output format if available
+            let outputLogs = existingProcess?.output || [];
+            if (data.logs && data.logs.length > 0) {
+              outputLogs = data.logs.map((log) => ({
+                id: log.id,
+                timestamp: new Date(log.timestamp),
+                type: log.type === "error" ? "stderr" : log.type,
+                content: log.content,
+              }));
+            }
+
             const process: RunnerProcess = {
               processId: data.processId,
               status: data.status,
@@ -181,7 +193,7 @@ export const useRunnerStore = create<RunnerState>()(
                 ...existingProcess?.serverInfo,
                 ...data.serverInfo,
               },
-              output: existingProcess?.output || [],
+              output: outputLogs,
               error: existingProcess?.error,
             };
 
