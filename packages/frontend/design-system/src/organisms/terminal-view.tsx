@@ -389,21 +389,6 @@ const TerminalView: React.FC<TerminalViewProps> = ({
                 >
                   Restart
                 </Button>
-                <Button
-                  onClick={handleRefresh}
-                  style={{
-                    background: "#2a2a2a",
-                    border: "1px solid #4a4a4a",
-                    color: "#ffffff",
-                    padding: "4px 8px",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontSize: "11px",
-                  }}
-                  title="Refresh status"
-                >
-                  Refresh
-                </Button>
               </div>
             </ServerInfoTitle>
             <ServerInfoRow>
@@ -412,6 +397,10 @@ const TerminalView: React.FC<TerminalViewProps> = ({
                 <StatusIndicator $status={serverInfo.status} />
                 {serverInfo.status}
               </span>
+            </ServerInfoRow>
+            <ServerInfoRow>
+              <span className="label">Process ID:</span>
+              <span className="value">{activeProcess?.processId}</span>
             </ServerInfoRow>
             <ServerInfoRow>
               <span className="label">Name:</span>

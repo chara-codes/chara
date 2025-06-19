@@ -107,6 +107,9 @@ export interface AppEvents {
     processId: string;
     newCommand?: string; // Optional new command to use for restart
   };
+  "runner:clear-logs": {
+    processId: string;
+  };
 }
 
 type EventMap = Record<string, any>;

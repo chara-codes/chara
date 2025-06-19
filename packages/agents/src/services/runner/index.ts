@@ -108,6 +108,40 @@ class RunnerService {
         });
       }
     });
+
+    // Listen for clear logs requests
+    appEvents.on("runner:clear-logs", (event) => {
+      this.clearProcessLogs(event.processId);
+
+      // Add a log entry indicating logs were cleared
+      this.addLogToBuffer(event.processId, {
+        id: uuidv4(),
+        timestamp: new Date(),
+        type: "stdout",
+        content: "--- Logs cleared ---",
+        processId: event.processId,
+      });
+
+      // Emit status update to notify clients
+      const serverInfo = this.getServerInfo(event.processId);
+      if (serverInfo) {
+        appEvents.emit("runner:status", {
+          processId: event.processId,
+          status: serverInfo.status,
+          serverInfo: {
+            name: serverInfo.name,
+            command: serverInfo.command,
+            cwd: serverInfo.cwd,
+            pid: serverInfo.pid,
+            uptime: serverInfo.uptime,
+            serverUrl: serverInfo.serverUrl,
+            host: serverInfo.host,
+            port: serverInfo.port,
+          },
+          logs: this.getProcessLogs(event.processId),
+        });
+      }
+    });
   }
 
   /**
@@ -351,13 +385,54 @@ class RunnerService {
         await processData.subprocess.exited;
       }
 
-      // Start new process with same ID
-      await this.startWithId(processId, {
-        command: commandToUse,
-        cwd,
+      // Clear the subprocess reference but keep the processData
+      processData.subprocess = null;
+      processData.info.status = "starting";
+
+      // Parse command and arguments
+      const parts = commandToUse.trim().split(/\s+/);
+      const mainCommand = parts[0];
+      const args = parts.slice(1);
+
+      // Update server info for restart
+      processData.info.command = commandToUse;
+      processData.info.startTime = new Date();
+      processData.info.pid = undefined;
+      processData.info.status = "starting";
+
+      // Emit starting event
+      appEvents.emit("runner:status", {
+        processId,
+        status: "starting",
+        serverInfo: {
+          name: processData.info.name,
+          command: processData.info.command,
+          cwd: processData.info.cwd,
+          pid: undefined,
+          uptime: undefined,
+          serverUrl: processData.info.serverUrl,
+          host: processData.info.host,
+          port: processData.info.port,
+        },
+        logs: this.getProcessLogs(processId),
       });
 
-      // Emit restart event
+      // Spawn the new process
+      const subprocess = Bun.spawn([String(mainCommand), ...args], {
+        cwd,
+        env: { ...process.env },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+
+      processData.subprocess = subprocess;
+      processData.info.pid = subprocess.pid;
+      processData.info.status = "active";
+
+      // Setup URL detection from output
+      setupUrlDetection(processId, processData);
+
+      // Emit restarted event
       appEvents.emit("runner:restarted", {
         processId,
         oldCommand,
@@ -366,7 +441,49 @@ class RunnerService {
           name: processData.info.name,
           command: commandToUse,
           cwd,
+          pid: processData.info.pid,
         },
+      });
+
+      // Stream stdout
+      streamOutput(
+        processId,
+        subprocess.stdout,
+        "stdout",
+        this.processes,
+        this.addLogToBuffer.bind(this),
+      );
+
+      // Stream stderr
+      streamOutput(
+        processId,
+        subprocess.stderr,
+        "stderr",
+        this.processes,
+        this.addLogToBuffer.bind(this),
+      );
+
+      // Handle process exit
+      subprocess.exited.then((exitCode) => {
+        const processData = this.processes.get(processId);
+        if (processData) {
+          processData.info.status = exitCode === 0 ? "stopped" : "error";
+
+          appEvents.emit("runner:stopped", {
+            processId,
+            exitCode,
+            serverInfo: {
+              name: processData.info.name,
+              command: processData.info.command,
+              cwd: processData.info.cwd,
+            },
+          });
+
+          // Clean up after some time to allow for final events
+          setTimeout(() => {
+            this.processes.delete(processId);
+          }, 5000);
+        }
       });
 
       return true;
@@ -578,5 +695,5 @@ export const requestRestart = (
 };
 
 export const clearLogs = (processId: string): void => {
-  runnerService.clearProcessLogs(processId);
+  appEvents.emit("runner:clear-logs", { processId });
 };

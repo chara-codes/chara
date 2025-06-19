@@ -240,7 +240,7 @@ export class RunnerService {
    * Send a command to the runner
    */
   sendCommand(
-    event: "runner:get-status" | "runner:restart",
+    event: "runner:get-status" | "runner:restart" | "runner:clear-logs",
     data: any = {},
   ): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
@@ -279,6 +279,13 @@ export class RunnerService {
       data.newCommand = newCommand;
     }
     this.sendCommand("runner:restart", data);
+  }
+
+  /**
+   * Clear logs for a process
+   */
+  clearLogs(processId: string): void {
+    this.sendCommand("runner:clear-logs", { processId });
   }
 
   /**

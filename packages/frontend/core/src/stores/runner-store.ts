@@ -270,15 +270,20 @@ export const useRunnerStore = create<RunnerState>()(
       },
 
       clearOutput: (processId) => {
-        set((state) => ({
-          processes: {
-            ...state.processes,
-            [processId]: {
-              ...state.processes[processId],
-              output: [],
+        if (get().isConnected) {
+          runnerService.clearLogs(processId);
+        } else {
+          // Fallback to local clear if not connected
+          set((state) => ({
+            processes: {
+              ...state.processes,
+              [processId]: {
+                ...state.processes[processId],
+                output: [],
+              },
             },
-          },
-        }));
+          }));
+        }
       },
 
       clearAllOutput: () => {

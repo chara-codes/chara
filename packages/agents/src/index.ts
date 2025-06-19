@@ -60,7 +60,11 @@ async function startServer(charaConfigFile = ".chara.json") {
 
   // Subscribe to runner events using pattern matching
   appEvents.onPattern("runner:*", (eventName: string, data: any) => {
-    if (eventName !== "runner:get-status" && eventName !== "runner:restart") {
+    if (
+      eventName !== "runner:get-status" &&
+      eventName !== "runner:restart" &&
+      eventName !== "runner:clear-logs"
+    ) {
       broadcastToClients(eventName, data);
     }
   });
@@ -148,10 +152,14 @@ async function startServer(charaConfigFile = ".chara.json") {
           logger.debug("WebSocket message received:", data);
 
           // Handle runner commands from client
-          if (data.event === "runner:get-status") {
-            appEvents.emit("runner:get-status", data.data || {});
-          } else if (data.event === "runner:restart") {
-            appEvents.emit("runner:restart", data.data || {});
+          if (
+            [
+              "runner:get-status",
+              "runner:restart",
+              "runner:clear-logs",
+            ].includes(data.event)
+          ) {
+            appEvents.emit(data.event, data.data || {});
           }
         } catch (error) {
           logger.error("Failed to parse WebSocket message:", error);
@@ -182,8 +190,8 @@ async function startServer(charaConfigFile = ".chara.json") {
   const server = Bun.serve(serverConfig);
   const protocol = serverConfig.tls ? "https" : "http";
   logger.server(`Server started on ${protocol}://localhost:${server.port}`);
-  logger.info(`🔌 WebSocket server ready at ws://localhost:${server.port}/ws`);
-  logger.info("🎉 Server fully ready to accept requests");
+  logger.debug(`🔌 WebSocket server ready at ws://localhost:${server.port}/ws`);
+  logger.debug("🎉 Server fully ready to accept requests");
 }
 // Check if current working directory is the parent directory and change to ../tmp if so
 const currentDir = process.cwd();
