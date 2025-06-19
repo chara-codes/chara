@@ -80,7 +80,11 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
   const toolbarItems = [
     { type: PreviewType.APP, icon: <GlobeIcon />, tooltip: "App Preview" },
     { type: PreviewType.CODE, icon: <CodeIcon />, tooltip: "Code View" },
-    { type: PreviewType.TESTS, icon: <FileIcon />, tooltip: "Tests" },
+    {
+      type: PreviewType.TESTS,
+      icon: <FileIcon width={28} height={28} />,
+      tooltip: "Tests",
+    },
     {
       type: PreviewType.STATISTICS,
       icon: <ChartIcon />,
@@ -88,7 +92,7 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
     },
     {
       type: PreviewType.DOCUMENTATION,
-      icon: <DocumentationIcon />,
+      icon: <DocumentationIcon width={28} height={28} />,
       tooltip: "Documentation",
     },
     {

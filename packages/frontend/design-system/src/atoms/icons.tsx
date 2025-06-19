@@ -33,6 +33,7 @@ import { ServerIcon } from "./icons/server-icon";
 import { DatabaseIcon } from "./icons/database-icon";
 import { GlobeIcon } from "./icons/globe-icon";
 import { EditIcon } from "./icons/edit-icon";
+import { RefreshIcon } from "./icons/refresh-icon";
 
 /**
  * Central export file for all icon components
@@ -78,6 +79,7 @@ export {
   DatabaseIcon,
   GlobeIcon,
   EditIcon,
+  RefreshIcon,
 };
 
 // Export types
@@ -117,3 +119,4 @@ export type { ServerIconProps } from "./icons/server-icon";
 export type { DatabaseIconProps } from "./icons/database-icon";
 export type { GlobeIconProps } from "./icons/globe-icon";
 export type { EditIconProps } from "./icons/edit-icon";
+export type { RefreshIconProps } from "./icons/refresh-icon";

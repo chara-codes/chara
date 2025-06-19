@@ -5,12 +5,12 @@ import styled from "styled-components";
 import {
   PreviewToolbar,
   PreviewType,
-  AppPreview,
   CodePreview,
   TestsPreview,
   StatisticsPreview,
   DocumentationPreview,
   DeploymentPreview,
+  ConnectedAppPreview,
 } from "../molecules";
 import type { Theme } from "../theme";
 
@@ -48,7 +48,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   const renderPreviewContent = () => {
     switch (activeType) {
       case PreviewType.APP:
-        return <AppPreview />;
+        return <ConnectedAppPreview />;
       case PreviewType.CODE:
         return <CodePreview />;
       case PreviewType.TESTS:

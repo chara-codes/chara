@@ -1,4 +1,5 @@
 export * from "./app-preview";
+export * from "./connected-app-preview";
 export * from "./code-preview";
 export * from "./command-terminal";
 export * from "./confirm-dialog";
