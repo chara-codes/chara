@@ -5,7 +5,6 @@ import type { ServerInfo, RunnerOptions, ProcessData } from "./types.js";
 import { setupUrlDetection } from "./url-detection.js";
 import { generateProcessName } from "./process-names.js";
 import { streamOutput } from "./output-streaming.js";
-import { logger } from "@chara/logger";
 
 export type { ServerInfo, RunnerOptions } from "./types.js";
 
@@ -49,7 +48,10 @@ class RunnerService {
       } else {
         // Get all processes status
         const allProcesses = this.getAllProcesses();
-        for (const { id, info } of allProcesses) {
+
+        // If only one process exists, return its status
+        if (allProcesses.length === 1) {
+          const { id, info } = allProcesses[0];
           appEvents.emit("runner:status", {
             processId: id,
             status: info.status,
@@ -64,6 +66,24 @@ class RunnerService {
               port: info.port,
             },
           });
+        } else {
+          // Return all processes if multiple exist
+          for (const { id, info } of allProcesses) {
+            appEvents.emit("runner:status", {
+              processId: id,
+              status: info.status,
+              serverInfo: {
+                name: info.name,
+                command: info.command,
+                cwd: info.cwd,
+                pid: info.pid,
+                uptime: info.uptime,
+                serverUrl: info.serverUrl,
+                host: info.host,
+                port: info.port,
+              },
+            });
+          }
         }
       }
     });

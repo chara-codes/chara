@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import ViewNavigation from "../molecules/view-navigation";
 import {
@@ -57,7 +57,7 @@ const TerminalContent = styled.div`
 `;
 
 const TerminalLine = styled.div<{
-  $type?: "stdout" | "stderr";
+  $type?: "stdout" | "stderr" | "error";
   $exitCode?: number;
 }>`
   margin: 2px 0;
@@ -65,11 +65,27 @@ const TerminalLine = styled.div<{
   align-items: flex-start;
   white-space: pre-wrap;
   word-break: break-word;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 13px;
+  line-height: 1.4;
 
   ${({ $type, $exitCode }) => {
-    if ($type === "stderr" || ($exitCode !== undefined && $exitCode !== 0)) {
+    if (
+      $type === "stderr" ||
+      $type === "error" ||
+      ($exitCode !== undefined && $exitCode !== 0)
+    ) {
       return `
         color: #ff6b6b;
+        background-color: rgba(255, 107, 107, 0.1);
+        padding: 2px 4px;
+        border-left: 3px solid #ff6b6b;
+        margin-left: 4px;
+      `;
+    }
+    if ($type === "stdout") {
+      return `
+        color: #ffffff;
       `;
     }
     return `
@@ -161,10 +177,11 @@ const EmptyState = styled.div`
 
 export interface TerminalEntry {
   id: string;
-  type: "stdout" | "stderr";
+  type: "stdout" | "stderr" | "error";
   content: string;
   timestamp: Date;
   exitCode?: number;
+  processId?: string;
 }
 
 export interface ServerInfo {
@@ -201,6 +218,33 @@ const TerminalView: React.FC<TerminalViewProps> = ({
 
   // Use runner store data if available, otherwise use fallback props
   const logs = activeProcess?.output || fallbackLogs;
+
+  // Add error messages to logs if there are any
+  const enhancedLogs = useMemo(() => {
+    const baseLogs = [...logs];
+
+    // Add error as a log entry if process has an error
+    if (activeProcess?.error) {
+      const errorEntry: TerminalEntry = {
+        id: `error-${activeProcess.processId}`,
+        type: "error",
+        content: `ERROR: ${activeProcess.error}`,
+        timestamp: new Date(),
+        processId: activeProcess.processId,
+      };
+
+      // Only add if not already present
+      const hasError = baseLogs.some((log) => log.id === errorEntry.id);
+      if (!hasError) {
+        baseLogs.push(errorEntry);
+      }
+    }
+
+    return baseLogs.sort(
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+    );
+  }, [logs, activeProcess?.error, activeProcess?.processId]);
+
   const serverInfo = activeProcess
     ? {
         serverUrl: activeProcess.serverInfo.serverUrl,
@@ -222,10 +266,10 @@ const TerminalView: React.FC<TerminalViewProps> = ({
 
   // Auto-scroll to bottom when new logs are added
   useEffect(() => {
-    if (contentRef.current && logs.length > 0) {
+    if (contentRef.current && enhancedLogs.length > 0) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
-  }, [logs.length]);
+  }, [enhancedLogs.length]);
 
   // Handlers for terminal actions
   const handleClearOutput = useCallback(() => {
@@ -402,7 +446,7 @@ const TerminalView: React.FC<TerminalViewProps> = ({
       )}
 
       <TerminalContent ref={contentRef}>
-        {logs.length === 0 ? (
+        {enhancedLogs.length === 0 ? (
           <EmptyState>
             <div className="icon">📋</div>
             <div>
@@ -417,24 +461,33 @@ const TerminalView: React.FC<TerminalViewProps> = ({
             </div>
           </EmptyState>
         ) : (
-          logs.map((entry) => (
+          enhancedLogs.map((entry) => (
             <TerminalLine
               key={entry.id}
               $type={entry.type}
               $exitCode={entry.exitCode}
             >
               <span
-                style={{ color: "#666", fontSize: "11px", marginRight: "8px" }}
+                style={{
+                  color: entry.type === "error" ? "#ff6b6b" : "#666",
+                  fontSize: "11px",
+                  marginRight: "8px",
+                  fontWeight: entry.type === "error" ? "bold" : "normal",
+                }}
               >
                 {entry.timestamp.toLocaleTimeString()}
+                {entry.type === "error" && " [ERROR]"}
+                {entry.type === "stderr" && " [STDERR]"}
+                {entry.type === "stdout" && " [STDOUT]"}
               </span>
-              {entry.content}
+              <span style={{ flex: 1 }}>{entry.content}</span>
               {entry.exitCode !== undefined && entry.exitCode !== 0 && (
                 <span
                   style={{
                     color: "#ff6b6b",
                     marginLeft: "8px",
                     fontSize: "11px",
+                    fontWeight: "bold",
                   }}
                 >
                   [exit: {entry.exitCode}]
