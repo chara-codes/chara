@@ -1,4 +1,3 @@
-import { spawn } from "bun";
 import os from "node:os";
 import { v4 as uuidv4 } from "uuid";
 import { appEvents } from "../events.js";
@@ -6,6 +5,7 @@ import type { ServerInfo, RunnerOptions, ProcessData } from "./types.js";
 import { setupUrlDetection } from "./url-detection.js";
 import { generateProcessName } from "./process-names.js";
 import { streamOutput } from "./output-streaming.js";
+import { logger } from "@chara/logger";
 
 export type { ServerInfo, RunnerOptions } from "./types.js";
 
@@ -132,7 +132,7 @@ class RunnerService {
       });
 
       // Spawn the process
-      const subprocess = spawn([String(mainCommand), ...args], {
+      const subprocess = Bun.spawn([String(mainCommand), ...args], {
         cwd,
         env: { ...process.env },
         stdout: "pipe",

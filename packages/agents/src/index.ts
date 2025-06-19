@@ -11,7 +11,6 @@ import {
 } from "./controllers";
 import { resolve } from "node:path";
 import { initAgent } from "./agents";
-import { mkdir } from "node:fs/promises";
 import { logWithPreset } from "./utils";
 import { runnerService } from "./services/runner";
 import { appEvents } from "./services/events";
@@ -46,9 +45,16 @@ async function startServer(charaConfigFile = ".chara.json") {
 
   appEvents.on("runner:status", (status) => {
     logger.dump(status);
+    // setInterval(() => {
+    //   appEvents.emit("runner:get-status", { processId: status.processId });
+    // }, 3000);
   });
 
-  runnerService.start({ command: charaConfig.dev || "npx serve ." });
+  logger.dump(process.cwd());
+  runnerService.start({
+    command: charaConfig.dev || "npx serve .",
+    cwd: process.cwd(),
+  });
 
   // Start MCP initialization in the background (don't wait)
   logger.info("🚀 Starting server initialization...");
@@ -110,7 +116,6 @@ async function startServer(charaConfigFile = ".chara.json") {
 const currentDir = process.cwd();
 const parentDir = resolve(__dirname, "..");
 if (currentDir === parentDir) {
-  mkdir("tmp");
   const tmpDir = resolve(parentDir, "tmp");
   process.chdir(tmpDir);
   logger.debug(`📁 Changed working directory to: ${tmpDir}`);

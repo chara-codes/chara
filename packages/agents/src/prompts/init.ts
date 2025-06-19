@@ -122,7 +122,7 @@ Generate a .chara.json file with this exact structure:
 ## Empty Directory Handling
 
 When a directory is empty or minimal (contains only basic files like .gitignore, README.md, LICENSE, .DS_Store, .git directory):
-- Set "dev": "npx serve ."
+- Set "dev": "npx serve ${workingDir}"
 - Set "projectType": "other"
 - Set "description": "Empty project directory ready for development"
 - Leave arrays empty: frameworks: [], tools: [], stack: [], dependencies: [], devDependencies: [], languages: []

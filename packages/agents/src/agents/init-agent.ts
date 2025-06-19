@@ -1,4 +1,4 @@
-import { streamText, type CoreMessage } from "ai";
+import { streamText } from "ai";
 import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
 import { initTools } from "../tools/init-tools";
@@ -20,9 +20,6 @@ export const initAgent = (
   logger.info(providerName, modelName);
 
   const cwd = workingDir || process.cwd();
-
-  // Create initial analysis message
-  const messages: CoreMessage[] = [];
 
   return streamText({
     ...options,
