@@ -29,7 +29,7 @@ import { useElementSelector } from "../../hooks";
 import { createDropdownItems } from "./dropdown-items";
 import styled from "styled-components";
 import AnimatedButton from "./animated-button";
-import { useUIStore } from "@chara/core";
+import { useRunnerProcesses, useUIStore } from "@chara/core";
 import { type InputAreaProps, useChatStore } from "@chara/core";
 
 const RoundedIconButton = styled(IconButton)`
@@ -240,20 +240,24 @@ const InputArea: React.FC<InputAreaProps> = ({
     }
   };
 
+  const runnerProcesses = useRunnerProcesses();
+
   const dropdownItems = createDropdownItems(
     startElementSelection,
     triggerFileUpload,
+    onAddContext,
+    runnerProcesses,
   );
 
   const handleDropdownSelect = (item: {
     id: string;
     label: string;
     type: string;
+    action?: any;
   }) => {
-    if (item.id === "upload" || item.id === "select-element") {
+    if (item.action) {
       return;
     }
-
     onAddContext({
       name: item.label,
       type: item.type.toLowerCase(),

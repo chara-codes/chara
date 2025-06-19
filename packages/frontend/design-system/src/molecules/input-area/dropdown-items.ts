@@ -1,9 +1,12 @@
-import type { DropdownItem } from "@chara/core";
+import type { DropdownItem, InputContextItem } from "@chara/core";
+import type { RunnerProcess } from "@chara/core";
 
 // Function to create dropdown items
 export const createDropdownItems = (
   startElementSelection: () => void,
   triggerFileUpload: () => void,
+  onAddContext: (item: InputContextItem) => void,
+  runnerProcesses?: Record<string, RunnerProcess>,
 ): DropdownItem[] => {
   return [
     // File items
@@ -45,31 +48,10 @@ export const createDropdownItems = (
       section: "Documentation",
     },
 
-    // Terminal items
-    {
-      id: "terminal-1",
-      label: "Terminal Output",
-      type: "Terminal",
-      section: "Terminal",
-    },
-    {
-      id: "terminal-2",
-      label: "Error Logs",
-      type: "Terminal",
-      section: "Terminal",
-    },
-    {
-      id: "terminal-3",
-      label: "Debug Console",
-      type: "Terminal",
-      section: "Terminal",
-    },
-    {
-      id: "terminal-4",
-      label: "Build Output",
-      type: "Terminal",
-      section: "Terminal",
-    },
+    // Dynamic terminal items from runner processes
+    ...(runnerProcesses
+      ? createTerminalItems(runnerProcesses, onAddContext)
+      : []),
 
     // Actions section
     {
@@ -87,4 +69,76 @@ export const createDropdownItems = (
       action: triggerFileUpload,
     },
   ];
+};
+
+// Helper function to create terminal items from runner processes
+const createTerminalItems = (
+  processes: Record<string, RunnerProcess>,
+  onAddContext: (item: InputContextItem) => void,
+): DropdownItem[] => {
+  const terminalItems: DropdownItem[] = [];
+
+  Object.values(processes).forEach((process) => {
+    const processName =
+      process.serverInfo.name || `Process ${process.processId}`;
+
+    // Full logs item
+    terminalItems.push({
+      id: `terminal-full-${process.processId}`,
+      label: `${processName} - Full Logs`,
+      type: "Terminal",
+      section: "Terminal",
+      action: () => {
+        onAddContext({
+          name: `${processName} - Full Logs`,
+          type: "Terminal",
+          data: process.output,
+        });
+      },
+      metadata: {
+        processId: process.processId,
+        logType: "full",
+      },
+    });
+
+    // Error logs item process.output.filter((log) => log.type === "stderr")
+    terminalItems.push({
+      id: `terminal-errors-${process.processId}`,
+      label: `${processName} - Errors`,
+      type: "Terminal",
+      section: "Terminal",
+      action: () => {
+        onAddContext({
+          name: `${processName} - Error Logs`,
+          type: "Terminal",
+          data: process.output.filter((log) => log.type === "stderr"),
+        });
+      },
+      metadata: {
+        processId: process.processId,
+        logType: "errors",
+      },
+    });
+
+    // Regular logs item
+    terminalItems.push({
+      id: `terminal-regular-${process.processId}`,
+      label: `${processName} - Regular Logs`,
+      type: "Terminal",
+      section: "Terminal",
+      action: () => {
+        onAddContext({
+          name: `${processName} - Regular Logs`,
+          type: "Terminal",
+          data: process.output.filter((log) => log.type !== "stderr"),
+        });
+      },
+      metadata: {
+        processId: process.processId,
+        logType: "regular",
+      },
+    });
+  });
+
+  return terminalItems;
 };

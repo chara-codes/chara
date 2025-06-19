@@ -1,5 +1,4 @@
 import type React from "react";
-import type { FC } from "react";
 
 export interface InputAreaProps {
   onSendMessage: (message: string) => void;
@@ -38,6 +37,6 @@ export interface DropdownItem {
 export interface ButtonConfig {
   enabled?: boolean;
   id?: string;
-  icon?: 'plus' | 'pointer' | 'clip';
+  icon?: "plus" | "pointer" | "clip";
   tooltip?: string;
 }

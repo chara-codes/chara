@@ -156,7 +156,7 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         <ToolCallInline status={toolCall.status} onClick={handleToggle}>
           <ToolCallHeader>
             <ToolCallName>
-              <FileImage width={12} height={12} /> {toolCall.name}: {filePath}
+              <FileImage width={12} height={12} /> {toolCall.name}
             </ToolCallName>
           </ToolCallHeader>
         </ToolCallInline>
@@ -225,7 +225,7 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         <ToolCallInline status={toolCall.status} onClick={handleToggle}>
           <ToolCallHeader>
             <ToolCallName>
-              <EditIcon width={12} height={12} /> {toolCall.name} {filePath}
+              <EditIcon width={12} height={12} /> {toolCall.name}
             </ToolCallName>
           </ToolCallHeader>
         </ToolCallInline>

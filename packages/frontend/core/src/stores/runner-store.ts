@@ -55,6 +55,11 @@ interface RunnerState {
   toggleTerminal: () => void;
   setTerminalHeight: (height: number) => void;
 
+  // Log retrieval actions
+  getFullLogs: (processId: string) => RunnerProcess["output"];
+  getErrorLogs: (processId: string) => RunnerProcess["output"];
+  getRegularLogs: (processId: string) => RunnerProcess["output"];
+
   // Internal state setters
   setConnectionState: (
     isConnected: boolean,
@@ -317,6 +322,29 @@ export const useRunnerStore = create<RunnerState>()(
         set({ terminalHeight: constrainedHeight });
       },
 
+      // Log retrieval actions
+      getFullLogs: (processId) => {
+        const state = get();
+        const process = state.processes[processId];
+        return process ? process.output : [];
+      },
+
+      getErrorLogs: (processId) => {
+        const state = get();
+        const process = state.processes[processId];
+        return process
+          ? process.output.filter((log) => log.type === "stderr")
+          : [];
+      },
+
+      getRegularLogs: (processId) => {
+        const state = get();
+        const process = state.processes[processId];
+        return process
+          ? process.output.filter((log) => log.type === "stdout")
+          : [];
+      },
+
       // Internal state setters
       setConnectionState: (isConnected, isConnecting, error) => {
         set({
@@ -422,6 +450,33 @@ export const useRunnerToggleTerminal = () =>
   useRunnerStore((state) => state.toggleTerminal);
 export const useRunnerSetTerminalHeight = () =>
   useRunnerStore((state) => state.setTerminalHeight);
+
+// Log retrieval action selectors
+export const useRunnerGetFullLogs = () =>
+  useRunnerStore((state) => state.getFullLogs);
+export const useRunnerGetErrorLogs = () =>
+  useRunnerStore((state) => state.getErrorLogs);
+export const useRunnerGetRegularLogs = () =>
+  useRunnerStore((state) => state.getRegularLogs);
+
+// Log selector hooks for reactive updates
+export const useRunnerFullLogs = (processId: string) =>
+  useRunnerStore((state) => {
+    const process = state.processes[processId];
+    return process ? process.output : [];
+  });
+
+export const useRunnerErrorLogs = (processId: string) =>
+  useRunnerStore((state) => {
+    const process = state.processes[processId];
+    return process ? process.output.filter((log) => log.type === "stderr") : [];
+  });
+
+export const useRunnerRegularLogs = (processId: string) =>
+  useRunnerStore((state) => {
+    const process = state.processes[processId];
+    return process ? process.output.filter((log) => log.type === "stdout") : [];
+  });
 
 // Constants for external use
 export const RUNNER_TERMINAL_HEIGHT_CONSTRAINTS = TERMINAL_HEIGHT_CONSTRAINTS;
