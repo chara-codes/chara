@@ -5,6 +5,7 @@ export * from "./context-panel";
 export * from "./conversation-view";
 export * from "./edit-tech-stack-view";
 export * from "./history-view";
+export * from "./preview-panel";
 export * from "./recent-history";
 export * from "./settings-view";
 export * from "./tech-stack-detail-view";
