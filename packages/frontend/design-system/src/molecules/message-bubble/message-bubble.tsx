@@ -116,49 +116,24 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   thinkingContent,
   isThinking,
   contextItems,
-  filesToChange,
-  commandsToExecute,
-  executedCommands,
-  fileDiffs,
   toolCalls,
   segments,
-  onKeepAllDiffs,
-  onRevertAllDiffs,
-  onKeepDiff,
-  onRevertDiff,
   onDeleteMessage,
 }) => {
   const [expandedContextId, setExpandedContextId] = useState<string | null>(
     null,
   );
-  const [selectedDiff, setSelectedDiff] = useState<FileDiff | null>(null);
   const [activeTab, setActiveTab] = useState<"commands" | "diffs">("diffs");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
-  const [isToolCallsExpanded] = useState(false);
 
   const contextPanelRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const thinkingContentRef = useRef<HTMLDivElement>(null);
 
   const hasContext = contextItems && contextItems.length > 0;
-  const hasFilesToChange = filesToChange && filesToChange.length > 0;
-  const hasCommandsToExecute =
-    commandsToExecute && commandsToExecute.length > 0;
-  const hasExecutedCommands =
-    executedCommands !== undefined && executedCommands.length > 0;
-  const hasFileDiffs = fileDiffs !== undefined && fileDiffs.length > 0;
   const hasToolCalls = toolCalls !== undefined && toolCalls.length > 0;
-  const hasGenerationDetails = hasExecutedCommands || hasFileDiffs;
   const hasThinkingContent = !isUser && (thinkingContent || isThinking);
-
-  useEffect(() => {
-    if (activeTab === "diffs" && !hasFileDiffs) {
-      if (hasExecutedCommands) {
-        setActiveTab("commands");
-      }
-    }
-  }, [activeTab, hasFileDiffs, hasExecutedCommands]);
 
   // Auto-expand when thinking starts, auto-collapse when thinking ends
   useEffect(() => {
@@ -211,15 +186,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   const handleCloseContextDetails = () => {
     setExpandedContextId(null);
-  };
-
-  const handleDiffSelect = (diffId: string) => {
-    const diff = fileDiffs?.find((d) => d.id === diffId) || null;
-    setSelectedDiff(diff);
-  };
-
-  const handleCloseDiff = () => {
-    setSelectedDiff(null);
   };
 
   const handleDeleteClick = useCallback(() => {
@@ -289,30 +255,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     }
   };
 
-  const handleKeepDiff = useCallback(
-    (diffId: string) => {
-      if (onKeepDiff) onKeepDiff(diffId);
-    },
-    [onKeepDiff],
-  );
-
-  const handleRevertDiff = useCallback(
-    (diffId: string) => {
-      if (onRevertDiff) onRevertDiff(diffId);
-    },
-    [onRevertDiff],
-  );
-
-  const handleKeepAllClick = useCallback(() => {
-    if (onKeepAllDiffs) onKeepAllDiffs();
-  }, [onKeepAllDiffs]);
-
-  const handleRevertAllClick = useCallback(() => {
-    if (onRevertAllDiffs) onRevertAllDiffs();
-  }, [onRevertAllDiffs]);
-
-  const pendingDiffsCount =
-    fileDiffs?.filter((diff) => diff.status === "pending").length || 0;
   const expandedContextItem = expandedContextId
     ? contextItems?.find((item) => item.id === expandedContextId)
     : null;
@@ -475,116 +417,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               </ContextDetailsPanel>
             )}
           </>
-        )}
-
-        {!isUser && hasFilesToChange && !hasGenerationDetails && (
-          <InstructionSection>
-            <InstructionHeader>
-              <FilesIcon />
-              Files to Change
-            </InstructionHeader>
-            <InstructionList>
-              {filesToChange.map((file) => (
-                <InstructionItem key={file}>{file}</InstructionItem>
-              ))}
-            </InstructionList>
-          </InstructionSection>
-        )}
-
-        {!isUser && hasCommandsToExecute && !hasGenerationDetails && (
-          <InstructionSection>
-            <InstructionHeader>
-              <CommandsIcon />
-              Commands to Execute
-            </InstructionHeader>
-            <InstructionList>
-              {commandsToExecute.map((command) => (
-                <InstructionItem key={command}>$ {command}</InstructionItem>
-              ))}
-            </InstructionList>
-          </InstructionSection>
-        )}
-
-        {!isUser && hasGenerationDetails && (
-          <InstructionSection>
-            {hasFileDiffs && hasExecutedCommands ? (
-              <>
-                <TabsContainer>
-                  <Tab
-                    $active={activeTab === "diffs"}
-                    onClick={() => setActiveTab("diffs")}
-                  >
-                    <FilesIcon />
-                    Files
-                  </Tab>
-                  <Tab
-                    $active={activeTab === "commands"}
-                    onClick={() => setActiveTab("commands")}
-                  >
-                    <TerminalIcon />
-                    Commands
-                  </Tab>
-                </TabsContainer>
-                <TabContent>
-                  {activeTab === "commands" && hasExecutedCommands && (
-                    <CommandTerminal commands={executedCommands} />
-                  )}
-                  {activeTab === "diffs" && hasFileDiffs && (
-                    <FileChangesList
-                      diffs={fileDiffs}
-                      onSelectDiff={handleDiffSelect}
-                      onKeepAll={
-                        pendingDiffsCount > 0 ? handleKeepAllClick : undefined
-                      }
-                      onRevertAll={
-                        pendingDiffsCount > 0 ? handleRevertAllClick : undefined
-                      }
-                    />
-                  )}
-                </TabContent>
-              </>
-            ) : (
-              <TabContent>
-                {hasExecutedCommands && (
-                  <>
-                    <InstructionHeader>
-                      <TerminalIcon />
-                      Commands
-                    </InstructionHeader>
-                    <CommandTerminal commands={executedCommands} />
-                  </>
-                )}
-                {hasFileDiffs && (
-                  <>
-                    <InstructionHeader>
-                      <FilesIcon />
-                      Files
-                    </InstructionHeader>
-                    <FileChangesList
-                      diffs={fileDiffs}
-                      onSelectDiff={handleDiffSelect}
-                      onKeepAll={
-                        pendingDiffsCount > 0 ? handleKeepAllClick : undefined
-                      }
-                      onRevertAll={
-                        pendingDiffsCount > 0 ? handleRevertAllClick : undefined
-                      }
-                    />
-                  </>
-                )}
-              </TabContent>
-            )}
-
-            {selectedDiff && (
-              <FileDiffComponent
-                diff={selectedDiff}
-                isVisible={hasFileDiffs}
-                onClose={handleCloseDiff}
-                onKeep={handleKeepDiff}
-                onRevert={handleRevertDiff}
-              />
-            )}
-          </InstructionSection>
         )}
       </Bubble>
 

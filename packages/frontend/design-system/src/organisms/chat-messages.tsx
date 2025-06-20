@@ -207,16 +207,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
             thinkingContent={message.thinkingContent}
             isThinking={message.isThinking}
             contextItems={message.contextItems}
-            filesToChange={message.filesToChange}
-            commandsToExecute={message.commandsToExecute}
-            executedCommands={message.executedCommands}
-            fileDiffs={message.fileDiffs}
             toolCalls={message.toolCalls}
             segments={message.segments}
-            onKeepAllDiffs={() => onKeepAllDiffs?.(message.id)}
-            onRevertAllDiffs={() => onRevertAllDiffs?.(message.id)}
-            onKeepDiff={(diffId) => handleKeepDiff(message.id, diffId)}
-            onRevertDiff={(diffId) => handleRevertDiff(message.id, diffId)}
             onDeleteMessage={onDeleteMessage}
           />
         ))}

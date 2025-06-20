@@ -9,7 +9,7 @@ import RecentHistory from "./recent-history";
 import InputArea from "../molecules/input-area";
 import Footer from "../molecules/footer";
 import ConversationSuggestions from "../molecules/conversation-suggestions";
-import { useChatStore } from '@chara/core';
+import { useChatStore } from "@chara/core";
 import { CharaLogo } from "../atoms/chara-logo";
 
 const ChatContent = styled.div`
@@ -126,35 +126,6 @@ const ConversationView: React.FC = () => {
     chatStore.stopResponse();
   }, [chatStore]);
 
-  // Handlers for diff updates
-  const handleKeepDiff = useCallback(
-    (messageId: string, diffId: string) => {
-      chatStore.updateDiffStatus(messageId, diffId, "kept");
-    },
-    [chatStore],
-  );
-
-  const handleRevertDiff = useCallback(
-    (messageId: string, diffId: string) => {
-      chatStore.updateDiffStatus(messageId, diffId, "reverted");
-    },
-    [chatStore],
-  );
-
-  const handleKeepAllDiffs = useCallback(
-    (messageId: string) => {
-      chatStore.updateAllDiffStatuses(messageId, "kept");
-    },
-    [chatStore],
-  );
-
-  const handleRevertAllDiffs = useCallback(
-    (messageId: string) => {
-      chatStore.updateAllDiffStatuses(messageId, "reverted");
-    },
-    [chatStore],
-  );
-
   const handleDeleteMessage = useCallback(
     (messageId: string) => {
       chatStore.deleteMessage(messageId);
@@ -170,10 +141,6 @@ const ConversationView: React.FC = () => {
             <ChatMessages
               messages={messages}
               isResponding={isResponding}
-              onKeepAllDiffs={handleKeepAllDiffs}
-              onRevertAllDiffs={handleRevertAllDiffs}
-              onKeepDiff={handleKeepDiff}
-              onRevertDiff={handleRevertDiff}
               onDeleteMessage={handleDeleteMessage}
             />
           ) : (

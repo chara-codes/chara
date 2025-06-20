@@ -1,10 +1,4 @@
-import type {
-  ContextItem,
-  ExecutedCommand,
-  FileDiff,
-  MessageContent,
-  ToolCall,
-} from "@chara/core";
+import type { ContextItem, MessageContent, ToolCall } from "@chara/core";
 
 export interface MessageBubbleProps {
   id?: string;
@@ -14,10 +8,6 @@ export interface MessageBubbleProps {
   thinkingContent?: string;
   isThinking?: boolean;
   contextItems?: ContextItem[];
-  filesToChange?: string[];
-  commandsToExecute?: string[];
-  executedCommands?: ExecutedCommand[];
-  fileDiffs?: FileDiff[];
   toolCalls?: ToolCall[];
   segments?: Array<{
     type: "text" | "tool-call";

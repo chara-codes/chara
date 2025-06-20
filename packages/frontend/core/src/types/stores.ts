@@ -11,10 +11,6 @@ export interface Message {
   isUser: boolean;
   timestamp?: string;
   contextItems?: ContextItem[]; // Add context items to messages
-  filesToChange?: string[]; // Add files to change
-  commandsToExecute?: string[]; // Add commands to execute
-  executedCommands?: ExecutedCommand[]; // Add executed commands
-  fileDiffs?: FileDiff[]; // Add file diffs
   diffStatuses?: { id: string; status: "pending" | "kept" | "reverted" }[]; // Add diff statuses
   thinkingContent?: string; // Store thinking content separately
   isThinking?: boolean; // Track if message is currently in thinking mode

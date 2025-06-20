@@ -58,17 +58,7 @@ interface ChatState {
   setMode: (mode: ChatMode) => void;
   setModel: (model: string) => void;
   clearContextItems: () => void;
-  updateDiffStatus: (
-    messageId: string,
-    diffId: string,
-    status: "pending" | "kept" | "reverted",
-  ) => void;
-  updateAllDiffStatuses: (
-    messageId: string,
-    status: "kept" | "reverted",
-  ) => void;
   deleteMessage: (messageId: string) => void;
-  beautifyPrompt: (currentPrompt: string) => Promise<string>;
   beautifyPromptStream: (
     currentPrompt: string,
     onTextDelta: (delta: string) => void,
@@ -154,19 +144,7 @@ export const useChatStore = create<ChatState>()(
           const updatedMessages = [...messages];
 
           // Update pending diffs in the last AI message to "kept"
-          for (let i = updatedMessages.length - 1; i >= 0; i--) {
-            const msg = updatedMessages[i];
-            if (!msg.isUser && msg.fileDiffs && msg.fileDiffs.length > 0) {
-              updatedMessages[i] = {
-                ...msg,
-                fileDiffs: msg.fileDiffs.map((diff) => ({
-                  ...diff,
-                  status: diff.status === "pending" ? "kept" : diff.status,
-                })),
-              };
-              break;
-            }
-          }
+          // No longer need to process fileDiffs since they're removed
 
           // Create message content - automatically include context if available
           let messageContent: string | MessageContent[];
@@ -266,10 +244,6 @@ export const useChatStore = create<ChatState>()(
               hour: "2-digit",
               minute: "2-digit",
             }),
-            filesToChange: [],
-            commandsToExecute: [],
-            executedCommands: [],
-            fileDiffs: [],
             thinkingContent: "",
             isThinking: false,
           };
@@ -407,30 +381,6 @@ export const useChatStore = create<ChatState>()(
                 onStructuredData: (data) => {
                   updateAIMessageInStore((msg) => {
                     const newPartial: Partial<Message> = {};
-                    if (data.fileDiffs) {
-                      newPartial.fileDiffs = [
-                        ...(msg.fileDiffs || []),
-                        ...data.fileDiffs,
-                      ];
-                    }
-                    if (data.filesToChange) {
-                      newPartial.filesToChange = [
-                        ...(msg.filesToChange || []),
-                        ...data.filesToChange,
-                      ];
-                    }
-                    if (data.commandsToExecute) {
-                      newPartial.commandsToExecute = [
-                        ...(msg.commandsToExecute || []),
-                        ...data.commandsToExecute,
-                      ];
-                    }
-                    if (data.executedCommands) {
-                      newPartial.executedCommands = [
-                        ...(msg.executedCommands || []),
-                        ...data.executedCommands,
-                      ];
-                    }
                     return newPartial;
                   });
                 },
@@ -535,56 +485,6 @@ export const useChatStore = create<ChatState>()(
         clearContextItems: () => set({ contextItems: [] }),
         setMode: (mode) => set({ mode }),
         setModel: (model) => set({ model }),
-
-        updateDiffStatus: (messageId, diffId, status) => {
-          set((state) => {
-            const updatedMessages = state.messages.map((message) => {
-              if (message.id === messageId && message.fileDiffs) {
-                return {
-                  ...message,
-                  fileDiffs: message.fileDiffs.map((diff) =>
-                    diff.id === diffId ? { ...diff, status } : diff,
-                  ),
-                };
-              }
-              return message;
-            });
-            return {
-              messages: updatedMessages,
-              chats: state.chats.map((chat) =>
-                chat.id === state.activeChat
-                  ? { ...chat, messages: updatedMessages }
-                  : chat,
-              ),
-            };
-          });
-        },
-
-        updateAllDiffStatuses: (messageId, status) => {
-          set((state) => {
-            const updatedMessages = state.messages.map((message) => {
-              if (message.id === messageId && message.fileDiffs) {
-                return {
-                  ...message,
-                  fileDiffs: message.fileDiffs.map((diff) => ({
-                    ...diff,
-                    status,
-                  })),
-                };
-              }
-              return message;
-            });
-            return {
-              messages: updatedMessages,
-              chats: state.chats.map((chat) =>
-                chat.id === state.activeChat
-                  ? { ...chat, messages: updatedMessages }
-                  : chat,
-              ),
-            };
-          });
-        },
-
         deleteMessage: (messageId) => {
           set((state) => {
             const messageIndex = state.messages.findIndex(
@@ -601,105 +501,6 @@ export const useChatStore = create<ChatState>()(
               ),
             };
           });
-        },
-
-        beautifyPrompt: async (currentPrompt) => {
-          const state = get();
-          if (!currentPrompt.trim()) {
-            return currentPrompt;
-          }
-
-          const abortController = new AbortController();
-          const timeoutId = setTimeout(() => {
-            abortController.abort();
-          }, 30000); // 30 second timeout
-
-          try {
-            const agentBaseUrl =
-              import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
-            const apiUrl = `${agentBaseUrl}api/beautify`;
-
-            // Use recent messages for context (last 5 messages max)
-            const recentMessages = state.messages.slice(-5).map((message) => ({
-              role: message.isUser ? "user" : "assistant",
-              content: message.content,
-            }));
-
-            const payload: StreamRequestPayload = {
-              messages: [
-                ...recentMessages,
-                {
-                  role: "user",
-                  content: `Please improve and beautify the following text while preserving its meaning and intent. Return only the improved text without any additional explanation:\n\n${currentPrompt}`,
-                },
-              ],
-              model: state.model,
-            };
-
-            let beautifiedText = "";
-            let streamError: string | null = null;
-
-            const callbacks: StreamCallbacks = {
-              onTextDelta: (delta: string) => {
-                beautifiedText += delta;
-              },
-              onThinkingDelta: () => {
-                // Ignore thinking content for beautification
-              },
-              onToolCall: () => {
-                // Not expected for beautification
-              },
-              onStructuredData: () => {
-                // Not expected for beautification
-              },
-              onStreamError: (error: string) => {
-                streamError = error;
-              },
-              onStreamClose: (aborted: boolean) => {
-                if (aborted && !abortController.signal.aborted) {
-                  streamError = "Stream was unexpectedly closed";
-                }
-              },
-              onCompletion: () => {
-                // Stream completed successfully
-              },
-            };
-
-            await processChatStream(
-              apiUrl,
-              payload,
-              callbacks,
-              abortController.signal,
-            );
-
-            // Check for errors
-            if (streamError) {
-              throw new Error(`Beautify stream error: ${streamError}`);
-            }
-
-            if (abortController.signal.aborted) {
-              throw new Error("Beautify request timed out");
-            }
-
-            // Return beautified text or fallback to original
-            const result = beautifiedText.trim();
-            return result || currentPrompt;
-          } catch (error) {
-            console.error("Failed to beautify prompt:", error);
-
-            // Return original text on any error
-            if (error instanceof Error && error.name === "AbortError") {
-              throw new Error("Beautify request timed out");
-            }
-
-            throw new Error(
-              error instanceof Error
-                ? `Failed to beautify text: ${error.message}`
-                : "Failed to beautify text",
-            );
-          } finally {
-            clearTimeout(timeoutId);
-          }
         },
 
         beautifyPromptStream: async (

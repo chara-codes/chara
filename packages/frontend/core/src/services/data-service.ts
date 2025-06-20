@@ -1,12 +1,6 @@
 // Import the mock data at the top of the file
 import { mockChats, mockModels, mockResponse } from "../data";
-import type {
-  Chat,
-  ExecutedCommand,
-  FileDiff,
-  FileNode,
-  Model,
-} from "../types";
+import type { Chat, FileNode, Model } from "../types";
 
 interface ChatsResponse {
   chats: Chat[];
@@ -19,11 +13,7 @@ interface ModelsResponse {
 
 interface MockResponseData {
   content: string;
-  filesToChange: string[];
-  commandsToExecute: string[];
   fileStructure: FileNode;
-  executedCommands: ExecutedCommand[];
-  fileDiffs: FileDiff[];
 }
 
 // Update the fetchChats function to use the imported mock data as a fallback

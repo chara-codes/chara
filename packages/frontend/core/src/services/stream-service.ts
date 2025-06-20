@@ -3,6 +3,38 @@ import type { Message, FileDiff, MessageContent, ChatMode } from "../types"; // 
 import { MessageSegmentBuilder } from "./message-segment-builder.ts";
 import { THINKING_TAG_REGEX } from "../utils";
 
+// Utility function for safer JSON parsing during streaming
+function tryParseStreamingJSON(jsonText: string): {
+  success: boolean;
+  data?: Record<string, unknown>;
+  error?: string;
+} {
+  if (!jsonText.trim()) {
+    return { success: false, error: "Empty text" };
+  }
+
+  try {
+    const parsed = JSON.parse(jsonText);
+    if (typeof parsed === "object" && parsed !== null) {
+      return { success: true, data: parsed };
+    }
+    return { success: false, error: "Parsed value is not an object" };
+  } catch (error) {
+    // Check if this looks like a partial JSON that might be completed later
+    const trimmed = jsonText.trim();
+    if (trimmed.startsWith("{") && !trimmed.endsWith("}")) {
+      return { success: false, error: "Incomplete JSON object" };
+    }
+    if (trimmed.startsWith("[") && !trimmed.endsWith("]")) {
+      return { success: false, error: "Incomplete JSON array" };
+    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown parse error",
+    };
+  }
+}
+
 // Type definitions for edit operations
 interface EditOperation {
   oldText: string;
@@ -14,8 +46,25 @@ interface EditOperation {
 export interface StreamCallbacks {
   onTextDelta: (delta: string) => void;
   onThinkingDelta: (delta: string) => void;
-  onToolCall: (toolCall: unknown) => void; // Define a more specific type if available
-  onStructuredData: (data: Partial<Message>) => void; // For fileDiffs, commands etc.
+  /**
+   * Called for tool call updates. During streaming, this is called multiple times:
+   * - When tool call begins (with empty arguments)
+   * - During argument streaming (with partial arguments assembled from argsTextDelta)
+   * - When tool call completes (with final arguments and result)
+   *
+   * The toolCall object will have isStreaming=true during argument assembly.
+   */
+  onToolCall: (toolCall: {
+    id: string;
+    name: string;
+    arguments: Record<string, unknown>;
+    status: "pending" | "in-progress" | "success" | "error";
+    result?: unknown;
+    timestamp: string;
+    isStreaming?: boolean;
+    argsText?: string; // Raw accumulated argument text during streaming
+  }) => void;
+  onStructuredData: (data: Partial<Message>) => void; // For structured data
   onStreamError: (error: string) => void;
   onStreamOpen?: () => void; // Optional: if you need to do something when stream opens
   onStreamClose?: (aborted: boolean) => void; // Optional: for cleanup or final actions
@@ -35,9 +84,21 @@ export interface StreamCallbacks {
         status: "pending" | "in-progress" | "success" | "error";
         result?: unknown;
         timestamp: string;
+        isStreaming?: boolean;
+        argsText?: string;
       };
     }>,
   ) => void; // For inline tool call rendering
+  /**
+   * Called during tool call argument streaming for real-time updates.
+   * Provides the current parsed arguments and raw argument text.
+   * Only called when arguments can be successfully parsed as JSON.
+   */
+  onToolCallArgsUpdate?: (
+    toolCallId: string,
+    args: Record<string, unknown>,
+    argsText: string,
+  ) => void;
 }
 
 export interface StreamRequestPayload {
@@ -107,6 +168,7 @@ export async function processChatStream(
         status: "pending" | "in-progress" | "success" | "error";
         result?: unknown;
         timestamp: string;
+        lastValidArgs?: Record<string, unknown>;
       }
     >();
 
@@ -279,42 +341,72 @@ export async function processChatStream(
                   console.log("Stream Service: Updated args text", {
                     toolCallId: parsedData.toolCallId,
                     argsText: pending.argsText,
+                    delta: parsedData.argsTextDelta,
                   });
 
-                  // Try to parse partial arguments for display
-                  try {
-                    if (pending.argsText.trim()) {
-                      const partialArgs = JSON.parse(pending.argsText);
-                      pending.arguments = partialArgs;
+                  // Try to parse partial arguments for display with better error handling
+                  const parseResult = tryParseStreamingJSON(pending.argsText);
 
-                      // For edit-file tool calls, process streaming edits
-                      if (
-                        pending.name === "edit-file" ||
-                        pending.name === "edit_file"
-                      ) {
-                        const edits = partialArgs.edits || [];
-                        // Add streaming status to each edit operation
-                        const processedEdits = Array.isArray(edits)
-                          ? edits.map((edit: EditOperation) => ({
-                              ...edit,
-                              status: "applying" as const,
-                            }))
-                          : [];
-                        pending.arguments = {
-                          ...partialArgs,
-                          edits: processedEdits,
-                        };
-                      }
+                  if (parseResult.success && parseResult.data) {
+                    pending.arguments = parseResult.data;
+                    pending.lastValidArgs = parseResult.data;
+
+                    // For edit-file tool calls, process streaming edits
+                    if (
+                      pending.name === "edit-file" ||
+                      pending.name === "edit_file"
+                    ) {
+                      const edits = parseResult.data.edits || [];
+                      // Add streaming status to each edit operation
+                      const processedEdits = Array.isArray(edits)
+                        ? edits.map((edit: EditOperation) => ({
+                            ...edit,
+                            status: "applying" as const,
+                          }))
+                        : [];
+                      pending.arguments = {
+                        ...parseResult.data,
+                        edits: processedEdits,
+                      };
                     }
-                  } catch {
-                    // Keep building arguments text
+                  } else {
+                    // Use last valid args if current text is invalid JSON
+                    if (pending.lastValidArgs) {
+                      pending.arguments = pending.lastValidArgs;
+                    }
+                    console.log(
+                      "Stream Service: JSON parse failed, continuing to accumulate",
+                      {
+                        error: parseResult.error,
+                        currentText: pending.argsText,
+                      },
+                    );
                   }
 
-                  // Tool call arguments are being built, will send to UI when completed
-                  console.log(
-                    "Stream Service: Tool call arguments updated",
-                    parsedData.toolCallId,
-                  );
+                  // Send streaming tool call updates with current arguments to callbacks
+                  const streamingToolCall = {
+                    id: pending.id,
+                    name: pending.name,
+                    arguments: pending.arguments || {},
+                    status: pending.status,
+                    timestamp: pending.timestamp,
+                    isStreaming: true,
+                    argsText: pending.argsText,
+                  };
+
+                  // Call onToolCall with streaming updates
+                  if (callbacks.onToolCall) {
+                    callbacks.onToolCall(streamingToolCall);
+                  }
+
+                  // Call specific args update callback if available
+                  if (callbacks.onToolCallArgsUpdate && pending.arguments) {
+                    callbacks.onToolCallArgsUpdate(
+                      parsedData.toolCallId,
+                      pending.arguments,
+                      pending.argsText,
+                    );
+                  }
 
                   // Update segment builder
                   segmentBuilder.updateToolCallArgs(
@@ -327,30 +419,12 @@ export async function processChatStream(
                 }
               }
               break;
-            case "2": // Data (for FileDiffs, etc.) or Tool Result
+            case "2": // Data or Tool Result
               // This part needs to be robust based on actual agent output for '2:'
               // Assuming '2:' sends an array of objects, each potentially having parts of a Message
               if (Array.isArray(parsedData)) {
                 for (const dataItem of parsedData) {
                   const structuredUpdate: Partial<Message> = {};
-                  if (dataItem.fileDiffs) {
-                    structuredUpdate.fileDiffs = (
-                      dataItem.fileDiffs as FileDiff[]
-                    ).map(
-                      (diff) => ({ ...diff, status: "pending" }) as FileDiff,
-                    );
-                  }
-                  if (dataItem.filesToChange) {
-                    structuredUpdate.filesToChange = dataItem.filesToChange;
-                  }
-                  if (dataItem.commandsToExecute) {
-                    structuredUpdate.commandsToExecute =
-                      dataItem.commandsToExecute;
-                  }
-                  if (dataItem.executedCommands) {
-                    structuredUpdate.executedCommands =
-                      dataItem.executedCommands;
-                  }
                   // Add other structured data fields as needed
                   if (Object.keys(structuredUpdate).length > 0) {
                     callbacks.onStructuredData(structuredUpdate);
@@ -363,11 +437,6 @@ export async function processChatStream(
                 // Could be a single tool result or other structured data object
                 // For now, let's assume it might be a single structured data item
                 const structuredUpdate: Partial<Message> = {};
-                if (parsedData.fileDiffs) {
-                  structuredUpdate.fileDiffs = (
-                    parsedData.fileDiffs as FileDiff[]
-                  ).map((diff) => ({ ...diff, status: "pending" }) as FileDiff);
-                }
                 // ... (add other fields like above)
                 if (Object.keys(structuredUpdate).length > 0) {
                   callbacks.onStructuredData(structuredUpdate);
