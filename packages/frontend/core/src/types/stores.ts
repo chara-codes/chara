@@ -57,55 +57,6 @@ export interface FileNode {
   hasChanges?: boolean; // Indicate if file has changes
 }
 
-// New type for executed commands
-export type ExecutedCommand = {
-  id: string;
-  command: string;
-  output?: string;
-  status: "pending" | "success" | "error" | string;
-  timestamp: string;
-};
-
-// File diff types using original and patch approach
-export interface FileDiff {
-  id: string;
-  filePath: string;
-  fileName: string;
-  language?: string;
-  originalContent?: string; // The original file content
-  patchContent?: string; // The patch/diff content in unified diff format
-  newContent?: string; // Optional - the resulting content after applying patch
-  status: "pending" | "kept" | "reverted";
-  stats?: DiffStats; // Optional statistics about the diff
-  // Legacy support for hunks structure
-  hunks?: DiffHunk[]; // Optional - legacy hunks structure for backwards compatibility
-}
-
-export interface DiffStats {
-  additions: number;
-  deletions: number;
-  modifications: number;
-  totalLines: number;
-}
-
-// Legacy interfaces - kept for backwards compatibility
-// These may be removed in a future version
-export interface DiffHunk {
-  id: string;
-  header: string;
-  changes: DiffChange[];
-  startLine: number;
-  endLine: number;
-}
-
-export interface DiffChange {
-  type: "addition" | "deletion" | "context" | string;
-  content: string;
-  lineNumber?: number;
-  oldLineNumber?: number;
-  newLineNumber?: number;
-}
-
 // Tool call types
 export interface ToolCall {
   id: string;

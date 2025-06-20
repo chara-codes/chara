@@ -1,117 +1,77 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Message, FileDiff, MessageContent, ChatMode } from "../types"; // Assuming types are in store
-import { MessageSegmentBuilder } from "./message-segment-builder.ts";
+import { parseDataStreamPart } from "@ai-sdk/ui-utils";
+import { LanguageModelV1FinishReason } from "@ai-sdk/provider";
+import { ChatMode, Message } from "../types";
+import MessageSegmentBuilder from "./message-segment-builder";
 import { THINKING_TAG_REGEX } from "../utils";
 
-// Utility function for safer JSON parsing during streaming
-function tryParseStreamingJSON(jsonText: string): {
-  success: boolean;
-  data?: Record<string, unknown>;
-  error?: string;
-} {
-  if (!jsonText.trim()) {
-    return { success: false, error: "Empty text" };
-  }
-
+function tryParseStreamingJSON(jsonString: string) {
   try {
-    const parsed = JSON.parse(jsonText);
-    if (typeof parsed === "object" && parsed !== null) {
-      return { success: true, data: parsed };
-    }
-    return { success: false, error: "Parsed value is not an object" };
+    const data = JSON.parse(jsonString);
+    return { success: true, data };
   } catch (error) {
-    // Check if this looks like a partial JSON that might be completed later
-    const trimmed = jsonText.trim();
-    if (trimmed.startsWith("{") && !trimmed.endsWith("}")) {
-      return { success: false, error: "Incomplete JSON object" };
+    // Attempt to fix common streaming issues, like missing closing brackets
+    const fixedJsonString = jsonString.trim();
+    if (fixedJsonString.startsWith("{") && !fixedJsonString.endsWith("}")) {
+      try {
+        const data = JSON.parse(fixedJsonString + "}");
+        return { success: true, data };
+      } catch (e) {
+        // ignore
+      }
     }
-    if (trimmed.startsWith("[") && !trimmed.endsWith("]")) {
-      return { success: false, error: "Incomplete JSON array" };
+    if (fixedJsonString.startsWith("[") && !fixedJsonString.endsWith("]")) {
+      try {
+        const data = JSON.parse(fixedJsonString + "]");
+        return { success: true, data };
+      } catch (e) {
+        // ignore
+      }
     }
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown parse error",
-    };
+    return { success: false, error };
   }
 }
 
-// Type definitions for edit operations
-interface EditOperation {
-  oldText: string;
-  newText: string;
+export interface EditOperation {
+  type: "insert" | "replace";
+  file_path: string;
+  code?: string;
+  start_line?: number;
+  end_line?: number;
   status?: "pending" | "applying" | "complete" | "error";
   error?: string;
 }
 
 export interface StreamCallbacks {
+  onStreamOpen?: () => void;
+  onStreamClose?: (aborted: boolean) => void;
+  onStreamError: (error: string) => void;
   onTextDelta: (delta: string) => void;
   onThinkingDelta: (delta: string) => void;
-  /**
-   * Called for tool call updates. During streaming, this is called multiple times:
-   * - When tool call begins (with empty arguments)
-   * - During argument streaming (with partial arguments assembled from argsTextDelta)
-   * - When tool call completes (with final arguments and result)
-   *
-   * The toolCall object will have isStreaming=true during argument assembly.
-   */
-  onToolCall: (toolCall: {
-    id: string;
-    name: string;
-    arguments: Record<string, unknown>;
-    status: "pending" | "in-progress" | "success" | "error";
-    result?: unknown;
-    timestamp: string;
-    isStreaming?: boolean;
-    argsText?: string; // Raw accumulated argument text during streaming
-  }) => void;
-  onStructuredData: (data: Partial<Message>) => void; // For structured data
-  onStreamError: (error: string) => void;
-  onStreamOpen?: () => void; // Optional: if you need to do something when stream opens
-  onStreamClose?: (aborted: boolean) => void; // Optional: for cleanup or final actions
-  onCompletion?: (data: {
-    finishReason: string;
-    usage?: { promptTokens: number; completionTokens: number };
-    isContinued?: boolean;
-  }) => void; // Optional: for completion stats
-  onSegmentUpdate?: (
-    segments: Array<{
-      type: "text" | "tool-call";
-      content: string;
-      toolCall?: {
-        id: string;
-        name: string;
-        arguments: Record<string, unknown>;
-        status: "pending" | "in-progress" | "success" | "error";
-        result?: unknown;
-        timestamp: string;
-        isStreaming?: boolean;
-        argsText?: string;
-      };
-    }>,
-  ) => void; // For inline tool call rendering
-  /**
-   * Called during tool call argument streaming for real-time updates.
-   * Provides the current parsed arguments and raw argument text.
-   * Only called when arguments can be successfully parsed as JSON.
-   */
+  onToolCall: (toolCall: any) => void;
   onToolCallArgsUpdate?: (
     toolCallId: string,
     args: Record<string, unknown>,
     argsText: string,
   ) => void;
+  onStructuredData: (data: Partial<Message>) => void;
+  onCompletion: (completion: {
+    finishReason: LanguageModelV1FinishReason;
+    usage?: {
+      promptTokens: number;
+      completionTokens: number;
+    };
+  }) => void;
+  onSegmentUpdate?: (segments: any[]) => void;
 }
 
 export interface StreamRequestPayload {
-  messages: Array<{
-    role: string;
-    content: string | MessageContent[];
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    tool_calls?: any[];
-    tool_call_id?: string;
-  }>; // Adjust based on agent needs
-  model: string;
-  // Add other necessary payload fields like contextItems, mode, etc.
-  // context_items?: Array<{ name: string; type: string; data?: unknown }>;
+  messages: Message[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context?: Record<string, any>;
+  model?: string;
+  temperature?: number;
+  max_tokens?: number;
+  user?: { id: string };
 }
 
 export async function processChatStream(
@@ -137,7 +97,9 @@ export async function processChatStream(
 
     if (signal.aborted) {
       console.log("Stream Service: Fetch aborted by user before response.");
-      if (callbacks.onStreamClose) callbacks.onStreamClose(true);
+      if (callbacks.onStreamClose) {
+        callbacks.onStreamClose(true);
+      }
       return;
     }
 
@@ -157,7 +119,6 @@ export async function processChatStream(
     let streamBuffer = "";
     let isThinking = false;
 
-    // Track partial tool calls during streaming
     const pendingToolCalls = new Map<
       string,
       {
@@ -172,7 +133,6 @@ export async function processChatStream(
       }
     >();
 
-    // Message segment builder for inline tool calls
     const segmentBuilder = new MessageSegmentBuilder();
 
     while (true) {
@@ -185,51 +145,35 @@ export async function processChatStream(
 
       streamBuffer += decoder.decode(value, { stream: true });
       const lines = streamBuffer.split("\n");
-      streamBuffer = lines.pop() || ""; // Keep the last partial line in buffer
+      streamBuffer = lines.pop() || "";
 
       for (const line of lines) {
         if (line.trim() === "") continue;
 
         try {
-          const typeChar = line[0];
-          const jsonDataString = line.substring(line.indexOf(":") + 1);
-          if (!jsonDataString) continue;
+          const parsedPart = parseDataStreamPart(line);
 
-          const parsedData = JSON.parse(jsonDataString);
+          switch (parsedPart.type) {
+            case "text": {
+              const textDelta = parsedPart.value;
 
-          switch (typeChar) {
-            case "0": {
-              // Text delta
-              const textDelta = parsedData as string;
-
-              // Handle thinking tags with proper text segmentation
               const processTextWithThinkingTags = (text: string) => {
-                // Use shared thinking tag regex for consistent handling
                 const thinkingTagRegex = new RegExp(
                   THINKING_TAG_REGEX.source,
                   THINKING_TAG_REGEX.flags,
                 );
-
                 let currentIndex = 0;
                 let match: RegExpExecArray | null;
-
-                // Check if text ends with a partial tag that might be completed in next chunk
                 const partialTagRegex = /<\/?think(?:ing)?(?:\s[^>]*)?$/i;
                 const partialMatch = partialTagRegex.exec(text);
-
-                // If we have a partial tag at the end, process everything except the partial tag
                 let textToProcess = text;
                 if (partialMatch) {
                   textToProcess = text.slice(0, partialMatch.index);
-                  // The partial tag will be handled when the complete tag arrives
                 }
 
-                // Avoid assignment in expressions
-                while (true) {
-                  match = thinkingTagRegex.exec(textToProcess);
-                  if (match === null) break;
-
-                  // Process text before the tag
+                while (
+                  (match = thinkingTagRegex.exec(textToProcess)) !== null
+                ) {
                   if (match.index > currentIndex) {
                     const beforeTag = textToProcess.slice(
                       currentIndex,
@@ -244,7 +188,6 @@ export async function processChatStream(
                     }
                   }
 
-                  // Update thinking state based on tag type
                   const tagContent = match[0].toLowerCase().trim();
                   if (
                     tagContent.startsWith("<think>") ||
@@ -261,11 +204,9 @@ export async function processChatStream(
                   ) {
                     isThinking = false;
                   }
-
                   currentIndex = match.index + match[0].length;
                 }
 
-                // Process remaining text after the last tag (excluding partial tag)
                 if (currentIndex < textToProcess.length) {
                   const remainingText = textToProcess.slice(currentIndex);
                   if (remainingText) {
@@ -276,18 +217,10 @@ export async function processChatStream(
                     }
                   }
                 }
-
-                // If we have a partial tag, don't process it yet - wait for completion
-                if (partialMatch) {
-                  // Store partial tag for next processing cycle if needed
-                  // For now, we'll just ignore it and let it be completed in the next chunk
-                }
               };
 
-              // Process the text delta with thinking tag handling
               processTextWithThinkingTags(textDelta);
 
-              // Also add to segment builder if not thinking
               if (!isThinking) {
                 segmentBuilder.addTextDelta(textDelta);
                 if (callbacks.onSegmentUpdate) {
@@ -296,409 +229,286 @@ export async function processChatStream(
               }
               break;
             }
-            case "1": // Tool Call
-              callbacks.onToolCall(parsedData);
+
+            case "tool_call_streaming_start": {
+              const { toolCallId, toolName } = parsedPart.value;
+              console.log("Stream Service: Tool call begin", parsedPart.value);
+              pendingToolCalls.set(toolCallId, {
+                id: toolCallId,
+                name: toolName,
+                argsText: "",
+                status: "pending",
+                timestamp: new Date().toISOString(),
+              });
+
+              segmentBuilder.beginToolCall(toolCallId, toolName);
+              if (callbacks.onSegmentUpdate) {
+                callbacks.onSegmentUpdate(segmentBuilder.getSegments());
+              }
               break;
-            case "b": // Tool call begin
-              // Start a new tool call
-              console.log("Stream Service: Tool call begin", parsedData);
-              if (parsedData.toolCallId && parsedData.toolName) {
-                pendingToolCalls.set(parsedData.toolCallId, {
-                  id: parsedData.toolCallId,
-                  name: parsedData.toolName,
-                  argsText: "",
-                  status: "pending",
-                  timestamp: new Date().toISOString(),
-                });
+            }
 
-                // Tool call will be sent to UI only when completed
-                console.log(
-                  "Stream Service: Tool call started",
-                  parsedData.toolCallId,
-                );
+            case "tool_call_delta": {
+              const { toolCallId, argsTextDelta } = parsedPart.value;
+              const pending = pendingToolCalls.get(toolCallId);
+              if (pending) {
+                pending.argsText += argsTextDelta;
+                pending.status = "in-progress";
 
-                // Add to segment builder for inline rendering
-                segmentBuilder.beginToolCall(
-                  parsedData.toolCallId,
-                  parsedData.toolName,
+                const parseResult = tryParseStreamingJSON(pending.argsText);
+                if (parseResult.success && parseResult.data) {
+                  pending.arguments = parseResult.data;
+                  pending.lastValidArgs = parseResult.data;
+
+                  if (
+                    pending.name === "edit-file" ||
+                    pending.name === "edit_file"
+                  ) {
+                    const edits = parseResult.data.edits || [];
+                    const processedEdits = Array.isArray(edits)
+                      ? edits.map((edit: EditOperation) => ({
+                          ...edit,
+                          status: "applying" as const,
+                        }))
+                      : [];
+                    pending.arguments = {
+                      ...parseResult.data,
+                      edits: processedEdits,
+                    };
+                  }
+                } else {
+                  if (pending.lastValidArgs) {
+                    pending.arguments = pending.lastValidArgs;
+                  }
+                }
+
+                const streamingToolCall = {
+                  id: pending.id,
+                  name: pending.name,
+                  arguments: pending.arguments || {},
+                  status: pending.status,
+                  timestamp: pending.timestamp,
+                  isStreaming: true,
+                  argsText: pending.argsText,
+                };
+
+                if (callbacks.onToolCall) {
+                  callbacks.onToolCall(streamingToolCall);
+                }
+                if (callbacks.onToolCallArgsUpdate && pending.arguments) {
+                  callbacks.onToolCallArgsUpdate(
+                    toolCallId,
+                    pending.arguments,
+                    pending.argsText,
+                  );
+                }
+
+                segmentBuilder.updateToolCallArgs(
+                  toolCallId,
+                  pending.arguments || {},
                 );
                 if (callbacks.onSegmentUpdate) {
                   callbacks.onSegmentUpdate(segmentBuilder.getSegments());
                 }
               }
               break;
-            case "c": // Tool call arguments delta
-              // Build up arguments text
-              console.log("Stream Service: Tool call args delta", parsedData);
-              if (
-                parsedData.toolCallId &&
-                parsedData.argsTextDelta !== undefined
-              ) {
-                const pending = pendingToolCalls.get(parsedData.toolCallId);
-                if (pending) {
-                  pending.argsText += parsedData.argsTextDelta;
-                  pending.status = "in-progress";
-                  console.log("Stream Service: Updated args text", {
-                    toolCallId: parsedData.toolCallId,
-                    argsText: pending.argsText,
-                    delta: parsedData.argsTextDelta,
-                  });
-
-                  // Try to parse partial arguments for display with better error handling
-                  const parseResult = tryParseStreamingJSON(pending.argsText);
-
-                  if (parseResult.success && parseResult.data) {
-                    pending.arguments = parseResult.data;
-                    pending.lastValidArgs = parseResult.data;
-
-                    // For edit-file tool calls, process streaming edits
-                    if (
-                      pending.name === "edit-file" ||
-                      pending.name === "edit_file"
-                    ) {
-                      const edits = parseResult.data.edits || [];
-                      // Add streaming status to each edit operation
-                      const processedEdits = Array.isArray(edits)
-                        ? edits.map((edit: EditOperation) => ({
-                            ...edit,
-                            status: "applying" as const,
-                          }))
-                        : [];
-                      pending.arguments = {
-                        ...parseResult.data,
-                        edits: processedEdits,
-                      };
-                    }
-                  } else {
-                    // Use last valid args if current text is invalid JSON
-                    if (pending.lastValidArgs) {
-                      pending.arguments = pending.lastValidArgs;
-                    }
-                    console.log(
-                      "Stream Service: JSON parse failed, continuing to accumulate",
-                      {
-                        error: parseResult.error,
-                        currentText: pending.argsText,
-                      },
-                    );
-                  }
-
-                  // Send streaming tool call updates with current arguments to callbacks
-                  const streamingToolCall = {
-                    id: pending.id,
-                    name: pending.name,
-                    arguments: pending.arguments || {},
-                    status: pending.status,
-                    timestamp: pending.timestamp,
-                    isStreaming: true,
-                    argsText: pending.argsText,
-                  };
-
-                  // Call onToolCall with streaming updates
-                  if (callbacks.onToolCall) {
-                    callbacks.onToolCall(streamingToolCall);
-                  }
-
-                  // Call specific args update callback if available
-                  if (callbacks.onToolCallArgsUpdate && pending.arguments) {
-                    callbacks.onToolCallArgsUpdate(
-                      parsedData.toolCallId,
-                      pending.arguments,
-                      pending.argsText,
-                    );
-                  }
-
-                  // Update segment builder
-                  segmentBuilder.updateToolCallArgs(
-                    parsedData.toolCallId,
-                    pending.arguments || {},
-                  );
-                  if (callbacks.onSegmentUpdate) {
-                    callbacks.onSegmentUpdate(segmentBuilder.getSegments());
-                  }
-                }
-              }
-              break;
-            case "2": // Data or Tool Result
-              // This part needs to be robust based on actual agent output for '2:'
-              // Assuming '2:' sends an array of objects, each potentially having parts of a Message
-              if (Array.isArray(parsedData)) {
-                for (const dataItem of parsedData) {
-                  const structuredUpdate: Partial<Message> = {};
-                  // Add other structured data fields as needed
-                  if (Object.keys(structuredUpdate).length > 0) {
-                    callbacks.onStructuredData(structuredUpdate);
-                  }
-                }
-              } else if (
-                typeof parsedData === "object" &&
-                parsedData !== null
-              ) {
-                // Could be a single tool result or other structured data object
-                // For now, let's assume it might be a single structured data item
-                const structuredUpdate: Partial<Message> = {};
-                // ... (add other fields like above)
-                if (Object.keys(structuredUpdate).length > 0) {
-                  callbacks.onStructuredData(structuredUpdate);
-                } else {
-                  // If not fitting known structured data, treat as generic tool result/data
-                  console.log(
-                    "Stream Service: Received single object for '2:'",
-                    parsedData,
-                  );
-                  // Potentially pass to onToolCall or a new callback if it's a tool result
-                }
-              }
-              break;
-            case "8": // Error from stream
-              callbacks.onStreamError(parsedData as string);
-              // Consider if the stream should be forcefully closed here
-              if (callbacks.onStreamClose) callbacks.onStreamClose(false); // Signal error, not aborted
-              return; // Stop processing on stream error
-            case "f": // Message finalization
-              console.log("Stream Service: Message finalized", parsedData);
-              // This indicates the message is complete
-              // The parsedData typically contains messageId
-              break;
-            case "d": {
-              // Done signal with completion stats
-              console.log("Stream Service: Stream done", parsedData);
-              // This indicates the stream is done with finish reason and usage stats
-              // parsedData contains: finishReason, usage (promptTokens, completionTokens)
-
-              // Finalize segments when stream completes
-              const finalSegments = segmentBuilder.finalize();
-              if (callbacks.onSegmentUpdate) {
-                callbacks.onSegmentUpdate(finalSegments);
-              }
-
-              if (callbacks.onCompletion) {
-                callbacks.onCompletion(parsedData);
-              }
-              break;
             }
-            case "e": {
-              // Stream completion/end with usage stats
-              console.log("Stream Service: Stream completed", parsedData);
-              // This indicates the stream is complete with finish reason and usage stats
-              // parsedData contains: finishReason, usage (promptTokens, completionTokens), isContinued
 
-              // Finalize segments when stream completes
-              const finalSegmentsE = segmentBuilder.finalize();
-              if (callbacks.onSegmentUpdate) {
-                callbacks.onSegmentUpdate(finalSegmentsE);
-              }
-
-              if (callbacks.onCompletion) {
-                callbacks.onCompletion(parsedData);
-              }
-              break;
-            }
-            case "3": // Error message or tool result/response
-              console.log("Stream Service: Type 3 chunk received", parsedData);
-              // Check if this is an error message (string) or tool result (object)
-              if (typeof parsedData === "string") {
-                // Handle error message - could be a tool call error
-                console.error(
-                  "Stream Service: Error message received:",
-                  parsedData,
-                );
-
-                // Try to find which tool call this error belongs to
-                let errorHandled = false;
-                for (const [
-                  toolCallId,
-                  pending,
-                ] of pendingToolCalls.entries()) {
-                  if (pending.status === "in-progress") {
-                    // Mark edits as failed for edit-file tool calls
-                    if (
-                      pending.name === "edit-file" ||
-                      pending.name === "edit_file"
-                    ) {
-                      const edits = pending.arguments?.edits || [];
-                      const failedEdits = Array.isArray(edits)
-                        ? edits.map((edit: EditOperation) => ({
-                            ...edit,
-                            status: "error" as const,
-                            error: parsedData,
-                          }))
-                        : [];
-                      pending.arguments = {
-                        ...pending.arguments,
-                        edits: failedEdits,
-                      };
-                    }
-
-                    pending.status = "error";
-                    pending.result = { error: parsedData };
-
-                    // Update segment builder
-                    segmentBuilder.errorToolCall(toolCallId, parsedData);
-                    if (callbacks.onSegmentUpdate) {
-                      callbacks.onSegmentUpdate(segmentBuilder.getSegments());
-                    }
-
-                    errorHandled = true;
-                    break;
-                  }
-                }
-
-                if (!errorHandled) {
-                  callbacks.onStreamError(parsedData);
-                }
-              } else {
-                // Handle tool execution results
-                console.log("Stream Service: Tool result received", parsedData);
-                if (callbacks.onToolCall) {
-                  callbacks.onToolCall(parsedData);
-                }
-              }
-              break;
-            case "4": // Metadata
-              console.log("Stream Service: Metadata received", parsedData);
-              // Handle metadata (model info, capabilities, etc.)
-              break;
-            case "5": // Progress/status updates
-              console.log("Stream Service: Progress update", parsedData);
-              // Handle progress indicators, status updates
-              break;
-            case "6": // Debug information
-              console.log("Stream Service: Debug info", parsedData);
-              // Handle debug information
-              break;
-            case "7": // Warning messages
-              console.log("Stream Service: Warning", parsedData);
-              // Handle non-fatal warnings
-              break;
-            case "9": // Tool call complete with arguments
-              // Finalize tool call with complete arguments
+            case "tool_call": {
+              const { toolCallId, args } = parsedPart.value;
               console.log(
                 "Stream Service: Tool call complete with arguments",
-                parsedData,
+                parsedPart.value,
               );
-              if (parsedData.toolCallId && parsedData.args) {
-                const pending = pendingToolCalls.get(parsedData.toolCallId);
-                if (pending) {
-                  pending.arguments = parsedData.args;
-                  pending.status = "in-progress";
+              const pending = pendingToolCalls.get(toolCallId);
+              if (pending) {
+                pending.arguments = args as Record<string, unknown>;
+                pending.status = "in-progress";
 
-                  // For edit-file tool calls, mark edits as pending before execution
-                  if (
-                    pending.name === "edit-file" ||
-                    pending.name === "edit_file"
-                  ) {
-                    const edits = parsedData.args.edits || [];
-                    const processedEdits = Array.isArray(edits)
-                      ? edits.map((edit: EditOperation) => ({
-                          ...edit,
-                          status: "pending" as const,
-                        }))
-                      : [];
-                    pending.arguments = {
-                      ...parsedData.args,
-                      edits: processedEdits,
-                    };
-                  }
+                if (
+                  pending.name === "edit-file" ||
+                  pending.name === "edit_file"
+                ) {
+                  const edits =
+                    (args as { edits: EditOperation[] }).edits || [];
+                  const processedEdits = Array.isArray(edits)
+                    ? edits.map((edit: EditOperation) => ({
+                        ...edit,
+                        status: "pending" as const,
+                      }))
+                    : [];
+                  pending.arguments = {
+                    ...args,
+                    edits: processedEdits,
+                  };
+                }
 
-                  // Update segment builder with arguments
-                  segmentBuilder.updateToolCallArgs(
-                    parsedData.toolCallId,
-                    pending.arguments || {},
-                  );
-                  if (callbacks.onSegmentUpdate) {
-                    callbacks.onSegmentUpdate(segmentBuilder.getSegments());
-                  }
+                segmentBuilder.updateToolCallArgs(
+                  toolCallId,
+                  pending.arguments || {},
+                );
+                if (callbacks.onSegmentUpdate) {
+                  callbacks.onSegmentUpdate(segmentBuilder.getSegments());
                 }
               }
               break;
-            case "a": // Tool call result
-              // Add result to tool call
-              console.log("Stream Service: Tool call result", parsedData);
-              if (parsedData.toolCallId && parsedData.result) {
-                const pending = pendingToolCalls.get(parsedData.toolCallId);
-                if (pending) {
-                  pending.result = parsedData.result;
+            }
 
-                  // Determine success/error status based on result
-                  const hasError =
-                    parsedData.result &&
-                    typeof parsedData.result === "object" &&
-                    "error" in parsedData.result;
+            case "tool_result": {
+              const { toolCallId, result } = parsedPart.value;
+              console.log("Stream Service: Tool call result", parsedPart.value);
+              const pending = pendingToolCalls.get(toolCallId);
+              if (pending) {
+                pending.result = result;
+                const hasError =
+                  result && typeof result === "object" && "error" in result;
+                pending.status = hasError ? "error" : "success";
 
-                  pending.status = hasError ? "error" : "success";
+                if (
+                  pending.name === "edit-file" ||
+                  pending.name === "edit_file"
+                ) {
+                  const edits = pending.arguments?.edits || [];
+                  const finalEdits = Array.isArray(edits)
+                    ? edits.map((edit: EditOperation) => ({
+                        ...edit,
+                        status: hasError
+                          ? ("error" as const)
+                          : ("complete" as const),
+                        error: hasError
+                          ? String((result as { error?: string })?.error)
+                          : undefined,
+                      }))
+                    : [];
+                  pending.arguments = {
+                    ...pending.arguments,
+                    edits: finalEdits,
+                  };
+                }
 
-                  // For edit-file tool calls, update edit statuses based on result
+                const toolCall = {
+                  id: pending.id,
+                  name: pending.name,
+                  arguments: pending.arguments || {},
+                  status: pending.status,
+                  result: result,
+                  timestamp: pending.timestamp,
+                };
+                callbacks.onToolCall(toolCall);
+
+                segmentBuilder.completeToolCall(toolCallId, result);
+                if (callbacks.onSegmentUpdate) {
+                  callbacks.onSegmentUpdate(segmentBuilder.getSegments());
+                }
+                pendingToolCalls.delete(toolCallId);
+              }
+              break;
+            }
+
+            case "error": {
+              const errorMessage = parsedPart.value;
+              console.error(
+                "Stream Service: Error message received:",
+                errorMessage,
+              );
+
+              let errorHandled = false;
+              for (const [toolCallId, pending] of pendingToolCalls.entries()) {
+                if (pending.status === "in-progress") {
                   if (
                     pending.name === "edit-file" ||
                     pending.name === "edit_file"
                   ) {
                     const edits = pending.arguments?.edits || [];
-                    const finalEdits = Array.isArray(edits)
+                    const failedEdits = Array.isArray(edits)
                       ? edits.map((edit: EditOperation) => ({
                           ...edit,
-                          status: hasError
-                            ? ("error" as const)
-                            : ("complete" as const),
-                          error: hasError
-                            ? String(
-                                (parsedData.result as { error?: string })
-                                  ?.error,
-                              )
-                            : undefined,
+                          status: "error" as const,
+                          error: errorMessage,
                         }))
                       : [];
                     pending.arguments = {
                       ...pending.arguments,
-                      edits: finalEdits,
+                      edits: failedEdits,
                     };
                   }
-
-                  // Send final tool call with result
-                  const toolCall = {
-                    id: pending.id,
-                    name: pending.name,
-                    arguments: pending.arguments || {},
-                    status: pending.status,
-                    result: parsedData.result,
-                    timestamp: pending.timestamp,
-                  };
-                  console.log(
-                    "Stream Service: Sending final tool call with result",
-                    toolCall,
-                  );
-                  callbacks.onToolCall(toolCall);
-
-                  // Complete tool call in segment builder
-                  segmentBuilder.completeToolCall(
-                    parsedData.toolCallId,
-                    parsedData.result,
-                  );
+                  pending.status = "error";
+                  pending.result = { error: errorMessage };
+                  segmentBuilder.errorToolCall(toolCallId, errorMessage);
                   if (callbacks.onSegmentUpdate) {
                     callbacks.onSegmentUpdate(segmentBuilder.getSegments());
                   }
+                  errorHandled = true;
+                  break;
+                }
+              }
 
-                  // Clean up completed tool call
-                  pendingToolCalls.delete(parsedData.toolCallId);
+              if (!errorHandled) {
+                callbacks.onStreamError(errorMessage);
+              }
+              break;
+            }
+
+            case "data": {
+              const data = parsedPart.value;
+              if (Array.isArray(data)) {
+                for (const _dataItem of data) {
+                  const structuredUpdate: Partial<Message> = {};
+                  if (Object.keys(structuredUpdate).length > 0) {
+                    callbacks.onStructuredData(structuredUpdate);
+                  }
                 }
               }
               break;
+            }
+
+            case "finish_message": {
+              console.log("Stream Service: Stream done", parsedPart.value);
+              const finalSegments = segmentBuilder.finalize();
+              if (callbacks.onSegmentUpdate) {
+                callbacks.onSegmentUpdate(finalSegments);
+              }
+              if (callbacks.onCompletion) {
+                callbacks.onCompletion(parsedPart.value);
+              }
+              break;
+            }
+
+            case "finish_step": {
+              console.log("Stream Service: Stream completed", parsedPart.value);
+              const finalSegments = segmentBuilder.finalize();
+              if (callbacks.onSegmentUpdate) {
+                callbacks.onSegmentUpdate(finalSegments);
+              }
+              if (callbacks.onCompletion) {
+                // Adapt the type if necessary, or assume it's compatible
+                callbacks.onCompletion(parsedPart.value);
+              }
+              break;
+            }
+
+            case "start_step": {
+              console.log(
+                "Stream Service: Message finalized",
+                parsedPart.value,
+              );
+              break;
+            }
+
             default:
               console.warn(
                 "Stream Service: Unknown stream data type:",
-                typeChar,
-                parsedData,
+                (parsedPart as any).type,
+                parsedPart.value,
               );
           }
         } catch (e) {
           console.error("Stream Service: Error parsing stream line:", line, e);
-          // Optionally call callbacks.onStreamError with a generic parsing error
         }
       }
-      if (signal.aborted) break; // Check again after processing a batch of lines
+      if (signal.aborted) break;
     }
 
-    // Finalize segments when stream closes
     const finalSegmentsClose = segmentBuilder.finalize();
     if (callbacks.onSegmentUpdate) {
       callbacks.onSegmentUpdate(finalSegmentsClose);
@@ -718,7 +528,7 @@ export async function processChatStream(
           ? error.message
           : "Unknown stream processing error",
       );
-      if (callbacks.onStreamClose) callbacks.onStreamClose(false); // Signal error
+      if (callbacks.onStreamClose) callbacks.onStreamClose(false);
     }
   }
 }
