@@ -123,7 +123,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     if (!isConnected && !isConnecting) {
       connect().catch(console.error);
     }
-  }, [isConnected, isConnecting]);
+  }, [isConnected, isConnecting, connect]);
 
   // Get routing state
   const currentScreen = useRoutingStore((state) => state.currentScreen);
@@ -246,7 +246,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       case Screen.EDIT_TECH_STACK:
         return <EditTechStackView />;
 
-      case Screen.TERMINAL:
+      case Screen.TERMINAL: {
         // Sample terminal logs for demonstration
         const sampleLogs = [
           {
@@ -301,6 +301,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
             serverInfo={sampleServerInfo}
           />
         );
+      }
 
       default:
         return <ConversationView />;
