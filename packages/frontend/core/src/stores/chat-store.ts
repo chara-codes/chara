@@ -136,7 +136,8 @@ export const useChatStore = create<ChatState>()(
 
         sendMessage: async (content) => {
           const state = get();
-          const { activeChat, chats, messages, contextItems, model } = state;
+          const { activeChat, chats, messages, contextItems, model, mode } =
+            state;
 
           // Abort any existing request
           if (state.abortController) {
@@ -470,6 +471,7 @@ export const useChatStore = create<ChatState>()(
                 },
               },
               newAbortController.signal,
+              mode,
             );
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
           } catch (error: any) {

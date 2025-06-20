@@ -1,26 +1,29 @@
-import { streamText, type CoreMessage } from "ai";
-import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
+import { type CoreMessage, streamText } from "ai";
 import { mcpWrapper } from "../mcp/mcp-client";
-import { chatTools } from "../tools";
+import { providersRegistry } from "../providers";
+import { chatToolsAskMode, chatToolsWriteMode } from "../tools/chat-tools";
+import { chatPrompt } from "../prompts/chat";
 
 export const chatAgent = async (
   {
     model,
     messages,
+    mode,
   }: {
     model: string;
     messages: CoreMessage[];
+    mode: "write" | "ask";
   },
   options: { headers?: Record<string, string> } = {},
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");
   const aiModel = providersRegistry.getModel(providerName, modelName);
-  logger.info(providerName, modelName);
 
   // Always start with local tools
   const mcpTools = mcpWrapper.getToolsSync();
+  const chatTools = mode === "write" ? chatToolsWriteMode : chatToolsAskMode;
   const allTools = { ...chatTools, ...mcpTools };
 
   const localCount = Object.keys(chatTools).length;
@@ -31,7 +34,11 @@ export const chatAgent = async (
 
   return streamText({
     ...options,
-    system: "You are a helpful assistant.",
+    system: chatPrompt({
+      hasTools: !!total,
+      hasTool: (toolName: string) => Object.keys(allTools).includes(toolName),
+      mode,
+    }),
     tools: allTools,
     model: aiModel,
     toolCallStreaming: true,

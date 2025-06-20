@@ -18,19 +18,22 @@ export const chatController = {
       model: string;
       messages: CoreMessage[];
     };
+    const url = new URL(req.url);
+    const mode = url.searchParams.get("mode");
 
-    const workingDir = process.cwd();
-    if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
-      isoGitService.initializeRepository(process.cwd());
+    if (mode === "write") {
+      const workingDir = process.cwd();
+      if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
+        isoGitService.initializeRepository(process.cwd());
+      }
+
+      const commitMessage = await gitAgent({
+        model,
+        messages,
+      });
+
+      isoGitService.saveToHistory(workingDir, commitMessage.toString());
     }
-
-    const commitMessage = await gitAgent({
-      model,
-      messages,
-    });
-
-    isoGitService.saveToHistory(workingDir, commitMessage.toString());
-
     return createDataStreamResponse({
       headers: { ...CORS_HEADERS, "accept-encoding": "" },
       execute: async (dataStream) => {

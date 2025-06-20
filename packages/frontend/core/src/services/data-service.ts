@@ -1,12 +1,12 @@
-import type {
-  Chat,
-  Model,
-  FileDiff,
-  FileNode,
-  ExecutedCommand,
-} from "../types";
 // Import the mock data at the top of the file
 import { mockChats, mockModels, mockResponse } from "../data";
+import type {
+  Chat,
+  ExecutedCommand,
+  FileDiff,
+  FileNode,
+  Model,
+} from "../types";
 
 interface ChatsResponse {
   chats: Chat[];

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Message, FileDiff, MessageContent } from "../types"; // Assuming types are in store
+import type { Message, FileDiff, MessageContent, ChatMode } from "../types"; // Assuming types are in store
 import { MessageSegmentBuilder } from "./message-segment-builder.ts";
 import { THINKING_TAG_REGEX } from "../utils";
 
@@ -58,15 +58,18 @@ export async function processChatStream(
   payload: StreamRequestPayload,
   callbacks: StreamCallbacks,
   signal: AbortSignal,
+  mode: ChatMode = "write",
 ): Promise<void> {
   try {
     if (callbacks.onStreamOpen) {
       callbacks.onStreamOpen();
     }
 
-    const response = await fetch(apiUrl, {
+    const response = await fetch(`${apiUrl}?mode=${mode}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(payload),
       signal,
     });
