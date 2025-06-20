@@ -43,6 +43,7 @@ export const chatController = {
         const result = await chatAgent({
           model,
           messages,
+          mode: mode === "write" ? "write" : "ask",
         });
         result.mergeIntoDataStream(dataStream);
       },

@@ -18,8 +18,6 @@ import { searchFiles } from "./search-files";
 // Tools for write mode - all tools available for interactive development
 export const chatToolsWriteMode = {
   "read-file": readFile,
-  "write-file": writeFile,
-  "read-multiple-files": readMultipleFiles,
   "edit-file": editFile,
   "create-directory": createDirectory,
   "list-directory": listDirectory,
@@ -29,24 +27,18 @@ export const chatToolsWriteMode = {
   fetch: fetchTool,
   terminal: terminal,
   thinking: thinking,
-  "save-to-history": saveToHistory,
-  diff: diff,
   "env-info": envInfo,
-  "search-files": searchFiles,
 };
 
 // Tools for ask mode - read-only tools that don't modify the system
 export const chatToolsAskMode = {
   "read-file": readFile,
-  "read-multiple-files": readMultipleFiles,
   "list-directory": listDirectory,
   "get-file-info": getFileInfo,
   grep: grep,
   fetch: fetchTool,
   thinking: thinking,
-  diff: diff,
   "env-info": envInfo,
-  "search-files": searchFiles,
 };
 
 // Legacy export for backward compatibility

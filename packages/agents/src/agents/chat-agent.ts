@@ -29,8 +29,9 @@ export const chatAgent = async (
   const localCount = Object.keys(chatTools).length;
   const mcpCount = Object.keys(mcpTools).length;
   const total = Object.keys(allTools).length;
-
-  logger.info(`🔧 Using ${total} tools: ${localCount} local + ${mcpCount} MCP`);
+  logger.debug(
+    `🔧 Using ${total} tools: ${localCount} local + ${mcpCount} MCP`,
+  );
 
   return streamText({
     ...options,
