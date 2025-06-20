@@ -4,7 +4,7 @@ import React, { useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { theme } from "../theme/theme";
 import { ChatIcon } from "../atoms/icons";
-import { useUIStore } from "@chara/core";
+import { useRunnerConnect, useRunnerConnection, useUIStore } from "@chara/core";
 import ResizeHandle from "../atoms/resize-handle";
 import { ChatInterface } from "../templates";
 
@@ -191,6 +191,16 @@ export const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
     keyboardShortcuts,
     showShortcutFeedback,
   } = useUIStore(); // This call should now work correctly and return UIState
+
+  const { isConnected, isConnecting } = useRunnerConnection();
+  const connect = useRunnerConnect();
+
+  // Connect to runner service on mount
+  useEffect(() => {
+    if (!isConnected && !isConnecting) {
+      connect().catch(console.error);
+    }
+  }, [isConnected, isConnecting]);
 
   useEffect(() => {
     if (defaultOpen) {

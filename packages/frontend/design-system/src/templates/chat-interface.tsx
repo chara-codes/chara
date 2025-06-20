@@ -11,7 +11,11 @@ import TechStacksView from "../organisms/tech-stacks-view";
 import AddTechStackView from "../organisms/add-tech-stack-view";
 import EditTechStackView from "../organisms/edit-tech-stack-view";
 import TerminalView from "../organisms/terminal-view";
-import { useChatStore } from "@chara/core";
+import {
+  useChatStore,
+  useRunnerConnect,
+  useRunnerConnection,
+} from "@chara/core";
 import { useModelsStore } from "@chara/core";
 import {
   useRoutingStore,
@@ -110,6 +114,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const initializeModelsStore = useModelsStore(
     (state) => state.initializeStore,
   );
+
+  const { isConnected, isConnecting } = useRunnerConnection();
+  const connect = useRunnerConnect();
+
+  // Connect to runner service on mount
+  useEffect(() => {
+    if (!isConnected && !isConnecting) {
+      connect().catch(console.error);
+    }
+  }, [isConnected, isConnecting]);
 
   // Get routing state
   const currentScreen = useRoutingStore((state) => state.currentScreen);
