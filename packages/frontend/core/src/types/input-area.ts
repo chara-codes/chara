@@ -13,6 +13,8 @@ export interface InputContextItem {
   name: string;
   type: string;
   data?: unknown;
+  mimeType?: string;
+  isBinary?: boolean;
 }
 
 export interface ElementComment {

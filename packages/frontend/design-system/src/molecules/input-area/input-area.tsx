@@ -29,7 +29,7 @@ import { useElementSelector } from "../../hooks";
 import { createDropdownItems } from "./dropdown-items";
 import styled from "styled-components";
 import AnimatedButton from "./animated-button";
-import { useRunnerProcesses, useUIStore } from "@chara/core";
+import { readFileContent, useRunnerProcesses, useUIStore } from "@chara/core";
 import { type InputAreaProps, useChatStore } from "@chara/core";
 
 const RoundedIconButton = styled(IconButton)`
@@ -225,11 +225,14 @@ const InputArea: React.FC<InputAreaProps> = ({
     setIsDropdownOpen(false);
   };
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = async (file: File) => {
+    const fileData = await readFileContent(file);
     onAddContext({
       name: file.name,
-      type: "File",
-      data: file,
+      type: "file",
+      data: fileData.content,
+      mimeType: fileData.mimeType,
+      isBinary: fileData.isBinary,
     });
     setIsDropdownOpen(false);
   };

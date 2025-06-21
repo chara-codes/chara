@@ -77,7 +77,7 @@ function isBinaryMimeType(mimeType: string): boolean {
  * @param filename - The filename to analyze
  * @returns MIME type string
  */
-function getMimeTypeFromExtension(filename: string): string {
+export function getMimeTypeFromExtension(filename: string): string {
   const extension = filename.toLowerCase().split(".").pop();
 
   const mimeTypes: Record<string, string> = {
@@ -176,31 +176,4 @@ export function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
   return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
-}
-
-/**
- * Checks if a file type is supported for content reading
- * @param file - The File object to check
- * @returns true if the file type is supported
- */
-export function isSupportedFileType(file: File): boolean {
-  const mimeType = file.type || getMimeTypeFromExtension(file.name);
-
-  // Support text files and common document formats
-  const supportedTypes = [
-    "text/",
-    "application/json",
-    "application/xml",
-    "application/javascript",
-    "application/typescript",
-    "application/x-typescript",
-    "application/x-javascript",
-    "application/yaml",
-    "application/toml",
-    "application/sql",
-    "application/x-sh",
-    "image/svg+xml",
-  ];
-
-  return supportedTypes.some((type) => mimeType.startsWith(type));
 }

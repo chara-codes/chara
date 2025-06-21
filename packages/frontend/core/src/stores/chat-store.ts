@@ -17,7 +17,8 @@ import {
   type StreamRequestPayload,
   type StreamCallbacks,
 } from "../services"; // Import the new service
-import { MessageSegmentBuilder } from "../services/message-segment-builder.ts";
+import { MessageSegmentBuilder } from "../services/message-segment-builder";
+import { getMimeTypeFromExtension } from "../utils/";
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [
@@ -158,22 +159,17 @@ export const useChatStore = create<ChatState>()(
               },
               ...contextItems.map((item) => {
                 if (item.type === "file" && item.data) {
+                  if (item.mimeType?.startsWith("image/")) {
+                    return {
+                      type: "image" as const,
+                      image: item.data,
+                      mimeType: item.mimeType,
+                    } as any;
+                  }
                   return {
                     type: "file" as const,
-                    data:
-                      typeof item.data === "string"
-                        ? item.data
-                        : JSON.stringify(item.data),
-                    mimeType: item.name.endsWith(".pdf")
-                      ? "application/pdf"
-                      : item.name.endsWith(".png")
-                        ? "image/png"
-                        : item.name.endsWith(".jpg") ||
-                            item.name.endsWith(".jpeg")
-                          ? "image/jpeg"
-                          : item.name.endsWith(".txt")
-                            ? "text/plain"
-                            : "application/octet-stream",
+                    data: item.data,
+                    mimeType: item.mimeType,
                   };
                 }
                 return {
