@@ -10,10 +10,12 @@ export const chatAgent = async (
     model,
     messages,
     mode,
+    workingDir = process.cwd(),
   }: {
     model: string;
     messages: CoreMessage[];
     mode: "write" | "ask";
+    workingDir: string;
   },
   options: { headers?: Record<string, string> } = {},
 ) => {
@@ -39,6 +41,7 @@ export const chatAgent = async (
       hasTools: !!total,
       hasTool: (toolName: string) => Object.keys(allTools).includes(toolName),
       mode,
+      workingDir,
     }),
     tools: allTools,
     model: aiModel,

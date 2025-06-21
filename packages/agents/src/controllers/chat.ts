@@ -37,13 +37,11 @@ export const chatController = {
     return createDataStreamResponse({
       headers: { ...CORS_HEADERS, "accept-encoding": "" },
       execute: async (dataStream) => {
-        appEvents.on("tool:calling", (message) => {
-          dataStream.writeData(message);
-        });
         const result = await chatAgent({
           model,
           messages,
           mode: mode === "write" ? "write" : "ask",
+          workingDir: process.cwd(),
         });
         result.mergeIntoDataStream(dataStream);
       },

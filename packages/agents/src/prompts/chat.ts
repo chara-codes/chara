@@ -2,12 +2,14 @@ interface ChatPromptOptions {
   hasTools?: boolean;
   hasTool?: (toolName: string) => boolean;
   mode?: string;
+  workingDir?: string;
 }
 
 export const chatPrompt = (options: ChatPromptOptions = {}) => {
   const { hasTools = false, hasTool = () => false, mode = "write" } = options;
 
   let prompt = `You are a highly skilled software engineer with extensive knowledge in many programming languages, frameworks, design patterns, and best practices.
+${options.workingDir && `Current working directory: ${options.workingDir}`}
 
 ## Communication
 
