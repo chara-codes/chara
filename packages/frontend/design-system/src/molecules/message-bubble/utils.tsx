@@ -1,11 +1,8 @@
 import type React from "react";
-import type { ToolCall, ToolResult } from "@chara/core";
+import type { ContextItem, ToolCall, ToolResult } from "@chara/core";
+import { ContextPreview } from "../context-preview";
 
-export const getPreviewContent = (item: {
-  type: string;
-  data?: unknown;
-  name?: string;
-}): React.ReactNode => {
+export const getPreviewContent = (item: ContextItem): React.ReactNode => {
   if (!item || !item.data) {
     return "No preview available";
   }
@@ -68,18 +65,7 @@ export const getPreviewContent = (item: {
     case "file":
       return (
         <>
-          <strong>File:</strong>{" "}
-          {String(safeData.name || item.name || "Unknown")}
-          {safeData.size && (
-            <div>
-              <strong>Size:</strong> {formatFileSize(Number(safeData.size))}
-            </div>
-          )}
-          {safeData.type && (
-            <div>
-              <strong>Type:</strong> {String(safeData.type)}
-            </div>
-          )}
+          <ContextPreview item={item} />
         </>
       );
     default:

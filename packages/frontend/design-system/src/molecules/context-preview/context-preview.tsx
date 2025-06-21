@@ -11,7 +11,6 @@ export interface ContextPreviewProps {
 const PreviewContent = styled.div`
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid #374151;
 `;
 
 const PreviewLabel = styled.div`
@@ -44,10 +43,6 @@ const TextPreview = styled.div`
 `;
 
 const ContextPreview: React.FC<ContextPreviewProps> = ({ item }) => {
-  if (!item.content) {
-    return null;
-  }
-
   const mimeType = item.mimeType;
 
   const formatSvgContent = (content: string): string => {
@@ -108,21 +103,21 @@ const ContextPreview: React.FC<ContextPreviewProps> = ({ item }) => {
 
   return (
     <PreviewContent>
-      <PreviewLabel>Preview</PreviewLabel>
-
       {isImageType ? (
         isSvgType ? (
-          <TextPreview>{formatSvgContent(item.content)}</TextPreview>
+          <TextPreview>{formatSvgContent(item.data as string)}</TextPreview>
         ) : (
           <ImagePreview
-            src={`data:${mimeType};base64,${item.content}`}
+            src={`data:${mimeType};base64,${item.data}`}
             alt={item.name}
             onError={handleImageError}
           />
         )
       ) : (
         isTextType && (
-          <TextPreview>{formatTextContent(item.content, mimeType)}</TextPreview>
+          <TextPreview>
+            {formatTextContent(item.data as string, mimeType)}
+          </TextPreview>
         )
       )}
     </PreviewContent>
