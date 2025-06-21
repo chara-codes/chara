@@ -24,9 +24,9 @@ export async function readFileContent(file: File): Promise<{
           isBinary: false,
         });
       } else if (result instanceof ArrayBuffer) {
-        // Convert ArrayBuffer to base64
+        // Convert ArrayBuffer to base64 using chunked processing to avoid stack overflow
         const bytes = new Uint8Array(result);
-        const base64 = btoa(String.fromCharCode(...bytes));
+        const base64 = arrayBufferToBase64(bytes);
         resolve({
           content: base64,
           mimeType: file.type || getMimeTypeFromExtension(file.name),
@@ -51,6 +51,23 @@ export async function readFileContent(file: File): Promise<{
       reader.readAsText(file);
     }
   });
+}
+
+/**
+ * Converts ArrayBuffer to base64 string using chunked processing
+ * @param bytes - The Uint8Array to convert
+ * @returns base64 encoded string
+ */
+function arrayBufferToBase64(bytes: Uint8Array): string {
+  const chunkSize = 8192; // Process 8KB chunks to avoid stack overflow
+  let binary = "";
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.slice(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
 }
 
 /**
