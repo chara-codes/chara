@@ -166,11 +166,12 @@ export const useChatStore = create<ChatState>()(
                       mimeType: item.mimeType,
                     } as any;
                   }
-                  return {
-                    type: "file" as const,
-                    data: item.data,
-                    mimeType: item.mimeType,
-                  };
+                  if (item.isBinary)
+                    return {
+                      type: "file" as const,
+                      data: item.data,
+                      mimeType: item.mimeType,
+                    };
                 }
                 return {
                   type: "text" as const,
