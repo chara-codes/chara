@@ -7,7 +7,7 @@ import ChatMessages from "./chat-messages";
 import ContextPanel from "./context-panel";
 import RecentHistory from "./recent-history";
 import InputArea from "../molecules/input-area";
-import Footer from "../molecules/footer";
+import Footer from "../molecules/footer/index";
 import ConversationSuggestions from "../molecules/conversation-suggestions";
 import { useChatStore } from "@chara/core";
 import { CharaLogo } from "../atoms/chara-logo";

@@ -41,9 +41,13 @@ const Footer: React.FC = () => {
     const foundModel = models.find((m) => m.id === model);
     if (foundModel) {
       const sourceType = getModelSourceType(foundModel.provider);
-      return { name: foundModel.name, sourceType };
+      return {
+        name: foundModel.name,
+        sourceType,
+        provider: foundModel.provider,
+      };
     }
-    return { name: model, sourceType: "unknown" };
+    return { name: model, sourceType: "unknown", provider: "unknown" };
   };
 
   // Group models by provider
@@ -117,7 +121,7 @@ const Footer: React.FC = () => {
           <ModelInfo>
             {selectedModel.name}
             <SourceBadge $sourceType={selectedModel.sourceType}>
-              {getSourceLabel(selectedModel.sourceType)}
+              {selectedModel.provider}
             </SourceBadge>
           </ModelInfo>
           <ChevronDownIcon />
@@ -152,9 +156,7 @@ const Footer: React.FC = () => {
                         <SourceBadge
                           $sourceType={getModelSourceType(modelOption.provider)}
                         >
-                          {getSourceLabel(
-                            getModelSourceType(modelOption.provider),
-                          )}
+                          {modelOption.provider}
                         </SourceBadge>
                       </ModelOptionContent>
                     </ModelOption>

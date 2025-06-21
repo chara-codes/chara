@@ -1,23 +1,27 @@
 export const getModelSourceType = (provider: string): string => {
-  const lowerProvider = provider.toLowerCase()
+  const lowerProvider = provider.toLowerCase();
 
   // Unified services
-  if (lowerProvider.includes("openrouter")) {
-    return "unified"
+  if (["openrouter", "dial"].includes(lowerProvider)) {
+    return "unified";
   }
 
   // Native services
-  if (["openai", "anthropic", "mistral ai", "together ai", "cohere"].includes(lowerProvider)) {
-    return "native"
+  if (
+    ["openai", "anthropic", "mistral ai", "together ai", "cohere"].includes(
+      lowerProvider,
+    )
+  ) {
+    return "native";
   }
 
   // Local services
   if (["ollama", "lmstudio", "local ai"].includes(lowerProvider)) {
-    return "local"
+    return "local";
   }
 
-  return "unknown"
-}
+  return "unknown";
+};
 
 /**
  * Gets a human-readable label for a source type
@@ -28,12 +32,12 @@ export const getModelSourceType = (provider: string): string => {
 export const getSourceLabel = (sourceType: string): string => {
   switch (sourceType) {
     case "unified":
-      return "Unified"
+      return "Unified";
     case "native":
-      return "Native"
+      return "Native";
     case "local":
-      return "Local"
+      return "Local";
     default:
-      return "Unknown"
+      return "Unknown";
   }
-}
+};
