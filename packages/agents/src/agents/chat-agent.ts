@@ -4,6 +4,7 @@ import { mcpWrapper } from "../mcp/mcp-client";
 import { providersRegistry } from "../providers";
 import { chatToolsAskMode, chatToolsWriteMode } from "../tools/chat-tools";
 import { chatPrompt } from "../prompts/chat";
+import { getTracer } from "@lmnr-ai/lmnr";
 
 export const chatAgent = async (
   {
@@ -49,6 +50,14 @@ export const chatAgent = async (
     experimental_continueSteps: true,
     maxSteps: 500,
     messages,
-    experimental_telemetry: { isEnabled: true },
+    experimental_telemetry: {
+      isEnabled: true,
+      tracer: getTracer(),
+      metadata: {
+        agent: "chat",
+        provider: providerName,
+        model: modelName,
+      },
+    },
   });
 };

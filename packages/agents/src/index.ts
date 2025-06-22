@@ -15,6 +15,7 @@ import { logWithPreset } from "./utils";
 import { runnerService } from "./services/runner";
 import { appEvents } from "./services/events";
 import type { ServerWebSocket } from "bun";
+import { Laminar } from "@lmnr-ai/lmnr";
 
 // Export agents for programmatic use
 export { chatAgent } from "./agents/chat-agent";
@@ -32,9 +33,12 @@ export { providersRegistry } from "./providers/";
 const wsClients = new Set<ServerWebSocket<unknown>>();
 
 async function startServer(charaConfigFile = ".chara.json") {
+  Laminar.initialize({
+    projectApiKey: process.env.LMNR_PROJECT_API_KEY,
+  });
   if (!(await Bun.file(charaConfigFile).exists())) {
     const init = initAgent({
-      model: "openai:::gpt-4.1-mini",
+      model: "dial:::gpt-4.1-mini-2025-04-14",
     });
     logger.info("🛠️  Initializing Chara configuration...");
     for await (const chunk of init.fullStream) {

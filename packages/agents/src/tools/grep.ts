@@ -1,8 +1,8 @@
 import { tool } from "ai";
 import z from "zod";
-import { readdir, stat } from "node:fs/promises";
-import { join, basename } from "node:path";
 import { readFile } from "node:fs/promises";
+import { globby } from "globby";
+import { resolve, relative } from "node:path";
 
 interface GrepMatch {
   file: string;
@@ -17,345 +17,388 @@ interface GrepResult {
   after_context?: GrepMatch[];
 }
 
-class GrepEngine {
-  private pattern: RegExp | string;
-  private ignoreCase: boolean;
-  private fixedStrings: boolean;
-  private invertMatch: boolean;
-  private lineNumber: boolean;
-  private beforeContext: number;
-  private afterContext: number;
-  private maxCount: number;
+interface GrepOptions {
+  pattern: string;
+  ignoreCase?: boolean;
+  fixedStrings?: boolean;
+  invertMatch?: boolean;
+  lineNumber?: boolean;
+  beforeContext?: number;
+  afterContext?: number;
+  context?: number;
+  maxCount?: number;
+}
 
-  constructor(options: {
-    pattern: string;
-    ignoreCase?: boolean;
-    fixedStrings?: boolean;
-    invertMatch?: boolean;
-    lineNumber?: boolean;
-    beforeContext?: number;
-    afterContext?: number;
-    context?: number;
-    maxCount?: number;
-  }) {
-    this.ignoreCase = options.ignoreCase || false;
-    this.fixedStrings = options.fixedStrings || false;
-    this.invertMatch = options.invertMatch || false;
-    this.lineNumber = options.lineNumber ?? true;
-    this.maxCount = options.maxCount || 0;
+function createPattern(options: GrepOptions): RegExp {
+  const { pattern, ignoreCase = false, fixedStrings = false } = options;
 
-    // Handle context parameter
-    if (options.context !== undefined) {
-      this.beforeContext = options.context;
-      this.afterContext = options.context;
-    } else {
-      this.beforeContext = options.beforeContext || 0;
-      this.afterContext = options.afterContext || 0;
-    }
-
-    // Setup pattern
-    if (this.fixedStrings) {
-      // For fixed strings, escape regex special characters
-      const escapedPattern = options.pattern.replace(
-        /[.*+?^${}()|[\]\\]/g,
-        "\\$&",
-      );
-      const flags = this.ignoreCase ? "gi" : "g";
-      this.pattern = new RegExp(escapedPattern, flags);
-    } else {
-      // For regex patterns
-      const flags = this.ignoreCase ? "gi" : "g";
-      try {
-        this.pattern = new RegExp(options.pattern, flags);
-      } catch {
-        throw new Error(`Invalid regular expression: ${options.pattern}`);
-      }
-    }
-  }
-
-  private matchesPattern(line: string): boolean {
-    if (this.pattern instanceof RegExp) {
-      const matches = this.pattern.test(line);
-      // Reset regex lastIndex to avoid stateful issues
-      this.pattern.lastIndex = 0;
-      return matches !== this.invertMatch;
-    }
-
-    // Fallback string matching
-    const matches = this.ignoreCase
-      ? line.toLowerCase().includes(this.pattern.toLowerCase())
-      : line.includes(this.pattern);
-    return matches !== this.invertMatch;
-  }
-
-  private getMatches(line: string): Array<{ start: number; end: number }> {
-    if (this.invertMatch || !(this.pattern instanceof RegExp)) {
-      return [];
-    }
-
-    const matches: Array<{ start: number; end: number }> = [];
-    let match: RegExpExecArray | null;
-
-    // Reset regex to start from beginning
-    this.pattern.lastIndex = 0;
-
-    // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
-    while ((match = this.pattern.exec(line)) !== null) {
-      matches.push({ start: match.index, end: match.index + match[0].length });
-
-      // Prevent infinite loop on zero-length matches
-      if (match[0].length === 0) {
-        this.pattern.lastIndex++;
-      }
-
-      // For global flag, continue until no more matches
-      if (!this.pattern.global) {
-        break;
-      }
-    }
-
-    // Reset regex lastIndex
-    this.pattern.lastIndex = 0;
-    return matches;
-  }
-
-  async searchFile(filePath: string): Promise<GrepResult[]> {
+  if (fixedStrings) {
+    // For fixed strings, escape regex special characters
+    const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const flags = ignoreCase ? "gi" : "g";
+    return new RegExp(escapedPattern, flags);
+  } else {
+    // For regex patterns
+    const flags = ignoreCase ? "gi" : "g";
     try {
-      const content = await readFile(filePath, "utf-8");
-      const lines = content.split("\n");
+      return new RegExp(pattern, flags);
+    } catch {
+      throw new Error(`Invalid regular expression: ${pattern}`);
+    }
+  }
+}
 
-      const results: GrepResult[] = [];
-      let matchCount = 0;
+function matchesPattern(
+  line: string,
+  pattern: RegExp,
+  invertMatch = false,
+): boolean {
+  const matches = pattern.test(line);
+  // Reset regex lastIndex to avoid stateful issues
+  pattern.lastIndex = 0;
+  return matches !== invertMatch;
+}
 
-      for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-        const line = lines[lineIdx];
-        if (line === undefined) continue;
+function getMatches(
+  line: string,
+  pattern: RegExp,
+  invertMatch = false,
+): Array<{ start: number; end: number }> {
+  if (invertMatch) {
+    return [];
+  }
 
-        const lineNum = lineIdx + 1;
+  const matches: Array<{ start: number; end: number }> = [];
+  let match: RegExpExecArray | null;
 
-        if (this.matchesPattern(line)) {
-          const matches = this.getMatches(line);
+  // Reset regex to start from beginning
+  pattern.lastIndex = 0;
 
-          if (this.beforeContext > 0 || this.afterContext > 0) {
-            // Build result with context
-            const result: GrepResult = {
-              match: {
-                file: filePath,
-                line,
-                matches,
-              },
-              before_context: [],
-              after_context: [],
-            };
+  // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+  while ((match = pattern.exec(line)) !== null) {
+    matches.push({ start: match.index, end: match.index + match[0].length });
 
-            if (this.lineNumber && result.match) {
-              result.match.line_num = lineNum;
-            }
+    // Prevent infinite loop on zero-length matches
+    if (match[0].length === 0) {
+      pattern.lastIndex++;
+    }
 
-            // Add before context
-            const beforeStart = Math.max(0, lineIdx - this.beforeContext);
-            for (let i = beforeStart; i < lineIdx; i++) {
-              const contextLine = lines[i];
-              if (contextLine === undefined) continue;
+    // For global flag, continue until no more matches
+    if (!pattern.global) {
+      break;
+    }
+  }
 
-              const contextMatch: GrepMatch = {
-                file: filePath,
-                line: contextLine,
-                matches: [],
-              };
-              if (this.lineNumber) {
-                contextMatch.line_num = i + 1;
-              }
-              if (result.before_context) {
-                result.before_context.push(contextMatch);
-              }
-            }
+  // Reset regex lastIndex
+  pattern.lastIndex = 0;
+  return matches;
+}
 
-            // Add after context
-            const afterEnd = Math.min(
-              lines.length,
-              lineIdx + this.afterContext + 1,
-            );
-            for (let i = lineIdx + 1; i < afterEnd; i++) {
-              const contextLine = lines[i];
-              if (contextLine === undefined) continue;
+function makeRelativePath(filePath: string): string {
+  const cwd = process.cwd();
+  if (filePath.startsWith(cwd)) {
+    return relative(cwd, filePath);
+  }
+  return filePath;
+}
 
-              const contextMatch: GrepMatch = {
-                file: filePath,
-                line: contextLine,
-                matches: [],
-              };
-              if (this.lineNumber) {
-                contextMatch.line_num = i + 1;
-              }
-              if (result.after_context) {
-                result.after_context.push(contextMatch);
-              }
-            }
+async function searchFile(
+  filePath: string,
+  options: GrepOptions,
+): Promise<GrepResult[]> {
+  const {
+    lineNumber = true,
+    beforeContext = 0,
+    afterContext = 0,
+    context,
+    maxCount = 0,
+    invertMatch = false,
+  } = options;
 
-            results.push(result);
-          } else {
-            // Simple match without context
-            const match: GrepMatch = {
+  const actualBeforeContext = context !== undefined ? context : beforeContext;
+  const actualAfterContext = context !== undefined ? context : afterContext;
+
+  const pattern = createPattern(options);
+
+  try {
+    const content = await readFile(filePath, "utf-8");
+    const lines = content.split("\n");
+
+    const results: GrepResult[] = [];
+    let matchCount = 0;
+
+    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+      const line = lines[lineIdx];
+      if (line === undefined) continue;
+
+      const lineNum = lineIdx + 1;
+
+      if (matchesPattern(line, pattern, invertMatch)) {
+        const matches = getMatches(line, pattern, invertMatch);
+
+        if (actualBeforeContext > 0 || actualAfterContext > 0) {
+          // Build result with context
+          const result: GrepResult = {
+            match: {
               file: filePath,
               line,
               matches,
+            },
+            before_context: [],
+            after_context: [],
+          };
+
+          if (lineNumber && result.match) {
+            result.match.line_num = lineNum;
+          }
+
+          // Add before context
+          const beforeStart = Math.max(0, lineIdx - actualBeforeContext);
+          for (let i = beforeStart; i < lineIdx; i++) {
+            const contextLine = lines[i];
+            if (contextLine === undefined) continue;
+
+            const contextMatch: GrepMatch = {
+              file: filePath,
+              line: contextLine,
+              matches: [],
             };
-
-            if (this.lineNumber) {
-              match.line_num = lineNum;
+            if (lineNumber) {
+              contextMatch.line_num = i + 1;
             }
-
-            results.push({ match });
+            if (result.before_context) {
+              result.before_context.push(contextMatch);
+            }
           }
 
-          matchCount++;
-          if (this.maxCount > 0 && matchCount >= this.maxCount) {
-            break;
+          // Add after context
+          const afterEnd = Math.min(
+            lines.length,
+            lineIdx + actualAfterContext + 1,
+          );
+          for (let i = lineIdx + 1; i < afterEnd; i++) {
+            const contextLine = lines[i];
+            if (contextLine === undefined) continue;
+
+            const contextMatch: GrepMatch = {
+              file: filePath,
+              line: contextLine,
+              matches: [],
+            };
+            if (lineNumber) {
+              contextMatch.line_num = i + 1;
+            }
+            if (result.after_context) {
+              result.after_context.push(contextMatch);
+            }
           }
+
+          results.push(result);
+        } else {
+          // Simple match without context
+          const match: GrepMatch = {
+            file: filePath,
+            line,
+            matches,
+          };
+
+          if (lineNumber) {
+            match.line_num = lineNum;
+          }
+
+          results.push({ match });
+        }
+
+        matchCount++;
+        if (maxCount > 0 && matchCount >= maxCount) {
+          break;
         }
       }
-
-      return results;
-    } catch (error) {
-      throw new Error(
-        `Error reading file ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
-      );
     }
-  }
 
-  async searchFiles(
-    paths: string[],
-    recursive = false,
-    filePattern?: string,
-  ): Promise<GrepResult[]> {
-    const results: GrepResult[] = [];
-    let totalMatches = 0;
+    return results;
+  } catch (error) {
+    throw new Error(
+      `Error reading file ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+async function searchFiles(
+  paths: string[],
+  options: GrepOptions,
+  filePattern?: string,
+  useGitignore = true,
+  caseSensitiveFilePattern = true,
+): Promise<GrepResult[]> {
+  const results: GrepResult[] = [];
+  let totalMatches = 0;
+  const { maxCount = 0 } = options;
+
+  try {
+    // Group paths by their base directory to handle absolute paths properly
+    const pathGroups = new Map<string, string[]>();
 
     for (const path of paths) {
-      try {
-        const pathStat = await stat(path);
+      const resolvedPath = resolve(path);
 
-        if (pathStat.isDirectory()) {
-          if (recursive) {
-            const dirResults = await this.searchDirectory(
-              path,
-              filePattern,
-              true,
-            );
-            for (const result of dirResults) {
-              results.push(result);
-              totalMatches++;
-              if (this.maxCount > 0 && totalMatches >= this.maxCount) {
-                return results;
-              }
-            }
+      // Check if it's already a glob pattern
+      if (path.includes("*") || path.includes("?") || path.includes("[")) {
+        // For glob patterns, use current directory as base
+        const basePath = process.cwd();
+        if (!pathGroups.has(basePath)) {
+          pathGroups.set(basePath, []);
+        }
+        pathGroups.get(basePath)!.push(path);
+      } else {
+        // Determine base directory for the path
+        let basePath: string;
+        let relativePath: string;
+
+        try {
+          const fs = await import("node:fs/promises");
+          const stats = await fs.stat(resolvedPath);
+          if (stats.isDirectory()) {
+            basePath = resolvedPath;
+            relativePath = "**/*";
           } else {
-            const dirResults = await this.searchDirectory(
-              path,
-              filePattern,
-              false,
-            );
-            for (const result of dirResults) {
-              results.push(result);
-              totalMatches++;
-              if (this.maxCount > 0 && totalMatches >= this.maxCount) {
-                return results;
-              }
+            basePath = resolve(resolvedPath, "..");
+            relativePath = relative(basePath, resolvedPath);
+          }
+        } catch {
+          // If stat fails, assume it's a file path
+          basePath = resolve(path, "..");
+          relativePath = relative(basePath, resolve(path));
+        }
+
+        if (!pathGroups.has(basePath)) {
+          pathGroups.set(basePath, []);
+        }
+        pathGroups.get(basePath)!.push(relativePath);
+      }
+    }
+
+    // Process each group with its own cwd
+    for (const [basePath, groupPaths] of pathGroups) {
+      const patterns: string[] = [];
+      const negativePatterns: string[] = [];
+
+      // Always ignore these directories
+      negativePatterns.push(
+        "!**/.chara/**",
+        "!**/.git/**",
+        "!**/node_modules/**",
+        "!**/.turbo/**",
+        "!**/.cache/**",
+        "!**/dist/**",
+        "!**/build/**",
+        "!**/.next/**",
+        "!**/.nuxt/**",
+        "!**/coverage/**",
+        "!**/.nyc_output/**",
+        "!**/tmp/**",
+        "!**/temp/**",
+      );
+
+      // Apply file pattern filter if specified
+      let finalPatterns = groupPaths;
+      if (filePattern) {
+        finalPatterns = groupPaths.map((pattern) => {
+          if (pattern.includes("**/*")) {
+            return pattern.replace("**/*", `**/${filePattern}`);
+          } else if (pattern === "**/*") {
+            return `**/${filePattern}`;
+          }
+          // If it's a specific file pattern, we need to match against it
+          return pattern;
+        });
+
+        // If case insensitive, add both upper and lower case variants
+        if (!caseSensitiveFilePattern) {
+          const caseVariants: string[] = [];
+          for (const pattern of finalPatterns) {
+            if (pattern.includes(filePattern)) {
+              // Create case-insensitive variants
+              const lowerPattern = pattern.replace(
+                filePattern,
+                filePattern.toLowerCase(),
+              );
+              const upperPattern = pattern.replace(
+                filePattern,
+                filePattern.toUpperCase(),
+              );
+              const titlePattern = pattern.replace(
+                filePattern,
+                filePattern.charAt(0).toUpperCase() +
+                  filePattern.slice(1).toLowerCase(),
+              );
+
+              caseVariants.push(lowerPattern, upperPattern, titlePattern);
             }
           }
-        } else if (pathStat.isFile()) {
-          if (
-            !filePattern ||
-            this.matchesFilePattern(basename(path), filePattern)
-          ) {
-            const fileResults = await this.searchFile(path);
+          finalPatterns = [...finalPatterns, ...caseVariants];
+        }
+      }
+
+      try {
+        // Use globby to find files with the appropriate cwd
+        const files = await globby([...finalPatterns, ...negativePatterns], {
+          gitignore: useGitignore,
+          onlyFiles: true,
+          absolute: true,
+          dot: false,
+          followSymbolicLinks: false,
+          cwd: basePath,
+          ignore: [],
+        });
+
+        // Search each file
+        for (const file of files) {
+          try {
+            const fileResults = await searchFile(file, options);
             for (const result of fileResults) {
+              // Convert absolute path back to relative for display if it's within original cwd
+              if (result.match) {
+                result.match.file = makeRelativePath(result.match.file);
+              }
+              if (result.before_context) {
+                result.before_context.forEach((ctx) => {
+                  ctx.file = makeRelativePath(ctx.file);
+                });
+              }
+              if (result.after_context) {
+                result.after_context.forEach((ctx) => {
+                  ctx.file = makeRelativePath(ctx.file);
+                });
+              }
               results.push(result);
               totalMatches++;
-              if (this.maxCount > 0 && totalMatches >= this.maxCount) {
+              if (maxCount > 0 && totalMatches >= maxCount) {
                 return results;
               }
             }
+          } catch (error) {
+            // Skip files that can't be read (binary files, permission issues, etc.)
+            continue;
           }
         }
-      } catch (error) {
-        // Skip files that can't be accessed
+      } catch (groupError) {
+        // If globby fails for this group, skip it
+        continue;
       }
     }
-
-    return results;
+  } catch (error) {
+    throw new Error(
+      `Error searching files: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 
-  private async searchDirectory(
-    dirPath: string,
-    filePattern?: string,
-    recursive = false,
-  ): Promise<GrepResult[]> {
-    const results: GrepResult[] = [];
-    let totalMatches = 0;
-
-    try {
-      const entries = await readdir(dirPath, { withFileTypes: true });
-
-      for (const entry of entries) {
-        const fullPath = join(dirPath, entry.name);
-
-        if (entry.isFile()) {
-          if (
-            !filePattern ||
-            this.matchesFilePattern(entry.name, filePattern)
-          ) {
-            try {
-              const fileResults = await this.searchFile(fullPath);
-              for (const result of fileResults) {
-                results.push(result);
-                totalMatches++;
-                if (this.maxCount > 0 && totalMatches >= this.maxCount) {
-                  return results;
-                }
-              }
-            } catch {
-              // Skip files that can't be read
-            }
-          }
-        } else if (entry.isDirectory() && recursive) {
-          const subResults = await this.searchDirectory(
-            fullPath,
-            filePattern,
-            recursive,
-          );
-          for (const result of subResults) {
-            results.push(result);
-            totalMatches++;
-            if (this.maxCount > 0 && totalMatches >= this.maxCount) {
-              return results;
-            }
-          }
-        }
-      }
-    } catch {
-      // Skip directories that can't be accessed
-    }
-
-    return results;
-  }
-
-  private matchesFilePattern(filename: string, pattern: string): boolean {
-    // Simple glob pattern matching
-    const regexPattern = pattern
-      .replace(/\./g, "\\.")
-      .replace(/\*/g, ".*")
-      .replace(/\?/g, ".");
-
-    const regex = new RegExp(`^${regexPattern}$`, this.ignoreCase ? "i" : "");
-    return regex.test(filename);
-  }
+  return results;
 }
 
 export const grep = tool({
   description:
-    "Search for patterns in files using grep-like functionality. Supports regex patterns, recursive directory search, context lines, and various filtering options.",
+    "Search for patterns in files using grep-like functionality with globby for file matching. Automatically respects .gitignore files and ignores common build/cache directories (.chara/, .git/, node_modules/, etc.). Supports regex patterns, context lines, and various filtering options.",
   parameters: z.object({
     pattern: z
       .string()
@@ -363,7 +406,7 @@ export const grep = tool({
     paths: z
       .union([z.string(), z.array(z.string())])
       .describe(
-        "File or directory paths to search in (string or array of strings)",
+        "File paths, directory paths, or glob patterns to search in (string or array of strings). Examples: 'src/', '**/*.ts', ['src/', 'tests/']",
       ),
     ignoreCase: z
       .boolean()
@@ -399,10 +442,6 @@ export const grep = tool({
       .boolean()
       .default(false)
       .describe("Treat pattern as literal text, not regex"),
-    recursive: z
-      .boolean()
-      .default(false)
-      .describe("Search directories recursively"),
     invertMatch: z
       .boolean()
       .default(false)
@@ -411,7 +450,11 @@ export const grep = tool({
     filePattern: z
       .string()
       .optional()
-      .describe("Pattern to filter files (e.g., '*.txt')"),
+      .describe("Glob pattern to filter files (e.g., '*.txt', '*.{js,ts}')"),
+    useGitignore: z
+      .boolean()
+      .default(true)
+      .describe("Respect .gitignore files when searching"),
   }),
   execute: async ({
     pattern,
@@ -422,17 +465,24 @@ export const grep = tool({
     context,
     maxCount = 0,
     fixedStrings = false,
-    recursive = false,
     invertMatch = false,
     lineNumber = true,
     filePattern,
+    useGitignore = true,
   }) => {
     try {
+      // Validate pattern early to catch invalid regex
+      createPattern({
+        pattern,
+        ignoreCase,
+        fixedStrings,
+      });
+
       // Convert single path to array
       const pathArray = Array.isArray(paths) ? paths : [paths];
 
-      // Create grep engine
-      const grepEngine = new GrepEngine({
+      // Create grep options
+      const options: GrepOptions = {
         pattern,
         ignoreCase,
         fixedStrings,
@@ -442,13 +492,15 @@ export const grep = tool({
         afterContext,
         context,
         maxCount,
-      });
+      };
 
-      // Search files
-      const results = await grepEngine.searchFiles(
+      // Search files using globby
+      const results = await searchFiles(
         pathArray,
-        recursive,
+        options,
         filePattern,
+        useGitignore,
+        !ignoreCase, // Use case-insensitive file patterns when ignoreCase is true
       );
 
       if (results.length === 0) {

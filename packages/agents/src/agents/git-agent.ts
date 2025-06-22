@@ -1,5 +1,6 @@
 import { generateText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
+import { getTracer } from "@lmnr-ai/lmnr";
 
 export const gitAgent = (
   {
@@ -28,5 +29,14 @@ export const gitAgent = (
           "Use previous messages and the current user prompt commit of changes, use maximum 200 symbols.",
       },
     ],
+    experimental_telemetry: {
+      isEnabled: true,
+      tracer: getTracer(),
+      metadata: {
+        agent: "git",
+        provider: providerName,
+        model: modelName,
+      },
+    },
   });
 };

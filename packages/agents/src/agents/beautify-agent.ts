@@ -1,5 +1,6 @@
 import { streamText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
+import { getTracer } from "@lmnr-ai/lmnr";
 
 export const beautifyAgent = (
   {
@@ -28,5 +29,14 @@ export const beautifyAgent = (
           "Use previous messages and the current user prompt to generate a better, implementation-focused answer. Limit the response to 300 symbols, make it actionable for development, and use plain text only. Prioritize clarity and practical instructions.",
       },
     ],
+    experimental_telemetry: {
+      isEnabled: true,
+      tracer: getTracer(),
+      metadata: {
+        agent: "beautify",
+        provider: providerName,
+        model: modelName,
+      },
+    },
   });
 };

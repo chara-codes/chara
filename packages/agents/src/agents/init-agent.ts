@@ -3,6 +3,7 @@ import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
 import { initTools } from "../tools/init-tools";
 import { initPrompt } from "../prompts/init";
+import { getTracer } from "@lmnr-ai/lmnr";
 
 export const initAgent = (
   {
@@ -36,5 +37,14 @@ export const initAgent = (
     experimental_continueSteps: true,
     maxSteps: 50,
     prompt: "Analyze the project and save configuration to .chara.json",
+    experimental_telemetry: {
+      isEnabled: true,
+      tracer: getTracer(),
+      metadata: {
+        agent: 'init',
+        provider: providerName,
+        model: modelName,
+      },
+    },
   });
 };
