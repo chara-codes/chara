@@ -13,9 +13,6 @@ import { fetchTool } from "./fetch";
 import { terminal } from "./terminal";
 import { grep } from "./grep";
 import { thinking } from "./thinking";
-import { initGit } from "./init-git";
-import { saveToHistory } from "./save-to-history";
-import { diff } from "./diff";
 import { envInfo } from "./env-info";
 
 // Export specialized tool configurations
@@ -39,8 +36,5 @@ export const tools = {
   terminal: terminal,
   grep: grep,
   thinking: thinking,
-  "init-git": initGit,
-  "save-to-history": saveToHistory,
-  diff: diff,
   "env-info": envInfo,
 };

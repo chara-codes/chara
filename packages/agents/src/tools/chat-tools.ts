@@ -1,6 +1,4 @@
 import { readFile } from "./read-file";
-import { writeFile } from "./write-file";
-import { readMultipleFiles } from "./read-multiple-files";
 import { editFile } from "./edit-file";
 import { createDirectory } from "./create-directory";
 import { listDirectory } from "./list-directory";
@@ -10,10 +8,7 @@ import { fetchTool } from "./fetch";
 import { terminal } from "./terminal";
 import { grep } from "./grep";
 import { thinking } from "./thinking";
-import { saveToHistory } from "./save-to-history";
-import { diff } from "./diff";
 import { envInfo } from "./env-info";
-import { searchFiles } from "./search-files";
 
 // Tools for write mode - all tools available for interactive development
 export const chatToolsWriteMode = {

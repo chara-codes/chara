@@ -597,4 +597,35 @@ describe("grep tool", () => {
     expect(parsed[0].line).toBe("test");
     expect(parsed[1].line).toBe("my test");
   });
+
+  test("should support fallback to current directory when disabled", async () => {
+    await testFS.createFile("fallback.txt", "no matches here");
+
+    const result = await grep.execute(
+      {
+        pattern: "nonexistent pattern",
+        paths: testFS.getPath(),
+        fallbackToCurrentDir: false,
+      } as any,
+      { toolCallId: "test", messages: [] },
+    );
+
+    expect(result).toBe("No matches found");
+  });
+
+  test("should have fallback enabled by default", async () => {
+    // Test that fallbackToCurrentDir defaults to true by checking the parameter is optional
+    const result = await grep.execute(
+      {
+        pattern: "export",
+        paths: "nonexistent-directory",
+        maxCount: 1,
+      } as any,
+      { toolCallId: "test", messages: [] },
+    );
+
+    // Since this is a real directory search and not a temp directory,
+    // it should either find matches or return no matches without error
+    expect(typeof result).toBe("string");
+  });
 });

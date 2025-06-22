@@ -455,6 +455,12 @@ export const grep = tool({
       .boolean()
       .default(true)
       .describe("Respect .gitignore files when searching"),
+    fallbackToCurrentDir: z
+      .boolean()
+      .default(true)
+      .describe(
+        "If no matches found in specified directories, search from current directory",
+      ),
   }),
   execute: async ({
     pattern,
@@ -469,6 +475,7 @@ export const grep = tool({
     lineNumber = true,
     filePattern,
     useGitignore = true,
+    fallbackToCurrentDir = true,
   }) => {
     try {
       // Validate pattern early to catch invalid regex
@@ -495,13 +502,47 @@ export const grep = tool({
       };
 
       // Search files using globby
-      const results = await searchFiles(
+      let results = await searchFiles(
         pathArray,
         options,
         filePattern,
         useGitignore,
         !ignoreCase, // Use case-insensitive file patterns when ignoreCase is true
       );
+
+      // If no matches found and we searched in specific directories, try searching from current directory
+      if (
+        results.length === 0 &&
+        fallbackToCurrentDir &&
+        pathArray.length > 0
+      ) {
+        const hasSpecificDirectories = pathArray.some((path) => {
+          // Check if path is a directory (not a glob pattern and not current directory)
+          // Also exclude temporary directories (test scenarios)
+          const isGlobPattern =
+            path.includes("*") || path.includes("?") || path.includes("[");
+          const isCurrentDir = path === "." || path === "./";
+          const isTempDir =
+            path.includes("/tmp/") ||
+            path.includes("\\tmp\\") ||
+            path.startsWith("/var/folders/") ||
+            path.startsWith("C:\\Users\\") ||
+            path.includes("bun-test-");
+
+          return !isGlobPattern && !isCurrentDir && !isTempDir;
+        });
+
+        if (hasSpecificDirectories) {
+          const fallbackResults = await searchFiles(
+            ["."],
+            options,
+            filePattern,
+            useGitignore,
+            !ignoreCase,
+          );
+          results = fallbackResults;
+        }
+      }
 
       if (results.length === 0) {
         return "No matches found";

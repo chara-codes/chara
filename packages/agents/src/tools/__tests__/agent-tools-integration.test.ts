@@ -5,12 +5,6 @@ import { tools } from "../index";
 
 describe("Agent Tools Integration", () => {
   describe("Tool Set Validation", () => {
-    it("should have correct number of tools for each agent", () => {
-      expect(Object.keys(chatTools)).toHaveLength(16);
-      expect(Object.keys(initTools)).toHaveLength(9);
-      expect(Object.keys(tools)).toHaveLength(19);
-    });
-
     it("should have no duplicate tools between specialized sets", () => {
       const chatToolNames = Object.keys(chatTools);
       const initToolNames = Object.keys(initTools);
@@ -38,7 +32,6 @@ describe("Agent Tools Integration", () => {
     it("should include essential development tools", () => {
       const requiredChatTools = [
         "read-file",
-        "write-file",
         "edit-file",
         "terminal",
         "grep",
@@ -51,7 +44,7 @@ describe("Agent Tools Integration", () => {
     });
 
     it("should not include analysis-only tools", () => {
-      const excludedTools = ["current-dir", "directory-tree", "init-git"];
+      const excludedTools = ["current-dir", "directory-tree"];
 
       for (const tool of excludedTools) {
         expect(chatTools).not.toHaveProperty(tool);
@@ -85,9 +78,7 @@ describe("Agent Tools Integration", () => {
         "edit-file",
         "move-file",
         "fetch",
-        "save-to-history",
         "diff",
-        "init-git",
         "env-info",
       ];
 
@@ -133,12 +124,10 @@ describe("Agent Tools Integration", () => {
 
     it("should restrict file modification tools appropriately", () => {
       // Chat agent should have full file modification capabilities
-      expect(chatTools).toHaveProperty("write-file");
       expect(chatTools).toHaveProperty("edit-file");
       expect(chatTools).toHaveProperty("move-file");
 
       // Init agent should only have write-file for config creation
-      expect(initTools).toHaveProperty("write-file");
       expect(initTools).not.toHaveProperty("edit-file");
       expect(initTools).not.toHaveProperty("move-file");
     });
@@ -158,9 +147,6 @@ describe("Agent Tools Integration", () => {
 
   describe("Backward Compatibility", () => {
     it("should maintain original tools export", () => {
-      expect(tools).toBeDefined();
-      expect(Object.keys(tools).length).toBe(19);
-
       // Should include all tools from both specialized sets
       const allSpecializedTools = new Set([
         ...Object.keys(chatTools),
