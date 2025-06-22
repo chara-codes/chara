@@ -8,12 +8,15 @@ CLI
 Server
 [ ] Move MCP to separate package
 [ ] Add ability to run sever with custom db
-[ ] Remove multi user/project support (no session, no project in database)
-[ ] Move AI to Agents
+[x] Remove multi user/project support (no session, no project in database)
+[x] Move AI to Agents
 
 Web
-[ ] Move to new one design
+[x] Move to new one design
+[ ] Improve tool calling visualisation
 
 Agents
-[ ] Tools for communication with cli
-[ ] Debug MCP errors (mcp-client.ts)
+[x] Tools for communication with cli
+[x] Debug MCP errors (mcp-client.ts)
+[ ] Add google ai support
+[ ] Add deepseek support
