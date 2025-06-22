@@ -1,7 +1,5 @@
 import { readFile } from "./read-file";
 import { editFile } from "./edit-file";
-import { createDirectory } from "./create-directory";
-import { listDirectory } from "./list-directory";
 import { moveFile } from "./move-file";
 import { getFileInfo } from "./get-file-info";
 import { fetchTool } from "./fetch";
@@ -9,13 +7,13 @@ import { terminal } from "./terminal";
 import { grep } from "./grep";
 import { thinking } from "./thinking";
 import { envInfo } from "./env-info";
+import { directory } from "./directory";
 
 // Tools for write mode - all tools available for interactive development
 export const chatToolsWriteMode = {
   "read-file": readFile,
   "edit-file": editFile,
-  "create-directory": createDirectory,
-  "list-directory": listDirectory,
+  directory: directory,
   "move-file": moveFile,
   "get-file-info": getFileInfo,
   grep: grep,
@@ -28,7 +26,7 @@ export const chatToolsWriteMode = {
 // Tools for ask mode - read-only tools that don't modify the system
 export const chatToolsAskMode = {
   "read-file": readFile,
-  "list-directory": listDirectory,
+  directory: directory,
   "get-file-info": getFileInfo,
   grep: grep,
   fetch: fetchTool,

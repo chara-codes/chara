@@ -115,7 +115,7 @@ async function startServer(charaConfigFile = ".chara.json") {
       );
     });
 
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  // biome-ignore lint/suspicious/noExplicitAny: Server config requires any type for Bun compatibility
   const serverConfig: any = {
     port: 3031,
     idleTimeout: 255,
@@ -132,7 +132,7 @@ async function startServer(charaConfigFile = ".chara.json") {
     },
 
     // WebSocket upgrade handler
-    fetch(req, server) {
+    fetch(req: Request, server: any) {
       const url = new URL(req.url);
 
       // Handle WebSocket upgrade for /ws endpoint
@@ -145,7 +145,7 @@ async function startServer(charaConfigFile = ".chara.json") {
       }
 
       // Handle other routes normally
-      return miscController.fallback(req, server);
+      return miscController.fallback();
     },
 
     // WebSocket configuration
@@ -177,14 +177,14 @@ async function startServer(charaConfigFile = ".chara.json") {
         );
       },
 
-      close(ws) {
+      close(ws: any) {
         wsClients.delete(ws);
         logger.debug(
           `WebSocket client disconnected. Total clients: ${wsClients.size}`,
         );
       },
 
-      error(ws, error) {
+      error(ws: any, error: any) {
         logger.error("WebSocket error:", error);
         wsClients.delete(ws);
       },

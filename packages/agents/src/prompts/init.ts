@@ -13,19 +13,16 @@ Current working directory: ${workingDir}
 
 ## Available Tools
 ${hasTools ? "You have access to filesystem tools to analyze the project:" : "No tools available"}
-${hasTool("current-dir") ? "- current-dir: Get current working directory" : ""}
-${hasTool("list-directory") ? "- list-directory: List files and directories" : ""}
-${hasTool("directory-tree") ? "- directory-tree: Get recursive directory structure" : ""}
+${hasTool("directory") ? "- directory: Unified directory management (list, tree, create, current, stats, find)" : ""}
 ${hasTool("read-file") ? "- read-file: Read file contents" : ""}
-${hasTool("read-multiple-files") ? "- read-multiple-files: Read multiple files at once" : ""}
 ${hasTool("search-files") ? "- search-files: Search for files matching patterns" : ""}
 ${hasTool("get-file-info") ? "- get-file-info: Get file metadata" : ""}
-${hasTool("write-file") ? "- write-file: Write files (use this to create .chara.json)" : ""}
+${hasTool("edit-file") ? "- edit-file: Create or edit files (use this to create .chara.json)" : ""}
 
 ## Analysis Strategy
 
 1. **Project Structure Analysis**
-   - Use directory-tree or list-directory to understand the project layout
+   - Use directory tool with tree or list action to understand the project layout
    - **Check if directory is empty or minimal** (only contains .gitignore, README.md, or similar basic files)
    - Identify key directories (src, lib, app, components, etc.)
    - Look for configuration files and build tools

@@ -44,7 +44,7 @@ describe("Agent Tools Integration", () => {
     });
 
     it("should not include analysis-only tools", () => {
-      const excludedTools = ["current-dir", "directory-tree"];
+      const excludedTools = ["search-files"];
 
       for (const tool of excludedTools) {
         expect(chatTools).not.toHaveProperty(tool);
@@ -58,14 +58,7 @@ describe("Agent Tools Integration", () => {
 
   describe("Init Agent Tools", () => {
     it("should include essential analysis tools", () => {
-      const requiredInitTools = [
-        "current-dir",
-        "read-file",
-        "directory-tree",
-        "list-directory",
-        "grep",
-        "thinking",
-      ];
+      const requiredInitTools = ["read-file", "directory", "grep", "thinking"];
 
       for (const tool of requiredInitTools) {
         expect(initTools).toHaveProperty(tool);
@@ -85,10 +78,6 @@ describe("Agent Tools Integration", () => {
       for (const tool of excludedTools) {
         expect(initTools).not.toHaveProperty(tool);
       }
-    });
-
-    it("should include write-file for config creation only", () => {
-      expect(initTools).toHaveProperty("write-file");
     });
   });
 
@@ -127,7 +116,7 @@ describe("Agent Tools Integration", () => {
       expect(chatTools).toHaveProperty("edit-file");
       expect(chatTools).toHaveProperty("move-file");
 
-      // Init agent should only have write-file for config creation
+      // Init agent should not have file modification tools
       expect(initTools).not.toHaveProperty("edit-file");
       expect(initTools).not.toHaveProperty("move-file");
     });

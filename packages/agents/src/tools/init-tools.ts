@@ -1,23 +1,21 @@
-import { currentDir } from "./current-dir";
 import { readFile } from "./read-file";
-import { readMultipleFiles } from "./read-multiple-files";
-import { listDirectory } from "./list-directory";
-import { directoryTree } from "./directory-tree";
+import { editFile } from "./edit-file";
 import { getFileInfo } from "./get-file-info";
 import { grep } from "./grep";
 import { thinking } from "./thinking";
+import { directory } from "./directory";
 
-import { writeFile } from "./write-file";
+// Legacy imports for backward compatibility
+import { searchFiles } from "./search-files";
 
 // Tools specifically for init agent - focused on project analysis and configuration
 export const initTools = {
-  "current-dir": currentDir,
   "read-file": readFile,
-  "read-multiple-files": readMultipleFiles,
-  "list-directory": listDirectory,
-  "directory-tree": directoryTree,
+  "edit-file": editFile, // For creating .chara.json
+  directory: directory, // New unified directory tool
   "get-file-info": getFileInfo,
   grep: grep,
   thinking: thinking,
-  "write-file": writeFile, // Only for creating .chara.json
+  // Legacy directory tools for compatibility
+  "search-files": searchFiles,
 };

@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -38,8 +38,8 @@ export class TestFileSystem {
 
   async fileExists(path: string): Promise<boolean> {
     try {
-      const file = Bun.file(this.getPath(path));
-      return await file.exists();
+      await stat(this.getPath(path));
+      return true;
     } catch {
       return false;
     }

@@ -6,14 +6,9 @@ This directory contains comprehensive tests for all filesystem tools in the agen
 
 Each tool has its own test file following the naming convention `{tool-name}.test.ts`:
 
-- `current-dir.test.ts` - Tests for current directory tool
 - `read-file.test.ts` - Tests for file reading tool
-- `write-file.test.ts` - Tests for file writing tool
-- `read-multiple-files.test.ts` - Tests for multiple file reading tool
 - `edit-file.test.ts` - Tests for file editing tool
-- `create-directory.test.ts` - Tests for directory creation tool
-- `list-directory.test.ts` - Tests for directory listing tool
-- `directory-tree.test.ts` - Tests for recursive directory tree tool
+- `directory.test.ts` - Tests for unified directory management tool
 - `move-file.test.ts` - Tests for file/directory moving tool
 - `search-files.test.ts` - Tests for file search tool
 - `get-file-info.test.ts` - Tests for file metadata tool
@@ -21,9 +16,6 @@ Each tool has its own test file following the naming convention `{tool-name}.tes
 - `terminal.test.ts` - Tests for terminal command execution tool
 - `grep.test.ts` - Tests for grep pattern search tool
 - `thinking.test.ts` - Tests for thinking/problem-solving tool
-- `init-git.test.ts` - Tests for git initialization tool
-- `save-to-history.test.ts` - Tests for git history saving tool
-- `diff.test.ts` - Tests for diff/change visualization tool
 - `env-info.test.ts` - Tests for environment information tool
 
 ## Test Utilities
@@ -53,6 +45,11 @@ Run specific test file:
 bun test src/tools/__tests__/read-file.test.ts
 ```
 
+Run directory tool tests:
+```bash
+bun test src/tools/__tests__/directory.test.ts
+```
+
 Run fetch tool tests:
 ```bash
 bun test src/tools/__tests__/fetch.test.ts
@@ -71,21 +68,6 @@ bun test src/tools/__tests__/grep.test.ts
 Run thinking tool tests:
 ```bash
 bun test src/tools/__tests__/thinking.test.ts
-```
-
-Run init-git tool tests:
-```bash
-bun test src/tools/__tests__/init-git.test.ts
-```
-
-Run save-to-history tool tests:
-```bash
-bun test src/tools/__tests__/save-to-history.test.ts
-```
-
-Run diff tool tests:
-```bash
-bun test src/tools/__tests__/diff.test.ts
 ```
 
 Run env-info tool tests:

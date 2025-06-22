@@ -528,7 +528,9 @@ describe("RunnerService", () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Check that get-status event was emitted
-        const getStatusEvents = events.filter((e) => e.event === "get-status");
+        const getStatusEvents = events.filter(
+          (e) => e.event === "runner:get-status",
+        );
         expect(getStatusEvents.length).toBe(1);
         expect(getStatusEvents[0].data.processId).toBe(processId);
 
@@ -564,7 +566,9 @@ describe("RunnerService", () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Check that get-status event was emitted
-        const getStatusEvents = events.filter((e) => e.event === "get-status");
+        const getStatusEvents = events.filter(
+          (e) => e.event === "runner:get-status",
+        );
         expect(getStatusEvents.length).toBe(1);
         expect(getStatusEvents[0].data.processId).toBeUndefined();
 
@@ -597,7 +601,7 @@ describe("RunnerService", () => {
 
         // Check that restart event was emitted
         const restartRequestEvents = events.filter(
-          (e) => e.event === "restart",
+          (e) => e.event === "runner:restart",
         );
         expect(restartRequestEvents.length).toBe(1);
         expect(restartRequestEvents[0].data.processId).toBe(processId);
@@ -640,7 +644,7 @@ describe("RunnerService", () => {
 
         // Check that restart event was emitted
         const restartRequestEvents = events.filter(
-          (e) => e.event === "restart",
+          (e) => e.event === "runner:restart",
         );
         expect(restartRequestEvents.length).toBe(1);
         expect(restartRequestEvents[0].data.processId).toBe(processId);
