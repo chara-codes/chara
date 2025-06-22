@@ -15,7 +15,7 @@ Current working directory: ${workingDir}
 ${hasTools ? "You have access to filesystem tools to analyze the project:" : "No tools available"}
 ${hasTool("directory") ? "- directory: Unified directory management (list, tree, create, current, stats, find)" : ""}
 ${hasTool("read-file") ? "- read-file: Read file contents" : ""}
-${hasTool("search-files") ? "- search-files: Search for files matching patterns" : ""}
+${hasTool("grep") ? "- grep: Search for patterns in files" : ""}
 ${hasTool("get-file-info") ? "- get-file-info: Get file metadata" : ""}
 ${hasTool("edit-file") ? "- edit-file: Create or edit files (use this to create .chara.json)" : ""}
 

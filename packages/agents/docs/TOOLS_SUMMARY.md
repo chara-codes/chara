@@ -4,7 +4,7 @@ This document provides a comprehensive overview of the filesystem tools implemen
 
 ## Overview
 
-The agents package now includes 11 powerful filesystem tools that provide comprehensive file and directory operations using Bun's native APIs. All tools follow a consistent pattern with proper error handling, type safety via Zod schemas, and extensive test coverage.
+The agents package now includes 10 powerful filesystem tools that provide comprehensive file and directory operations using Bun's native APIs. All tools follow a consistent pattern with proper error handling, type safety via Zod schemas, and extensive test coverage.
 
 ## Tools Implemented
 
@@ -77,18 +77,7 @@ The agents package now includes 11 powerful filesystem tools that provide compre
 
 ### Search and Analysis
 
-#### 10. `search-files`
-- **Purpose**: Recursively search for files matching patterns
-- **Parameters**: `path` (string), `pattern` (string), `excludePatterns` (optional string array)
-- **Returns**: List of matching file paths or "No matches found"
-- **Features**: 
-  - Case-insensitive search
-  - Recursive directory traversal
-  - Exclude pattern support
-  - Full path matching
-- **Use Case**: Finding files, code search, cleanup operations
-
-#### 11. `get-file-info`
+#### 10. `get-file-info`
 - **Purpose**: Retrieve detailed file/directory metadata
 - **Parameters**: `path` (string)
 - **Returns**: Comprehensive metadata object
@@ -181,10 +170,11 @@ await tools["edit-file"].execute({
   ]
 });
 
-// Search for files
-const results = await tools["search-files"].execute({
+// Use directory tool to find files with glob patterns
+const results = await tools["directory"].execute({
+  action: "find",
   path: "./src",
-  pattern: "component",
+  pattern: "**/*component*",
   excludePatterns: ["node_modules", ".git"]
 });
 

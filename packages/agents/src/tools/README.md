@@ -19,7 +19,7 @@ Tools for the project initialization agent focused on analysis and configuration
 
 - **Directory Management**: `directory` (unified tool for all directory operations)
 - **File Reading**: `read-file`, `get-file-info`
-- **Search**: `grep` (for finding configuration files and patterns), `search-files`
+- **Search**: `grep` (for finding configuration files and patterns)
 - **Meta Tools**: `thinking`
 
 ## Removed Redundancies
@@ -31,20 +31,20 @@ Tools for the project initialization agent focused on analysis and configuration
 - **Development-only tools from init**: Removed `terminal`, `edit-file`, and other development tools from init agent since it only needs to analyze, not modify projects
 
 ### New Unified Tools
-- **`directory`**: A comprehensive directory management tool that combines `create-directory`, `current-dir`, `directory-tree`, `list-directory`, and `search-files` into a single, powerful interface with enhanced glob pattern support via globby
+- **`directory`**: A comprehensive directory management tool that combines `create-directory`, `current-dir`, `directory-tree`, `list-directory`, and file finding into a single, powerful interface with enhanced glob pattern support via globby
 
 ### Tool Placement Rationale
 - **`env-info` moved to chat agent**: Environment information is more useful during development for debugging, deployment setup, and system troubleshooting. The init agent only needs to analyze project structure, not system environment details.
 
-### Tool Comparison: Why grep over search-files?
+### Tool Comparison: Why grep over simple file finding?
 
-| Feature | grep | search-files |
-|---------|------|--------------|
-| Pattern matching | Regex support | Simple string matching |
+| Feature | grep | directory find |
+|---------|------|---------|
+| Pattern matching | Regex support | Glob patterns |
 | Content search | ✅ Can search inside files | ❌ Filename only |
 | Context lines | ✅ Before/after context | ❌ No context |
-| Filtering | ✅ Advanced filters | ✅ Basic exclude patterns |
-| Performance | ✅ Optimized for large codebases | ⚠️ Basic recursion |
+| Filtering | ✅ Advanced filters | ✅ Glob exclude patterns |
+| Performance | ✅ Optimized for large codebases | ✅ Globby optimized |
 
 ## Usage
 
@@ -121,8 +121,6 @@ The tool optimization achieved significant improvements:
 - **`move-file`**: Move/rename files and directories
 
 ### Legacy Operations (maintained for search functionality)
-- **`search-files`**: Recursive file search with pattern matching (used by init agent)
-
 ### Search & Analysis
 - **`grep`**: Advanced pattern search with regex, context, and filtering
 - **`get-file-info`**: Get file metadata (size, type, permissions)

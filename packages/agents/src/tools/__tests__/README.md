@@ -10,7 +10,6 @@ Each tool has its own test file following the naming convention `{tool-name}.tes
 - `edit-file.test.ts` - Tests for file editing tool
 - `directory.test.ts` - Tests for unified directory management tool
 - `move-file.test.ts` - Tests for file/directory moving tool
-- `search-files.test.ts` - Tests for file search tool
 - `get-file-info.test.ts` - Tests for file metadata tool
 - `fetch.test.ts` - Tests for URL fetching tool
 - `terminal.test.ts` - Tests for terminal command execution tool

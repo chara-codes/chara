@@ -46,7 +46,7 @@ If you are unsure how to fulfill the user's request, gather more information wit
     if (hasTool("grep")) {
       prompt += `- When looking for symbols in the project, prefer the \`grep\` tool.
 - As you learn about the structure of the project, use that information to scope \`grep\` searches to targeted subtrees of the project.
-- The user might specify a partial file path. If you don't know the full path, use \`search-files\` (not \`grep\`) before you read the file.
+- The user might specify a partial file path. If you don't know the full path, use the \`directory\` tool with find action (not \`grep\`) before you read the file.
 `;
     }
   } else {

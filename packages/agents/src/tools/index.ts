@@ -10,7 +10,6 @@ import { envInfo } from "./env-info";
 import { directory } from "./directory";
 
 // Legacy imports for backward compatibility
-import { searchFiles } from "./search-files";
 
 // Export specialized tool configurations
 export { chatTools, chatToolsWriteMode, chatToolsAskMode } from "./chat-tools";
@@ -35,7 +34,6 @@ export const tools = {
   "read-file": readFile,
   "edit-file": editFile,
   "move-file": moveFile,
-  "search-files": searchFiles,
   "get-file-info": getFileInfo,
   directory: directory, // Include new tool in legacy export too
   fetch: fetchTool,
