@@ -9,6 +9,8 @@ import type {
   OllamaModel,
   AnthropicModelsResponse,
   AnthropicModel,
+  GoogleModelsResponse,
+  GoogleModel,
 } from "./types";
 
 /**
@@ -247,6 +249,52 @@ export namespace ModelFetcher {
     } catch (error) {
       logger.warning(
         "Failed to fetch Anthropic models from API, using fallback models:",
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      );
+
+      // Fallback to known models if API fails
+      return [];
+    }
+  }
+
+  /**
+   * Fetches available models from Google Generative AI API
+   * @returns Array of Google models or fallback models if API fails
+   */
+  export async function fetchGoogleModels(): Promise<ModelInfo[]> {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GOOGLE_GENERATIVE_AI_API_KEY}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "GET",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Google API error: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const data = (await response.json()) as GoogleModelsResponse;
+      return data.models
+        .filter((model: GoogleModel) =>
+          model.supportedGenerationMethods?.includes("generateContent"),
+        )
+        .map((model: GoogleModel) => ({
+          id: model.name,
+          name: model.displayName,
+          description: model.description,
+          contextLength: model.inputTokenLimit,
+        }));
+    } catch (error) {
+      logger.warning(
+        "Failed to fetch Google models from API, using fallback models:",
         {
           error: error instanceof Error ? error.message : "Unknown error",
         },

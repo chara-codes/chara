@@ -49,5 +49,6 @@ export const chatAgent = async (
     experimental_continueSteps: true,
     maxSteps: 500,
     messages,
+    experimental_telemetry: { isEnabled: true },
   });
 };

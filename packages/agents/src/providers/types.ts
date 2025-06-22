@@ -1,4 +1,4 @@
-import type { LanguageModelV1 } from '@ai-sdk/provider';
+import type { LanguageModelV1 } from "@ai-sdk/provider";
 
 /**
  * Represents an error that occurred during provider initialization
@@ -98,6 +98,29 @@ export interface AnthropicModel {
 
 export interface AnthropicModelsResponse {
   data: AnthropicModel[];
+}
+
+/**
+ * Google API response types
+ */
+export interface GoogleModel {
+  name: string;
+  baseModelId: string;
+  version: string;
+  displayName: string;
+  description: string;
+  inputTokenLimit: number;
+  outputTokenLimit: number;
+  supportedGenerationMethods: string[];
+  temperature?: number;
+  maxTemperature?: number;
+  topP?: number;
+  topK?: number;
+}
+
+export interface GoogleModelsResponse {
+  models: GoogleModel[];
+  nextPageToken?: string;
 }
 
 /**

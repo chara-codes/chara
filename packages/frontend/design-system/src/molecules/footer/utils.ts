@@ -8,7 +8,7 @@ export const getModelSourceType = (provider: string): string => {
 
   // Native services
   if (
-    ["openai", "anthropic", "mistral ai", "together ai", "cohere"].includes(
+    ["openai", "anthropic", "mistral ai", "google", "cohere"].includes(
       lowerProvider,
     )
   ) {

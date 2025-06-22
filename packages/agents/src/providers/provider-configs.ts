@@ -63,6 +63,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
       name: "Google",
       provider: (modelId: string) => google(modelId),
       isAvailable: true,
+      fetchModels: ModelFetcher.fetchGoogleModels,
     }));
   }
 
