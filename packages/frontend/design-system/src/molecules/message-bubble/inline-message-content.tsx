@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -119,286 +119,330 @@ const formatToolCallResult = (result: ToolCall["result"]): string => {
   return JSON.stringify(result, null, 2);
 };
 
-const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const InlineToolCall = memo(
+  ({ toolCall }: { toolCall: ToolCall }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleToggle = () => {
-    setIsExpanded(!isExpanded);
-  };
+    const handleToggle = () => {
+      setIsExpanded(!isExpanded);
+    };
 
-  // Check if this is a write-file tool call
-  const isWriteFileTool =
-    toolCall.name === "write-file" || toolCall.name === "write_file";
+    // Check if this is a write-file tool call
+    const isWriteFileTool =
+      toolCall.name === "write-file" || toolCall.name === "write_file";
 
-  // Check if this is an edit-file tool call
-  const isEditFileTool =
-    toolCall.name === "edit-file" || toolCall.name === "edit_file";
+    // Check if this is an edit-file tool call
+    const isEditFileTool =
+      toolCall.name === "edit-file" || toolCall.name === "edit_file";
 
-  // Check if this is a terminal tool call
-  const isTerminalTool = toolCall.name === "terminal";
+    // Check if this is a terminal tool call
+    const isTerminalTool = toolCall.name === "terminal";
 
-  // Handle write-file tool calls
-  if (isWriteFileTool) {
-    const filePath = String(
-      toolCall.arguments?.path ||
-        toolCall.arguments?.file_path ||
-        toolCall.arguments?.filePath ||
-        "Unknown file",
-    );
-
-    // Determine if the file is currently being generated based on tool call status
-    const isGenerating =
-      toolCall.status === "pending" || toolCall.status === "in-progress";
-
-    // Fallback to generic tool display if we don't have essential file data
-    if (!filePath || filePath === "Unknown file") {
-      return (
-        <ToolCallInline status={toolCall.status} onClick={handleToggle}>
-          <ToolCallHeader>
-            <ToolCallName>
-              <FileImage width={12} height={12} /> {toolCall.name}
-            </ToolCallName>
-          </ToolCallHeader>
-        </ToolCallInline>
+    // Handle write-file tool calls
+    if (isWriteFileTool) {
+      const filePath = String(
+        toolCall.arguments?.path ||
+          toolCall.arguments?.file_path ||
+          toolCall.arguments?.filePath ||
+          "Unknown file",
       );
-    }
 
-    // Extract content from tool call arguments or result
-    let content = "";
+      // Determine if the file is currently being generated based on tool call status
+      const isGenerating =
+        toolCall.status === "pending" || toolCall.status === "in-progress";
 
-    // Handle streaming/partial content for real-time display during generation
-    if (
-      toolCall.arguments?.content &&
-      typeof toolCall.arguments.content === "string"
-    ) {
-      content = toolCall.arguments.content;
-    } else if (
-      toolCall.result?.content &&
-      typeof toolCall.result.content === "string"
-    ) {
-      content = toolCall.result.content;
-    } else if (typeof toolCall.result === "string") {
-      content = toolCall.result;
-    }
-
-    // Ensure content is always a string
-    const displayContent = content || "";
-
-    return (
-      <WriteFileBlock
-        filePath={filePath}
-        content={displayContent}
-        isGenerating={isGenerating}
-        isVisible={true}
-        streamingSpeed={isGenerating ? 20 : 0}
-        showLineNumbers={true}
-        maxHeight={400}
-        toolCallId={toolCall.id}
-      />
-    );
-  }
-
-  // Handle edit-file tool calls
-  if (isEditFileTool) {
-    const filePath = String(
-      toolCall.arguments?.path ||
-        toolCall.arguments?.file_path ||
-        toolCall.arguments?.filePath ||
-        "Unknown file",
-    );
-
-    // Determine if the file is currently being edited based on tool call status
-    const isGenerating =
-      toolCall.status === "pending" || toolCall.status === "in-progress";
-
-    // Extract tool call error if present
-    const toolCallError =
-      toolCall.result &&
-      typeof toolCall.result === "object" &&
-      "error" in toolCall.result
-        ? String(toolCall.result.error)
-        : undefined;
-
-    // Fallback to generic tool display if we don't have essential file data
-    if (!filePath || filePath === "Unknown file") {
-      return (
-        <ToolCallInline status={toolCall.status} onClick={handleToggle}>
-          <ToolCallHeader>
-            <ToolCallName>
-              <EditIcon width={12} height={12} /> {toolCall.name}
-            </ToolCallName>
-          </ToolCallHeader>
-        </ToolCallInline>
-      );
-    }
-
-    // Extract edit operations from tool call arguments
-    const edits = Array.isArray(toolCall.arguments?.edits)
-      ? toolCall.arguments.edits
-      : [];
-    const processedEdits = edits.map(
-      (
-        edit: { oldText?: string; newText?: string },
-        index: number,
-      ): EditOperation => ({
-        oldText: edit.oldText || "",
-        newText: edit.newText || "",
-        status:
-          toolCall.status === "success"
-            ? "complete"
-            : toolCall.status === "error"
-              ? "error"
-              : isGenerating
-                ? "applying"
-                : "pending",
-      }),
-    );
-    return (
-      <EditFileBlock
-        filePath={filePath}
-        edits={processedEdits}
-        isGenerating={isGenerating}
-        isVisible={true}
-        showLineNumbers={true}
-        maxHeight={400}
-        toolCallError={toolCallError}
-        toolCallId={toolCall.id}
-      />
-    );
-  }
-
-  // Handle terminal tool calls
-  if (isTerminalTool) {
-    const command = String(toolCall.arguments?.command || "");
-    const workingDirectory = String(toolCall.arguments?.cd || "");
-
-    // Determine if the command is currently running based on tool call status
-    const isGenerating =
-      toolCall.status === "pending" || toolCall.status === "in-progress";
-
-    // Extract output from tool call result
-    let output = "";
-    if (toolCall.result) {
-      if (typeof toolCall.result === "string") {
-        output = toolCall.result;
-      } else if (
-        typeof toolCall.result === "object" &&
-        toolCall.result !== null &&
-        "content" in toolCall.result
-      ) {
-        output = String(toolCall.result.content);
-      } else if (
-        typeof toolCall.result === "object" &&
-        toolCall.result !== null &&
-        "output" in toolCall.result
-      ) {
-        output = String(toolCall.result.output);
+      // Fallback to generic tool display if we don't have essential file data
+      if (!filePath || filePath === "Unknown file") {
+        return (
+          <ToolCallInline status={toolCall.status} onClick={handleToggle}>
+            <ToolCallHeader>
+              <ToolCallName>
+                <FileImage width={12} height={12} /> {toolCall.name}
+              </ToolCallName>
+            </ToolCallHeader>
+          </ToolCallInline>
+        );
       }
-    }
 
-    // Extract tool call error if present
-    const toolCallError =
-      toolCall.result &&
-      typeof toolCall.result === "object" &&
-      "error" in toolCall.result
-        ? String(toolCall.result.error)
-        : undefined;
+      // Extract content from tool call arguments or result
+      let content = "";
 
-    // Fallback to generic tool display if we don't have essential command data
-    if (!command) {
-      return (
-        <ToolCallInline status={toolCall.status} onClick={handleToggle}>
-          <ToolCallHeader>
-            <ToolCallName>
-              <TerminalIcon /> {toolCall.name}
-            </ToolCallName>
-          </ToolCallHeader>
-        </ToolCallInline>
-      );
-    }
-
-    return (
-      <TerminalToolBlock
-        command={command}
-        workingDirectory={workingDirectory}
-        output={output}
-        status={toolCall.status}
-        isGenerating={isGenerating}
-        isVisible={true}
-        streamingSpeed={isGenerating ? 20 : 0}
-        maxHeight={400}
-        toolCallError={toolCallError}
-        toolCallId={toolCall.id}
-      />
-    );
-  }
-
-  // Default tool call rendering for non-write-file tools
-  return (
-    <ToolCallInline status={toolCall.status} onClick={handleToggle}>
-      <ToolCallHeader>
-        <ToolCallName>
-          <ToolIcon /> {toolCall.name}
-        </ToolCallName>
-        <ChevronIcon isExpanded={isExpanded}>
-          {isExpanded ? <ChevronDown size={8} /> : <ChevronRight size={8} />}
-        </ChevronIcon>
-      </ToolCallHeader>
-
-      <ToolCallDetails isExpanded={isExpanded}>
-        {Object.keys(toolCall.arguments).length > 0 && (
-          <ToolCallSection>
-            <ToolCallLabel>Arguments</ToolCallLabel>
-            <ToolCallContent>
-              {JSON.stringify(toolCall.arguments, null, 2)}
-            </ToolCallContent>
-          </ToolCallSection>
-        )}
-
-        {toolCall.result && (
-          <ToolCallSection>
-            <ToolCallLabel>Result</ToolCallLabel>
-            <ToolCallContent>
-              {formatToolCallResult(toolCall.result)}
-            </ToolCallContent>
-          </ToolCallSection>
-        )}
-      </ToolCallDetails>
-    </ToolCallInline>
-  );
-};
-
-export const InlineMessageContent = ({
-  segments,
-  isUser,
-}: InlineMessageContentProps) => {
-  const renderSegment = (segment: ContentSegment, index: number) => {
-    if (segment.type === "text") {
-      if (isUser) {
-        return <span key={index}>{segment.content}</span>;
+      // Handle streaming/partial content for real-time display during generation
+      if (
+        toolCall.arguments?.content &&
+        typeof toolCall.arguments.content === "string"
+      ) {
+        content = toolCall.arguments.content;
+      } else if (
+        toolCall.result?.content &&
+        typeof toolCall.result.content === "string"
+      ) {
+        content = toolCall.result.content;
+      } else if (typeof toolCall.result === "string") {
+        content = toolCall.result;
       }
+
+      // Ensure content is always a string
+      const displayContent = content || "";
+
       return (
-        <ReactMarkdown
-          key={index}
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeHighlight]}
-        >
-          {cleanThinkingTags(segment.content)}
-        </ReactMarkdown>
+        <WriteFileBlock
+          filePath={filePath}
+          content={displayContent}
+          isGenerating={isGenerating}
+          isVisible={true}
+          streamingSpeed={isGenerating ? 20 : 0}
+          showLineNumbers={true}
+          maxHeight={400}
+          toolCallId={toolCall.id}
+        />
       );
     }
-    if (segment.type === "tool-call" && segment.toolCall) {
-      const key = segment.toolCall.id || `tool-call-${index}`;
-      return <InlineToolCall key={key} toolCall={segment.toolCall} />;
-    }
-    return null;
-  };
 
-  return (
-    <MessageContent>
-      {segments.map((segment, index) => renderSegment(segment, index))}
-    </MessageContent>
-  );
-};
+    // Handle edit-file tool calls
+    if (isEditFileTool) {
+      const filePath = String(
+        toolCall.arguments?.path ||
+          toolCall.arguments?.file_path ||
+          toolCall.arguments?.filePath ||
+          "Unknown file",
+      );
+
+      // Determine if the file is currently being edited based on tool call status
+      const isGenerating =
+        toolCall.status === "pending" || toolCall.status === "in-progress";
+
+      // Extract tool call error if present
+      const toolCallError =
+        toolCall.result &&
+        typeof toolCall.result === "object" &&
+        "error" in toolCall.result
+          ? String(toolCall.result.error)
+          : undefined;
+
+      // Fallback to generic tool display if we don't have essential file data
+      if (!filePath || filePath === "Unknown file") {
+        return (
+          <ToolCallInline status={toolCall.status} onClick={handleToggle}>
+            <ToolCallHeader>
+              <ToolCallName>
+                <EditIcon width={12} height={12} /> {toolCall.name}
+              </ToolCallName>
+            </ToolCallHeader>
+          </ToolCallInline>
+        );
+      }
+
+      // Extract edit operations from tool call arguments
+      const edits = Array.isArray(toolCall.arguments?.edits)
+        ? toolCall.arguments.edits
+        : [];
+      const processedEdits = edits.map(
+        (
+          edit: { oldText?: string; newText?: string },
+          index: number,
+        ): EditOperation => ({
+          oldText: edit.oldText || "",
+          newText: edit.newText || "",
+          status:
+            toolCall.status === "success"
+              ? "complete"
+              : toolCall.status === "error"
+                ? "error"
+                : isGenerating
+                  ? "applying"
+                  : "pending",
+        }),
+      );
+      return (
+        <EditFileBlock
+          filePath={filePath}
+          edits={processedEdits}
+          isGenerating={isGenerating}
+          isVisible={true}
+          showLineNumbers={true}
+          maxHeight={400}
+          toolCallError={toolCallError}
+          toolCallId={toolCall.id}
+        />
+      );
+    }
+
+    // Handle terminal tool calls
+    if (isTerminalTool) {
+      const command = String(toolCall.arguments?.command || "");
+      const workingDirectory = String(toolCall.arguments?.cd || "");
+
+      // Determine if the command is currently running based on tool call status
+      const isGenerating =
+        toolCall.status === "pending" || toolCall.status === "in-progress";
+
+      // Extract output from tool call result
+      let output = "";
+      if (toolCall.result) {
+        if (typeof toolCall.result === "string") {
+          output = toolCall.result;
+        } else if (
+          typeof toolCall.result === "object" &&
+          toolCall.result !== null &&
+          "content" in toolCall.result
+        ) {
+          output = String(toolCall.result.content);
+        } else if (
+          typeof toolCall.result === "object" &&
+          toolCall.result !== null &&
+          "output" in toolCall.result
+        ) {
+          output = String(toolCall.result.output);
+        }
+      }
+
+      // Extract tool call error if present
+      const toolCallError =
+        toolCall.result &&
+        typeof toolCall.result === "object" &&
+        "error" in toolCall.result
+          ? String(toolCall.result.error)
+          : undefined;
+
+      // Fallback to generic tool display if we don't have essential command data
+      if (!command) {
+        return (
+          <ToolCallInline status={toolCall.status} onClick={handleToggle}>
+            <ToolCallHeader>
+              <ToolCallName>
+                <TerminalIcon /> {toolCall.name}
+              </ToolCallName>
+            </ToolCallHeader>
+          </ToolCallInline>
+        );
+      }
+
+      return (
+        <TerminalToolBlock
+          command={command}
+          workingDirectory={workingDirectory}
+          output={output}
+          status={toolCall.status}
+          isGenerating={isGenerating}
+          isVisible={true}
+          streamingSpeed={isGenerating ? 20 : 0}
+          maxHeight={400}
+          toolCallError={toolCallError}
+          toolCallId={toolCall.id}
+        />
+      );
+    }
+
+    // Default tool call rendering for non-write-file tools
+    return (
+      <ToolCallInline status={toolCall.status} onClick={handleToggle}>
+        <ToolCallHeader>
+          <ToolCallName>
+            <ToolIcon /> {toolCall.name}
+          </ToolCallName>
+          <ChevronIcon isExpanded={isExpanded}>
+            {isExpanded ? <ChevronDown size={8} /> : <ChevronRight size={8} />}
+          </ChevronIcon>
+        </ToolCallHeader>
+
+        <ToolCallDetails isExpanded={isExpanded}>
+          {Object.keys(toolCall.arguments).length > 0 && (
+            <ToolCallSection>
+              <ToolCallLabel>Arguments</ToolCallLabel>
+              <ToolCallContent>
+                {JSON.stringify(toolCall.arguments, null, 2)}
+              </ToolCallContent>
+            </ToolCallSection>
+          )}
+
+          {toolCall.result && (
+            <ToolCallSection>
+              <ToolCallLabel>Result</ToolCallLabel>
+              <ToolCallContent>
+                {formatToolCallResult(toolCall.result)}
+              </ToolCallContent>
+            </ToolCallSection>
+          )}
+        </ToolCallDetails>
+      </ToolCallInline>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison to prevent unnecessary re-renders
+    return (
+      prevProps.toolCall.id === nextProps.toolCall.id &&
+      prevProps.toolCall.status === nextProps.toolCall.status &&
+      JSON.stringify(prevProps.toolCall.arguments) ===
+        JSON.stringify(nextProps.toolCall.arguments) &&
+      JSON.stringify(prevProps.toolCall.result) ===
+        JSON.stringify(nextProps.toolCall.result)
+    );
+  },
+);
+
+// Memoized text segment component
+const TextSegment = memo(
+  ({ content, isUser }: { content: string; isUser: boolean }) => {
+    if (isUser) {
+      return <span>{content}</span>;
+    }
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeHighlight]}
+      >
+        {cleanThinkingTags(content)}
+      </ReactMarkdown>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.content === nextProps.content &&
+      prevProps.isUser === nextProps.isUser
+    );
+  },
+);
+
+TextSegment.displayName = "TextSegment";
+
+export const InlineMessageContent = memo(
+  ({ segments, isUser }: InlineMessageContentProps) => {
+    const renderedSegments = useMemo(() => {
+      return segments
+        .map((segment, index) => {
+          // Create stable keys based on content and type
+          if (segment.type === "text") {
+            const key = `text-${index}-${segment.content.slice(0, 50).replace(/\s/g, "")}`;
+            return (
+              <TextSegment
+                key={key}
+                content={segment.content}
+                isUser={isUser}
+              />
+            );
+          }
+          if (segment.type === "tool-call" && segment.toolCall) {
+            // Use tool call ID as stable key, fallback to index for consistency
+            const key = segment.toolCall.id || `tool-call-${index}`;
+            return <InlineToolCall key={key} toolCall={segment.toolCall} />;
+          }
+          return null;
+        })
+        .filter(Boolean);
+    }, [segments, isUser]);
+
+    return <MessageContent>{renderedSegments}</MessageContent>;
+  },
+  (prevProps, nextProps) => {
+    // Only re-render if segments array reference changed or isUser changed
+    return (
+      prevProps.segments === nextProps.segments &&
+      prevProps.isUser === nextProps.isUser
+    );
+  },
+);
+
+InlineMessageContent.displayName = "InlineMessageContent";
 
 export default InlineMessageContent;

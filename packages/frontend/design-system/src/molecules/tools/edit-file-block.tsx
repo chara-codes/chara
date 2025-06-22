@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, memo } from "react";
 import styled, { keyframes } from "styled-components";
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 import { FileIcon } from "../../atoms/icons";
@@ -314,336 +314,190 @@ const LoadingIndicator = styled.span<{ isGenerating: boolean }>`
   margin-left: 4px;
 `;
 
-const EditFileBlock: React.FC<EditFileBlockProps> = ({
-  filePath,
-  toolResponse,
-  edits = [],
-  isGenerating = false,
-  isVisible = true,
-  maxHeight = 500,
-  toolCallError,
-  toolCallId,
-}) => {
-  // Validate props
-  if (!filePath || typeof filePath !== "string") {
-    console.warn(
-      "EditFileBlock: filePath prop is required and must be a string",
-    );
-    return null;
-  }
+const EditFileBlock: React.FC<EditFileBlockProps> = memo(
+  ({
+    filePath,
+    toolResponse,
+    edits,
+    isGenerating = false,
+    isVisible = true,
+    showLineNumbers = true,
+    maxHeight = 500,
+    toolCallError,
+    toolCallId,
+  }) => {
+    // Validate props
+    if (!filePath || typeof filePath !== "string") {
+      console.warn(
+        "EditFileBlock: filePath prop is required and must be a string",
+      );
+      return null;
+    }
 
-  if (edits && !Array.isArray(edits)) {
-    console.warn("EditFileBlock: edits prop must be an array");
-    return null;
-  }
+    if (edits && !Array.isArray(edits)) {
+      console.warn("EditFileBlock: edits prop must be an array");
+      return null;
+    }
 
-  const [viewMode, setViewMode] = useState<ViewMode>("limited");
+    const [viewMode, setViewMode] = useState<ViewMode>("limited");
 
-  // Determine what data to use - prioritize toolResponse over legacy edits
-  const useToolResponse = Boolean(toolResponse);
-  const legacyEdits = edits || [];
+    // Determine what data to use - prioritize toolResponse over legacy edits
+    const useToolResponse = Boolean(toolResponse);
+    const legacyEdits = edits || [];
 
-  const completedEdits = useToolResponse
-    ? toolResponse?.status === "success"
-      ? 1
-      : 0
-    : legacyEdits.filter((edit) => edit.status === "complete").length;
+    const completedEdits = useToolResponse
+      ? toolResponse?.status === "success"
+        ? 1
+        : 0
+      : legacyEdits.filter((edit) => edit.status === "complete").length;
 
-  const totalEdits = useToolResponse ? 1 : legacyEdits.length;
+    const totalEdits = useToolResponse ? 1 : legacyEdits.length;
 
-  const status =
-    toolCallError || toolResponse?.status === "error"
-      ? "error"
-      : isGenerating
-        ? "generating"
-        : "complete";
+    const status =
+      toolCallError || toolResponse?.status === "error"
+        ? "error"
+        : isGenerating
+          ? "generating"
+          : "complete";
 
-  // Get file extension for display
-  const getFileExtension = (path: string): string => {
-    const parts = path.split(".");
-    return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
-  };
+    // Get file extension for display
+    const getFileExtension = (path: string): string => {
+      const parts = path.split(".");
+      return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+    };
 
-  const fileExtension = getFileExtension(filePath);
-  const fileName = filePath.split("/").pop() || filePath;
+    const fileExtension = getFileExtension(filePath);
+    const fileName = filePath.split("/").pop() || filePath;
 
-  // Calculate if content fits within limited height
-  const estimatedContentHeight = useToolResponse
-    ? 200 // Single tool response block
-    : legacyEdits.length * 120 + 16; // Estimate height for edit blocks
-  const contentFitsInLimitedView = estimatedContentHeight <= maxHeight;
+    // Calculate if content fits within limited height
+    const estimatedContentHeight = useToolResponse
+      ? 200 // Single tool response block
+      : legacyEdits.length * 120 + 16; // Estimate height for edit blocks
+    const contentFitsInLimitedView = estimatedContentHeight <= maxHeight;
 
-  const toggleCollapse = () => {
-    setViewMode(viewMode === "collapsed" ? "limited" : "collapsed");
-  };
+    const toggleCollapse = () => {
+      setViewMode(viewMode === "collapsed" ? "limited" : "collapsed");
+    };
 
-  const toggleViewMode = () => {
-    setViewMode(viewMode === "limited" ? "full" : "limited");
-  };
+    const toggleViewMode = () => {
+      setViewMode(viewMode === "limited" ? "full" : "limited");
+    };
 
-  return (
-    <EditFileContainer isVisible={isVisible}>
-      <EditFileHeader>
-        <EditFileTitle>
-          <FileIcon width={12} height={12} />
-          {fileName}
-          {fileExtension && (
-            <span
-              style={{ color: "#9ca3af", fontSize: "10px", marginLeft: "4px" }}
-            >
-              .{fileExtension}
-            </span>
-          )}
-          <StatusBadge $status={status}>
-            {toolCallError || toolResponse?.status === "error"
-              ? "Error"
-              : isGenerating && !toolResponse
-                ? "Processing..."
-                : "Complete"}
-          </StatusBadge>
-        </EditFileTitle>
-        <EditFileActions>
-          <ExpandCollapseButton onClick={toggleCollapse}>
-            {viewMode === "collapsed" ? (
-              <ChevronRight size={12} />
-            ) : (
-              <ChevronDown size={12} />
+    return (
+      <EditFileContainer isVisible={isVisible}>
+        <EditFileHeader>
+          <EditFileTitle>
+            <FileIcon width={12} height={12} />
+            {fileName}
+            {fileExtension && (
+              <span
+                style={{
+                  color: "#9ca3af",
+                  fontSize: "10px",
+                  marginLeft: "4px",
+                }}
+              >
+                .{fileExtension}
+              </span>
             )}
-          </ExpandCollapseButton>
-        </EditFileActions>
-      </EditFileHeader>
-
-      {(toolCallError || toolResponse?.status === "error") &&
-        viewMode !== "collapsed" && (
-          <ErrorBanner>
-            <strong>Tool Call Error:</strong>{" "}
-            {toolCallError || toolResponse?.message}
-          </ErrorBanner>
-        )}
-
-      <GenerationStats viewMode={viewMode}>
-        {useToolResponse ? (
-          <>
-            <StatItem>
-              <span>Operation:</span>
-              <span style={{ textTransform: "capitalize" }}>
-                {toolResponse?.operation === "no-change"
-                  ? "No Changes"
-                  : toolResponse?.operation}
-              </span>
-            </StatItem>
-            <StatItem>
-              <span>Status:</span>
-              <span>
-                {toolResponse?.status === "success" ? "Success" : "Error"}
-              </span>
-            </StatItem>
-            {toolResponse?.diff &&
-              toolResponse.diff !== "No changes" &&
-              toolResponse.diff !== "File completely replaced" && (
-                <StatItem>
-                  <span>Changes:</span>
-                  <span>
-                    {
-                      toolResponse.diff
-                        .split("\n")
-                        .filter(
-                          (line) =>
-                            line.trim().startsWith("+") ||
-                            line.trim().startsWith("-"),
-                        ).length
-                    }{" "}
-                    lines
-                  </span>
-                </StatItem>
+            <StatusBadge $status={status}>
+              {toolCallError || toolResponse?.status === "error"
+                ? "Error"
+                : isGenerating && !toolResponse
+                  ? "Processing..."
+                  : "Complete"}
+            </StatusBadge>
+          </EditFileTitle>
+          <EditFileActions>
+            <ExpandCollapseButton onClick={toggleCollapse}>
+              {viewMode === "collapsed" ? (
+                <ChevronRight size={12} />
+              ) : (
+                <ChevronDown size={12} />
               )}
-          </>
-        ) : (
-          <>
-            <StatItem>
-              <span>Edits Applied:</span>
-              <span>
-                {completedEdits}
-                {isGenerating && totalEdits > completedEdits
-                  ? `/${totalEdits}`
-                  : totalEdits > 0
-                    ? `/${totalEdits}`
-                    : ""}
-              </span>
-            </StatItem>
-            <StatItem>
-              <span>Total Edits:</span>
-              <span>{totalEdits}</span>
-            </StatItem>
-            {isGenerating && totalEdits > 0 && (
-              <StatItem>
-                <span>Progress:</span>
-                <span>{Math.round((completedEdits / totalEdits) * 100)}%</span>
-              </StatItem>
-            )}
-          </>
-        )}
-      </GenerationStats>
+            </ExpandCollapseButton>
+          </EditFileActions>
+        </EditFileHeader>
 
-      <EditFileContent maxHeight={maxHeight} viewMode={viewMode}>
-        <EditsList>
+        {(toolCallError || toolResponse?.status === "error") &&
+          viewMode !== "collapsed" && (
+            <ErrorBanner>
+              <strong>Tool Call Error:</strong>{" "}
+              {toolCallError || toolResponse?.message}
+            </ErrorBanner>
+          )}
+
+        <GenerationStats viewMode={viewMode}>
           {useToolResponse ? (
             <>
-              {isGenerating && !toolResponse && (
-                <div
-                  style={{
-                    padding: "20px",
-                    textAlign: "center",
-                    color: "#9ca3af",
-                    fontSize: "12px",
-                  }}
-                >
-                  Loading file changes...
-                </div>
-              )}
-              {toolResponse && (
-                <EditBlock
-                  status={
-                    toolResponse?.status === "success" ? "complete" : "error"
-                  }
-                >
-                  <EditContent>
-                    {toolResponse?.operation === "created" && (
-                      <EditSection type="new">
-                        <EditLabel type="new">File Created</EditLabel>
-                        {toolResponse.message}
-                      </EditSection>
-                    )}
-                    {(toolResponse?.operation === "overwritten" ||
-                      toolResponse?.operation === "overwrite") && (
-                      <>
-                        <EditSection type="new">
-                          <EditLabel type="new">File Overwritten</EditLabel>
-                          {toolResponse.message}
-                        </EditSection>
-                        {toolResponse.diff &&
-                          toolResponse.diff !== "File completely replaced" &&
-                          toolResponse.diff.trim() !== "" && (
-                            <EditSection type="new">
-                              <EditLabel type="new">Changes Made</EditLabel>
-                              <pre
-                                style={{
-                                  whiteSpace: "pre-wrap",
-                                  fontSize: "11px",
-                                  lineHeight: "1.4",
-                                  maxHeight: "400px",
-                                  overflowY: "auto",
-                                  backgroundColor: "#f8f9fa",
-                                  padding: "12px",
-                                  borderRadius: "4px",
-                                  border: "1px solid #e9ecef",
-                                  margin: "8px 0 0 0",
-                                  fontFamily:
-                                    '"Monaco", "Menlo", "Ubuntu Mono", monospace',
-                                }}
-                              >
-                                {toolResponse.diff}
-                              </pre>
-                            </EditSection>
-                          )}
-                      </>
-                    )}
-                    {(toolResponse?.operation === "edited" ||
-                      toolResponse?.operation === "edit") && (
-                      <>
-                        <EditSection type="new">
-                          <EditLabel type="new">Changes Applied</EditLabel>
-                          {toolResponse.message}
-                        </EditSection>
-                        {toolResponse.diff &&
-                          toolResponse.diff !== "Changes applied" &&
-                          toolResponse.diff.trim() !== "" && (
-                            <EditSection type="new">
-                              <EditLabel type="new">Diff</EditLabel>
-                              <pre
-                                style={{
-                                  whiteSpace: "pre-wrap",
-                                  fontSize: "11px",
-                                  lineHeight: "1.4",
-                                  maxHeight: "400px",
-                                  overflowY: "auto",
-                                  backgroundColor: "#f8f9fa",
-                                  padding: "12px",
-                                  borderRadius: "4px",
-                                  border: "1px solid #e9ecef",
-                                  margin: "8px 0 0 0",
-                                  fontFamily:
-                                    '"Monaco", "Menlo", "Ubuntu Mono", monospace',
-                                }}
-                              >
-                                {toolResponse.diff}
-                              </pre>
-                            </EditSection>
-                          )}
-                      </>
-                    )}
-                    {toolResponse?.operation === "no-change" && (
-                      <EditSection type="old">
-                        <EditLabel type="old">No Changes</EditLabel>
-                        {toolResponse.message}
-                      </EditSection>
-                    )}
-                    {toolResponse?.status === "error" && (
-                      <div
-                        style={{
-                          padding: "8px 12px",
-                          backgroundColor: "#fee2e2",
-                          color: "#ef4444",
-                          fontSize: "11px",
-                          borderTop: "1px solid #e5e7eb",
-                          fontFamily:
-                            '"Monaco", "Menlo", "Ubuntu Mono", monospace',
-                        }}
-                      >
-                        <strong>Error:</strong> {toolResponse.message}
-                      </div>
-                    )}
-                  </EditContent>
-                </EditBlock>
-              )}
+              <StatItem>
+                <span>Operation:</span>
+                <span style={{ textTransform: "capitalize" }}>
+                  {toolResponse?.operation === "no-change"
+                    ? "No Changes"
+                    : toolResponse?.operation}
+                </span>
+              </StatItem>
+              <StatItem>
+                <span>Status:</span>
+                <span>
+                  {toolResponse?.status === "success" ? "Success" : "Error"}
+                </span>
+              </StatItem>
+              {toolResponse?.diff &&
+                toolResponse.diff !== "No changes" &&
+                toolResponse.diff !== "File completely replaced" && (
+                  <StatItem>
+                    <span>Changes:</span>
+                    <span>
+                      {
+                        toolResponse.diff
+                          .split("\n")
+                          .filter(
+                            (line) =>
+                              line.trim().startsWith("+") ||
+                              line.trim().startsWith("-"),
+                          ).length
+                      }{" "}
+                      lines
+                    </span>
+                  </StatItem>
+                )}
             </>
           ) : (
             <>
-              {legacyEdits.map((edit, index) => (
-                <EditBlock
-                  key={`edit-${toolCallId || "unknown"}-${index}`}
-                  status={edit.status}
-                >
-                  <EditContent>
-                    <EditSection type="old">
-                      <EditLabel type="old">Remove</EditLabel>
-                      {edit.oldText}
-                    </EditSection>
-                    <EditSection type="new">
-                      <EditLabel type="new">Add</EditLabel>
-                      {edit.newText}
-                    </EditSection>
-                    {edit.error && (
-                      <div
-                        style={{
-                          padding: "8px 12px",
-                          backgroundColor: "#fee2e2",
-                          color: "#ef4444",
-                          fontSize: "11px",
-                          borderTop: "1px solid #e5e7eb",
-                          fontFamily:
-                            '"Monaco", "Menlo", "Ubuntu Mono", monospace',
-                        }}
-                      >
-                        <strong>Error:</strong> {edit.error}
-                      </div>
-                    )}
-                  </EditContent>
-                </EditBlock>
-              ))}
-              {!useToolResponse &&
-                legacyEdits.length === 0 &&
-                !isGenerating && (
+              <StatItem>
+                <span>Edits Applied:</span>
+                <span>
+                  {completedEdits}
+                  {isGenerating && totalEdits > completedEdits
+                    ? `/${totalEdits}`
+                    : totalEdits > 0
+                      ? `/${totalEdits}`
+                      : ""}
+                </span>
+              </StatItem>
+              <StatItem>
+                <span>Total Edits:</span>
+                <span>{totalEdits}</span>
+              </StatItem>
+              {isGenerating && totalEdits > 0 && (
+                <StatItem>
+                  <span>Progress:</span>
+                  <span>
+                    {Math.round((completedEdits / totalEdits) * 100)}%
+                  </span>
+                </StatItem>
+              )}
+            </>
+          )}
+        </GenerationStats>
+
+        <EditFileContent maxHeight={maxHeight} viewMode={viewMode}>
+          <EditsList>
+            {useToolResponse ? (
+              <>
+                {isGenerating && !toolResponse && (
                   <div
                     style={{
                       padding: "20px",
@@ -652,36 +506,208 @@ const EditFileBlock: React.FC<EditFileBlockProps> = ({
                       fontSize: "12px",
                     }}
                   >
-                    No edits to display
+                    Loading file changes...
                   </div>
                 )}
-            </>
-          )}
-        </EditsList>
-      </EditFileContent>
+                {toolResponse && (
+                  <EditBlock
+                    status={
+                      toolResponse?.status === "success" ? "complete" : "error"
+                    }
+                  >
+                    <EditContent>
+                      {toolResponse?.operation === "created" && (
+                        <EditSection type="new">
+                          <EditLabel type="new">File Created</EditLabel>
+                          {toolResponse.message}
+                        </EditSection>
+                      )}
+                      {(toolResponse?.operation === "overwritten" ||
+                        toolResponse?.operation === "overwrite") && (
+                        <>
+                          <EditSection type="new">
+                            <EditLabel type="new">File Overwritten</EditLabel>
+                            {toolResponse.message}
+                          </EditSection>
+                          {toolResponse.diff &&
+                            toolResponse.diff !== "File completely replaced" &&
+                            toolResponse.diff.trim() !== "" && (
+                              <EditSection type="new">
+                                <EditLabel type="new">Changes Made</EditLabel>
+                                <pre
+                                  style={{
+                                    whiteSpace: "pre-wrap",
+                                    fontSize: "11px",
+                                    lineHeight: "1.4",
+                                    maxHeight: "400px",
+                                    overflowY: "auto",
+                                    backgroundColor: "#f8f9fa",
+                                    padding: "12px",
+                                    borderRadius: "4px",
+                                    border: "1px solid #e9ecef",
+                                    margin: "8px 0 0 0",
+                                    fontFamily:
+                                      '"Monaco", "Menlo", "Ubuntu Mono", monospace',
+                                  }}
+                                >
+                                  {toolResponse.diff}
+                                </pre>
+                              </EditSection>
+                            )}
+                        </>
+                      )}
+                      {(toolResponse?.operation === "edited" ||
+                        toolResponse?.operation === "edit") && (
+                        <>
+                          <EditSection type="new">
+                            <EditLabel type="new">Changes Applied</EditLabel>
+                            {toolResponse.message}
+                          </EditSection>
+                          {toolResponse.diff &&
+                            toolResponse.diff !== "Changes applied" &&
+                            toolResponse.diff.trim() !== "" && (
+                              <EditSection type="new">
+                                <EditLabel type="new">Diff</EditLabel>
+                                <pre
+                                  style={{
+                                    whiteSpace: "pre-wrap",
+                                    fontSize: "11px",
+                                    lineHeight: "1.4",
+                                    maxHeight: "400px",
+                                    overflowY: "auto",
+                                    backgroundColor: "#f8f9fa",
+                                    padding: "12px",
+                                    borderRadius: "4px",
+                                    border: "1px solid #e9ecef",
+                                    margin: "8px 0 0 0",
+                                    fontFamily:
+                                      '"Monaco", "Menlo", "Ubuntu Mono", monospace',
+                                  }}
+                                >
+                                  {toolResponse.diff}
+                                </pre>
+                              </EditSection>
+                            )}
+                        </>
+                      )}
+                      {toolResponse?.operation === "no-change" && (
+                        <EditSection type="old">
+                          <EditLabel type="old">No Changes</EditLabel>
+                          {toolResponse.message}
+                        </EditSection>
+                      )}
+                      {toolResponse?.status === "error" && (
+                        <div
+                          style={{
+                            padding: "8px 12px",
+                            backgroundColor: "#fee2e2",
+                            color: "#ef4444",
+                            fontSize: "11px",
+                            borderTop: "1px solid #e5e7eb",
+                            fontFamily:
+                              '"Monaco", "Menlo", "Ubuntu Mono", monospace',
+                          }}
+                        >
+                          <strong>Error:</strong> {toolResponse.message}
+                        </div>
+                      )}
+                    </EditContent>
+                  </EditBlock>
+                )}
+              </>
+            ) : (
+              <>
+                {legacyEdits.map((edit, index) => (
+                  <EditBlock
+                    key={`edit-${toolCallId || "unknown"}-${index}`}
+                    status={edit.status}
+                  >
+                    <EditContent>
+                      <EditSection type="old">
+                        <EditLabel type="old">Remove</EditLabel>
+                        {edit.oldText}
+                      </EditSection>
+                      <EditSection type="new">
+                        <EditLabel type="new">Add</EditLabel>
+                        {edit.newText}
+                      </EditSection>
+                      {edit.error && (
+                        <div
+                          style={{
+                            padding: "8px 12px",
+                            backgroundColor: "#fee2e2",
+                            color: "#ef4444",
+                            fontSize: "11px",
+                            borderTop: "1px solid #e5e7eb",
+                            fontFamily:
+                              '"Monaco", "Menlo", "Ubuntu Mono", monospace',
+                          }}
+                        >
+                          <strong>Error:</strong> {edit.error}
+                        </div>
+                      )}
+                    </EditContent>
+                  </EditBlock>
+                ))}
+                {!useToolResponse &&
+                  legacyEdits.length === 0 &&
+                  !isGenerating && (
+                    <div
+                      style={{
+                        padding: "20px",
+                        textAlign: "center",
+                        color: "#9ca3af",
+                        fontSize: "12px",
+                      }}
+                    >
+                      No edits to display
+                    </div>
+                  )}
+              </>
+            )}
+          </EditsList>
+        </EditFileContent>
 
-      {viewMode !== "collapsed" &&
-        !contentFitsInLimitedView &&
-        !useToolResponse && (
-          <ViewModeToggle>
-            <ViewModeButton onClick={toggleViewMode}>
-              {viewMode === "limited" ? (
-                <>
-                  <Maximize2 size={12} />
-                  Show All Edits
-                </>
-              ) : (
-                <>
-                  <Minimize2 size={12} />
-                  Show Limited
-                </>
-              )}
-            </ViewModeButton>
-          </ViewModeToggle>
-        )}
-    </EditFileContainer>
-  );
-};
+        {viewMode !== "collapsed" &&
+          !contentFitsInLimitedView &&
+          !useToolResponse && (
+            <ViewModeToggle>
+              <ViewModeButton onClick={toggleViewMode}>
+                {viewMode === "limited" ? (
+                  <>
+                    <Maximize2 size={12} />
+                    Show All Edits
+                  </>
+                ) : (
+                  <>
+                    <Minimize2 size={12} />
+                    Show Limited
+                  </>
+                )}
+              </ViewModeButton>
+            </ViewModeToggle>
+          )}
+      </EditFileContainer>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison to prevent unnecessary re-renders
+    return (
+      prevProps.filePath === nextProps.filePath &&
+      JSON.stringify(prevProps.toolResponse) ===
+        JSON.stringify(nextProps.toolResponse) &&
+      JSON.stringify(prevProps.edits) === JSON.stringify(nextProps.edits) &&
+      prevProps.isGenerating === nextProps.isGenerating &&
+      prevProps.isVisible === nextProps.isVisible &&
+      prevProps.showLineNumbers === nextProps.showLineNumbers &&
+      prevProps.maxHeight === nextProps.maxHeight &&
+      prevProps.toolCallError === nextProps.toolCallError &&
+      prevProps.toolCallId === nextProps.toolCallId
+    );
+  },
+);
+
+EditFileBlock.displayName = "EditFileBlock";
 
 export default EditFileBlock;
 export { EditFileBlock };

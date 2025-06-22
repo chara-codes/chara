@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import styled, { keyframes } from "styled-components";
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 import { TerminalIcon } from "../../atoms/icons";
@@ -237,185 +237,208 @@ const LoadingIndicator = styled.span<{ isGenerating: boolean }>`
   font-weight: bold;
 `;
 
-const TerminalToolBlock: React.FC<TerminalToolBlockProps> = ({
-  command,
-  output = "",
-  status = "pending",
-  isGenerating = false,
-  isVisible = true,
-  streamingSpeed = 20,
-  maxHeight = 300,
-  toolCallError,
-  toolCallId,
-}) => {
-  // Validate props
-  if (!command || typeof command !== "string") {
-    console.warn(
-      "TerminalToolBlock: command prop is required and must be a string",
-    );
-    return null;
-  }
-
-  const [displayedOutput, setDisplayedOutput] = useState("");
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [viewMode, setViewMode] = useState<ViewMode>("collapsed");
-
-  useEffect(() => {
-    if (isGenerating && currentIndex < output.length) {
-      const timer = setTimeout(
-        () => {
-          setDisplayedOutput(output.slice(0, currentIndex + 1));
-          setCurrentIndex(currentIndex + 1);
-        },
-        Math.max(1, streamingSpeed),
+const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
+  ({
+    command,
+    workingDirectory,
+    output = "",
+    status = "pending",
+    isGenerating = false,
+    isVisible = true,
+    streamingSpeed = 20,
+    maxHeight = 300,
+    toolCallError,
+    toolCallId,
+  }) => {
+    // Validate props
+    if (!command || typeof command !== "string") {
+      console.warn(
+        "TerminalToolBlock: command prop is required and must be a string",
       );
-
-      return () => clearTimeout(timer);
+      return null;
     }
 
-    if (!isGenerating) {
-      setDisplayedOutput(output);
-      setCurrentIndex(output.length);
-    }
-  }, [output, currentIndex, isGenerating, streamingSpeed]);
+    const [displayedOutput, setDisplayedOutput] = useState("");
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [viewMode, setViewMode] = useState<ViewMode>("collapsed");
 
-  // Reset when output changes completely
-  useEffect(() => {
-    if (!isGenerating) {
-      setDisplayedOutput(output);
-      setCurrentIndex(output.length);
-    } else {
-      // If generating and output is completely different, restart
-      if (currentIndex > output.length) {
-        setCurrentIndex(0);
-        setDisplayedOutput("");
+    useEffect(() => {
+      if (isGenerating && currentIndex < output.length) {
+        const timer = setTimeout(
+          () => {
+            setDisplayedOutput(output.slice(0, currentIndex + 1));
+            setCurrentIndex(currentIndex + 1);
+          },
+          Math.max(1, streamingSpeed),
+        );
+
+        return () => clearTimeout(timer);
       }
-    }
-  }, [output, currentIndex, isGenerating]);
 
-  const outputLines = displayedOutput.split("\n").length;
-  const totalOutputLines = output.split("\n").length;
-  const characterCount = displayedOutput.length;
-  const totalCharacters = output.length;
+      if (!isGenerating) {
+        setDisplayedOutput(output);
+        setCurrentIndex(output.length);
+      }
+    }, [output, currentIndex, isGenerating, streamingSpeed]);
 
-  // Calculate if content fits within limited height
-  const estimatedContentHeight = outputLines * 18 + 60; // 18px per line + padding
-  const contentFitsInLimitedView = estimatedContentHeight <= maxHeight;
+    // Reset when output changes completely
+    useEffect(() => {
+      if (!isGenerating) {
+        setDisplayedOutput(output);
+        setCurrentIndex(output.length);
+      } else {
+        // If generating and output is completely different, restart
+        if (currentIndex > output.length) {
+          setCurrentIndex(0);
+          setDisplayedOutput("");
+        }
+      }
+    }, [output, currentIndex, isGenerating]);
 
-  const toggleCollapse = () => {
-    setViewMode(viewMode === "collapsed" ? "limited" : "collapsed");
-  };
+    const outputLines = displayedOutput.split("\n").length;
+    const totalOutputLines = output.split("\n").length;
+    const characterCount = displayedOutput.length;
+    const totalCharacters = output.length;
 
-  const toggleViewMode = () => {
-    setViewMode(viewMode === "limited" ? "full" : "limited");
-  };
+    // Calculate if content fits within limited height
+    const estimatedContentHeight = outputLines * 18 + 60; // 18px per line + padding
+    const contentFitsInLimitedView = estimatedContentHeight <= maxHeight;
 
-  const getStatusText = () => {
-    switch (status) {
-      case "pending":
-        return "Pending";
-      case "in-progress":
-        return "Running...";
-      case "success":
-        return "Complete";
-      case "error":
-        return "Error";
-      default:
-        return "Unknown";
-    }
-  };
+    const toggleCollapse = () => {
+      setViewMode(viewMode === "collapsed" ? "limited" : "collapsed");
+    };
 
-  return (
-    <TerminalContainer isVisible={isVisible}>
-      <TerminalHeader>
-        <TerminalTitle>
-          <TerminalIcon />
-          Terminal
-          <StatusBadge $status={status}>{getStatusText()}</StatusBadge>
-        </TerminalTitle>
-        <TerminalActions>
-          <ExpandCollapseButton onClick={toggleCollapse}>
-            {viewMode === "collapsed" ? (
-              <ChevronRight size={12} />
-            ) : (
-              <ChevronDown size={12} />
-            )}
-          </ExpandCollapseButton>
-        </TerminalActions>
-      </TerminalHeader>
+    const toggleViewMode = () => {
+      setViewMode(viewMode === "limited" ? "full" : "limited");
+    };
 
-      {toolCallError && viewMode !== "collapsed" && (
-        <ErrorBanner>
-          <strong>Tool Call Error:</strong> {toolCallError}
-        </ErrorBanner>
-      )}
+    const getStatusText = () => {
+      switch (status) {
+        case "pending":
+          return "Pending";
+        case "in-progress":
+          return "Running...";
+        case "success":
+          return "Complete";
+        case "error":
+          return "Error";
+        default:
+          return "Unknown";
+      }
+    };
 
-      <CommandSection>
-        <CommandPrompt>
-          <span>$</span>
-          <CommandText>{command}</CommandText>
-        </CommandPrompt>
-      </CommandSection>
+    return (
+      <TerminalContainer isVisible={isVisible}>
+        <TerminalHeader>
+          <TerminalTitle>
+            <TerminalIcon />
+            Terminal
+            <StatusBadge $status={status}>{getStatusText()}</StatusBadge>
+          </TerminalTitle>
+          <TerminalActions>
+            <ExpandCollapseButton onClick={toggleCollapse}>
+              {viewMode === "collapsed" ? (
+                <ChevronRight size={12} />
+              ) : (
+                <ChevronDown size={12} />
+              )}
+            </ExpandCollapseButton>
+          </TerminalActions>
+        </TerminalHeader>
 
-      <GenerationStats viewMode={viewMode}>
-        <StatItem>
-          <span>Output Lines:</span>
-          <span>
-            {outputLines}
-            {isGenerating && totalOutputLines > outputLines
-              ? `/${totalOutputLines}`
-              : ""}
-          </span>
-        </StatItem>
-        <StatItem>
-          <span>Characters:</span>
-          <span>
-            {characterCount}
-            {isGenerating && totalCharacters > characterCount
-              ? `/${totalCharacters}`
-              : ""}
-          </span>
-        </StatItem>
-        {isGenerating && output.length > 0 && (
-          <StatItem>
-            <span>Progress:</span>
-            <span>{Math.round((currentIndex / output.length) * 100)}%</span>
-          </StatItem>
+        {toolCallError && viewMode !== "collapsed" && (
+          <ErrorBanner>
+            <strong>Tool Call Error:</strong> {toolCallError}
+          </ErrorBanner>
         )}
-      </GenerationStats>
 
-      <TerminalContent maxHeight={maxHeight} viewMode={viewMode}>
-        <OutputSection viewMode={viewMode}>
-          {displayedOutput ||
-            (status === "pending" ? "Waiting to execute..." : "No output")}
-          <LoadingIndicator
-            isGenerating={isGenerating && status === "in-progress"}
-          >
-            |
-          </LoadingIndicator>
-        </OutputSection>
-      </TerminalContent>
-
-      {viewMode !== "collapsed" && !contentFitsInLimitedView && (
-        <ViewModeToggle>
-          <ViewModeButton onClick={toggleViewMode}>
-            {viewMode === "limited" ? (
-              <>
-                <Maximize2 size={12} />
-                Show Full Output
-              </>
-            ) : (
-              <>
-                <Minimize2 size={12} />
-                Show Limited
-              </>
+        <CommandSection>
+          <CommandPrompt>
+            <span>$</span>
+            {workingDirectory && (
+              <WorkingDirectory>{workingDirectory}</WorkingDirectory>
             )}
-          </ViewModeButton>
-        </ViewModeToggle>
-      )}
-    </TerminalContainer>
-  );
-};
+            <CommandText>{command}</CommandText>
+          </CommandPrompt>
+        </CommandSection>
+
+        <GenerationStats viewMode={viewMode}>
+          <StatItem>
+            <span>Output Lines:</span>
+            <span>
+              {outputLines}
+              {isGenerating && totalOutputLines > outputLines
+                ? `/${totalOutputLines}`
+                : ""}
+            </span>
+          </StatItem>
+          <StatItem>
+            <span>Characters:</span>
+            <span>
+              {characterCount}
+              {isGenerating && totalCharacters > characterCount
+                ? `/${totalCharacters}`
+                : ""}
+            </span>
+          </StatItem>
+          {isGenerating && output.length > 0 && (
+            <StatItem>
+              <span>Progress:</span>
+              <span>{Math.round((currentIndex / output.length) * 100)}%</span>
+            </StatItem>
+          )}
+        </GenerationStats>
+
+        <TerminalContent maxHeight={maxHeight} viewMode={viewMode}>
+          <OutputSection viewMode={viewMode}>
+            {displayedOutput ||
+              (status === "pending" ? "Waiting to execute..." : "No output")}
+            <LoadingIndicator
+              isGenerating={isGenerating && status === "in-progress"}
+            >
+              |
+            </LoadingIndicator>
+          </OutputSection>
+        </TerminalContent>
+
+        {viewMode !== "collapsed" && !contentFitsInLimitedView && (
+          <ViewModeToggle>
+            <ViewModeButton onClick={toggleViewMode}>
+              {viewMode === "limited" ? (
+                <>
+                  <Maximize2 size={12} />
+                  Show Full Output
+                </>
+              ) : (
+                <>
+                  <Minimize2 size={12} />
+                  Show Limited
+                </>
+              )}
+            </ViewModeButton>
+          </ViewModeToggle>
+        )}
+      </TerminalContainer>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison to prevent unnecessary re-renders
+    return (
+      prevProps.command === nextProps.command &&
+      prevProps.workingDirectory === nextProps.workingDirectory &&
+      prevProps.output === nextProps.output &&
+      prevProps.status === nextProps.status &&
+      prevProps.isGenerating === nextProps.isGenerating &&
+      prevProps.isVisible === nextProps.isVisible &&
+      prevProps.streamingSpeed === nextProps.streamingSpeed &&
+      prevProps.maxHeight === nextProps.maxHeight &&
+      prevProps.toolCallError === nextProps.toolCallError &&
+      prevProps.toolCallId === nextProps.toolCallId
+    );
+  },
+);
+
+TerminalToolBlock.displayName = "TerminalToolBlock";
 
 export default TerminalToolBlock;
 export { TerminalToolBlock };

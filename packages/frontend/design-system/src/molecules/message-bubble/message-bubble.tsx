@@ -70,7 +70,7 @@ import {
   ToolCallItemHeader,
 } from "./styles";
 import { getPreviewContent } from "./utils";
-import { cleanThinkingTags, type FileDiff, type ToolResult } from "@chara/core";
+import { cleanThinkingTags, type ToolResult } from "@chara/core";
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
 
 // Helper function to get the main message content (first text part)

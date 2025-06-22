@@ -21,10 +21,16 @@ export class MessageSegmentBuilder {
   private toolCallInsertionPositions = new Map<string, number>();
   private completedToolCalls = new Set<string>();
   private lastSegmentsSnapshot: ContentSegment[] = [];
-  private segmentVersions = new Map<number, number
+  private segmentVersions = new Map<number, number>();
 
   addTextDelta(delta: string): void {
     this.currentTextSegment += delta;
+    // Increment version for the current text segment position
+    const textSegmentPosition = this.segments.length;
+    this.segmentVersions.set(
+      textSegmentPosition,
+      (this.segmentVersions.get(textSegmentPosition) || 0) + 1,
+    );
   }
 
   beginToolCall(toolCallId: string, toolName: string): void {
@@ -80,7 +86,15 @@ export class MessageSegmentBuilder {
         position !== undefined &&
         this.segments[position]?.type === "tool-call"
       ) {
-        this.segments[position].toolCall = { ...toolCall };
+        this.segments[position] = {
+          ...this.segments[position],
+          toolCall: { ...toolCall },
+        };
+        // Increment version for this segment position
+        this.segmentVersions.set(
+          position,
+          (this.segmentVersions.get(position) || 0) + 1,
+        );
       }
     }
   }
@@ -116,7 +130,15 @@ export class MessageSegmentBuilder {
         position !== undefined &&
         this.segments[position]?.type === "tool-call"
       ) {
-        this.segments[position].toolCall = { ...toolCall };
+        this.segments[position] = {
+          ...this.segments[position],
+          toolCall: { ...toolCall },
+        };
+        // Increment version for this segment position
+        this.segmentVersions.set(
+          position,
+          (this.segmentVersions.get(position) || 0) + 1,
+        );
       }
 
       // Move to completed set and clean up pending tracking
@@ -152,7 +174,15 @@ export class MessageSegmentBuilder {
         position !== undefined &&
         this.segments[position]?.type === "tool-call"
       ) {
-        this.segments[position].toolCall = { ...toolCall };
+        this.segments[position] = {
+          ...this.segments[position],
+          toolCall: { ...toolCall },
+        };
+        // Increment version for this segment position
+        this.segmentVersions.set(
+          position,
+          (this.segmentVersions.get(position) || 0) + 1,
+        );
       }
 
       // Move to completed set and clean up pending tracking
@@ -189,17 +219,47 @@ export class MessageSegmentBuilder {
   }
 
   getSegments(): ContentSegment[] {
-    // Return current segments with any pending text
-    const segments = [...this.segments];
-
+    // Only create new array if we have pending text or segments changed
     if (this.currentTextSegment.trim()) {
+      const segments = [...this.segments];
       segments.push({
         type: "text",
         content: this.currentTextSegment,
       });
+      return segments;
     }
 
-    return segments;
+    // Return existing segments without creating new array
+    return this.segments;
+  }
+
+  private hasSegmentsChanged(newSegments: ContentSegment[]): boolean {
+    if (newSegments.length !== this.lastSegmentsSnapshot.length) {
+      return true;
+    }
+
+    for (let i = 0; i < newSegments.length; i++) {
+      const newSegment = newSegments[i];
+      const oldSegment = this.lastSegmentsSnapshot[i];
+
+      if (!oldSegment) return true;
+
+      if (newSegment.type !== oldSegment.type) return true;
+
+      if (newSegment.type === "text") {
+        if (newSegment.content !== oldSegment.content) return true;
+      } else if (newSegment.type === "tool-call") {
+        // Compare tool call data more efficiently using versions
+        const currentVersion = this.segmentVersions.get(i) || 0;
+        const oldVersion = (oldSegment as any).__version || 0;
+        if (currentVersion !== oldVersion) {
+          (newSegment as any).__version = currentVersion;
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   clear(): void {
@@ -208,6 +268,8 @@ export class MessageSegmentBuilder {
     this.pendingToolCalls.clear();
     this.toolCallInsertionPositions.clear();
     this.completedToolCalls.clear();
+    this.lastSegmentsSnapshot = [];
+    this.segmentVersions.clear();
   }
 
   isToolCallTracked(toolCallId: string): boolean {
@@ -220,10 +282,13 @@ export class MessageSegmentBuilder {
 
   private finalizeCurrentTextSegment(): void {
     if (this.currentTextSegment.trim()) {
+      const segmentPosition = this.segments.length;
       this.segments.push({
         type: "text",
         content: this.currentTextSegment,
       });
+      // Set initial version for this segment
+      this.segmentVersions.set(segmentPosition, 1);
       this.currentTextSegment = "";
     }
   }
