@@ -20,6 +20,8 @@ export class MessageSegmentBuilder {
   private pendingToolCalls = new Map<string, ToolCall>();
   private toolCallInsertionPositions = new Map<string, number>();
   private completedToolCalls = new Set<string>();
+  private lastSegmentsSnapshot: ContentSegment[] = [];
+  private segmentVersions = new Map<number, number
 
   addTextDelta(delta: string): void {
     this.currentTextSegment += delta;
@@ -59,7 +61,7 @@ export class MessageSegmentBuilder {
       toolCall.status = "in-progress";
 
       // For edit-file tool calls, ensure edits have proper status
-      if (toolCall.name === "edit-file" || toolCall.name === "edit_file") {
+      if (toolCall.name === "edit-file") {
         const edits = args.edits || [];
         if (Array.isArray(edits)) {
           toolCall.arguments = {
@@ -92,7 +94,7 @@ export class MessageSegmentBuilder {
       toolCall.status = hasError ? "error" : "success";
 
       // For edit-file tool calls, update edit statuses based on completion
-      if (toolCall.name === "edit-file" || toolCall.name === "edit_file") {
+      if (toolCall.name === "edit-file") {
         const edits = toolCall.arguments?.edits || [];
         if (Array.isArray(edits)) {
           toolCall.arguments = {

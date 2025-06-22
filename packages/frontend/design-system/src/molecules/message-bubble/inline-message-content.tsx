@@ -193,7 +193,7 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         streamingSpeed={isGenerating ? 20 : 0}
         showLineNumbers={true}
         maxHeight={400}
-        toolCallId={toolCall.toolCallId}
+        toolCallId={toolCall.id}
       />
     );
   }
@@ -253,7 +253,6 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
                 : "pending",
       }),
     );
-
     return (
       <EditFileBlock
         filePath={filePath}
@@ -263,7 +262,7 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         showLineNumbers={true}
         maxHeight={400}
         toolCallError={toolCallError}
-        toolCallId={toolCall.toolCallId}
+        toolCallId={toolCall.id}
       />
     );
   }
@@ -329,7 +328,7 @@ const InlineToolCall = ({ toolCall }: { toolCall: ToolCall }) => {
         streamingSpeed={isGenerating ? 20 : 0}
         maxHeight={400}
         toolCallError={toolCallError}
-        toolCallId={toolCall.toolCallId}
+        toolCallId={toolCall.id}
       />
     );
   }
@@ -389,7 +388,7 @@ export const InlineMessageContent = ({
       );
     }
     if (segment.type === "tool-call" && segment.toolCall) {
-      const key = segment.toolCall.toolCallId || `tool-call-${index}`;
+      const key = segment.toolCall.id || `tool-call-${index}`;
       return <InlineToolCall key={key} toolCall={segment.toolCall} />;
     }
     return null;

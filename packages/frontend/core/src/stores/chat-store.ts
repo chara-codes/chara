@@ -18,7 +18,6 @@ import {
   type StreamCallbacks,
 } from "../services"; // Import the new service
 import { MessageSegmentBuilder } from "../services/message-segment-builder";
-import { getMimeTypeFromExtension } from "../utils/";
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [
