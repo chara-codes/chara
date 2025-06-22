@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactElement } from "react";
+import React, { ReactElement } from "react";
 import { useState, useCallback, useEffect } from "react";
 import styled, { ThemeProvider } from "styled-components";
 import {
@@ -17,9 +17,10 @@ import {
   useNavigateBack,
   useNavigateToTechStacks,
   useSelectedTechStackId,
+  useCreateTechStack,
+  useGetTechStackById,
+  useUpdateTechStack,
 } from "@chara/core";
-
-import { useGetTechStackById, useUpdateTechStack } from "@chara/core";
 import {
   InputBase,
   TextAreaBase,
@@ -203,24 +204,37 @@ const emptyMcpServer = {
   },
 };
 
-const EditTechStackView: React.FC = () => {
+// Generate a unique ID for new tech stacks
+const generateId = (name: string) => {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+};
+
+interface AddEditTechStackViewProps {
+  mode: "add" | "edit";
+}
+
+const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
+  mode,
+}) => {
   // Get navigation actions
   const navigateBack = useNavigateBack();
   const navigateToTechStacks = useNavigateToTechStacks();
 
-  // Get selected tech stack ID
+  // Get selected tech stack ID for edit mode
   const selectedTechStackId = useSelectedTechStackId();
 
-  // Get tech stack by ID function
+  // Get tech stack by ID function for edit mode
   const getTechStackById = useGetTechStackById();
 
-  // Get update tech stack action
-  const { updateStack } = useUpdateTechStack();
+  // Get the tech stack to edit in edit mode
+  const techStack =
+    mode === "edit" && selectedTechStackId
+      ? getTechStackById(selectedTechStackId)
+      : undefined;
 
-  // Get the tech stack to edit
-  const techStack = selectedTechStackId
-    ? getTechStackById(selectedTechStackId)
-    : undefined;
+  // Get actions based on mode
+  const { createStack } = useCreateTechStack();
+  const { updateStack } = useUpdateTechStack();
 
   // Form state
   const [formData, setFormData] = useState<Partial<TechStackDetail>>({
@@ -229,7 +243,7 @@ const EditTechStackView: React.FC = () => {
     category: "frontend",
     description: "",
     longDescription: "",
-    icon: iconOptions[0].id,
+    icon: "code",
     isNew: false,
     documentationLinks: [],
     mcpServers: [],
@@ -246,9 +260,9 @@ const EditTechStackView: React.FC = () => {
     {},
   );
 
-  // Initialize form with tech stack data
+  // Initialize form with tech stack data in edit mode
   useEffect(() => {
-    if (techStack) {
+    if (mode === "edit" && techStack) {
       setFormData({
         ...techStack,
       });
@@ -259,7 +273,14 @@ const EditTechStackView: React.FC = () => {
 
       setSelectedIconId(iconId);
     }
-  }, [techStack]);
+  }, [mode, techStack]);
+
+  // If edit mode and no tech stack is selected, navigate back
+  useEffect(() => {
+    if (mode === "edit" && !selectedTechStackId) {
+      navigateBack();
+    }
+  }, [mode, selectedTechStackId, navigateBack]);
 
   // Handle input change
   const handleChange = useCallback(
@@ -297,7 +318,10 @@ const EditTechStackView: React.FC = () => {
     setSelectedIconId(iconId);
     const selectedIcon = iconOptions.find((option) => option.id === iconId);
     if (selectedIcon) {
-      setFormData((prev) => ({ ...prev, icon: selectedIcon.id }));
+      setFormData((prev) => ({
+        ...prev,
+        icon: selectedIcon.id as TechStackDetail["icon"],
+      }));
     }
   }, []);
 
@@ -438,35 +462,62 @@ const EditTechStackView: React.FC = () => {
   // Handle form submission
   const handleSubmit = useCallback(() => {
     if (validateForm()) {
-      // Create tech stack object
-      const updatedTechStack: TechStackDetail = {
-        id: formData.id || "",
-        name: formData.name || "",
-        category: formData.category || "Other",
-        description: formData.description || "",
-        longDescription: formData.longDescription || "",
-        icon: formData.icon || iconOptions[0].id,
-        isNew: formData.isNew || false,
-        documentationLinks: (formData.documentationLinks || []).filter(
-          (link) => link.name || link.url,
-        ),
-        mcpServers: (formData.mcpServers || []).filter((server) => server.name),
-      };
+      if (mode === "add") {
+        // Generate ID from name for new tech stacks
+        const id = generateId(formData.name || "");
 
-      // Update tech stack in store
-      updateStack(updatedTechStack);
+        // Create tech stack object
+        const techStack: TechStackDetail = {
+          id,
+          name: formData.name || "",
+          category: formData.category || "Other",
+          description: formData.description || "",
+          longDescription: formData.longDescription || "",
+          icon: (formData.icon as TechStackDetail["icon"]) || iconOptions[0].id,
+          isNew: formData.isNew || false,
+          documentationLinks: (formData.documentationLinks || []).filter(
+            (link) => link.name || link.url,
+          ),
+          mcpServers: (formData.mcpServers || []).filter(
+            (server) => server.name,
+          ),
+        };
+
+        // Add tech stack to store
+        createStack(techStack);
+      } else {
+        // Create tech stack object with existing ID
+        const updatedTechStack: TechStackDetail = {
+          id: formData.id || "",
+          name: formData.name || "",
+          category: formData.category || "Other",
+          description: formData.description || "",
+          longDescription: formData.longDescription || "",
+          icon: formData.icon || iconOptions[0].id,
+          isNew: formData.isNew || false,
+          documentationLinks: (formData.documentationLinks || []).filter(
+            (link) => link.name || link.url,
+          ),
+          mcpServers: (formData.mcpServers || []).filter(
+            (server) => server.name,
+          ),
+        };
+
+        // Update tech stack in store
+        updateStack(updatedTechStack);
+      }
 
       // Navigate back to tech stacks view
       navigateToTechStacks();
     }
-  }, [formData, validateForm, updateStack, navigateToTechStacks]);
-
-  // If no tech stack is selected, navigate back
-  useEffect(() => {
-    if (!selectedTechStackId) {
-      navigateBack();
-    }
-  }, [selectedTechStackId, navigateBack]);
+  }, [
+    mode,
+    formData,
+    validateForm,
+    createStack,
+    updateStack,
+    navigateToTechStacks,
+  ]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -475,7 +526,9 @@ const EditTechStackView: React.FC = () => {
           <BackButton onClick={navigateBack}>
             <ArrowLeftIcon width={18} height={18} />
           </BackButton>
-          <Title>Edit Tech Stack</Title>
+          <Title>
+            {mode === "add" ? "Add New Tech Stack" : "Edit Tech Stack"}
+          </Title>
         </Header>
 
         <Content>
@@ -660,7 +713,7 @@ const EditTechStackView: React.FC = () => {
             <SectionTitleBase>MCP Servers</SectionTitleBase>
 
             {(formData.mcpServers || []).map((server, index) => (
-              <LinkItem key={server.name}>
+              <LinkItem key={server.id}>
                 <LinkFields>
                   <FormGroupBase $fullWidth>
                     <LabelBase htmlFor={`mcpServer_${index}_name`}>
@@ -718,7 +771,7 @@ const EditTechStackView: React.FC = () => {
             Cancel
           </ButtonBase>
           <ButtonBase $variant="primary" onClick={handleSubmit}>
-            Save Changes
+            {mode === "add" ? "Add Tech Stack" : "Save Changes"}
           </ButtonBase>
         </Footer>
       </Container>
@@ -726,4 +779,4 @@ const EditTechStackView: React.FC = () => {
   );
 };
 
-export default EditTechStackView;
+export default AddEditTechStackView;
