@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import z from "zod";
 import { readdir, mkdir, stat } from "node:fs/promises";
-import { resolve, relative } from "node:path";
+import { resolve } from "node:path";
 import { globby } from "globby";
 
 interface TreeEntry {
@@ -24,7 +24,7 @@ const DirectoryAction = z.enum([
   "create",
   "current",
   "stats",
-  "find"
+  "find",
 ]);
 
 export const directory = tool({
@@ -52,7 +52,9 @@ export const directory = tool({
     path: z
       .string()
       .optional()
-      .describe("Directory path (defaults to current directory for most operations, required for create)"),
+      .describe(
+        "Directory path (defaults to current directory for most operations, required for create)",
+      ),
 
     maxDepth: z
       .number()
@@ -90,7 +92,7 @@ export const directory = tool({
     includeHidden = false,
     includeSize = false,
     pattern,
-    excludePatterns = []
+    excludePatterns = [],
   }) => {
     const workingPath = path || process.cwd();
 
@@ -119,7 +121,12 @@ export const directory = tool({
           return await listDirectory(workingPath, includeHidden, includeSize);
 
         case "tree":
-          return await getDirectoryTree(workingPath, maxDepth, includeHidden, includeSize);
+          return await getDirectoryTree(
+            workingPath,
+            maxDepth,
+            includeHidden,
+            includeSize,
+          );
 
         case "stats":
           return await getDirectoryStats(workingPath, includeHidden);
@@ -128,14 +135,22 @@ export const directory = tool({
           if (!pattern) {
             throw new Error("Pattern is required for find operation");
           }
-          return await findInDirectory(workingPath, pattern, excludePatterns, includeHidden);
+          return await findInDirectory(
+            workingPath,
+            pattern,
+            excludePatterns,
+            includeHidden,
+          );
 
         default:
           throw new Error(`Unknown action: ${action}`);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Directory operation '${action}' failed: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Directory operation '${action}' failed: ${errorMessage}`,
+      );
     }
   },
 });
@@ -143,7 +158,7 @@ export const directory = tool({
 async function listDirectory(
   dirPath: string,
   includeHidden: boolean,
-  includeSize: boolean
+  includeSize: boolean,
 ) {
   const entries = await readdir(dirPath, { withFileTypes: true });
   const items: Array<{
@@ -181,9 +196,10 @@ async function listDirectory(
   }
 
   const formatted = items
-    .map(item => {
+    .map((item) => {
       const typeIndicator = item.type === "directory" ? "[DIR]" : "[FILE]";
-      const sizeInfo = item.size !== undefined ? ` (${formatBytes(item.size)})` : "";
+      const sizeInfo =
+        item.size !== undefined ? ` (${formatBytes(item.size)})` : "";
       const hiddenIndicator = item.hidden ? " (hidden)" : "";
       return `${typeIndicator} ${item.name}${sizeInfo}${hiddenIndicator}`;
     })
@@ -203,10 +219,12 @@ async function getDirectoryTree(
   maxDepth?: number,
   includeHidden: boolean = false,
   includeSize: boolean = false,
-  currentDepth: number = 0
+  currentDepth: number = 0,
 ): Promise<any> {
-
-  async function buildTree(currentPath: string, depth: number = 0): Promise<TreeEntry[]> {
+  async function buildTree(
+    currentPath: string,
+    depth: number = 0,
+  ): Promise<TreeEntry[]> {
     if (maxDepth !== undefined && depth >= maxDepth) {
       return [];
     }
@@ -249,7 +267,7 @@ async function getDirectoryTree(
       return result;
     } catch (error) {
       throw new Error(
-        `Failed to read directory ${currentPath}: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to read directory ${currentPath}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -328,7 +346,7 @@ async function findInDirectory(
   dirPath: string,
   pattern: string,
   excludePatterns: string[],
-  includeHidden: boolean
+  includeHidden: boolean,
 ) {
   const basePatterns = [pattern];
 
@@ -350,7 +368,9 @@ async function findInDirectory(
   ];
 
   // Add user exclusions
-  const userExclusions = excludePatterns.map(p => p.startsWith("!") ? p : `!${p}`);
+  const userExclusions = excludePatterns.map((p) =>
+    p.startsWith("!") ? p : `!${p}`,
+  );
 
   // Hidden files exclusion
   const hiddenExclusions = includeHidden ? [] : ["!**/.*"];
@@ -372,7 +392,7 @@ async function findInDirectory(
       followSymbolicLinks: false,
     });
 
-    const results = files.map(file => {
+    const results = files.map((file) => {
       const isDirectory = file.endsWith("/");
       return {
         path: isDirectory ? file.slice(0, -1) : file,
@@ -390,12 +410,20 @@ async function findInDirectory(
       includeHidden,
       count: results.length,
       results,
-      formatted: results.length > 0
-        ? results.map(r => `${r.type === "directory" ? "[DIR]" : "[FILE]"} ${r.path}`).join("\n")
-        : "No matches found",
+      formatted:
+        results.length > 0
+          ? results
+              .map(
+                (r) =>
+                  `${r.type === "directory" ? "[DIR]" : "[FILE]"} ${r.path}`,
+              )
+              .join("\n")
+          : "No matches found",
     };
   } catch (error) {
-    throw new Error(`Find operation failed: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Find operation failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
