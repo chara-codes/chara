@@ -8,9 +8,8 @@ import ConversationView from "../organisms/conversation-view";
 import HistoryView from "../organisms/history-view";
 import SettingsView from "../organisms/settings-view";
 import TechStacksView from "../organisms/tech-stacks-view";
-import AddTechStackView from "../organisms/add-tech-stack-view";
-import EditTechStackView from "../organisms/edit-tech-stack-view";
 import TerminalView from "../organisms/terminal-view";
+import AddEditTechStackView from "../organisms/add-edit-tech-stack-view";
 import {
   useChatStore,
   useRunnerConnect,
@@ -241,10 +240,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         return <TechStacksView />;
 
       case Screen.ADD_TECH_STACK:
-        return <AddTechStackView />;
+        return <AddEditTechStackView mode="add" />;
 
       case Screen.EDIT_TECH_STACK:
-        return <EditTechStackView />;
+        return <AddEditTechStackView mode="edit" />;
 
       case Screen.TERMINAL: {
         // Sample terminal logs for demonstration
