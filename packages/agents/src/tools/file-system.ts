@@ -15,6 +15,8 @@ import {
   freemem,
   uptime,
 } from "node:os";
+import ignore from "ignore";
+import { dirname, relative } from "node:path";
 
 interface TreeEntry {
   name: string;
@@ -28,6 +30,7 @@ interface DirectoryStats {
   totalDirectories: number;
   totalSize: number;
   hiddenItems: number;
+  ignoredItems: number;
 }
 
 interface FileInfo {
@@ -58,6 +61,15 @@ interface CharaConfig {
   };
 }
 
+interface GitignoreManager {
+  isIgnored(
+    filePath: string,
+    fromRoot?: string,
+    isDirectory?: boolean,
+  ): boolean;
+  isDefaultIgnored(filePath: string): boolean;
+}
+
 const FileSystemAction = z.enum([
   "list",
   "tree",
@@ -68,6 +80,124 @@ const FileSystemAction = z.enum([
   "info",
   "env",
 ]);
+
+// Default directories and patterns to always ignore
+const DEFAULT_IGNORE_PATTERNS = [
+  ".chara",
+  ".chara/",
+  ".chara/**",
+  "node_modules",
+  "node_modules/",
+  "node_modules/**",
+  ".git",
+  ".git/",
+  ".git/**",
+];
+
+/**
+ * Creates a gitignore manager that handles both .gitignore rules and default exclusions
+ */
+async function createGitignoreManager(
+  rootPath: string,
+): Promise<GitignoreManager> {
+  const ig = ignore();
+  const defaultIg = ignore();
+
+  // Add default ignore patterns
+  defaultIg.add(DEFAULT_IGNORE_PATTERNS);
+
+  // Try to read .gitignore files from root and parent directories
+  const gitignoreContents: string[] = [];
+
+  // Function to collect gitignore files up the directory tree
+  const collectGitignoreFiles = async (dirPath: string, maxLevels = 5) => {
+    let currentPath = resolve(dirPath);
+    let level = 0;
+
+    while (level < maxLevels) {
+      const gitignorePath = join(currentPath, ".gitignore");
+
+      try {
+        if (existsSync(gitignorePath)) {
+          const content = await fsReadFile(gitignorePath, "utf-8");
+          gitignoreContents.push(content);
+        }
+      } catch {
+        // Ignore errors reading gitignore files
+      }
+
+      const parentPath = dirname(currentPath);
+      if (parentPath === currentPath) break; // Reached root
+
+      currentPath = parentPath;
+      level++;
+    }
+  };
+
+  await collectGitignoreFiles(rootPath);
+
+  // Add all collected gitignore contents
+  if (gitignoreContents.length > 0) {
+    ig.add(gitignoreContents.join("\n"));
+  }
+
+  return {
+    isIgnored(
+      filePath: string,
+      fromRoot?: string,
+      isDirectory?: boolean,
+    ): boolean {
+      const checkPath = fromRoot
+        ? relative(fromRoot, resolve(fromRoot, filePath))
+        : filePath;
+
+      // Normalize path - remove leading ./
+      const normalizedPath = checkPath.startsWith("./")
+        ? checkPath.slice(2)
+        : checkPath;
+
+      // Never ignore .gitignore files themselves
+      if (
+        normalizedPath === ".gitignore" ||
+        normalizedPath.endsWith("/.gitignore")
+      ) {
+        return false;
+      }
+
+      // Always ignore the default patterns
+      if (defaultIg.ignores(normalizedPath)) {
+        return true;
+      }
+
+      // For directories, check with trailing slash
+      const pathToCheck = isDirectory ? normalizedPath + "/" : normalizedPath;
+
+      // Check custom gitignore patterns
+      return ig.ignores(pathToCheck);
+    },
+
+    isDefaultIgnored(filePath: string): boolean {
+      const normalizedPath = filePath.startsWith("./")
+        ? filePath.slice(2)
+        : filePath;
+      return defaultIg.ignores(normalizedPath);
+    },
+  };
+}
+
+/**
+ * Checks if a file/directory should be ignored based on name patterns
+ */
+function isAlwaysIgnored(name: string): boolean {
+  return name === ".chara" || name === "node_modules" || name === ".git";
+}
+
+/**
+ * Checks if a hidden file should be included even when includeHidden is false
+ */
+function isImportantHiddenFile(name: string): boolean {
+  return name === ".gitignore" || name === ".chara.json";
+}
 
 export const fileSystem = tool({
   description: `Comprehensive file system management tool with multiple operations:
@@ -87,7 +217,8 @@ export const fileSystem = tool({
 - **env**: Get comprehensive environment information including project configuration from .chara.json and system details
 
 **Features:**
-- Automatic exclusion of .chara directories and common build/cache folders
+- Full .gitignore support (reads .gitignore files up the directory tree)
+- Automatic exclusion of .chara, node_modules, .git directories and common build/cache folders
 - Support for hidden files and special characters
 - Configurable depth limits for tree operations
 - File size information where applicable
@@ -132,12 +263,19 @@ export const fileSystem = tool({
     excludePatterns: z
       .array(z.string())
       .default([])
-      .describe("Glob patterns to exclude from results"),
+      .describe("Additional glob patterns to exclude from results"),
+
+    respectGitignore: z
+      .boolean()
+      .default(true)
+      .describe("Whether to respect .gitignore files (default: true)"),
 
     workingDir: z
       .string()
       .optional()
-      .describe("Working directory for env operation (defaults to current directory)"),
+      .describe(
+        "Working directory for env operation (defaults to current directory)",
+      ),
 
     includeSystem: z
       .boolean()
@@ -149,7 +287,9 @@ export const fileSystem = tool({
       .boolean()
       .optional()
       .default(true)
-      .describe("Include project information from .chara.json in env operation"),
+      .describe(
+        "Include project information from .chara.json in env operation",
+      ),
   }),
 
   execute: async ({
@@ -160,6 +300,7 @@ export const fileSystem = tool({
     includeSize = false,
     pattern,
     excludePatterns = [],
+    respectGitignore = true,
     workingDir,
     includeSystem = true,
     includeProject = true,
@@ -188,7 +329,12 @@ export const fileSystem = tool({
           };
 
         case "list":
-          return await listDirectory(workingPath, includeHidden, includeSize);
+          return await listDirectory(
+            workingPath,
+            includeHidden,
+            includeSize,
+            respectGitignore,
+          );
 
         case "tree":
           return await getDirectoryTree(
@@ -196,10 +342,15 @@ export const fileSystem = tool({
             maxDepth,
             includeHidden,
             includeSize,
+            respectGitignore,
           );
 
         case "stats":
-          return await getDirectoryStats(workingPath, includeHidden);
+          return await getDirectoryStats(
+            workingPath,
+            includeHidden,
+            respectGitignore,
+          );
 
         case "find":
           if (!pattern) {
@@ -210,6 +361,7 @@ export const fileSystem = tool({
             pattern,
             excludePatterns,
             includeHidden,
+            respectGitignore,
           );
 
         case "info":
@@ -242,21 +394,40 @@ async function listDirectory(
   dirPath: string,
   includeHidden: boolean,
   includeSize: boolean,
+  respectGitignore: boolean,
 ) {
   const entries = await readdir(dirPath, { withFileTypes: true });
+  const gitignoreManager = respectGitignore
+    ? await createGitignoreManager(dirPath)
+    : null;
+
   const items: Array<{
     name: string;
     type: "file" | "directory";
     size?: number;
     hidden: boolean;
+    ignored?: boolean;
   }> = [];
 
   for (const entry of entries) {
     const isHidden = entry.name.startsWith(".");
-    const isCharaDir = entry.name.startsWith(".chara");
+    const isAlwaysIgnoredItem = isAlwaysIgnored(entry.name);
 
-    // Skip .chara directories and hidden files if not requested
-    if (isCharaDir || (!includeHidden && isHidden)) {
+    // Always skip certain directories
+    if (isAlwaysIgnoredItem) {
+      continue;
+    }
+
+    // Skip hidden files if not requested
+    if (!includeHidden && isHidden && !isImportantHiddenFile(entry.name)) {
+      continue;
+    }
+
+    // Check gitignore rules
+    const isIgnored =
+      gitignoreManager?.isIgnored(entry.name, dirPath, entry.isDirectory()) ||
+      false;
+    if (respectGitignore && isIgnored) {
       continue;
     }
 
@@ -265,6 +436,10 @@ async function listDirectory(
       type: entry.isDirectory() ? "directory" : "file",
       hidden: isHidden,
     };
+
+    if (respectGitignore) {
+      item.ignored = isIgnored;
+    }
 
     if (includeSize && entry.isFile()) {
       try {
@@ -284,7 +459,8 @@ async function listDirectory(
       const sizeInfo =
         item.size !== undefined ? ` (${formatBytes(item.size)})` : "";
       const hiddenIndicator = item.hidden ? " (hidden)" : "";
-      return `${typeIndicator} ${item.name}${sizeInfo}${hiddenIndicator}`;
+      const ignoredIndicator = item.ignored ? " (ignored)" : "";
+      return `${typeIndicator} ${item.name}${sizeInfo}${hiddenIndicator}${ignoredIndicator}`;
     })
     .join("\n");
 
@@ -293,6 +469,7 @@ async function listDirectory(
     path: dirPath,
     count: items.length,
     items,
+    respectGitignore,
     formatted: formatted || "Directory is empty",
   };
 }
@@ -302,8 +479,13 @@ async function getDirectoryTree(
   maxDepth?: number,
   includeHidden: boolean = false,
   includeSize: boolean = false,
+  respectGitignore: boolean = true,
   currentDepth: number = 0,
 ): Promise<any> {
+  const gitignoreManager = respectGitignore
+    ? await createGitignoreManager(dirPath)
+    : null;
+
   async function buildTree(
     currentPath: string,
     depth: number = 0,
@@ -318,14 +500,32 @@ async function getDirectoryTree(
 
       for (const entry of entries) {
         const isHidden = entry.name.startsWith(".");
-        const isCharaDir = entry.name.startsWith(".chara");
+        const isAlwaysIgnoredItem = isAlwaysIgnored(entry.name);
 
-        // Skip .chara directories and hidden files if not requested
-        if (isCharaDir || (!includeHidden && isHidden)) {
+        // Always skip certain directories
+        if (isAlwaysIgnoredItem) {
           continue;
         }
 
+        // Skip hidden files if not requested
+        if (!includeHidden && isHidden && !isImportantHiddenFile(entry.name)) {
+          continue;
+        }
+
+        // Check gitignore rules
         const entryPath = resolve(currentPath, entry.name);
+        const relativePath = relative(dirPath, entryPath);
+        const isIgnored =
+          gitignoreManager?.isIgnored(
+            relativePath,
+            dirPath,
+            entry.isDirectory(),
+          ) || false;
+
+        if (respectGitignore && isIgnored) {
+          continue;
+        }
+
         const entryData: TreeEntry = {
           name: entry.name,
           type: entry.isDirectory() ? "directory" : "file",
@@ -363,18 +563,27 @@ async function getDirectoryTree(
     maxDepth: maxDepth || "unlimited",
     includeHidden,
     includeSize,
+    respectGitignore,
     tree,
     formatted: JSON.stringify(tree, null, 2),
   };
 }
 
-async function getDirectoryStats(dirPath: string, includeHidden: boolean) {
+async function getDirectoryStats(
+  dirPath: string,
+  includeHidden: boolean,
+  respectGitignore: boolean,
+) {
   const stats: DirectoryStats = {
     totalFiles: 0,
     totalDirectories: 0,
     totalSize: 0,
     hiddenItems: 0,
+    ignoredItems: 0,
   };
+
+  // Always create gitignore manager to count ignored items even when not respecting gitignore
+  const gitignoreManager = await createGitignoreManager(dirPath);
 
   async function collectStats(currentPath: string) {
     try {
@@ -382,27 +591,49 @@ async function getDirectoryStats(dirPath: string, includeHidden: boolean) {
 
       for (const entry of entries) {
         const isHidden = entry.name.startsWith(".");
-        const isCharaDir = entry.name.startsWith(".chara");
+        const isAlwaysIgnoredItem = isAlwaysIgnored(entry.name);
 
-        if (isCharaDir) continue;
-
-        if (isHidden) {
-          stats.hiddenItems++;
-          if (!includeHidden) continue;
+        // Always skip certain directories
+        if (isAlwaysIgnoredItem) {
+          continue;
         }
 
         const entryPath = resolve(currentPath, entry.name);
+        const relativePath = relative(dirPath, entryPath);
+        const isIgnored =
+          gitignoreManager?.isIgnored(
+            relativePath,
+            dirPath,
+            entry.isDirectory(),
+          ) || false;
+
+        if (isHidden) {
+          stats.hiddenItems++;
+          if (!includeHidden && !isImportantHiddenFile(entry.name)) continue;
+        }
+
+        if (isIgnored) {
+          stats.ignoredItems++;
+        }
 
         if (entry.isDirectory()) {
-          stats.totalDirectories++;
+          // Always recurse into directories to count ignored items, even if directory itself is ignored
           await collectStats(entryPath);
+
+          // Only count directory in totals if not ignored (when respecting gitignore)
+          if (!isIgnored || !respectGitignore) {
+            stats.totalDirectories++;
+          }
         } else {
-          stats.totalFiles++;
-          try {
-            const fileStat = await stat(entryPath);
-            stats.totalSize += fileStat.size;
-          } catch {
-            // Skip if can't read file stats
+          // Only count file in totals if not ignored (when respecting gitignore)
+          if (!isIgnored || !respectGitignore) {
+            stats.totalFiles++;
+            try {
+              const fileStat = await stat(entryPath);
+              stats.totalSize += fileStat.size;
+            } catch {
+              // Skip if can't read file stats
+            }
           }
         }
       }
@@ -416,12 +647,14 @@ async function getDirectoryStats(dirPath: string, includeHidden: boolean) {
   return {
     operation: "stats",
     path: dirPath,
+    respectGitignore,
     stats,
     formatted: `Directory Statistics:
 - Files: ${stats.totalFiles}
 - Directories: ${stats.totalDirectories}
 - Total Size: ${formatBytes(stats.totalSize)}
-- Hidden Items: ${stats.hiddenItems}${includeHidden ? " (included)" : " (excluded)"}`,
+- Hidden Items: ${stats.hiddenItems}${includeHidden ? " (included)" : " (excluded)"}
+- Ignored Items: ${stats.ignoredItems}${respectGitignore ? " (excluded)" : " (would be excluded)"}`,
   };
 }
 
@@ -430,25 +663,22 @@ async function findInDirectory(
   pattern: string,
   excludePatterns: string[],
   includeHidden: boolean,
+  respectGitignore: boolean,
 ) {
   const basePatterns = [pattern];
+  const gitignoreManager = respectGitignore
+    ? await createGitignoreManager(dirPath)
+    : null;
 
-  // Default exclusions
+  // Default exclusions (always applied regardless of gitignore setting)
   const defaultExclusions = [
     "!**/.chara/**",
     "!**/.git/**",
     "!**/node_modules/**",
-    "!**/.turbo/**",
-    "!**/.cache/**",
-    "!**/dist/**",
-    "!**/build/**",
-    "!**/.next/**",
-    "!**/.nuxt/**",
-    "!**/coverage/**",
-    "!**/.nyc_output/**",
-    "!**/tmp/**",
-    "!**/temp/**",
   ];
+
+  // Additional common exclusions when not using gitignore (disabled for now)
+  const commonExclusions: string[] = [];
 
   // Add user exclusions
   const userExclusions = excludePatterns.map((p) =>
@@ -461,6 +691,7 @@ async function findInDirectory(
   const allPatterns = [
     ...basePatterns,
     ...defaultExclusions,
+    ...commonExclusions,
     ...userExclusions,
     ...hiddenExclusions,
   ];
@@ -475,13 +706,42 @@ async function findInDirectory(
       followSymbolicLinks: false,
     });
 
-    const results = files.map((file) => {
+    // If hidden files are not included, manually add important dotfiles
+    let allFiles = files;
+    if (!includeHidden) {
+      const importantDotfiles = [".gitignore", ".chara.json"];
+      for (const dotfile of importantDotfiles) {
+        const dotfilePath = join(dirPath, dotfile);
+        try {
+          await stat(dotfilePath);
+          // File exists, add it if not already in results
+          if (!allFiles.includes(dotfile)) {
+            allFiles.push(dotfile);
+          }
+        } catch {
+          // File doesn't exist, skip
+        }
+      }
+    }
+
+    // Filter by gitignore rules if enabled
+    const filteredFiles =
+      respectGitignore && gitignoreManager
+        ? allFiles.filter((file) => {
+            const isDirectory = file.endsWith("/");
+            const cleanPath = isDirectory ? file.slice(0, -1) : file;
+            return !gitignoreManager.isIgnored(cleanPath, dirPath, isDirectory);
+          })
+        : allFiles;
+
+    const results = filteredFiles.map((file) => {
       const isDirectory = file.endsWith("/");
+      const cleanPath = isDirectory ? file.slice(0, -1) : file;
       return {
-        path: isDirectory ? file.slice(0, -1) : file,
+        path: cleanPath,
         type: isDirectory ? "directory" : "file",
         relativePath: file,
-        absolutePath: resolve(dirPath, isDirectory ? file.slice(0, -1) : file),
+        absolutePath: resolve(dirPath, cleanPath),
       };
     });
 
@@ -491,7 +751,9 @@ async function findInDirectory(
       pattern,
       excludePatterns,
       includeHidden,
+      respectGitignore,
       count: results.length,
+      totalFound: files.length,
       results,
       formatted:
         results.length > 0
@@ -533,8 +795,7 @@ async function getFileInfo(filePath: string) {
         .join("\n"),
     };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to get file info for ${filePath}: ${errorMessage}`);
   }
 }
@@ -608,8 +869,7 @@ async function getEnvironmentInfo(
       total: Math.round((totalmem() / 1024 / 1024 / 1024) * 100) / 100, // GB
       free: Math.round((freemem() / 1024 / 1024 / 1024) * 100) / 100, // GB
       used:
-        Math.round(((totalmem() - freemem()) / 1024 / 1024 / 1024) * 100) /
-        100, // GB
+        Math.round(((totalmem() - freemem()) / 1024 / 1024 / 1024) * 100) / 100, // GB
     };
 
     result.system = {

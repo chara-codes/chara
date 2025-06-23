@@ -50,6 +50,7 @@ const MODEL_WHITELIST = [
   // Gemini models
   "google/gemini-2.5-pro-preview",
   "google/gemini-2.5-flash-preview",
+  "google/gemini-2.5-flash-preview-05-20",
 
   // DeepSeek R1 models
   "deepseek/deepseek-r1",
@@ -57,6 +58,8 @@ const MODEL_WHITELIST = [
 
   // other models
   "moonshotai/kimi-dev-72b:free",
+  "minimax/minimax-m1:extended",
+  "minimax/minimax-m1",
 ];
 
 export const modelsController = {
