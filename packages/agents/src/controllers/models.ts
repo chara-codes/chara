@@ -55,7 +55,7 @@ const MODEL_WHITELIST = [
   // DeepSeek R1 models
   "deepseek/deepseek-r1",
   "deepseek/deepseek-chat",
-
+  "deepseek/deepseek-chat-v3-0324",
   // other models
   "moonshotai/kimi-dev-72b:free",
   "minimax/minimax-m1:extended",

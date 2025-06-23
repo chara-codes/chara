@@ -1,6 +1,6 @@
 import { logger } from "@chara/logger";
 import { mcpWrapper } from "../mcp/mcp-client";
-import { localTools } from "../tools/local-tools";
+import { tools as localTools } from "../tools";
 
 export const statusController = {
   getStatus: async () => {

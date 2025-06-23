@@ -6,6 +6,7 @@ import { terminal } from "./terminal";
 import { grep } from "./grep";
 import { thinking } from "./thinking";
 import { fileSystem } from "./file-system";
+import { runner } from "./runner";
 
 // Legacy imports for backward compatibility
 
@@ -23,6 +24,7 @@ export const modernTools = {
   terminal: terminal,
   grep: grep,
   thinking: thinking,
+  runner: runner,
 };
 
 // Keep legacy export for backward compatibility
@@ -35,4 +37,5 @@ export const tools = {
   terminal: terminal,
   grep: grep,
   thinking: thinking,
+  runner: runner,
 };
