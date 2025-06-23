@@ -25,7 +25,6 @@ describe("Agent Tools Integration", () => {
       expect(chatOnlyTools).toContain("terminal");
       expect(chatOnlyTools).toContain("move-file");
       expect(chatOnlyTools).toContain("fetch");
-      expect(chatOnlyTools).toContain("env-info");
     });
   });
 
@@ -34,6 +33,7 @@ describe("Agent Tools Integration", () => {
       const requiredChatTools = [
         "read-file",
         "edit-file",
+        "file-system",
         "terminal",
         "grep",
         "thinking",
@@ -58,7 +58,12 @@ describe("Agent Tools Integration", () => {
 
   describe("Init Agent Tools", () => {
     it("should include essential analysis tools", () => {
-      const requiredInitTools = ["read-file", "directory", "grep", "thinking"];
+      const requiredInitTools = [
+        "read-file",
+        "file-system",
+        "grep",
+        "thinking",
+      ];
 
       for (const tool of requiredInitTools) {
         expect(initTools).toHaveProperty(tool);
@@ -66,7 +71,7 @@ describe("Agent Tools Integration", () => {
     });
 
     it("should not include development tools except edit-file", () => {
-      const excludedTools = ["terminal", "move-file", "fetch", "env-info"];
+      const excludedTools = ["terminal", "move-file", "fetch"];
 
       for (const tool of excludedTools) {
         expect(initTools).not.toHaveProperty(tool);
@@ -111,9 +116,11 @@ describe("Agent Tools Integration", () => {
       // Chat agent should have full file modification capabilities
       expect(chatTools).toHaveProperty("edit-file");
       expect(chatTools).toHaveProperty("move-file");
+      expect(chatTools).toHaveProperty("file-system");
 
       // Init agent should have edit-file for .chara.json creation but not move-file
       expect(initTools).toHaveProperty("edit-file");
+      expect(initTools).toHaveProperty("file-system");
       expect(initTools).not.toHaveProperty("move-file");
     });
   });
@@ -124,13 +131,13 @@ describe("Agent Tools Integration", () => {
       const chatCount = Object.keys(chatTools).length;
       const initCount = Object.keys(initTools).length;
 
-      // After removing search-files, counts should be equal or optimized
+      // After consolidating tools into file-system, counts should be optimized
       expect(chatCount).toBeLessThanOrEqual(originalCount);
       expect(initCount).toBeLessThan(chatCount); // Init should be most minimal
 
       // Verify reasonable tool counts
-      expect(initCount).toBeGreaterThan(4); // Should have core tools
-      expect(chatCount).toBeGreaterThan(6); // Should have development tools
+      expect(initCount).toBeGreaterThan(3); // Should have core tools
+      expect(chatCount).toBeGreaterThan(4); // Should have development tools
     });
   });
 

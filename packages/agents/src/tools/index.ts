@@ -1,13 +1,11 @@
 import { readFile } from "./read-file";
 import { editFile } from "./edit-file";
 import { moveFile } from "./move-file";
-import { getFileInfo } from "./get-file-info";
 import { fetchTool } from "./fetch";
 import { terminal } from "./terminal";
 import { grep } from "./grep";
 import { thinking } from "./thinking";
-import { envInfo } from "./env-info";
-import { directory } from "./directory";
+import { fileSystem } from "./file-system";
 
 // Legacy imports for backward compatibility
 
@@ -15,18 +13,16 @@ import { directory } from "./directory";
 export { chatTools, chatToolsWriteMode, chatToolsAskMode } from "./chat-tools";
 export { initTools } from "./init-tools";
 
-// Modern tool exports with new unified directory tool
+// Modern tool exports with new unified file system tool
 export const modernTools = {
   "read-file": readFile,
   "edit-file": editFile,
   "move-file": moveFile,
-  "get-file-info": getFileInfo,
-  directory: directory,
+  "file-system": fileSystem,
   fetch: fetchTool,
   terminal: terminal,
   grep: grep,
   thinking: thinking,
-  "env-info": envInfo,
 };
 
 // Keep legacy export for backward compatibility
@@ -34,11 +30,9 @@ export const tools = {
   "read-file": readFile,
   "edit-file": editFile,
   "move-file": moveFile,
-  "get-file-info": getFileInfo,
-  directory: directory, // Include new tool in legacy export too
+  "file-system": fileSystem, // Unified file system tool
   fetch: fetchTool,
   terminal: terminal,
   grep: grep,
   thinking: thinking,
-  "env-info": envInfo,
 };

@@ -8,17 +8,17 @@ This directory contains tools optimized for different agents in the Chara system
 Tools for the interactive chat agent focused on development tasks:
 
 - **File Operations**: `read-file`, `edit-file`
-- **Directory Management**: `directory` (unified tool), `move-file`
-- **Search & Analysis**: `grep`, `get-file-info`
+- **File System Management**: `file-system` (comprehensive unified tool), `move-file`
+- **Search & Analysis**: `grep`
 - **External Resources**: `fetch`
-- **System Integration**: `terminal`, `env-info`
+- **System Integration**: `terminal`
 - **Meta Tools**: `thinking`
 
 ### Init Tools (`init-tools.ts`)
 Tools for the project initialization agent focused on analysis and configuration:
 
-- **Directory Management**: `directory` (unified tool for all directory operations)
-- **File Reading**: `read-file`, `get-file-info`
+- **File System Management**: `file-system` (unified tool for all file system operations)
+- **File Reading**: `read-file`
 - **Search**: `grep` (for finding configuration files and patterns)
 - **Meta Tools**: `thinking`
 
@@ -27,14 +27,20 @@ Tools for the project initialization agent focused on analysis and configuration
 ### Eliminated Tools
 - **`write-file`**: Removed as file creation/modification is handled by `edit-file`
 - **`read-multiple-files`**: Functionality can be achieved by multiple `read-file` calls
-- **`list-directory`**, **`directory-tree`**, **`current-dir`**, **`create-directory`**: Replaced by the unified `directory` tool
-- **Development-only tools from init**: Removed `terminal`, `edit-file`, and other development tools from init agent since it only needs to analyze, not modify projects
+- **`list-directory`**, **`directory-tree`**, **`current-dir`**, **`create-directory`**: Replaced by the unified `file-system` tool
+- **`get-file-info`**: Merged into `file-system` tool as the `info` action
+- **`env-info`**: Merged into `file-system` tool as the `env` action
+- **`directory`**: Renamed and expanded to `file-system` with additional capabilities
+- **Development-only tools from init**: Removed `terminal` and other development tools from init agent since it only needs to analyze, not modify projects
 
-### New Unified Tools
-- **`directory`**: A comprehensive directory management tool that combines `create-directory`, `current-dir`, `directory-tree`, `list-directory`, and file finding into a single, powerful interface with enhanced glob pattern support via globby
+### New Unified Tool
+- **`file-system`**: A comprehensive file system management tool that combines directory operations (`create`, `list`, `tree`, `current`, `stats`, `find`), file information (`info`), and environment analysis (`env`) into a single, powerful interface with enhanced glob pattern support via globby
 
-### Tool Placement Rationale
-- **`env-info` moved to chat agent**: Environment information is more useful during development for debugging, deployment setup, and system troubleshooting. The init agent only needs to analyze project structure, not system environment details.
+### Tool Consolidation Benefits
+- **Single interface** for all file system operations instead of multiple separate tools
+- **Consistent API** across directory, file info, and environment operations
+- **Reduced tool count** while maintaining all functionality
+- **Better organization** with logical grouping of related operations
 
 ### Tool Comparison: Why grep over simple file finding?
 
@@ -73,17 +79,18 @@ tools: {
 The tool optimization achieved significant improvements:
 
 - **Original tools**: 19 tools (all agents used everything)
-- **Chat agent tools**: 10 tools (streamlined with unified `directory` tool)
-- **Init agent tools**: 5 tools (minimal set for project analysis)
-- **Modern tools**: 10 tools (streamlined set using only essential tools)
+- **Chat agent tools**: 8 tools (streamlined with unified `file-system` tool)
+- **Init agent tools**: 4 tools (minimal set for project analysis)
+- **Modern tools**: 8 tools (streamlined set using only essential tools)
 
-### New Directory Tool Benefits
-- **Single interface** for all directory operations instead of 4 separate tools
+### New File System Tool Benefits
+- **Single interface** for all file system operations instead of 6+ separate tools
 - **Globby integration** for powerful file search with glob patterns
 - **Automatic exclusions** of build/cache directories (.chara/, .git/, node_modules/, etc.)
-- **Enhanced features**: file sizes, hidden file handling, depth limits, statistics
+- **Enhanced features**: file sizes, hidden file handling, depth limits, statistics, file metadata, environment analysis
 - **Better error handling** and validation
-- **Consistent API** across all directory operations
+- **Consistent API** across all file system operations
+- **Environment integration**: Project configuration and system information in one tool
 
 ### Key Improvements
 1. **Eliminated redundancy**: Consolidated multiple directory tools into unified `directory` tool
@@ -93,16 +100,19 @@ The tool optimization achieved significant improvements:
 5. **Performance boost**: Fewer tools mean faster initialization and less token usage
 
 ### Tools Removed from Specific Agents
-- **From chat agent**: `write-file`, `read-multiple-files`, legacy directory tools
-- **From init agent**: `terminal`, `edit-file`, `move-file`, `fetch`, `env-info`, `write-file`, `read-multiple-files` (development-only tools)
-- **Globally removed**: `write-file`, `read-multiple-files`, `list-directory`, `directory-tree`, `current-dir`, `create-directory`
+- **From chat agent**: `write-file`, `read-multiple-files`, `get-file-info`, `env-info`, legacy directory tools
+- **From init agent**: `terminal`, `move-file`, `fetch`, `get-file-info`, `env-info`, `write-file`, `read-multiple-files` (development-only tools)
+- **Globally removed**: `write-file`, `read-multiple-files`, `list-directory`, `directory-tree`, `current-dir`, `create-directory`, `get-file-info`, `env-info`, `directory`
 
-### Tools Replaced by `directory` Tool
-- **`current-dir`**: Now `directory` with `action: "current"`
-- **`create-directory`**: Now `directory` with `action: "create"`
-- **`list-directory`**: Now `directory` with `action: "list"`
-- **`directory-tree`**: Now `directory` with `action: "tree"`
-- **File finding**: Now `directory` with `action: "find"` (plus globby patterns)
+### Tools Replaced by `file-system` Tool
+- **`current-dir`**: Now `file-system` with `action: "current"`
+- **`create-directory`**: Now `file-system` with `action: "create"`
+- **`list-directory`**: Now `file-system` with `action: "list"`
+- **`directory-tree`**: Now `file-system` with `action: "tree"`
+- **`get-file-info`**: Now `file-system` with `action: "info"`
+- **`env-info`**: Now `file-system` with `action: "env"`
+- **File finding**: Now `file-system` with `action: "find"` (plus globby patterns)
+- **Directory stats**: Now `file-system` with `action: "stats"`
 
 ## Tool Descriptions
 
@@ -110,24 +120,23 @@ The tool optimization achieved significant improvements:
 - **`read-file`**: Read single file content
 - **`edit-file`**: Create new files or make precise line-based edits to existing files
 
-### Directory Operations
-- **`directory`**: **NEW UNIFIED TOOL** - Comprehensive directory management with multiple operations:
+### File System Operations
+- **`file-system`**: **COMPREHENSIVE UNIFIED TOOL** - Complete file system management with multiple operations:
   - `list`: Get flat listing with file sizes and type indicators
   - `tree`: Get recursive tree structure with configurable depth
   - `create`: Create directories with recursive parent creation
   - `current`: Get current working directory
   - `stats`: Calculate directory statistics (file count, sizes, etc.)
   - `find`: Search using glob patterns with advanced filtering via globby
-- **`move-file`**: Move/rename files and directories
+  - `info`: Get detailed file/directory metadata (size, timestamps, permissions)
+  - `env`: Get comprehensive environment and project configuration information
+- **`move-file`**: Move/rename files and directories (chat agent only)
 
-### Legacy Operations (maintained for search functionality)
 ### Search & Analysis
 - **`grep`**: Advanced pattern search with regex, context, and filtering
-- **`get-file-info`**: Get file metadata (size, type, permissions)
 
 ### System Integration
 - **`terminal`**: Execute shell commands (chat agent only)
-- **`env-info`**: Get system and project environment information (chat agent only)
 
 ### Meta Tools
 - **`thinking`**: Internal reasoning and planning
@@ -144,54 +153,57 @@ The tool optimization achieved significant improvements:
 ## Tool Configurations
 
 Different tool configurations are available:
-- **`modernTools`**: Streamlined set with unified `directory` tool
+- **`modernTools`**: Streamlined set with unified `file-system` tool
 - **`chatToolsWriteMode`** / **`chatToolsAskMode`**: Specialized configurations for chat agent
 - **`initTools`**: Minimal configuration for init agent
 - **`tools`**: Legacy export maintained for backward compatibility
 
-## Directory Tool Usage Examples
+## File System Tool Usage Examples
 
-### Basic Operations
+### Directory Operations
 ```typescript
 // Get current directory
-await directory.execute({ action: "current" })
+await fileSystem.execute({ action: "current" })
 
 // List directory contents
-await directory.execute({ action: "list", path: "./src" })
+await fileSystem.execute({ action: "list", path: "./src" })
 
 // Create nested directories
-await directory.execute({ action: "create", path: "./dist/assets" })
+await fileSystem.execute({ action: "create", path: "./dist/assets" })
 
 // Get directory tree
-await directory.execute({ action: "tree", path: "./", maxDepth: 3 })
+await fileSystem.execute({ action: "tree", path: "./", maxDepth: 3 })
 ```
 
 ### Advanced Search with Globby
 ```typescript
 // Find all TypeScript files
-await directory.execute({ 
+await fileSystem.execute({ 
   action: "find", 
   pattern: "**/*.{ts,tsx}",
   excludePatterns: ["node_modules", "dist"]
 })
 
 // Find test files with hidden files
-await directory.execute({
+await fileSystem.execute({
   action: "find",
   pattern: "**/*.test.*",
   includeHidden: true
 })
 ```
 
-### Statistics and Analysis
+### File Information and Environment
 ```typescript
-// Get detailed directory stats
-await directory.execute({ action: "stats", includeHidden: true })
+// Get file metadata
+await fileSystem.execute({ action: "info", path: "./package.json" })
 
-// List with file sizes
-await directory.execute({ 
-  action: "list", 
-  includeSize: true,
-  includeHidden: false 
+// Get environment and project information
+await fileSystem.execute({ 
+  action: "env", 
+  includeSystem: true, 
+  includeProject: true 
 })
+
+// Get detailed directory stats
+await fileSystem.execute({ action: "stats", includeHidden: true })
 ```
