@@ -4,7 +4,6 @@ import { mcpWrapper } from "../mcp/mcp-client";
 import { providersRegistry } from "../providers";
 import { chatToolsAskMode, chatToolsWriteMode } from "../tools/chat-tools";
 import { chatPrompt } from "../prompts/chat";
-import { getTracer } from "@lmnr-ai/lmnr";
 
 export const chatAgent = async (
   {
@@ -44,7 +43,7 @@ export const chatAgent = async (
       mode,
       workingDir,
     }),
-    tools: chatTools,
+    tools: allTools,
     model: aiModel,
     toolCallStreaming: true,
     experimental_continueSteps: true,

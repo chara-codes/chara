@@ -3,7 +3,6 @@ import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
 import { initTools } from "../tools/init-tools";
 import { initPrompt } from "../prompts/init";
-import { getTracer } from "@lmnr-ai/lmnr";
 
 export const initAgent = (
   {

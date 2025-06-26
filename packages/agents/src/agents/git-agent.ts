@@ -1,6 +1,5 @@
 import { generateText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
-import { getTracer } from "@lmnr-ai/lmnr";
 
 export const gitAgent = (
   {
