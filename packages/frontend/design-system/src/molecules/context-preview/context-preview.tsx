@@ -13,17 +13,8 @@ const PreviewContent = styled.div`
   padding-top: 8px;
 `;
 
-const PreviewLabel = styled.div`
-  font-size: 10px;
-  color: #9ca3af;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  font-weight: 500;
-`;
-
 const ImagePreview = styled.img`
-  max-width: 120px;
-  max-height: 80px;
+  max-width: 100%;
   border-radius: 4px;
   object-fit: cover;
 `;
