@@ -3,6 +3,7 @@
 # Logs
 .idea
 logs
+dial/
 _.log
 npm-debug.log_
 yarn-debug.log*

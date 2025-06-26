@@ -13,6 +13,16 @@ const MODEL_WHITELIST = [
   //DIAL
   "deepseek-r1",
   "gpt-4.1-mini-2025-04-14",
+  "gemini-2.5-flash-preview-05-20",
+  "claude-sonnet-4@20250514",
+  "claude-3-7-sonnet@20250219",
+  "o4-mini-2025-04-16",
+  "gpt-4.1-2025-04-14",
+  "anthropic.claude-3-7-sonnet-20250219-v1:0",
+  "anthropic.claude-3-7-sonnet-20250219-v1:0-with-thinking",
+  "anthropic.claude-sonnet-4-20250514-v1:0",
+  "anthropic.claude-sonnet-4-20250514-v1:0-with-thinking",
+  "claude-3-5-sonnet-v2@20241022",
 
   // Claude models
   "claude-opus-4-20250514",

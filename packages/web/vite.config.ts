@@ -17,7 +17,6 @@ export default defineConfig({
       jsxRuntime: "automatic",
     }),
     tailwindcss(),
-    mkcert(),
   ],
   resolve: {
     alias: {

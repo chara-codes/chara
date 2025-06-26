@@ -44,20 +44,11 @@ export const chatAgent = async (
       mode,
       workingDir,
     }),
-    tools: allTools,
+    tools: chatTools,
     model: aiModel,
     toolCallStreaming: true,
     experimental_continueSteps: true,
     maxSteps: 500,
     messages,
-    experimental_telemetry: {
-      isEnabled: true,
-      tracer: getTracer(),
-      metadata: {
-        agent: "chat",
-        provider: providerName,
-        model: modelName,
-      },
-    },
   });
 };

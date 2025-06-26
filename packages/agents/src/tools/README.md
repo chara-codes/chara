@@ -10,6 +10,7 @@ Tools for the interactive chat agent focused on development tasks:
 - **File Operations**: `read-file`, `edit-file`
 - **File System Management**: `file-system` (comprehensive unified tool), `move-file`
 - **Search & Analysis**: `grep`
+- **Code Quality**: `examination`
 - **External Resources**: `fetch`
 - **System Integration**: `terminal`
 - **Meta Tools**: `thinking`
@@ -20,6 +21,7 @@ Tools for the project initialization agent focused on analysis and configuration
 - **File System Management**: `file-system` (unified tool for all file system operations)
 - **File Reading**: `read-file`
 - **Search**: `grep` (for finding configuration files and patterns)
+- **Code Quality**: `examination`
 - **Meta Tools**: `thinking`
 
 ## Removed Redundancies
@@ -134,6 +136,13 @@ The tool optimization achieved significant improvements:
 
 ### Search & Analysis
 - **`grep`**: Advanced pattern search with regex, context, and filtering
+- **`examination`**: **DIAGNOSTIC ANALYSIS TOOL** - JavaScript/TypeScript project diagnostics:
+  - Automatic project type detection (JavaScript, TypeScript)
+  - Project-wide error and warning summaries
+  - File-specific detailed diagnostics
+  - Integration with TypeScript compiler, ESLint, Prettier, and unit tests
+  - Executes project test suite (npm run test) and reports failures
+  - Uses Bun's spawn API for efficient tool execution
 
 ### System Integration
 - **`terminal`**: Execute shell commands (chat agent only)
@@ -207,3 +216,57 @@ await fileSystem.execute({
 // Get detailed directory stats
 await fileSystem.execute({ action: "stats", includeHidden: true })
 ```
+
+### Code Quality and Diagnostics
+```typescript
+// Get project-wide diagnostic summary (includes unit test results)
+await examination.execute({})
+
+// Get diagnostics for specific file (skips unit tests)
+await examination.execute({ path: "src/main.ts" })
+
+// Check for TypeScript errors in components
+await examination.execute({ path: "src/components/Header.tsx" })
+```
+
+## Testing
+
+### Test Structure
+
+The tools in this directory are comprehensively tested with multiple test types:
+
+- **Unit Tests**: Mock-based testing for individual components
+- **Integration Tests**: End-to-end testing with real project setups  
+- **Configuration Tests**: Tool set validation and security checks
+
+### Running Tests
+
+```bash
+# Run all tool tests
+bun test src/tools/__tests__
+
+# Run specific tool tests
+bun test src/tools/__tests__/examination.test.ts
+bun test src/tools/__tests__/examination.unit.test.ts
+
+# Run with coverage
+bun test --coverage src/tools/__tests__
+```
+
+### Test Coverage
+
+- **examination**: 40 unit tests + 7 integration tests
+- **file-system**: Comprehensive file operations testing
+- **grep**: Pattern matching and search functionality
+- **edit-file**: File modification and creation testing
+- **All tools**: Agent integration and configuration validation
+
+### Testing Best Practices
+
+1. **Isolation**: Each test runs independently with proper setup/cleanup
+2. **Mocking**: External dependencies (processes, file system) are mocked appropriately
+3. **Edge Cases**: Error conditions and boundary cases are thoroughly tested
+4. **Real-world Scenarios**: Integration tests use actual project structures
+5. **Performance**: Tests complete within reasonable time bounds
+
+For detailed testing information, see individual test files and `EXAMINATION_TEST_SUMMARY.md`.

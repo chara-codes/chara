@@ -1,35 +1,8 @@
+import type { LanguageModelV1FinishReason } from "@ai-sdk/provider";
 import { parseDataStreamPart } from "@ai-sdk/ui-utils";
-import { LanguageModelV1FinishReason } from "@ai-sdk/provider";
-import { ChatMode, Message } from "../types";
-import MessageSegmentBuilder from "./message-segment-builder";
+import type { ChatMode, Message } from "../types";
 import { THINKING_TAG_REGEX } from "../utils";
-
-function tryParseStreamingJSON(jsonString: string) {
-  try {
-    const data = JSON.parse(jsonString);
-    return { success: true, data };
-  } catch (error) {
-    // Attempt to fix common streaming issues, like missing closing brackets
-    const fixedJsonString = jsonString.trim();
-    if (fixedJsonString.startsWith("{") && !fixedJsonString.endsWith("}")) {
-      try {
-        const data = JSON.parse(fixedJsonString + "}");
-        return { success: true, data };
-      } catch (e) {
-        // ignore
-      }
-    }
-    if (fixedJsonString.startsWith("[") && !fixedJsonString.endsWith("]")) {
-      try {
-        const data = JSON.parse(fixedJsonString + "]");
-        return { success: true, data };
-      } catch (e) {
-        // ignore
-      }
-    }
-    return { success: false, error };
-  }
-}
+import MessageSegmentBuilder from "./message-segment-builder";
 
 export interface EditOperation {
   type: "insert" | "replace";
@@ -252,35 +225,7 @@ export async function processChatStream(
               const { toolCallId, argsTextDelta } = parsedPart.value;
               const pending = pendingToolCalls.get(toolCallId);
               if (pending) {
-                pending.argsText += argsTextDelta;
                 pending.status = "in-progress";
-
-                const parseResult = tryParseStreamingJSON(pending.argsText);
-                if (parseResult.success && parseResult.data) {
-                  pending.arguments = parseResult.data;
-                  pending.lastValidArgs = parseResult.data;
-
-                  if (
-                    pending.name === "edit-file" ||
-                    pending.name === "edit_file"
-                  ) {
-                    const edits = parseResult.data.edits || [];
-                    const processedEdits = Array.isArray(edits)
-                      ? edits.map((edit: EditOperation) => ({
-                          ...edit,
-                          status: "applying" as const,
-                        }))
-                      : [];
-                    pending.arguments = {
-                      ...parseResult.data,
-                      edits: processedEdits,
-                    };
-                  }
-                } else {
-                  if (pending.lastValidArgs) {
-                    pending.arguments = pending.lastValidArgs;
-                  }
-                }
 
                 const streamingToolCall = {
                   id: pending.id,

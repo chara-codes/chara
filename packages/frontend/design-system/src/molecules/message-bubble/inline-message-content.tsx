@@ -360,7 +360,7 @@ const InlineToolCall = memo(
             <ToolCallSection>
               <ToolCallLabel>Result</ToolCallLabel>
               <ToolCallContent>
-                {formatToolCallResult(toolCall.result)}
+                <pre>{formatToolCallResult(toolCall.result)}</pre>
               </ToolCallContent>
             </ToolCallSection>
           )}

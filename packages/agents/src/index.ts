@@ -33,9 +33,6 @@ export { providersRegistry } from "./providers/";
 const wsClients = new Set<ServerWebSocket<unknown>>();
 
 async function startServer(charaConfigFile = ".chara.json") {
-  Laminar.initialize({
-    projectApiKey: process.env.LMNR_PROJECT_API_KEY,
-  });
   if (!(await Bun.file(charaConfigFile).exists())) {
     const init = initAgent({
       model: "dial:::gpt-4.1-mini-2025-04-14",

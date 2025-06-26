@@ -1,6 +1,7 @@
 import { streamText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
 import { getTracer } from "@lmnr-ai/lmnr";
+import { logger } from "@chara/logger";
 
 export const beautifyAgent = (
   {
@@ -18,25 +19,26 @@ export const beautifyAgent = (
 
   return streamText({
     ...options,
-    system:
-      "You are a helpful assistant, the main goal is beautify users prompts.",
     model: aiModel,
     messages: [
-      ...messages,
       {
         role: "system",
         content:
           "Use previous messages and the current user prompt to generate a better, implementation-focused answer. Limit the response to 300 symbols, make it actionable for development, and use plain text only. Prioritize clarity and practical instructions.",
       },
+      ...messages,
     ],
-    experimental_telemetry: {
-      isEnabled: true,
-      tracer: getTracer(),
-      metadata: {
-        agent: "beautify",
-        provider: providerName,
-        model: modelName,
-      },
+    onError: (err) => {
+      logger.dump(err);
     },
+    // experimental_telemetry: {
+    //   isEnabled: true,
+    //   tracer: getTracer(),
+    //   metadata: {
+    //     agent: "beautify",
+    //     provider: providerName,
+    //     model: modelName,
+    //   },
+    // },
   });
 };

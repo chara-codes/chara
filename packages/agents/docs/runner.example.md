@@ -1,10 +1,28 @@
 # Runner Tool Usage Examples
 
-The `runner` tool is a diagnostic tool that helps you get fresh logs from running development servers by making HTTP calls and capturing the resulting log output.
+The `runner` tool is a diagnostic tool that helps you get fresh logs from running development servers by making HTTP calls and capturing the resulting log output. It can also list all currently running processes.
 
 ## Basic Usage
 
-### Get logs from a running process
+### List all running processes
+
+```typescript
+// Get information about all current processes
+await runner.execute({});
+```
+
+This will return a list of all currently running processes with their details including:
+- Process ID
+- Name
+- Status
+- Server URL
+- Command
+- Working directory
+- Process ID (PID)
+- Uptime
+- Start time
+
+### Get logs from a specific process
 
 ```typescript
 // Get diagnostic information from a process
@@ -46,7 +64,43 @@ await runner.execute({
 
 ## Common Use Cases
 
-### 1. Debugging API Endpoints
+### 1. Discovery - List All Processes
+
+Start by discovering what processes are currently running:
+
+```typescript
+await runner.execute({});
+```
+
+Expected output:
+```
+Current Running Processes (2):
+
+1. Process ID: next-dev-123
+   Name: Next.js Development Server
+   Status: active
+   URL: http://localhost:3000
+   Command: npm run dev
+   CWD: /path/to/project
+   PID: 12345
+   Uptime: 120 seconds
+   Start Time: 2023-12-01T10:28:15.000Z
+
+2. Process ID: api-server-456
+   Name: Express API Server
+   Status: active
+   URL: http://localhost:8080
+   Command: node server.js
+   CWD: /path/to/api
+   PID: 12346
+   Uptime: 85 seconds
+   Start Time: 2023-12-01T10:28:50.000Z
+
+To get diagnostic logs for a specific process, use:
+runner({ processId: "process-id" })
+```
+
+### 2. Debugging API Endpoints
 
 When you need to see what logs are generated when hitting a specific endpoint:
 
@@ -58,7 +112,7 @@ await runner.execute({
 });
 ```
 
-### 2. Testing Error Handling
+### 3. Testing Error Handling
 
 See how your server handles and logs errors:
 
@@ -70,7 +124,7 @@ await runner.execute({
 });
 ```
 
-### 3. Health Checks
+### 4. Health Checks
 
 Verify your server is responding and logging correctly:
 
@@ -84,7 +138,30 @@ await runner.execute({
 
 ## Expected Output
 
-The tool returns a formatted diagnostic report:
+### Process Listing Output
+
+When called without `processId`:
+
+```
+Current Running Processes (1):
+
+1. Process ID: my-dev-server
+   Name: Next.js Dev Server
+   Status: active
+   URL: http://localhost:3000
+   Command: npm run dev
+   CWD: /Users/dev/my-project
+   PID: 12345
+   Uptime: 45 seconds
+   Start Time: 2023-12-01T10:29:30.000Z
+
+To get diagnostic logs for a specific process, use:
+runner({ processId: "process-id" })
+```
+
+### Diagnostic Output
+
+When called with a specific `processId`:
 
 ```
 Runner Diagnostic for Process: my-dev-server
@@ -104,9 +181,14 @@ Fresh Logs (3 new entries):
 
 ## Error Scenarios
 
+### No processes running
+```
+No running processes found. Start a development server first using one of the available runner commands.
+```
+
 ### Process not found
 ```
-Error: Process with ID 'non-existent' not found. Use the terminal tool to list running processes.
+Error: Process with ID 'non-existent' not found. Use the runner tool without processId to list all running processes.
 ```
 
 ### Process not active
@@ -132,34 +214,86 @@ HTTP GET http://localhost:3000/ - Error: Connection refused
 No new logs generated from the HTTP call.
 ```
 
+## Workflow
+
+Here's a typical workflow for using the runner tool:
+
+```typescript
+// 1. First, discover what processes are running
+await runner.execute({});
+
+// 2. Pick a process ID from the list and test it
+await runner.execute({
+  processId: "next-dev-123",
+  endpoint: "/",
+  method: "GET"
+});
+
+// 3. Test specific endpoints
+await runner.execute({
+  processId: "next-dev-123",
+  endpoint: "/api/users",
+  method: "POST"
+});
+
+// 4. Test with different timeouts if needed
+await runner.execute({
+  processId: "next-dev-123",
+  endpoint: "/slow-endpoint",
+  timeout: 30000
+});
+```
+
 ## Tips
 
-1. **Find Process IDs**: Use the `terminal` tool to list running processes and find the correct process ID
-2. **Start with Root**: Begin with the root endpoint (`/`) to ensure basic connectivity
-3. **Check Logs First**: Look at existing logs before using the runner tool to understand the baseline
-4. **Use Appropriate Timeouts**: Adjust timeout based on your server's expected response time
-5. **Test Different Methods**: Try different HTTP methods to test various endpoints
+1. **Start with Process Discovery**: Always begin by calling `runner()` without parameters to see what's running
+2. **Use Process IDs**: Copy the exact process ID from the listing to avoid typos
+3. **Test Basic Connectivity**: Start with the root endpoint (`/`) to ensure basic connectivity
+4. **Check Server Status**: Look for processes with `active` status and valid URLs
+5. **Use Appropriate Timeouts**: Adjust timeout based on your server's expected response time
+6. **Monitor Different Endpoints**: Test various endpoints to understand server behavior
+
+## Quick Reference
+
+### List all processes
+```typescript
+await runner.execute({});
+```
+
+### Test specific process
+```typescript
+await runner.execute({
+  processId: "my-server-id"
+});
+```
+
+### Test with custom endpoint
+```typescript
+await runner.execute({
+  processId: "my-server-id",
+  endpoint: "/api/health",
+  method: "POST",
+  timeout: 15000
+});
+```
 
 ## Integration with Other Tools
 
 The runner tool works well with other diagnostic tools:
 
 ```typescript
-// First, check what processes are running
-await terminal.execute({
-  command: "ps aux | grep node",
-  cd: "project-root"
-});
+// Start by listing all processes
+await runner.execute({});
 
-// Then use runner to test the server
+// Test a specific server
 await runner.execute({
   processId: "found-process-id",
   endpoint: "/api/status"
 });
 
-// Finally, get more detailed logs if needed
+// Get additional system information if needed
 await terminal.execute({
-  command: "tail -n 50 server.log",
+  command: "netstat -tulpn | grep :3000",
   cd: "project-root"
 });
 ```

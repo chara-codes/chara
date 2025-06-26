@@ -37,14 +37,5 @@ export const initAgent = (
     experimental_continueSteps: true,
     maxSteps: 50,
     prompt: "Analyze the project and save configuration to .chara.json",
-    experimental_telemetry: {
-      isEnabled: true,
-      tracer: getTracer(),
-      metadata: {
-        agent: 'init',
-        provider: providerName,
-        model: modelName,
-      },
-    },
   });
 };

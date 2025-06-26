@@ -7,6 +7,7 @@ import { grep } from "./grep";
 import { thinking } from "./thinking";
 import { fileSystem } from "./file-system";
 import { runner } from "./runner";
+import { examination } from "./examination";
 
 // Tools for write mode - all tools available for interactive development
 export const chatToolsWriteMode = {
@@ -19,6 +20,7 @@ export const chatToolsWriteMode = {
   terminal: terminal,
   thinking: thinking,
   runner: runner,
+  examination: examination,
 };
 
 // Tools for ask mode - read-only tools that don't modify the system
@@ -29,6 +31,7 @@ export const chatToolsAskMode = {
   fetch: fetchTool,
   thinking: thinking,
   runner: runner,
+  examination: examination,
 };
 
 // Legacy export for backward compatibility
