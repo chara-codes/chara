@@ -1,184 +1,218 @@
-import styled from "styled-components"
+import { type Theme, theme } from "../../theme";
+import styled from "styled-components";
 
 // Footer container
 export const FooterContainer = styled.footer`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 12px;
-  border-top: 1px solid #e5e7eb;
-  background-color: #fff;
-`
+  padding: ${({ theme }) => (theme as Theme).spacing.xs}
+    ${({ theme }) => (theme as Theme).spacing.sm};
+  border-top: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  background-color: ${({ theme }) => (theme as Theme).colors.background};
+`;
 
 // Mode selector
 export const ModeSelector = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-`
+  gap: ${({ theme }) => (theme as Theme).spacing.sm};
+`;
 
 export const ModeButton = styled.button<{ $active: boolean }>`
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: ${({ theme }) => (theme as Theme).spacing.xs}
+    ${({ theme }) => (theme as Theme).spacing.sm};
+  border-radius: ${({ theme }) => (theme as Theme).borderRadius.sm};
   border: none;
-  background-color: ${(props) => (props.$active ? "#f3f4f6" : "transparent")};
-  color: ${(props) => (props.$active ? "#333" : "#6b7280")};
-  font-size: 12px;
+  background-color: ${(props) =>
+    props.$active ? (props.theme as Theme).colors.highlight : "transparent"};
+  color: ${(props) =>
+    props.$active
+      ? (props.theme as Theme).colors.text
+      : (props.theme as Theme).colors.textSecondary};
+  font-size: ${({ theme }) => (theme as Theme).typography.fontSize.xs};
   cursor: pointer;
-  
+  transition: background-color
+    ${({ theme }) => (theme as Theme).transitions.fast};
+
   &:hover {
-    background-color: ${(props) => (props.$active ? "#f3f4f6" : "#f9fafb")};
+    background-color: ${(props) =>
+      props.$active
+        ? (props.theme as Theme).colors.highlight
+        : (props.theme as Theme).colors.backgroundSecondary};
   }
-`
+`;
 
 // Model selector
 export const ModelSelectorContainer = styled.div`
   position: relative;
-  font-size: 12px;
-`
+  font-size: ${({ theme }) => (theme as Theme).typography.fontSize.xs};
+`;
 
 export const ModelSelectorButton = styled.button`
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
-  background-color: #fff;
-  color: #333;
-  font-size: 12px;
+  padding: ${({ theme }) => (theme as Theme).spacing.xs}
+    ${({ theme }) => (theme as Theme).spacing.sm};
+  border-radius: ${({ theme }) => (theme as Theme).borderRadius.sm};
+  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  background-color: ${({ theme }) => (theme as Theme).colors.background};
+  color: ${({ theme }) => (theme as Theme).colors.text};
+  font-size: ${({ theme }) => (theme as Theme).typography.fontSize.xs};
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 4px;
-  
+  gap: ${({ theme }) => (theme as Theme).spacing.xs};
+  transition: background-color
+    ${({ theme }) => (theme as Theme).transitions.fast};
+
   &:hover {
-    background-color: #f9fafb;
+    background-color: ${({ theme }) =>
+      (theme as Theme).colors.backgroundSecondary};
   }
-`
+`;
 
 export const ModelInfo = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
-`
+  gap: ${({ theme }) => (theme as Theme).spacing.xs};
+`;
 
 export const SourceBadge = styled.span<{ $sourceType: string }>`
-  padding: 2px 6px;
+  padding: 2px ${({ theme }) => (theme as Theme).spacing.sm};
   border-radius: 3px;
+  border-width: 1px;
   font-size: 10px;
-  font-weight: 500;
+  font-weight: ${({ theme }) => (theme as Theme).typography.fontWeight.medium};
+  max-height: 26px;
   background-color: ${(props) => {
     switch (props.$sourceType) {
       case "unified":
-        return "#e0e7ff" // Purple for unified services
+        return (props.theme as Theme).colors.sourceBadge.unified.background;
       case "native":
-        return "#dbeafe" // Blue for native services
+        return (props.theme as Theme).colors.sourceBadge.native.background;
       case "local":
-        return "#dcfce7" // Green for local services
+        return (props.theme as Theme).colors.sourceBadge.local.background;
       default:
-        return "#f3f4f6" // Gray for unknown
+        return (props.theme as Theme).colors.highlight;
     }
   }};
   color: ${(props) => {
     switch (props.$sourceType) {
       case "unified":
-        return "#5b21b6"
+        return "#5b21b6";
+        return (props.theme as Theme).colors.sourceBadge.unified.text;
       case "native":
-        return "#1d4ed8"
+        return "#1d4ed8";
+        return (props.theme as Theme).colors.sourceBadge.native.text;
       case "local":
-        return "#166534"
+        return "#166534";
+        return (props.theme as Theme).colors.sourceBadge.local.text;
       default:
-        return "#6b7280"
+        return (props.theme as Theme).colors.textSecondary;
     }
   }};
-`
+`;
 
 // Dropdown
 export const DropdownContainer = styled.div`
   position: absolute;
   bottom: 100%;
   right: 0;
-  margin-bottom: 4px;
+  color: ${({ theme }) => (theme as Theme).colors.text};
+  margin-bottom: ${({ theme }) => (theme as Theme).spacing.xs};
   width: 240px;
-  background-color: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  z-index: 50;
+  background-color: ${({ theme }) => (theme as Theme).colors.background};
+  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  border-radius: ${({ theme }) => (theme as Theme).borderRadius.sm};
+  box-shadow: ${({ theme }) => (theme as Theme).shadows.md};
+  z-index: ${({ theme }) => (theme as Theme).zIndices.dropdown};
   max-height: 300px;
   overflow-y: auto;
-`
+`;
 
 export const SearchContainer = styled.div`
-  padding: 8px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: ${({ theme }) => (theme as Theme).spacing.sm};
+  border-bottom: 1px solid ${({ theme }) => (theme as Theme).colors.border};
   position: sticky;
   top: 0;
-  background-color: #fff;
-  z-index: 1;
-`
+  background-color: ${({ theme }) => (theme as Theme).colors.background};
+  z-index: ${({ theme }) => (theme as Theme).zIndices.base};
+`;
 
 export const SearchInput = styled.input`
   width: 100%;
-  padding: 6px 8px 6px 28px;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: ${({ theme }) => (theme as Theme).spacing.xs}
+    ${({ theme }) => (theme as Theme).spacing.sm}
+    ${({ theme }) => (theme as Theme).spacing.xs} 28px;
+  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  border-radius: ${({ theme }) => (theme as Theme).borderRadius.sm};
+  font-size: ${({ theme }) => (theme as Theme).typography.fontSize.xs};
   outline: none;
-  
+  transition: border-color ${({ theme }) => (theme as Theme).transitions.fast};
+
   &:focus {
-    border-color: #2563eb;
+    border-color: ${({ theme }) => (theme as Theme).colors.primary};
   }
-`
+`;
 
 export const SearchIconWrapper = styled.div`
   position: absolute;
-  left: 16px;
+  left: ${({ theme }) => (theme as Theme).spacing.md};
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
-`
+  color: ${({ theme }) => (theme as Theme).colors.textSecondary};
+`;
 
 // Provider groups
 export const ProviderGroup = styled.div`
   padding: 0;
-`
+`;
 
 export const ProviderHeader = styled.div`
-  padding: 8px 12px;
-  font-weight: 500;
-  color: #6b7280;
-  background-color: #f9fafb;
+  padding: ${({ theme }) => (theme as Theme).spacing.sm}
+    ${({ theme }) => (theme as Theme).spacing.sm};
+  font-weight: ${({ theme }) => (theme as Theme).typography.fontWeight.medium};
+  color: ${({ theme }) => (theme as Theme).colors.textSecondary};
+  background-color: ${({ theme }) =>
+    (theme as Theme).colors.backgroundSecondary};
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-`
+`;
 
 // Model options
 export const ModelOption = styled.div<{ $selected: boolean }>`
-  padding: 8px 12px;
+  padding: ${({ theme }) => (theme as Theme).spacing.sm}
+    ${({ theme }) => (theme as Theme).spacing.sm};
   cursor: pointer;
-  
+  transition: background-color
+    ${({ theme }) => (theme as Theme).transitions.fast};
+
   ${(props) =>
     props.$selected &&
     `
-    background-color: #e5e7eb;
-    font-weight: 500;
+    background-color: ${(props.theme as Theme).colors.highlight};
+    font-weight: ${(props.theme as Theme).typography.fontWeight.medium};
   `}
-  
+
   &:hover {
-    background-color: ${(props) => (props.$selected ? "#e5e7eb" : "#f3f4f6")};
+    background-color: ${(props) =>
+      props.$selected
+        ? (props.theme as Theme).colors.highlight
+        : (props.theme as Theme).colors.backgroundSecondary};
   }
-`
+`;
 
 export const ModelOptionContent = styled.div`
   display: flex;
-  align-items: center;
+  color: ${({ theme }) => (theme as Theme).colors.text};
   justify-content: space-between;
+  text-align: left;
   width: 100%;
-`
+`;
 
 export const NoResults = styled.div`
-  padding: 12px;
+  padding: ${({ theme }) => (theme as Theme).spacing.sm};
   text-align: center;
-  color: #6b7280;
+  color: ${({ theme }) => (theme as Theme).colors.textSecondary};
   font-style: italic;
-`
+`;

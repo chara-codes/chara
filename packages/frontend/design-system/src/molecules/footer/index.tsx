@@ -153,11 +153,15 @@ const Footer: React.FC = () => {
                     >
                       <ModelOptionContent>
                         <span>{modelOption.name}</span>
-                        <SourceBadge
-                          $sourceType={getModelSourceType(modelOption.provider)}
-                        >
-                          {modelOption.provider}
-                        </SourceBadge>
+                        <span>
+                          <SourceBadge
+                            $sourceType={getModelSourceType(
+                              modelOption.provider,
+                            )}
+                          >
+                            {modelOption.provider}
+                          </SourceBadge>
+                        </span>
                       </ModelOptionContent>
                     </ModelOption>
                   ))}

@@ -22,6 +22,20 @@ export interface Theme {
     warning: string;
     info: string;
     highlight: string;
+    sourceBadge: {
+      unified: {
+        background: string;
+        text: string;
+      };
+      native: {
+        background: string;
+        text: string;
+      };
+      local: {
+        background: string;
+        text: string;
+      };
+    };
   };
   spacing: {
     xs: string;
@@ -106,6 +120,20 @@ export const theme: Theme = {
     warning: "#f59e0b",
     info: "#3b82f6",
     highlight: "#f3f4f6",
+    sourceBadge: {
+      unified: {
+        background: "#e0e7ff",
+        text: "#5b21b6",
+      },
+      native: {
+        background: "#dbeafe",
+        text: "#1d4ed8",
+      },
+      local: {
+        background: "#dcfce7",
+        text: "#166534",
+      },
+    },
   },
   spacing: {
     xs: "4px",
