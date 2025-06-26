@@ -1,7 +1,6 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import mkcert from "vite-plugin-mkcert";
 import { defineConfig } from "vitest/config";
 
 /// <reference types="vitest" />
@@ -17,7 +16,6 @@ export default defineConfig({
       jsxRuntime: "automatic",
     }),
     tailwindcss(),
-    mkcert(),
   ],
   resolve: {
     alias: {
