@@ -1,36 +1,45 @@
 "use client";
 
-import type React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import type { ContextItem } from "@chara/core";
+import type { Theme } from "../../theme/theme";
 
 export interface ContextPreviewProps {
   item: ContextItem;
 }
 
-const PreviewContent = styled.div`
-  margin-top: 8px;
-  padding-top: 8px;
+const PreviewContent = styled.div<{ theme: Theme }>`
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  padding-top: ${({ theme }) => theme.spacing.sm};
 `;
 
-const ImagePreview = styled.img`
+const ImagePreview = styled.img<{ theme: Theme }>`
   max-width: 100%;
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   object-fit: cover;
 `;
 
-const TextPreview = styled.div`
+const TextPreview = styled.div<{ theme: Theme }>`
   font-family: monospace;
-  font-size: 11px;
-  background: #374151;
-  padding: 6px 8px;
-  border-radius: 4px;
-  color: #d1d5db;
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  background: ${({ theme }) => theme.colors.secondaryActive};
+  padding: ${({ theme }) => `6px ${theme.spacing.sm}`};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  color: ${({ theme }) => theme.colors.textSecondary};
   word-break: break-word;
   white-space: pre-wrap;
-  line-height: 1.3;
+  line-height: ${({ theme }) => theme.typography.lineHeight.tight};
   max-height: 60px;
   overflow: hidden;
+`;
+
+const ErrorText = styled.div<{ theme: Theme }>`
+  font-size: 10px;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-style: italic;
+  text-align: center;
+  padding: ${({ theme }) => `${theme.spacing.lg} ${theme.spacing.sm}`};
 `;
 
 const ContextPreview: React.FC<ContextPreviewProps> = ({ item }) => {
@@ -68,17 +77,10 @@ const ContextPreview: React.FC<ContextPreviewProps> = ({ item }) => {
     return preview.length > 30 ? `${preview.substring(0, 30)}...` : preview;
   };
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const target = e.target as HTMLImageElement;
-    target.style.display = "none";
-    const errorText = document.createElement("div");
-    errorText.textContent = "Preview unavailable";
-    errorText.style.fontSize = "10px";
-    errorText.style.color = "#9ca3af";
-    errorText.style.fontStyle = "italic";
-    errorText.style.textAlign = "center";
-    errorText.style.padding = "20px 10px";
-    target.parentNode?.appendChild(errorText);
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageError = () => {
+    setImageError(true);
   };
 
   const isImageType = mimeType?.startsWith("image/");
@@ -97,6 +99,8 @@ const ContextPreview: React.FC<ContextPreviewProps> = ({ item }) => {
       {isImageType ? (
         isSvgType ? (
           <TextPreview>{formatSvgContent(item.data as string)}</TextPreview>
+        ) : imageError ? (
+          <ErrorText>Preview unavailable</ErrorText>
         ) : (
           <ImagePreview
             src={`data:${mimeType};base64,${item.data}`}
