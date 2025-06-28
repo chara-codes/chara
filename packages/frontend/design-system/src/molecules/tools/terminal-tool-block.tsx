@@ -355,9 +355,6 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
         <CommandSection>
           <CommandPrompt>
             <span>$</span>
-            {workingDirectory && (
-              <WorkingDirectory>{workingDirectory}</WorkingDirectory>
-            )}
             <CommandText>{command}</CommandText>
           </CommandPrompt>
         </CommandSection>
