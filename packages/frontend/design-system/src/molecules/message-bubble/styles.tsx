@@ -9,7 +9,7 @@ export const BubbleContainer = styled.div<{ isUser: boolean }>`
   width: 100%;
 `;
 
-export const Bubble = styled.div<{ isUser: boolean }>`
+export const Bubble = styled.div<{ $isUser: boolean }>`
   position: relative;
   max-width: 100%;
   width: 100%;
@@ -18,12 +18,12 @@ export const Bubble = styled.div<{ isUser: boolean }>`
   font-size: 14px;
   line-height: 1.5;
   color: #1f2937;
-  background-color: ${(props) => (props.isUser ? "#ffffff" : "#f3f4f6")};
+  background-color: ${(props) => (props.$isUser ? "#ffffff" : "#f3f4f6")};
   box-shadow: ${(props) =>
-    props.isUser
+    props.$isUser
       ? "0 2px 4px rgba(0, 0, 0, 0.05)"
       : "0 1px 2px rgba(0, 0, 0, 0.05)"};
-  border: ${(props) => (props.isUser ? "1px solid #e5e7eb" : "none")};
+  border: ${(props) => (props.$isUser ? "1px solid #e5e7eb" : "none")};
 `;
 
 export const DeleteButton = styled.button`
@@ -133,7 +133,7 @@ export const MessageContent = styled.div`
     white-space: pre;
     font-size: 14px;
     line-height: 1.45;
-    
+
     /* Custom scrollbar for code blocks */
     &::-webkit-scrollbar {
       height: 8px;
@@ -412,7 +412,8 @@ export const ThinkingLabel = styled.div`
   }
 
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
     }
@@ -521,13 +522,17 @@ export const ChevronIconSVG = ({ isExpanded }: { isExpanded: boolean }) => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    aria-label={isExpanded ? "Collapse thinking section" : "Expand thinking section"}
+    aria-label={
+      isExpanded ? "Collapse thinking section" : "Expand thinking section"
+    }
     style={{
       transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
       transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     }}
   >
-    <title>{isExpanded ? "Collapse thinking section" : "Expand thinking section"}</title>
+    <title>
+      {isExpanded ? "Collapse thinking section" : "Expand thinking section"}
+    </title>
     <polyline points="6,9 12,15 18,9" />
   </svg>
 );

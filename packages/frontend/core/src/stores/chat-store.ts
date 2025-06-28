@@ -351,7 +351,7 @@ export const useChatStore = create<ChatState>()(
                       content: existingToolCall
                         ? msg.content // Don't append if updating existing
                         : (msg.content || "") +
-                          `[${incomingToolCall.id},${incomingToolCall.name}]`,
+                          `[toolCall:${incomingToolCall.id},${incomingToolCall.name}]`,
                     };
                   });
                 },

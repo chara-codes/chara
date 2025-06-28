@@ -6,9 +6,8 @@ import ReactMarkdown from "react-markdown"; // Import ReactMarkdown
 import remarkGfm from "remark-gfm"; // Import remark-gfm for GitHub Flavored Markdown
 import rehypeHighlight from "rehype-highlight"; // Import rehype-highlight for syntax highlighting
 import "highlight.js/styles/github.css"; // Import highlight.js CSS theme for syntax highlighting
-import CommandTerminal from "../command-terminal";
-import FileDiffComponent from "../file-diff";
-import FileChangesList from "../file-changes-list";
+import ToolCallComponent from "./tool-call-component";
+
 import type { MessageContent as MessageContentType } from "@chara/core";
 
 import type { MessageBubbleProps } from "./types";
@@ -18,10 +17,7 @@ import {
   TextIcon,
   DocumentationIcon,
   TerminalIcon,
-  FilesIcon,
-  CommandsIcon,
   TrashIcon,
-  ToolIcon,
 } from "./icons";
 import {
   BubbleContainer,
@@ -32,13 +28,6 @@ import {
   ContextItemComponent,
   ContextLabel,
   ContextItemWrapper,
-  InstructionSection,
-  InstructionHeader,
-  InstructionList,
-  InstructionItem,
-  TabsContainer,
-  Tab,
-  TabContent,
   DeleteButton,
   // Styled components for inline context details
   ContextDetailsPanel,
@@ -56,21 +45,9 @@ import {
   ThinkingContent,
   ThinkingIcon,
   ChevronIconSVG,
-  // Tool call styled components
-  ToolCallsContainer,
-  ToolCallItem,
-  ToolCallName,
-  ToolCallStatus,
-  ToolCallArguments,
-  ToolCallArgumentsLabel,
-  ToolCallArgumentsContent,
-  ToolCallResult,
-  ToolCallResultLabel,
-  ToolCallResultContent,
-  ToolCallItemHeader,
 } from "./styles";
 import { getPreviewContent } from "./utils";
-import { cleanThinkingTags, type ToolResult } from "@chara/core";
+import { cleanThinkingTags } from "@chara/core";
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
 
 // Helper function to get the main message content (first text part)
@@ -90,6 +67,10 @@ const getMainMessageContent = (
 const renderMainMessageContent = (
   content: string | MessageContentType[],
   isUser = false,
+  toolCalls?: Map<
+    string,
+    { name?: string; status?: string; arguments?: unknown; result?: unknown }
+  >,
 ) => {
   const mainContent = getMainMessageContent(content);
 
@@ -97,13 +78,83 @@ const renderMainMessageContent = (
     return mainContent; // Render user content as plain text
   }
 
-  // Render AI content as Markdown with syntax highlighting, cleaned of thinking tags
+  // Clean thinking tags from content
+  const cleanedContent = cleanThinkingTags(mainContent);
+
+  // Process tool call backticks
+  if (toolCalls && toolCalls.size > 0) {
+    // Split content by tool call patterns and render accordingly
+    const toolCallPattern = /\[toolCall:([^,]+),([^\]]+)\]/g;
+    const parts = [];
+    let lastIndex = 0;
+
+    const matches = [...cleanedContent.matchAll(toolCallPattern)];
+
+    for (const match of matches) {
+      // Add text before the tool call
+      if (match.index > lastIndex) {
+        const textPart = cleanedContent.slice(lastIndex, match.index);
+        if (textPart.trim()) {
+          parts.push(
+            <ReactMarkdown
+              key={`text-${lastIndex}`}
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+            >
+              {textPart}
+            </ReactMarkdown>,
+          );
+        }
+      }
+
+      // Add tool call component
+      const toolCallId = match[1];
+      const toolCallType = match[2];
+      const toolCall = toolCalls.get(toolCallId);
+
+      if (toolCall) {
+        parts.push(
+          <ToolCallComponent
+            key={`toolcall-${toolCallId}`}
+            toolCall={toolCall}
+            toolCallId={toolCallId}
+            toolCallType={toolCallType}
+          />,
+        );
+      }
+
+      lastIndex = (match.index || 0) + match[0].length;
+    }
+
+    // Add remaining text after the last tool call
+    if (lastIndex < cleanedContent.length) {
+      const remainingText = cleanedContent.slice(lastIndex);
+      if (remainingText.trim()) {
+        parts.push(
+          <ReactMarkdown
+            key={`text-${lastIndex}`}
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeHighlight]}
+          >
+            {remainingText}
+          </ReactMarkdown>,
+        );
+      }
+    }
+
+    // If we found tool calls, return the processed parts
+    if (parts.length > 0) {
+      return <>{parts}</>;
+    }
+  }
+
+  // Render AI content as Markdown with syntax highlighting if no tool calls found
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       rehypePlugins={[rehypeHighlight]}
     >
-      {cleanThinkingTags(mainContent)}
+      {cleanedContent}
     </ReactMarkdown>
   );
 };
@@ -130,8 +181,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const thinkingContentRef = useRef<HTMLDivElement>(null);
 
   const hasContext = contextItems && contextItems.length > 0;
-  const hasToolCalls =
-    toolCalls !== undefined && Array.from(toolCalls?.values()).length > 0;
   const hasThinkingContent = !isUser && (thinkingContent || isThinking);
 
   // Auto-expand when thinking starts, auto-collapse when thinking ends
@@ -204,36 +253,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   const handleThinkingToggle = useCallback(() => {
     setIsThinkingExpanded((prev) => !prev);
-  }, []);
-
-  const formatToolCallResult = useCallback((result: ToolResult | unknown) => {
-    console.log("formatToolCallResult: received result", result);
-
-    if (!result) return "No result";
-
-    const resultObj = result as Record<string, unknown>;
-
-    // Handle error case
-    if (typeof result === "object" && result !== null && "error" in result) {
-      console.log("formatToolCallResult: using error", resultObj.error);
-      return String(resultObj.error);
-    }
-
-    // Handle content case
-    if (typeof result === "object" && result !== null && "content" in result) {
-      console.log("formatToolCallResult: using content", resultObj.content);
-      return String(resultObj.content);
-    }
-
-    // Handle data case
-    if (typeof result === "object" && result !== null && "data" in result) {
-      console.log("formatToolCallResult: using data", resultObj.data);
-      return JSON.stringify(resultObj.data, null, 2);
-    }
-
-    // Handle direct result object
-    console.log("formatToolCallResult: using direct result", result);
-    return JSON.stringify(result, null, 2);
   }, []);
 
   const getIcon = (type: string) => {
@@ -356,7 +375,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
 
         <MessageContent>
-          {renderMainMessageContent(content, isUser)}
+          {renderMainMessageContent(content, isUser, toolCalls)}
         </MessageContent>
 
         {hasContext && (
