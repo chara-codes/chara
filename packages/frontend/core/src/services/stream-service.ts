@@ -2,7 +2,6 @@ import type { LanguageModelV1FinishReason } from "@ai-sdk/provider";
 import { parseDataStreamPart } from "@ai-sdk/ui-utils";
 import type { ChatMode, Message } from "../types";
 import { THINKING_TAG_REGEX } from "../utils";
-import MessageSegmentBuilder from "./message-segment-builder";
 
 export interface EditOperation {
   type: "insert" | "replace";
@@ -34,7 +33,6 @@ export interface StreamCallbacks {
       completionTokens: number;
     };
   }) => void;
-  onSegmentUpdate?: (segments: any[]) => void;
 }
 
 export interface StreamRequestPayload {
@@ -106,8 +104,6 @@ export async function processChatStream(
       }
     >();
 
-    const segmentBuilder = new MessageSegmentBuilder();
-
     while (true) {
       const { done, value } = await reader.read();
       if (done || signal.aborted) {
@@ -144,9 +140,8 @@ export async function processChatStream(
                   textToProcess = text.slice(0, partialMatch.index);
                 }
 
-                while (
-                  (match = thinkingTagRegex.exec(textToProcess)) !== null
-                ) {
+                match = thinkingTagRegex.exec(textToProcess);
+                while (match !== null) {
                   if (match.index > currentIndex) {
                     const beforeTag = textToProcess.slice(
                       currentIndex,
@@ -178,6 +173,7 @@ export async function processChatStream(
                     isThinking = false;
                   }
                   currentIndex = match.index + match[0].length;
+                  match = thinkingTagRegex.exec(textToProcess);
                 }
 
                 if (currentIndex < textToProcess.length) {
@@ -195,10 +191,7 @@ export async function processChatStream(
               processTextWithThinkingTags(textDelta);
 
               if (!isThinking) {
-                segmentBuilder.addTextDelta(textDelta);
-                if (callbacks.onSegmentUpdate) {
-                  callbacks.onSegmentUpdate(segmentBuilder.getSegments());
-                }
+                // Text delta handling without segments
               }
               break;
             }
@@ -214,10 +207,7 @@ export async function processChatStream(
                 timestamp: new Date().toISOString(),
               });
 
-              segmentBuilder.beginToolCall(toolCallId, toolName);
-              if (callbacks.onSegmentUpdate) {
-                callbacks.onSegmentUpdate(segmentBuilder.getSegments());
-              }
+              // Tool call started
               break;
             }
 
@@ -246,14 +236,6 @@ export async function processChatStream(
                     pending.arguments,
                     pending.argsText,
                   );
-                }
-
-                segmentBuilder.updateToolCallArgs(
-                  toolCallId,
-                  pending.arguments || {},
-                );
-                if (callbacks.onSegmentUpdate) {
-                  callbacks.onSegmentUpdate(segmentBuilder.getSegments());
                 }
               }
               break;
@@ -286,14 +268,6 @@ export async function processChatStream(
                     ...args,
                     edits: processedEdits,
                   };
-                }
-
-                segmentBuilder.updateToolCallArgs(
-                  toolCallId,
-                  pending.arguments || {},
-                );
-                if (callbacks.onSegmentUpdate) {
-                  callbacks.onSegmentUpdate(segmentBuilder.getSegments());
                 }
               }
               break;
@@ -341,10 +315,6 @@ export async function processChatStream(
                 };
                 callbacks.onToolCall(toolCall);
 
-                segmentBuilder.completeToolCall(toolCallId, result);
-                if (callbacks.onSegmentUpdate) {
-                  callbacks.onSegmentUpdate(segmentBuilder.getSegments());
-                }
                 pendingToolCalls.delete(toolCallId);
               }
               break;
@@ -379,10 +349,6 @@ export async function processChatStream(
                   }
                   pending.status = "error";
                   pending.result = { error: errorMessage };
-                  segmentBuilder.errorToolCall(toolCallId, errorMessage);
-                  if (callbacks.onSegmentUpdate) {
-                    callbacks.onSegmentUpdate(segmentBuilder.getSegments());
-                  }
                   errorHandled = true;
                   break;
                 }
@@ -409,10 +375,6 @@ export async function processChatStream(
 
             case "finish_message": {
               console.log("Stream Service: Stream done", parsedPart.value);
-              const finalSegments = segmentBuilder.finalize();
-              if (callbacks.onSegmentUpdate) {
-                callbacks.onSegmentUpdate(finalSegments);
-              }
               if (callbacks.onCompletion) {
                 callbacks.onCompletion(parsedPart.value);
               }
@@ -421,10 +383,6 @@ export async function processChatStream(
 
             case "finish_step": {
               console.log("Stream Service: Stream completed", parsedPart.value);
-              const finalSegments = segmentBuilder.finalize();
-              if (callbacks.onSegmentUpdate) {
-                callbacks.onSegmentUpdate(finalSegments);
-              }
               if (callbacks.onCompletion) {
                 // Adapt the type if necessary, or assume it's compatible
                 callbacks.onCompletion(parsedPart.value);
@@ -452,11 +410,6 @@ export async function processChatStream(
         }
       }
       if (signal.aborted) break;
-    }
-
-    const finalSegmentsClose = segmentBuilder.finalize();
-    if (callbacks.onSegmentUpdate) {
-      callbacks.onSegmentUpdate(finalSegmentsClose);
     }
 
     if (callbacks.onStreamClose) {

@@ -208,7 +208,6 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
             isThinking={message.isThinking}
             contextItems={message.contextItems}
             toolCalls={message.toolCalls}
-            segments={message.segments}
             onDeleteMessage={onDeleteMessage}
           />
         ))}

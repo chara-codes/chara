@@ -10,7 +10,7 @@ import CommandTerminal from "../command-terminal";
 import FileDiffComponent from "../file-diff";
 import FileChangesList from "../file-changes-list";
 import type { MessageContent as MessageContentType } from "@chara/core";
-import { InlineMessageContent } from "./inline-message-content";
+
 import type { MessageBubbleProps } from "./types";
 import {
   FileIcon,
@@ -117,7 +117,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   isThinking,
   contextItems,
   toolCalls,
-  segments,
   onDeleteMessage,
 }) => {
   const [expandedContextId, setExpandedContextId] = useState<string | null>(
@@ -357,13 +356,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
 
         <MessageContent>
-          {segments && segments.length > 0 ? (
-            // Render message with inline tool calls
-            <InlineMessageContent segments={segments} isUser={isUser} />
-          ) : (
-            // Render only the main message content
-            renderMainMessageContent(content, isUser)
-          )}
+          {renderMainMessageContent(content, isUser)}
         </MessageContent>
 
         {hasContext && (

@@ -9,11 +9,7 @@ export interface MessageBubbleProps {
   isThinking?: boolean;
   contextItems?: ContextItem[];
   toolCalls?: ToolCall[];
-  segments?: Array<{
-    type: "text" | "tool-call";
-    content: string;
-    toolCall?: ToolCall;
-  }>;
+
   onKeepAllDiffs?: () => void;
   onRevertAllDiffs?: () => void;
   onKeepDiff?: (diffId: string) => void;

@@ -17,7 +17,6 @@ import {
   type StreamRequestPayload,
   type StreamCallbacks,
 } from "../services"; // Import the new service
-import { MessageSegmentBuilder } from "../services/message-segment-builder";
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [
@@ -283,9 +282,6 @@ export const useChatStore = create<ChatState>()(
             // context_items: contextItems.map(item => ({ name: item.name, type: item.type, data: item.data })),
           };
 
-          // Create segment builder for inline tool calls
-          const segmentBuilder = new MessageSegmentBuilder();
-
           const updateAIMessageInStore = (
             updater: (currentAIMsg: Message) => Partial<Message>,
           ) => {
@@ -399,18 +395,7 @@ export const useChatStore = create<ChatState>()(
                   set({ isThinking: false });
                   // Final state update handled in finally block of sendMessage
                 },
-                onSegmentUpdate: (segments) => {
-                  updateAIMessageInStore(() => ({
-                    segments: segments as Message["segments"],
-                  }));
-                },
                 onCompletion: (data) => {
-                  // Finalize segments when stream completes
-                  const finalSegments = segmentBuilder.finalize();
-                  updateAIMessageInStore(() => ({
-                    segments: finalSegments as Message["segments"],
-                  }));
-
                   console.log("Chat Store: Stream completed", data);
                   // Handle completion with usage statistics
                   // data contains: finishReason, usage (promptTokens, completionTokens), isContinued
