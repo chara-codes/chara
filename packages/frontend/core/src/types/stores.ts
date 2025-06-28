@@ -1,8 +1,23 @@
 export interface MessageContent {
-  type: "text" | "file";
+  type: "text" | "file" | "image";
   text?: string;
   data?: string; // base64 encoded file data
   mimeType?: string;
+}
+
+export interface StreamToolCall {
+  id: string;
+  type: "function";
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+export interface StreamMessage {
+  role: "user" | "system" | "assistant";
+  content: string | MessageContent[];
+  tool_calls?: StreamToolCall[];
 }
 
 export interface Message {
@@ -11,10 +26,9 @@ export interface Message {
   isUser: boolean;
   timestamp?: string;
   contextItems?: ContextItem[]; // Add context items to messages
-  diffStatuses?: { id: string; status: "pending" | "kept" | "reverted" }[]; // Add diff statuses
   thinkingContent?: string; // Store thinking content separately
   isThinking?: boolean; // Track if message is currently in thinking mode
-  toolCalls?: ToolCall[]; // Add tool calls
+  toolCalls?: Map<string, ToolCall>; // Add tool calls as Map with toolCall.id as key
 }
 
 export interface Chat {

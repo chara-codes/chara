@@ -164,12 +164,6 @@ export const useChatStore = create<ChatState>()(
                       mimeType: item.mimeType,
                     } as any;
                   }
-                  if (item.isBinary)
-                    return {
-                      type: "file" as const,
-                      data: item.data,
-                      mimeType: item.mimeType,
-                    };
                 }
                 return {
                   type: "text" as const,
@@ -268,14 +262,16 @@ export const useChatStore = create<ChatState>()(
                 ? m.content
                 : [{ type: "text", text: m.content }],
               // Include tool calls in message history
-              tool_calls: m.toolCalls?.map((tc) => ({
-                id: tc.id,
-                type: "function",
-                function: {
-                  name: tc.name,
-                  arguments: JSON.stringify(tc.arguments),
-                },
-              })),
+              tool_calls: m.toolCalls
+                ? Array.from(m.toolCalls.values()).map((tc) => ({
+                    id: tc.id,
+                    type: "function",
+                    function: {
+                      name: tc.name,
+                      arguments: JSON.stringify(tc.arguments),
+                    },
+                  }))
+                : undefined,
             })),
             model: model, // Send selected model
             // You might need to send contextItems, mode, etc., depending on agent's API
@@ -335,38 +331,27 @@ export const useChatStore = create<ChatState>()(
                   const incomingToolCall = toolCall as ToolCall;
 
                   updateAIMessageInStore((msg) => {
-                    const existingToolCalls = msg.toolCalls || [];
+                    const existingToolCalls =
+                      msg.toolCalls || new Map<string, ToolCall>();
                     console.log("Store: Current tool calls", existingToolCalls);
 
-                    // Find existing tool call with same ID
-                    const existingIndex = existingToolCalls.findIndex(
-                      (tc) => tc.id === incomingToolCall.id,
-                    );
-                    console.log(
-                      "Store: Existing tool call index",
-                      existingIndex,
+                    // Create new Map with updated tool call
+                    const updatedToolCalls = new Map(existingToolCalls);
+                    const existingToolCall = updatedToolCalls.get(
+                      incomingToolCall.id,
                     );
 
-                    if (existingIndex >= 0) {
-                      // Update existing tool call
-                      const updatedToolCalls = [...existingToolCalls];
-                      updatedToolCalls[existingIndex] = incomingToolCall;
-                      console.log(
-                        "Store: Updated tool calls",
-                        updatedToolCalls,
-                      );
-                      return {
-                        toolCalls: updatedToolCalls,
-                      };
-                    }
-                    // Add new tool call
-                    const newToolCalls = [
-                      ...existingToolCalls,
-                      incomingToolCall,
-                    ];
-                    console.log("Store: New tool calls", newToolCalls);
+                    console.log("Store: Existing tool call", existingToolCall);
+
+                    updatedToolCalls.set(incomingToolCall.id, incomingToolCall);
+                    console.log("Store: Updated tool calls", updatedToolCalls);
+
                     return {
-                      toolCalls: newToolCalls,
+                      toolCalls: updatedToolCalls,
+                      content: existingToolCall
+                        ? msg.content // Don't append if updating existing
+                        : (msg.content || "") +
+                          `[${incomingToolCall.id},${incomingToolCall.name}]`,
                     };
                   });
                 },
@@ -508,7 +493,7 @@ export const useChatStore = create<ChatState>()(
 
             // Use recent messages for context (last 5 messages max)
             const recentMessages = state.messages.slice(-5).map((message) => ({
-              role: message.isUser ? "user" : "assistant",
+              role: message.isUser ? ("user" as const) : ("assistant" as const),
               content: message.content,
             }));
 

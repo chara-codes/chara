@@ -1,6 +1,6 @@
 import type { LanguageModelV1FinishReason } from "@ai-sdk/provider";
 import { parseDataStreamPart } from "@ai-sdk/ui-utils";
-import type { ChatMode, Message } from "../types";
+import type { ChatMode, Message, StreamMessage } from "../types";
 import { THINKING_TAG_REGEX } from "../utils";
 
 export interface EditOperation {
@@ -36,7 +36,7 @@ export interface StreamCallbacks {
 }
 
 export interface StreamRequestPayload {
-  messages: Message[];
+  messages: StreamMessage[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context?: Record<string, any>;
   model?: string;

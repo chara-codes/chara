@@ -34,6 +34,7 @@ import { DatabaseIcon } from "./icons/database-icon";
 import { GlobeIcon } from "./icons/globe-icon";
 import { EditIcon } from "./icons/edit-icon";
 import { RefreshIcon } from "./icons/refresh-icon";
+import { ScrollDownIcon } from "./icons/scroll-down-icon";
 
 /**
  * Central export file for all icon components
@@ -80,6 +81,7 @@ export {
   GlobeIcon,
   EditIcon,
   RefreshIcon,
+  ScrollDownIcon,
 };
 
 // Export types
@@ -120,3 +122,4 @@ export type { DatabaseIconProps } from "./icons/database-icon";
 export type { GlobeIconProps } from "./icons/globe-icon";
 export type { EditIconProps } from "./icons/edit-icon";
 export type { RefreshIconProps } from "./icons/refresh-icon";
+export type { ScrollDownIconProps } from "./icons/scroll-down-icon";

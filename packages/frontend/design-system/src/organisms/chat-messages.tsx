@@ -5,6 +5,7 @@ import styled from "styled-components";
 import MessageBubble from "../molecules/message-bubble";
 import type { Message } from "@chara/core";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ScrollDownIcon } from "../atoms/icons";
 
 // Update the ChatMessagesProps interface to include handlers for the new buttons
 interface ChatMessagesProps {
@@ -215,22 +216,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 
       {showScrollButton && (
         <ScrollToBottomButton onClick={scrollToBottom} title="Scroll to bottom">
-          <svg
-            width="26"
-            height="26"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <title>Scroll Down</title>
-            <path
-              d="M7 10L12 15L17 10"
-              stroke-width="2"
-              stroke="#c0c0c0"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <ScrollDownIcon />
         </ScrollToBottomButton>
       )}
     </Container>
