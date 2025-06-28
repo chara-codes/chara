@@ -632,9 +632,8 @@ export const TabContent = styled.div`
 
 // Tool call styles
 export const ToolCallsContainer = styled.div`
-  margin-top: 12px;
-  margin-bottom: 12px;
-  padding: 8px 0;
+  margin: 0;
+  padding: 0;
   transition: all 0.3s ease;
 `;
 
