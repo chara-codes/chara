@@ -8,12 +8,7 @@ export interface MessageBubbleProps {
   thinkingContent?: string;
   isThinking?: boolean;
   contextItems?: ContextItem[];
-  toolCalls?: ToolCall[];
-
-  onKeepAllDiffs?: () => void;
-  onRevertAllDiffs?: () => void;
-  onKeepDiff?: (diffId: string) => void;
-  onRevertDiff?: (diffId: string) => void;
+  toolCalls?: Map<string, ToolCall>;
   onDeleteMessage?: (messageId: string) => void;
 }
 

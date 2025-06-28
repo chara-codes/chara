@@ -122,7 +122,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const [expandedContextId, setExpandedContextId] = useState<string | null>(
     null,
   );
-  const [activeTab, setActiveTab] = useState<"commands" | "diffs">("diffs");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
 
@@ -131,7 +130,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const thinkingContentRef = useRef<HTMLDivElement>(null);
 
   const hasContext = contextItems && contextItems.length > 0;
-  const hasToolCalls = toolCalls !== undefined && toolCalls.length > 0;
+  const hasToolCalls =
+    toolCalls !== undefined && Array.from(toolCalls?.values()).length > 0;
   const hasThinkingContent = !isUser && (thinkingContent || isThinking);
 
   // Auto-expand when thinking starts, auto-collapse when thinking ends

@@ -11,10 +11,6 @@ import { ScrollDownIcon } from "../atoms/icons";
 interface ChatMessagesProps {
   messages: Message[];
   isResponding?: boolean;
-  onKeepAllDiffs?: (messageId: string) => void;
-  onRevertAllDiffs?: (messageId: string) => void;
-  onKeepDiff?: (messageId: string, diffId: string) => void;
-  onRevertDiff?: (messageId: string, diffId: string) => void;
   onDeleteMessage?: (messageId: string) => void;
 }
 
@@ -99,10 +95,6 @@ const EmptyStateText = styled.p`
 // Update the ChatMessages component to pass the handlers to MessageBubble
 const ChatMessages: React.FC<ChatMessagesProps> = ({
   messages,
-  onKeepAllDiffs,
-  onRevertAllDiffs,
-  onKeepDiff,
-  onRevertDiff,
   onDeleteMessage,
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -115,7 +107,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
     if (!messagesContainerRef.current) return true;
     const { scrollTop, scrollHeight, clientHeight } =
       messagesContainerRef.current;
-    return scrollTop + clientHeight >= scrollHeight - 100;
+    return scrollTop + clientHeight >= scrollHeight - 150;
   }, []);
 
   // Scroll to bottom
@@ -162,27 +154,6 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
       return () => container.removeEventListener("scroll", handleScroll);
     }
   }, [handleScroll]);
-
-  // Add handlers for individual diff updates
-  const handleKeepDiff = useCallback(
-    (messageId: string, diffId: string) => {
-      console.log(`Keeping diff ${diffId} in message ${messageId}`);
-      if (onKeepDiff) {
-        onKeepDiff(messageId, diffId);
-      }
-    },
-    [onKeepDiff],
-  );
-
-  const handleRevertDiff = useCallback(
-    (messageId: string, diffId: string) => {
-      console.log(`Reverting diff ${diffId} in message ${messageId}`);
-      if (onRevertDiff) {
-        onRevertDiff(messageId, diffId);
-      }
-    },
-    [onRevertDiff],
-  );
 
   if (messages.length === 0) {
     return (
