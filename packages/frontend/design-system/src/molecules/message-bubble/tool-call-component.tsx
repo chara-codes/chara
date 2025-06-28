@@ -15,8 +15,8 @@ import {
   ToolCallResultContent,
   ToolCallItemHeader,
   ToolCallToggle,
-  ChevronIconSVG,
 } from "./styles";
+import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
 
 interface ToolCallData {
   name?: string;
@@ -54,7 +54,7 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
               {toolCall.status || "completed"}
             </ToolCallStatus>
             <ToolCallToggle onClick={handleToggle}>
-              <ChevronIconSVG isExpanded={isExpanded} />
+              <ExpandableChevronIcon isExpanded={isExpanded} />
             </ToolCallToggle>
           </div>
         </ToolCallItemHeader>

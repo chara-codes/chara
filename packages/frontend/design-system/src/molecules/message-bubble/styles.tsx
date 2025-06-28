@@ -1,61 +1,68 @@
 import styled from "styled-components";
+import { theme, Theme } from "../../theme";
+import { ThinkingIcon } from "../../atoms/icons/thinking-icon";
+import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
+import { CloseIcon } from "../../atoms/icons/close-icon";
 
 // Main container styles
-export const BubbleContainer = styled.div<{ isUser: boolean }>`
+export const BubbleContainer = styled.div<{ isUser: boolean; theme: Theme }>`
   display: flex;
   flex-direction: column;
   align-items: ${(props) => (props.isUser ? "flex-end" : "flex-start")};
-  margin-bottom: 16px;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
   width: 100%;
 `;
 
-export const Bubble = styled.div<{ $isUser: boolean }>`
+export const Bubble = styled.div<{ $isUser: boolean; theme: Theme }>`
   position: relative;
   max-width: 100%;
   width: 100%;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #1f2937;
-  background-color: ${(props) => (props.$isUser ? "#ffffff" : "#f3f4f6")};
-  box-shadow: ${(props) =>
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  line-height: ${({ theme }) => theme.typography.lineHeight.normal};
+  color: ${({ theme }) => theme.colors.text};
+  background-color: ${(props) =>
     props.$isUser
-      ? "0 2px 4px rgba(0, 0, 0, 0.05)"
-      : "0 1px 2px rgba(0, 0, 0, 0.05)"};
-  border: ${(props) => (props.$isUser ? "1px solid #e5e7eb" : "none")};
+      ? props.theme.colors.background
+      : props.theme.colors.backgroundSecondary};
+  box-shadow: ${(props) =>
+    props.$isUser ? props.theme.shadows.sm : "0 1px 2px rgba(0, 0, 0, 0.05)"};
+  border: ${(props) =>
+    props.$isUser ? `1px solid ${props.theme.colors.border}` : "none"};
 `;
 
-export const DeleteButton = styled.button`
+export const DeleteButton = styled.button<{ theme: Theme }>`
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: ${({ theme }) => theme.spacing.sm};
+  right: ${({ theme }) => theme.spacing.sm};
   width: 24px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   background: transparent;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #9ca3af;
+  color: ${({ theme }) => theme.colors.textSecondary};
   opacity: 0.6;
-  transition: all 0.2s ease;
+  transition: all ${({ theme }) => theme.transitions.fast} ease;
 
   &:hover {
-    background-color: #f3f4f6;
-    color: #ef4444;
+    background-color: ${({ theme }) => theme.colors.highlight};
+    color: ${({ theme }) => theme.colors.error};
     opacity: 1;
   }
 
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+    box-shadow: ${({ theme }) => theme.shadows.focus}
+      ${({ theme }) => theme.colors.errorLight};
   }
 `;
 
-export const MessageContent = styled.div`
+export const MessageContent = styled.div<{ theme: Theme }>`
   white-space: pre-wrap; /* Preserves line breaks for plain text and Markdown <pre> tags */
   word-break: break-word;
   margin-right: 24px; /* To avoid overlapping with delete button if present */
@@ -82,7 +89,7 @@ export const MessageContent = styled.div`
   }
   h3 {
     font-size: 1.15em;
-    font-weight: 600;
+    font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
   }
 
   p {
@@ -101,10 +108,10 @@ export const MessageContent = styled.div`
   }
 
   a {
-    color: #3b82f6; /* Example blue link color */
+    color: ${({ theme }) => theme.colors.info};
     text-decoration: underline;
     &:hover {
-      color: #2563eb;
+      color: ${({ theme }) => theme.colors.primary};
     }
   }
 
@@ -113,41 +120,41 @@ export const MessageContent = styled.div`
     font-family:
       ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
-    background-color: #f6f8fa;
-    color: #d73a49;
+    background-color: ${({ theme }) => theme.colors.highlight};
+    color: ${({ theme }) => theme.colors.error};
     padding: 0.2em 0.4em;
-    font-size: 0.875em;
-    border-radius: 4px;
+    font-size: ${({ theme }) => theme.typography.fontSize.xs};
+    border-radius: ${({ theme }) => theme.borderRadius.sm};
     white-space: pre-wrap;
-    border: 1px solid #e1e4e8;
+    border: 1px solid ${({ theme }) => theme.colors.border};
   }
 
   /* Code block container styling */
   pre {
-    background-color: #f6f8fa !important; /* Light background to match github theme */
-    border: 1px solid #e1e4e8;
-    border-radius: 6px;
-    padding: 16px;
-    margin: 12px 0;
+    background-color: ${({ theme }) => theme.colors.highlight} !important;
+    border: 1px solid ${({ theme }) => theme.colors.border};
+    border-radius: ${({ theme }) => theme.borderRadius.md};
+    padding: ${({ theme }) => theme.spacing.md};
+    margin: ${({ theme }) => theme.spacing.sm} 0;
     overflow-x: auto;
     white-space: pre;
-    font-size: 14px;
+    font-size: ${({ theme }) => theme.typography.fontSize.sm};
     line-height: 1.45;
 
     /* Custom scrollbar for code blocks */
     &::-webkit-scrollbar {
-      height: 8px;
+      height: ${({ theme }) => theme.spacing.sm};
     }
     &::-webkit-scrollbar-track {
-      background: #f1f3f4;
-      border-radius: 4px;
+      background: ${({ theme }) => theme.colors.backgroundSecondary};
+      border-radius: ${({ theme }) => theme.borderRadius.sm};
     }
     &::-webkit-scrollbar-thumb {
-      background: #c1c8cd;
-      border-radius: 4px;
+      background: ${({ theme }) => theme.colors.border};
+      border-radius: ${({ theme }) => theme.borderRadius.sm};
     }
     &::-webkit-scrollbar-thumb:hover {
-      background: #a8b0b8;
+      background: ${({ theme }) => theme.colors.borderHover};
     }
   }
 
@@ -167,17 +174,17 @@ export const MessageContent = styled.div`
 
   /* Highlight.js specific overrides */
   .hljs {
-    background: #f6f8fa !important;
+    background: ${({ theme }) => theme.colors.highlight} !important;
     padding: 0 !important;
   }
 
   blockquote {
-    border-left: 4px solid #d1d5db;
+    border-left: 4px solid ${({ theme }) => theme.colors.border};
     padding-left: 1em;
     margin-left: 0;
     margin-right: 0;
     margin-bottom: 0.8em;
-    color: #4b5563;
+    color: ${({ theme }) => theme.colors.textSecondary};
     font-style: italic;
     white-space: normal;
   }
@@ -190,39 +197,41 @@ export const MessageContent = styled.div`
   }
   th,
   td {
-    border: 1px solid #d1d5db;
+    border: 1px solid ${({ theme }) => theme.colors.border};
     padding: 0.5em 0.75em;
     text-align: left;
   }
   th {
-    background-color: #f3f4f6;
-    font-weight: 600;
+    background-color: ${({ theme }) => theme.colors.highlight};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.semibold};
   }
   thead {
-    border-bottom: 2px solid #c7c9cc;
+    border-bottom: 2px solid ${({ theme }) => theme.colors.borderHover};
   }
 `;
 
-export const Time = styled.div`
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 4px;
+export const Time = styled.div<{ theme: Theme }>`
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin-top: ${({ theme }) => theme.spacing.xs};
 `;
 
-export const ContextContainer = styled.div<{ isUser: boolean }>`
+export const ContextContainer = styled.div<{ isUser: boolean; theme: Theme }>`
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid ${(props) => (props.isUser ? "#e5e7eb" : "#e2e4e9")};
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  padding-top: ${({ theme }) => theme.spacing.sm};
+  border-top: 1px solid
+    ${(props) =>
+      props.isUser ? props.theme.colors.border : props.theme.colors.border};
   position: relative;
 `;
 
-export const ContextLabel = styled.div<{ isUser: boolean }>`
-  font-size: 12px;
-  font-weight: 500;
-  color: #6b7280;
+export const ContextLabel = styled.div<{ isUser: boolean; theme: Theme }>`
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  color: ${({ theme }) => theme.colors.textSecondary};
   margin-right: 6px;
   display: flex;
   align-items: center;
@@ -232,35 +241,44 @@ export const ContextItemWrapper = styled.div`
   position: relative;
 `;
 
-export const ContextItemComponent = styled.div<{ isUser: boolean }>`
+export const ContextItemComponent = styled.div<{
+  isUser: boolean;
+  theme: Theme;
+}>`
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background-color: ${(props) => (props.isUser ? "#f9fafb" : "#e5e7eb")};
-  color: #4b5563;
+  gap: ${({ theme }) => theme.spacing.xs};
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  padding: 2px ${({ theme }) => theme.spacing.sm};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  background-color: ${(props) =>
+    props.isUser
+      ? props.theme.colors.backgroundSecondary
+      : props.theme.colors.border};
+  color: ${({ theme }) => theme.colors.textSecondary};
   cursor: pointer;
 
   svg {
-    color: #6b7280;
+    color: ${({ theme }) => theme.colors.textSecondary};
   }
 
   &:hover {
-    background-color: ${(props) => (props.isUser ? "#f3f4f6" : "#d1d5db")};
+    background-color: ${(props) =>
+      props.isUser
+        ? props.theme.colors.highlight
+        : props.theme.colors.borderHover};
   }
 `;
 
 // New styled components for the inline context details
-export const ContextDetailsPanel = styled.div`
-  margin-top: 8px;
+export const ContextDetailsPanel = styled.div<{ theme: Theme }>`
+  margin-top: ${({ theme }) => theme.spacing.sm};
   width: 100%;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  background-color: ${({ theme }) => theme.colors.backgroundSecondary};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: ${({ theme }) => theme.shadows.sm};
   animation: slideDown 0.2s ease-out;
 
   @keyframes slideDown {
@@ -275,39 +293,39 @@ export const ContextDetailsPanel = styled.div`
   }
 `;
 
-export const ContextDetailHeader = styled.div`
+export const ContextDetailHeader = styled.div<{ theme: Theme }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
-  background-color: #f3f4f6;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 10px ${({ theme }) => theme.spacing.sm};
+  background-color: ${({ theme }) => theme.colors.highlight};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
-export const ContextDetailTitle = styled.div`
-  font-weight: 500;
-  font-size: 14px;
-  color: #1f2937;
+export const ContextDetailTitle = styled.div<{ theme: Theme }>`
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  font-size: ${({ theme }) => theme.typography.fontSize.sm};
+  color: ${({ theme }) => theme.colors.text};
   display: flex;
   align-items: center;
   gap: 6px;
 `;
 
-export const ContextDetailType = styled.span`
+export const ContextDetailType = styled.span<{ theme: Theme }>`
   font-size: 11px;
-  color: #6b7280;
+  color: ${({ theme }) => theme.colors.textSecondary};
   font-weight: normal;
-  background-color: #e5e7eb;
+  background-color: ${({ theme }) => theme.colors.border};
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   text-transform: capitalize;
 `;
 
-export const ContextDetailContent = styled.div`
-  padding: 12px;
+export const ContextDetailContent = styled.div<{ theme: Theme }>`
+  padding: ${({ theme }) => theme.spacing.sm};
   font-size: 13px;
-  line-height: 1.5;
-  color: #4b5563;
+  line-height: ${({ theme }) => theme.typography.lineHeight.normal};
+  color: ${({ theme }) => theme.colors.textSecondary};
   max-height: 300px;
   overflow-y: auto;
   white-space: pre-wrap;
@@ -316,98 +334,78 @@ export const ContextDetailContent = styled.div`
   code,
   pre {
     font-family: monospace;
-    background-color: #e5e7eb;
-    padding: 2px 4px;
-    border-radius: 4px;
-    font-size: 12px;
+    background-color: ${({ theme }) => theme.colors.border};
+    padding: 2px ${({ theme }) => theme.spacing.xs};
+    border-radius: ${({ theme }) => theme.borderRadius.sm};
+    font-size: ${({ theme }) => theme.typography.fontSize.xs};
   }
 
   pre {
-    padding: 8px;
+    padding: ${({ theme }) => theme.spacing.sm};
     overflow-x: auto;
-    margin: 8px 0;
+    margin: ${({ theme }) => theme.spacing.sm} 0;
   }
 
   strong {
-    color: #374151;
+    color: ${({ theme }) => theme.colors.text};
   }
 `;
 
-export const CloseButton = styled.button`
+export const CloseButton = styled.button<{ theme: Theme }>`
   background: none;
   border: none;
-  color: #6b7280;
+  color: ${({ theme }) => theme.colors.textSecondary};
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: ${({ theme }) => theme.spacing.xs};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   display: flex;
   align-items: center;
   justify-content: center;
 
   &:hover {
-    background-color: #e5e7eb;
-    color: #4b5563;
+    background-color: ${({ theme }) => theme.colors.border};
+    color: ${({ theme }) => theme.colors.text};
   }
 
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-  }
-`;
-
-export const CloseIcon = styled.svg.attrs({
-  width: "16",
-  height: "16",
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: "2",
-  strokeLinecap: "round",
-  strokeLinejoin: "round",
-})`
-  & > line:first-child {
-    x1: 18;
-    y1: 6;
-    x2: 6;
-    y2: 18;
-  }
-  & > line:last-child {
-    x1: 6;
-    y1: 6;
-    x2: 18;
-    y2: 18;
+    box-shadow: ${({ theme }) => theme.shadows.focus}
+      ${({ theme }) => theme.colors.primaryLight};
   }
 `;
 
 // Thinking section styles
-export const ThinkingContainer = styled.div<{ isExpanded: boolean }>`
-  margin-top: 12px;
-  margin-bottom: 12px;
-  padding: 8px 0;
-  transition: all 0.3s ease;
+export const ThinkingContainer = styled.div<{
+  isExpanded: boolean;
+  theme: Theme;
+}>`
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.sm} 0;
+  transition: all ${({ theme }) => theme.transitions.normal} ease;
 `;
 
-export const ThinkingHeader = styled.div`
+export const ThinkingHeader = styled.div<{ theme: Theme }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
   cursor: pointer;
   user-select: none;
-  padding: 4px 0;
-  transition: all 0.2s ease;
+  padding: ${({ theme }) => theme.spacing.xs} 0;
+  transition: all ${({ theme }) => theme.transitions.fast} ease;
 `;
 
-export const ThinkingLabel = styled.div`
+export const ThinkingLabel = styled.div<{ theme: Theme }>`
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  font-weight: 400;
-  color: #6b7280;
+  font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
+  color: ${({ theme }) => theme.colors.textSecondary};
 
   svg {
-    color: #9ca3af;
+    color: ${({ theme }) => theme.colors.textSecondary};
     animation: pulse 2s ease-in-out infinite;
   }
 
@@ -424,19 +422,19 @@ export const ThinkingLabel = styled.div`
   }
 `;
 
-export const ThinkingToggle = styled.button`
+export const ThinkingToggle = styled.button<{ theme: Theme }>`
   background: none;
   border: none;
-  color: #9ca3af;
+  color: ${({ theme }) => theme.colors.textSecondary};
   cursor: pointer;
   padding: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all ${({ theme }) => theme.transitions.fast} ease;
 
   &:hover {
-    color: #6b7280;
+    color: ${({ theme }) => theme.colors.text};
   }
 
   &:focus {
@@ -444,27 +442,31 @@ export const ThinkingToggle = styled.button`
   }
 
   svg {
-    transition: transform 0.3s ease;
+    transition: transform ${({ theme }) => theme.transitions.normal} ease;
   }
 `;
 
-export const ThinkingContent = styled.div<{ isExpanded: boolean }>`
-  font-size: 12px;
-  line-height: 1.5;
-  color: #6b7280;
+export const ThinkingContent = styled.div<{
+  isExpanded: boolean;
+  theme: Theme;
+}>`
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  line-height: ${({ theme }) => theme.typography.lineHeight.normal};
+  color: ${({ theme }) => theme.colors.textSecondary};
   white-space: pre-wrap;
   word-break: break-word;
   max-height: ${(props) => (props.isExpanded ? "400px" : "0")};
   overflow-y: ${(props) => (props.isExpanded ? "auto" : "hidden")};
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all ${({ theme }) => theme.transitions.normal}
+    cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  padding: 8px 0;
-  margin-top: 4px;
+  padding: ${({ theme }) => theme.spacing.sm} 0;
+  margin-top: ${({ theme }) => theme.spacing.xs};
   scroll-behavior: smooth;
 
   /* Custom scrollbar styling */
   &::-webkit-scrollbar {
-    width: 4px;
+    width: ${({ theme }) => theme.spacing.xs};
   }
 
   &::-webkit-scrollbar-track {
@@ -472,16 +474,16 @@ export const ThinkingContent = styled.div<{ isExpanded: boolean }>`
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: ${({ theme }) => theme.colors.borderHover};
     border-radius: 2px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+    background: ${({ theme }) => theme.colors.textSecondary};
   }
 
   &:not(:last-child) {
-    margin-bottom: 8px;
+    margin-bottom: ${({ theme }) => theme.spacing.sm};
   }
 
   ${(props) =>
@@ -492,64 +494,22 @@ export const ThinkingContent = styled.div<{ isExpanded: boolean }>`
   `}
 `;
 
-export const ThinkingIcon = () => (
-  <svg
-    width="12"
-    height="12"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-label="Idea indicator"
-  >
-    <title>Idea indicator</title>
-    <path d="M9 21h6" />
-    <path d="M12 21v-3" />
-    <path d="M12 3a6 6 0 0 0-6 6c0 1.8.8 3.4 2 4.5V17h8v-3.5c1.2-1.1 2-2.7 2-4.5a6 6 0 0 0-6-6z" />
-    <path d="M8 17h8" />
-  </svg>
-);
+// Export the imported icons for backward compatibility
+export { ThinkingIcon, ExpandableChevronIcon as ChevronIconSVG, CloseIcon };
 
-export const ChevronIconSVG = ({ isExpanded }: { isExpanded: boolean }) => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-label={
-      isExpanded ? "Collapse thinking section" : "Expand thinking section"
-    }
-    style={{
-      transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-      transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    }}
-  >
-    <title>
-      {isExpanded ? "Collapse thinking section" : "Expand thinking section"}
-    </title>
-    <polyline points="6,9 12,15 18,9" />
-  </svg>
-);
-
-export const ToolCallToggle = styled.button`
+export const ToolCallToggle = styled.button<{ theme: Theme }>`
   background: none;
   border: none;
-  color: #9ca3af;
+  color: ${({ theme }) => theme.colors.textSecondary};
   cursor: pointer;
   padding: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all ${({ theme }) => theme.transitions.fast} ease;
 
   &:hover {
-    color: #6b7280;
+    color: ${({ theme }) => theme.colors.text};
   }
 
   &:focus {
@@ -557,68 +517,72 @@ export const ToolCallToggle = styled.button`
   }
 
   svg {
-    transition: transform 0.3s ease;
+    transition: transform ${({ theme }) => theme.transitions.normal} ease;
   }
 `;
 
 // Instruction section styles
-export const InstructionSection = styled.div`
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
+export const InstructionSection = styled.div<{ theme: Theme }>`
+  margin-top: ${({ theme }) => theme.spacing.md};
+  padding-top: ${({ theme }) => theme.spacing.md};
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
 `;
 
-export const InstructionHeader = styled.div`
+export const InstructionHeader = styled.div<{ theme: Theme }>`
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  font-weight: 500;
-  color: #4b5563;
-  margin-bottom: 8px;
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
 
   svg {
-    color: #6b7280;
+    color: ${({ theme }) => theme.colors.textSecondary};
   }
 `;
 
-export const InstructionList = styled.div`
+export const InstructionList = styled.div<{ theme: Theme }>`
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: ${({ theme }) => theme.spacing.xs};
 `;
 
-export const InstructionItem = styled.div`
+export const InstructionItem = styled.div<{ theme: Theme }>`
   font-size: 13px;
-  color: #4b5563;
-  padding: 4px 8px;
-  background-color: #f9fafb;
-  border-radius: 4px;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
+  background-color: ${({ theme }) => theme.colors.backgroundSecondary};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   font-family: monospace;
 `;
 
-export const TabsContainer = styled.div`
+export const TabsContainer = styled.div<{ theme: Theme }>`
   display: flex;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 12px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
 `;
 
-export const Tab = styled.button<{ $active: boolean }>`
+export const Tab = styled.button<{ $active: boolean; theme: Theme }>`
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.sm};
   font-size: 13px;
   background: none;
   border: none;
   border-bottom: 2px solid
-    ${(props) => (props.$active ? "#6366f1" : "transparent")};
-  color: ${(props) => (props.$active ? "#4f46e5" : "#6b7280")};
+    ${(props) => (props.$active ? props.theme.colors.primary : "transparent")};
+  color: ${(props) =>
+    props.$active
+      ? props.theme.colors.primary
+      : props.theme.colors.textSecondary};
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all ${({ theme }) => theme.transitions.fast} ease;
 
   &:hover {
-    color: ${(props) => (props.$active ? "#4f46e5" : "#4b5563")};
+    color: ${(props) =>
+      props.$active ? props.theme.colors.primary : props.theme.colors.text};
   }
 
   svg {
@@ -626,69 +590,69 @@ export const Tab = styled.button<{ $active: boolean }>`
   }
 `;
 
-export const TabContent = styled.div`
-  padding: 4px 0;
+export const TabContent = styled.div<{ theme: Theme }>`
+  padding: ${({ theme }) => theme.spacing.xs} 0;
 `;
 
 // Tool call styles
-export const ToolCallsContainer = styled.div`
+export const ToolCallsContainer = styled.div<{ theme: Theme }>`
   margin: 0;
   padding: 0;
-  transition: all 0.3s ease;
+  transition: all ${({ theme }) => theme.transitions.normal} ease;
 `;
 
-export const ToolCallItem = styled.div<{ isExpanded: boolean }>`
-  margin-bottom: 8px;
-  transition: all 0.3s ease;
+export const ToolCallItem = styled.div<{ isExpanded: boolean; theme: Theme }>`
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+  transition: all ${({ theme }) => theme.transitions.normal} ease;
 `;
 
-export const ToolCallHeader = styled.div`
+export const ToolCallHeader = styled.div<{ theme: Theme }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
   cursor: pointer;
   user-select: none;
-  padding: 4px 0;
-  transition: all 0.2s ease;
+  padding: ${({ theme }) => theme.spacing.xs} 0;
+  transition: all ${({ theme }) => theme.transitions.fast} ease;
 `;
 
-export const ToolCallItemHeader = styled.div`
+export const ToolCallItemHeader = styled.div<{ theme: Theme }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
   padding: 2px 0;
 `;
 
-export const ToolCallName = styled.div`
+export const ToolCallName = styled.div<{ theme: Theme }>`
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  font-weight: 400;
-  color: #6b7280;
+  font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
+  color: ${({ theme }) => theme.colors.textSecondary};
   font-family: monospace;
 `;
 
-export const ToolCallStatus = styled.span<{ status: string }>`
+export const ToolCallStatus = styled.span<{ status: string; theme: Theme }>`
   font-size: 11px;
-  font-weight: 500;
+  font-weight: ${({ theme }) => theme.typography.fontWeight.medium};
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
   text-transform: capitalize;
   color: ${(props) => {
     switch (props.status) {
       case "success":
-        return "#059669";
+        return props.theme.colors.success;
       case "error":
-        return "#dc2626";
+        return props.theme.colors.error;
       case "in-progress":
-        return "#d97706";
+        return props.theme.colors.warning;
       case "pending":
-        return "#6b7280";
+        return props.theme.colors.textSecondary;
       default:
-        return "#6b7280";
+        return props.theme.colors.textSecondary;
     }
   }};
   background-color: ${(props) => {
@@ -696,27 +660,32 @@ export const ToolCallStatus = styled.span<{ status: string }>`
       case "success":
         return "#d1fae5";
       case "error":
-        return "#fee2e2";
+        return props.theme.colors.errorLight;
       case "in-progress":
         return "#fef3c7";
       case "pending":
-        return "#f3f4f6";
+        return props.theme.colors.highlight;
       default:
-        return "#f3f4f6";
+        return props.theme.colors.highlight;
     }
   }};
 `;
 
-export const ToolCallContent = styled.div<{ isExpanded: boolean }>`
+export const ToolCallContent = styled.div<{
+  isExpanded: boolean;
+  theme: Theme;
+}>`
   max-height: ${(props) => (props.isExpanded ? "400px" : "0")};
   overflow-y: ${(props) => (props.isExpanded ? "auto" : "hidden")};
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: ${(props) => (props.isExpanded ? "8px 0" : "0")};
-  margin-top: 4px;
+  transition: all ${({ theme }) => theme.transitions.normal}
+    cubic-bezier(0.4, 0, 0.2, 1);
+  padding: ${(props) =>
+    props.isExpanded ? `${props.theme.spacing.sm} 0` : "0"};
+  margin-top: ${({ theme }) => theme.spacing.xs};
 
   /* Custom scrollbar styling */
   &::-webkit-scrollbar {
-    width: 4px;
+    width: ${({ theme }) => theme.spacing.xs};
   }
 
   &::-webkit-scrollbar-track {
@@ -724,62 +693,68 @@ export const ToolCallContent = styled.div<{ isExpanded: boolean }>`
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: ${({ theme }) => theme.colors.borderHover};
     border-radius: 2px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+    background: ${({ theme }) => theme.colors.textSecondary};
   }
 `;
 
-export const ToolCallArguments = styled.div`
-  margin-bottom: 8px;
+export const ToolCallArguments = styled.div<{ theme: Theme }>`
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
 `;
 
-export const ToolCallArgumentsLabel = styled.div`
+export const ToolCallArgumentsLabel = styled.div<{ theme: Theme }>`
   font-size: 11px;
-  font-weight: 400;
-  color: #9ca3af;
+  font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
+  color: ${({ theme }) => theme.colors.textSecondary};
   margin-bottom: 2px;
   text-transform: uppercase;
   letter-spacing: 0.025em;
 `;
 
-export const ToolCallArgumentsContent = styled.pre`
-  font-size: 12px;
+export const ToolCallArgumentsContent = styled.pre<{ theme: Theme }>`
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
   font-family: monospace;
-  color: #6b7280;
+  color: ${({ theme }) => theme.colors.textSecondary};
   background-color: transparent;
   border: none;
-  border-radius: 4px;
-  padding: 4px 0;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  padding: ${({ theme }) => theme.spacing.xs} 0;
   margin: 0;
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-word;
 `;
 
-export const ToolCallResult = styled.div`
-  margin-top: 8px;
+export const ToolCallResult = styled.div<{ theme: Theme }>`
+  margin-top: ${({ theme }) => theme.spacing.sm};
 `;
 
-export const ToolCallResultLabel = styled.div`
+export const ToolCallResultLabel = styled.div<{ theme: Theme }>`
   font-size: 11px;
-  font-weight: 400;
-  color: #9ca3af;
+  font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
+  color: ${({ theme }) => theme.colors.textSecondary};
   margin-bottom: 2px;
   text-transform: uppercase;
   letter-spacing: 0.025em;
 `;
 
-export const ToolCallResultContent = styled.div<{ hasError?: boolean }>`
-  font-size: 12px;
-  color: ${(props) => (props.hasError ? "#dc2626" : "#6b7280")};
+export const ToolCallResultContent = styled.div<{
+  hasError?: boolean;
+  theme: Theme;
+}>`
+  font-size: ${({ theme }) => theme.typography.fontSize.xs};
+  color: ${(props) =>
+    props.hasError
+      ? props.theme.colors.error
+      : props.theme.colors.textSecondary};
   background-color: transparent;
   border: none;
-  border-radius: 4px;
-  padding: 4px 0;
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  padding: ${({ theme }) => theme.spacing.xs} 0;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: ${(props) => (props.hasError ? "inherit" : "monospace")};

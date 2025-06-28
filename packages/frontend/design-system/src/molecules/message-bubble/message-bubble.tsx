@@ -36,16 +36,16 @@ import {
   ContextDetailType,
   ContextDetailContent,
   CloseButton,
-  CloseIcon,
   // Thinking section styled components
   ThinkingContainer,
   ThinkingHeader,
   ThinkingLabel,
   ThinkingToggle,
   ThinkingContent,
-  ThinkingIcon,
-  ChevronIconSVG,
 } from "./styles";
+import { ThinkingIcon } from "../../atoms/icons/thinking-icon";
+import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
+import { CloseIcon } from "../../atoms/icons/close-icon";
 import { getPreviewContent } from "./utils";
 import { cleanThinkingTags } from "@chara/core";
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
@@ -360,7 +360,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 {isThinking ? "Thinking..." : "Thought process"}
               </ThinkingLabel>
               <ThinkingToggle onClick={handleThinkingToggle}>
-                <ChevronIconSVG isExpanded={isThinkingExpanded} />
+                <ExpandableChevronIcon
+                  isExpanded={isThinkingExpanded}
+                  ariaLabel={
+                    isThinkingExpanded
+                      ? "Collapse thinking section"
+                      : "Expand thinking section"
+                  }
+                />
               </ThinkingToggle>
             </ThinkingHeader>
             {(thinkingContent || isThinking) && (
@@ -420,7 +427,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     onClick={handleCloseContextDetails}
                     title="Close"
                   >
-                    <CloseIcon />
+                    <CloseIcon size={16} />
                   </CloseButton>
                 </ContextDetailHeader>
                 <ContextDetailContent>
