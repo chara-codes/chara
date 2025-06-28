@@ -75,26 +75,29 @@ import { cleanThinkingTags } from "../../../utils/thinking-tags";
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
 
 // Helper function to get the main message content (first text part)
-const getMainMessageContent = (content: string | MessageContentType[]): string => {
-  if (typeof content === 'string') {
+const getMainMessageContent = (
+  content: string | MessageContentType[],
+): string => {
+  if (typeof content === "string") {
     return content;
   }
-  
+
   // Find the first text part
-  const firstTextPart = content.find(part => part.type === 'text');
-  return firstTextPart?.text || '';
+  const firstTextPart = content.find((part) => part.type === "text");
+  return firstTextPart?.text || "";
 };
 
-
-
 // Helper function to render main message content
-const renderMainMessageContent = (content: string | MessageContentType[], isUser = false) => {
+const renderMainMessageContent = (
+  content: string | MessageContentType[],
+  isUser = false,
+) => {
   const mainContent = getMainMessageContent(content);
-  
+
   if (isUser) {
     return mainContent; // Render user content as plain text
   }
-  
+
   // Render AI content as Markdown with syntax highlighting, cleaned of thinking tags
   return (
     <ReactMarkdown
@@ -105,8 +108,6 @@ const renderMainMessageContent = (content: string | MessageContentType[], isUser
     </ReactMarkdown>
   );
 };
-
-
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   id,
@@ -151,7 +152,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const hasToolCalls = toolCalls !== undefined && toolCalls.length > 0;
   const hasGenerationDetails = hasExecutedCommands || hasFileDiffs;
   const hasThinkingContent = !isUser && (thinkingContent || isThinking);
-
 
   useEffect(() => {
     if (activeTab === "diffs" && !hasFileDiffs) {

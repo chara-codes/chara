@@ -18,7 +18,7 @@ import {
   DocumentationIcon,
   TerminalIcon,
   TrashIcon,
-} from "./icons";
+} from "../../atoms/icons";
 import {
   BubbleContainer,
   Bubble,

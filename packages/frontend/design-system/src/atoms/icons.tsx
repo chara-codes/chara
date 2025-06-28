@@ -35,6 +35,13 @@ import { GlobeIcon } from "./icons/globe-icon";
 import { EditIcon } from "./icons/edit-icon";
 import { RefreshIcon } from "./icons/refresh-icon";
 import { ScrollDownIcon } from "./icons/scroll-down-icon";
+import { FilesIcon } from "./icons/files-icon";
+import { RunnerIcon } from "./icons/runner-icon";
+import { ExaminationIcon } from "./icons/examination-icon";
+import { MoveIcon } from "./icons/move-icon";
+import { ToolIcon } from "./icons/tool-icon";
+import { ThinkingIcon } from "./icons/thinking-icon";
+import { BrainIcon } from "./icons/brain-icon";
 
 /**
  * Central export file for all icon components
@@ -46,7 +53,6 @@ import { ScrollDownIcon } from "./icons/scroll-down-icon";
 export {
   CloseIcon,
   ChatIcon,
-  ChartIcon,
   SettingsIcon,
   HistoryIcon,
   MinimizeIcon,
@@ -59,6 +65,7 @@ export {
   TrashIcon,
   PlusIcon,
   ClipIcon,
+  ChartIcon,
   PointerIcon,
   SendIcon,
   StopIcon,
@@ -74,7 +81,6 @@ export {
   ChevronDownIcon,
   BeautifyIcon,
   UndoIcon,
-  // New icons
   LayersIcon,
   ServerIcon,
   DatabaseIcon,
@@ -82,7 +88,17 @@ export {
   EditIcon,
   RefreshIcon,
   ScrollDownIcon,
+  BrainIcon,
+  ThinkingIcon,
+  FilesIcon,
+  RunnerIcon,
+  ExaminationIcon,
+  MoveIcon,
+  ToolIcon,
 };
+
+// Export tool icon mapper
+export { getToolIcon } from "./icons/tool-icon-mapper";
 
 // Export types
 export type { CloseIconProps } from "./icons/close-icon";
@@ -123,3 +139,10 @@ export type { GlobeIconProps } from "./icons/globe-icon";
 export type { EditIconProps } from "./icons/edit-icon";
 export type { RefreshIconProps } from "./icons/refresh-icon";
 export type { ScrollDownIconProps } from "./icons/scroll-down-icon";
+export type { FilesIconProps } from "./icons/files-icon";
+export type { RunnerIconProps } from "./icons/runner-icon";
+export type { ExaminationIconProps } from "./icons/examination-icon";
+export type { MoveIconProps } from "./icons/move-icon";
+export type { ToolIconProps } from "./icons/tool-icon";
+export type { ThinkingIconProps } from "./icons/thinking-icon";
+export type { ToolIconProps as ToolIconMapperProps } from "./icons/tool-icon-mapper";

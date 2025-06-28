@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import type React from "react";
-import { ToolIcon } from "./icons";
+import { getToolIcon } from "../../atoms/icons";
 import {
   ToolCallsContainer,
   ToolCallName,
@@ -46,7 +46,7 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
       <div>
         <ToolCallItemHeader>
           <ToolCallName>
-            <ToolIcon />
+            {getToolIcon(toolCallType)}
             {toolCall.name || toolCallType}
           </ToolCallName>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
