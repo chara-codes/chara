@@ -6,8 +6,21 @@ import styled, { keyframes } from "styled-components";
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 import { TerminalIcon } from "../../atoms/icons";
 
+interface ToolCallData {
+  name?: string;
+  status?: string;
+  arguments?: unknown;
+  result?: unknown;
+}
+
 interface TerminalToolBlockProps {
-  command: string;
+  // New props for direct tool call data
+  toolCall?: ToolCallData;
+  id?: string;
+  toolCallType?: string;
+
+  // Original props for direct usage
+  command?: string;
   workingDirectory?: string;
   output?: string;
   status?: "pending" | "in-progress" | "success" | "error";
@@ -239,28 +252,101 @@ const LoadingIndicator = styled.span<{ isGenerating: boolean }>`
 
 const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
   ({
-    command,
-    workingDirectory,
-    output = "",
-    status = "pending",
+    // New props
+    toolCall,
+    id: _id,
+    toolCallType: _toolCallType, // Currently unused but kept for future extensibility
+
+    // Original props
+    command: directCommand,
+    workingDirectory: directWorkingDirectory,
+    output: directOutput = "",
+    status: directStatus = "pending",
     isGenerating = false,
     isVisible = true,
     streamingSpeed = 20,
     maxHeight = 300,
-    toolCallError,
-    toolCallId,
+    toolCallError: directToolCallError,
+    // directToolCallId is currently unused but kept for compatibility
   }) => {
-    // Validate props
-    if (!command || typeof command !== "string") {
-      console.warn(
-        "TerminalToolBlock: command prop is required and must be a string",
-      );
-      return null;
-    }
+    // Helper function to extract terminal arguments
+    const getTerminalArgs = () => {
+      if (!toolCall) return { command: "", workingDirectory: undefined };
 
+      if (
+        typeof toolCall.arguments === "object" &&
+        toolCall.arguments !== null
+      ) {
+        const args = toolCall.arguments as Record<string, unknown>;
+        return {
+          command: String(args.command || ""),
+          workingDirectory: args.cd
+            ? String(args.cd)
+            : args.workingDirectory
+              ? String(args.workingDirectory)
+              : undefined,
+        };
+      }
+      return { command: "", workingDirectory: undefined };
+    };
+
+    // Helper function to get terminal output
+    const getTerminalOutput = () => {
+      if (!toolCall) return "";
+
+      if (typeof toolCall.result === "string") {
+        return toolCall.result;
+      }
+      if (typeof toolCall.result === "object" && toolCall.result !== null) {
+        const result = toolCall.result as Record<string, unknown>;
+        return (
+          String(result.output || "") ||
+          String(result.stdout || "") ||
+          JSON.stringify(toolCall.result, null, 2)
+        );
+      }
+      return "";
+    };
+
+    // Helper function to get terminal status
+    const getTerminalStatus = ():
+      | "pending"
+      | "in-progress"
+      | "success"
+      | "error" => {
+      if (!toolCall) return "pending";
+
+      const status = toolCall.status || "success";
+      if (status === "completed" || status === "success") return "success";
+      if (status === "error" || status === "failed") return "error";
+      if (status === "running" || status === "in-progress")
+        return "in-progress";
+      return "pending";
+    };
+
+    // Determine actual values to use (toolCall data takes precedence)
+    const terminalArgs = toolCall
+      ? getTerminalArgs()
+      : {
+          command: directCommand || "",
+          workingDirectory: directWorkingDirectory,
+        };
+    const command = terminalArgs.command;
+    const output = toolCall ? getTerminalOutput() : directOutput;
+    const status = toolCall ? getTerminalStatus() : directStatus;
+    const toolCallError =
+      toolCall && status === "error" ? output : directToolCallError;
+
+    // Initialize hooks first (always called)
     const [displayedOutput, setDisplayedOutput] = useState("");
     const [currentIndex, setCurrentIndex] = useState(0);
     const [viewMode, setViewMode] = useState<ViewMode>("collapsed");
+
+    // Validate props and provide fallbacks instead of early return
+    const validCommand =
+      command && typeof command === "string"
+        ? command
+        : "echo 'Invalid command'";
 
     useEffect(() => {
       if (isGenerating && currentIndex < output.length) {
@@ -355,7 +441,7 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
         <CommandSection>
           <CommandPrompt>
             <span>$</span>
-            <CommandText>{command}</CommandText>
+            <CommandText>{validCommand}</CommandText>
           </CommandPrompt>
         </CommandSection>
 
@@ -421,6 +507,11 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
   (prevProps, nextProps) => {
     // Custom comparison to prevent unnecessary re-renders
     return (
+      // New props comparison
+      prevProps.toolCall === nextProps.toolCall &&
+      prevProps.id === nextProps.id &&
+      prevProps.toolCallType === nextProps.toolCallType &&
+      // Original props comparison
       prevProps.command === nextProps.command &&
       prevProps.workingDirectory === nextProps.workingDirectory &&
       prevProps.output === nextProps.output &&
@@ -429,8 +520,7 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
       prevProps.isVisible === nextProps.isVisible &&
       prevProps.streamingSpeed === nextProps.streamingSpeed &&
       prevProps.maxHeight === nextProps.maxHeight &&
-      prevProps.toolCallError === nextProps.toolCallError &&
-      prevProps.toolCallId === nextProps.toolCallId
+      prevProps.toolCallError === nextProps.toolCallError
     );
   },
 );
