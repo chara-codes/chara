@@ -199,6 +199,203 @@ function isImportantHiddenFile(name: string): boolean {
   return name === ".gitignore" || name === ".chara.json";
 }
 
+// Helper function to provide suggestions for invalid actions
+function getActionSuggestion(invalidAction: string): string {
+  const validActions = [
+    "list",
+    "tree",
+    "create",
+    "current",
+    "stats",
+    "find",
+    "info",
+    "env",
+  ];
+
+  // Common mappings for LLM mistakes
+  const actionMappings: Record<string, string> = {
+    grep: "find",
+    search: "find",
+    locate: "find",
+    ls: "list",
+    dir: "list",
+    mkdir: "create",
+    pwd: "current",
+    cwd: "current",
+    stat: "info",
+    info: "info",
+    details: "info",
+    metadata: "info",
+    structure: "tree",
+    recursive: "tree",
+    environment: "env",
+    config: "env",
+    statistics: "stats",
+    summary: "stats",
+  };
+
+  // Check for direct mapping
+  if (actionMappings[invalidAction.toLowerCase()]) {
+    return `Did you mean "${actionMappings[invalidAction.toLowerCase()]}"? Valid actions are: ${validActions.join(", ")}`;
+  }
+
+  // Find closest match by string similarity with safety checks
+  let bestMatch = validActions[0];
+  let bestScore = 0;
+
+  // Only calculate similarity if strings are reasonable length
+  if (invalidAction.length <= 100) {
+    for (const validAction of validActions) {
+      try {
+        const score = calculateSimilarity(
+          invalidAction.toLowerCase(),
+          validAction,
+        );
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = validAction;
+        }
+      } catch (error) {
+        // Skip similarity calculation if it fails
+        continue;
+      }
+    }
+  }
+
+  return `Invalid action "${invalidAction}". Did you mean "${bestMatch}"? Valid actions are: ${validActions.join(", ")}`;
+}
+
+// Simple string similarity calculation with safety checks
+function calculateSimilarity(str1: string, str2: string): number {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+
+  if (longer.length === 0) return 1.0;
+
+  // Safety check for string lengths
+  if (longer.length > 1000 || shorter.length > 1000) {
+    return 0.0;
+  }
+
+  try {
+    const editDistance = levenshteinDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+  } catch (error) {
+    // Return 0 similarity if calculation fails
+    return 0.0;
+  }
+}
+
+// Levenshtein distance calculation with safety checks
+function levenshteinDistance(str1: string, str2: string): number {
+  // Safety checks to prevent array overflow
+  if (str1.length > 1000 || str2.length > 1000) {
+    return Math.max(str1.length, str2.length);
+  }
+
+  if (str1.length === 0) return str2.length;
+  if (str2.length === 0) return str1.length;
+
+  const matrix = Array(str2.length + 1)
+    .fill(null)
+    .map(() => Array(str1.length + 1).fill(null));
+
+  for (let i = 0; i <= str1.length; i++) {
+    matrix[0][i] = i;
+  }
+
+  for (let j = 0; j <= str2.length; j++) {
+    matrix[j][0] = j;
+  }
+
+  for (let j = 1; j <= str2.length; j++) {
+    for (let i = 1; i <= str1.length; i++) {
+      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1,
+        matrix[j - 1][i] + 1,
+        matrix[j - 1][i - 1] + indicator,
+      );
+    }
+  }
+
+  return matrix[str2.length][str1.length];
+}
+
+// Helper function to preprocess patterns to prevent overflow
+function preprocessPattern(pattern: string): string {
+  // Handle patterns like *tic*toe* which can cause overflow
+  if (
+    pattern.includes("*") &&
+    !pattern.includes("|") &&
+    !pattern.startsWith("**")
+  ) {
+    const segments = pattern.split("*").filter((s) => s.length > 0);
+
+    // For simple patterns like *tic*, convert to recursive search
+    if (segments.length === 1) {
+      return `**/*${segments[0]}*`;
+    }
+
+    // If we have multiple segments with wildcards, convert to safer alternatives
+    if (segments.length > 1 && segments.length <= 3) {
+      // For moderate complexity, keep the original pattern but make it recursive
+      return `**/${pattern}`;
+    }
+
+    // For very complex patterns, use brace expansion
+    if (segments.length > 3 && segments.length <= 5) {
+      return `**/*{${segments.join(",")}}*`;
+    }
+
+    // For extremely complex patterns, just use the first segment
+    if (segments.length > 5) {
+      return `**/*${segments[0]}*`;
+    }
+  }
+
+  return pattern;
+}
+
+// Helper function to suggest better glob patterns
+function suggestGlobPattern(pattern: string): string {
+  // Common regex-to-glob conversions
+  const suggestions = [];
+
+  if (pattern.includes("|")) {
+    const parts = pattern.split("|").map((p) => p.trim());
+    if (parts.length <= 10) {
+      // Convert to brace expansion
+      const cleanParts = parts.map((p) => p.replace(/^\*|\*$/g, ""));
+      suggestions.push(`**/*{${cleanParts.join(",")}}*`);
+    }
+    suggestions.push("Use separate calls for each pattern");
+  }
+
+  if (pattern.includes("*") && pattern.includes("|")) {
+    suggestions.push("Try: **/*pattern* for each term separately");
+  }
+
+  if (!pattern.includes("**") && !pattern.includes("*")) {
+    suggestions.push(`Try: **/*${pattern}* to search recursively`);
+  }
+
+  // Special handling for complex wildcard patterns
+  if (pattern.includes("*")) {
+    const segments = pattern.split("*").filter((s) => s.length > 0);
+    if (segments.length > 1) {
+      suggestions.push(`Try: **/*{${segments.join(",")}}* (brace expansion)`);
+      suggestions.push(
+        `Or: ${segments.map((s) => `**/*${s}*`).join(" in separate searches")}`,
+      );
+    }
+  }
+
+  return suggestions.length > 0
+    ? suggestions.join(" OR ")
+    : "Use standard glob patterns like **/*.js, *.txt, or **/*name*";
+}
+
 export const fileSystem = tool({
   description: `Comprehensive file system management tool with multiple operations:
 
@@ -228,7 +425,7 @@ export const fileSystem = tool({
 - Project configuration analysis`,
 
   parameters: z.object({
-    action: FileSystemAction.describe("Operation to perform"),
+    action: z.string().describe("Operation to perform"),
 
     path: z
       .string()
@@ -290,6 +487,14 @@ export const fileSystem = tool({
       .describe(
         "Include project information from .chara.json in env operation",
       ),
+
+    returnErrorObjects: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe(
+        "Return structured error objects instead of throwing exceptions (for LLM usage)",
+      ),
   }),
 
   execute: async ({
@@ -304,88 +509,304 @@ export const fileSystem = tool({
     workingDir,
     includeSystem = true,
     includeProject = true,
+    returnErrorObjects = false,
   }) => {
-    const workingPath = path || process.cwd();
-
+    // Top-level safety wrapper to catch any overflow errors
     try {
-      switch (action) {
-        case "current":
-          return {
-            operation: "current",
-            path: process.cwd(),
-            absolutePath: resolve(process.cwd()),
-          };
+      const workingPath = path || process.cwd();
 
-        case "create":
-          if (!path) {
-            throw new Error("Path is required for create operation");
+      // Validate action and provide suggestions if invalid
+      const validActions = [
+        "list",
+        "tree",
+        "create",
+        "current",
+        "stats",
+        "find",
+        "info",
+        "env",
+      ];
+      if (!validActions.includes(action)) {
+        const errorResponse = {
+          error: true,
+          suggestion: getActionSuggestion(action),
+          validActions,
+          providedAction: action,
+          message:
+            "Invalid action provided. Please use one of the valid actions.",
+        };
+        if (returnErrorObjects) {
+          return errorResponse;
+        } else {
+          throw new Error(`Unknown action: ${action}`);
+        }
+      }
+
+      // Safety checks for potentially problematic operations
+      if (maxDepth && maxDepth > 10) {
+        const errorResponse = {
+          error: true,
+          suggestion: `maxDepth of ${maxDepth} is too large. Please use a value between 1-10 to prevent system resource issues.`,
+          message: "maxDepth too large",
+          providedMaxDepth: maxDepth,
+          recommendedMaxDepth: Math.min(maxDepth, 5),
+        };
+        if (returnErrorObjects) {
+          return errorResponse;
+        } else {
+          throw new Error(`maxDepth too large: ${maxDepth}`);
+        }
+      }
+
+      // Pre-validate patterns for find operations to avoid preprocessing issues
+      if (action === "find" && pattern) {
+        const wildcardCount = (pattern.match(/\*/g) || []).length;
+        const segments = pattern.split("*").filter((s) => s.length > 0);
+
+        // Allow simple patterns like *tic* or **/*tic* (up to 6 wildcards, 4 segments)
+        if (wildcardCount <= 6 && segments.length <= 4) {
+          // Pattern is safe, continue
+        } else if (wildcardCount > 15 || segments.length > 8) {
+          const errorResponse = {
+            error: true,
+            suggestion: `Pattern "${pattern}" is too complex (${wildcardCount} wildcards, ${segments.length} segments). Try "**/*${segments[0]}*" or use separate searches.`,
+            message: "Pattern too complex",
+            providedPattern: pattern,
+            simplifiedSuggestion: `**/*${segments[0]}*`,
+          };
+          if (returnErrorObjects) {
+            return errorResponse;
+          } else {
+            throw new Error(`Pattern too complex: ${pattern}`);
           }
-          await mkdir(path, { recursive: true });
-          return {
-            operation: "create",
-            path: path,
-            absolutePath: resolve(path),
-            message: `Successfully created directory: ${path}`,
+        }
+      }
+
+      try {
+        switch (action) {
+          case "current":
+            return {
+              operation: "current",
+              path: process.cwd(),
+              absolutePath: resolve(process.cwd()),
+            };
+
+          case "create":
+            if (!path) {
+              throw new Error("Path is required for create operation");
+            }
+            await mkdir(path, { recursive: true });
+            return {
+              operation: "create",
+              path: path,
+              absolutePath: resolve(path),
+              message: `Successfully created directory: ${path}`,
+            };
+
+          case "list":
+            return await listDirectory(
+              workingPath,
+              includeHidden,
+              includeSize,
+              respectGitignore,
+            );
+
+          case "tree":
+            return await getDirectoryTree(
+              workingPath,
+              maxDepth,
+              includeHidden,
+              includeSize,
+              respectGitignore,
+            );
+
+          case "stats":
+            return await getDirectoryStats(
+              workingPath,
+              includeHidden,
+              respectGitignore,
+            );
+
+          case "find":
+            if (!pattern) {
+              throw new Error("Pattern is required for find operation");
+            }
+            return await findInDirectory(
+              workingPath,
+              pattern,
+              excludePatterns,
+              includeHidden,
+              respectGitignore,
+            );
+
+          case "info":
+            if (!path) {
+              throw new Error("Path is required for info operation");
+            }
+            return await getFileInfo(path);
+
+          case "env":
+            return await getEnvironmentInfo(
+              workingDir,
+              includeSystem,
+              includeProject,
+            );
+
+          default:
+            return {
+              error: true,
+              suggestion: getActionSuggestion(action),
+              validActions: [
+                "list",
+                "tree",
+                "create",
+                "current",
+                "stats",
+                "find",
+                "info",
+                "env",
+              ],
+              providedAction: action,
+              message:
+                "Invalid action provided. Please use one of the valid actions.",
+            };
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
+        // Check if it's a parameter-related error and provide suggestions
+        if (errorMessage.includes("Pattern is required for find operation")) {
+          const errorResponse = {
+            error: true,
+            suggestion: `The "find" action requires a "pattern" parameter. Example: {"action": "find", "pattern": "**/*.js"}`,
+            message: "Missing required parameter for find operation",
+            requiredParams: {
+              action: "find",
+              pattern: "string (e.g., '**/*.js', '*.txt', '**/*keyword*')",
+            },
+            examplePatterns: [
+              "**/*.js - all JavaScript files",
+              "src/**/*.ts - TypeScript files in src",
+              "**/*test* - files containing 'test'",
+              "*.json - JSON files in current directory",
+            ],
           };
-
-        case "list":
-          return await listDirectory(
-            workingPath,
-            includeHidden,
-            includeSize,
-            respectGitignore,
-          );
-
-        case "tree":
-          return await getDirectoryTree(
-            workingPath,
-            maxDepth,
-            includeHidden,
-            includeSize,
-            respectGitignore,
-          );
-
-        case "stats":
-          return await getDirectoryStats(
-            workingPath,
-            includeHidden,
-            respectGitignore,
-          );
-
-        case "find":
-          if (!pattern) {
+          if (returnErrorObjects) {
+            return errorResponse;
+          } else {
             throw new Error("Pattern is required for find operation");
           }
-          return await findInDirectory(
-            workingPath,
-            pattern,
-            excludePatterns,
-            includeHidden,
-            respectGitignore,
-          );
+        }
 
-        case "info":
-          if (!path) {
-            throw new Error("Path is required for info operation");
+        if (errorMessage.includes("Path is required")) {
+          const errorResponse = {
+            error: true,
+            suggestion: `The "${action}" action requires a "path" parameter. Example: {"action": "${action}", "path": "/path/to/target"}`,
+            message: `Missing required parameter for ${action} operation`,
+            requiredParams: {
+              action,
+              path: "string (file or directory path)",
+            },
+          };
+          if (returnErrorObjects) {
+            return errorResponse;
+          } else {
+            throw new Error(`Path is required for ${action} operation`);
           }
-          return await getFileInfo(path);
+        }
 
-        case "env":
-          return await getEnvironmentInfo(
-            workingDir,
-            includeSystem,
-            includeProject,
+        // Handle other errors based on returnErrorObjects flag
+        if (returnErrorObjects) {
+          return {
+            error: true,
+            operation: action,
+            message: `File system operation '${action}' failed: ${errorMessage}`,
+            suggestion: "Check the operation parameters and try again",
+            providedParams: { action, path },
+          };
+        } else {
+          throw new Error(
+            `File system operation '${action}' failed: ${errorMessage}`,
           );
-
-        default:
-          throw new Error(`Unknown action: ${action}`);
+        }
       }
-    } catch (error) {
+    } catch (topLevelError) {
       const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `File system operation '${action}' failed: ${errorMessage}`,
-      );
+        topLevelError instanceof Error
+          ? topLevelError.message
+          : String(topLevelError);
+
+      // Catch any remaining array overflow or system resource errors
+      // Check for array overflow or memory issues
+      if (
+        errorMessage.includes("Array length") ||
+        errorMessage.includes("safe magnitude") ||
+        errorMessage.includes("RangeError") ||
+        errorMessage.includes("Maximum call stack") ||
+        errorMessage.includes("out of memory") ||
+        errorMessage.includes("ENOMEM")
+      ) {
+        const errorResponse = {
+          error: true,
+          operation: action,
+          message: `System resource limits exceeded during ${action} operation`,
+          suggestion:
+            "Try using smaller parameters (lower maxDepth, more specific paths, or simpler patterns)",
+          providedParams: { action, path, maxDepth, pattern },
+          tip: "Large directories or complex patterns can cause memory issues. Use more targeted operations.",
+          safetyRecommendations: [
+            "Use maxDepth of 1-3 for tree operations",
+            "Use specific subdirectories instead of root",
+            "Use simple patterns like '**/*.ext' for find operations",
+            "Break complex searches into multiple simpler ones",
+          ],
+          technicalError: errorMessage,
+        };
+        if (returnErrorObjects) {
+          return errorResponse;
+        } else {
+          throw new Error(
+            `System resource limits exceeded during ${action} operation`,
+          );
+        }
+      }
+
+      // For find operations with simple patterns, try a fallback approach
+      if (action === "find" && pattern && pattern.split("*").length <= 3) {
+        const errorResponse = {
+          error: true,
+          operation: action,
+          message: `Find operation failed with pattern "${pattern}"`,
+          suggestion: `Try using a simpler pattern like "**/*${pattern.replace(/\*/g, "")}*" or search in a specific subdirectory`,
+          providedParams: { action, path, pattern },
+          fallbackSuggestion: `**/*${pattern.replace(/\*/g, "")}*`,
+          tip: "Sometimes glob patterns can cause issues with specific directory structures",
+        };
+        if (returnErrorObjects) {
+          return errorResponse;
+        } else {
+          throw new Error(`Find operation failed with pattern "${pattern}"`);
+        }
+      }
+
+      // Generic error fallback
+      const errorResponse = {
+        error: true,
+        operation: action,
+        message: `Unexpected error during ${action} operation: ${errorMessage}`,
+        suggestion:
+          "Check the operation parameters and try again with simpler values",
+        providedParams: { action, path },
+        technicalError: errorMessage,
+      };
+      if (returnErrorObjects) {
+        return errorResponse;
+      } else {
+        throw new Error(
+          `Unexpected error during ${action} operation: ${errorMessage}`,
+        );
+      }
     }
   },
 });
@@ -396,82 +817,102 @@ async function listDirectory(
   includeSize: boolean,
   respectGitignore: boolean,
 ) {
-  const entries = await readdir(dirPath, { withFileTypes: true });
-  const gitignoreManager = respectGitignore
-    ? await createGitignoreManager(dirPath)
-    : null;
+  try {
+    const entries = await readdir(dirPath, { withFileTypes: true });
+    const gitignoreManager = respectGitignore
+      ? await createGitignoreManager(dirPath)
+      : null;
 
-  const items: Array<{
-    name: string;
-    type: "file" | "directory";
-    size?: number;
-    hidden: boolean;
-    ignored?: boolean;
-  }> = [];
+    const items: Array<{
+      name: string;
+      type: "file" | "directory";
+      size?: number;
+      hidden: boolean;
+      ignored?: boolean;
+    }> = [];
 
-  for (const entry of entries) {
-    const isHidden = entry.name.startsWith(".");
-    const isAlwaysIgnoredItem = isAlwaysIgnored(entry.name);
-
-    // Always skip certain directories
-    if (isAlwaysIgnoredItem) {
-      continue;
+    // Limit entries to prevent overflow
+    const limitedEntries = entries.slice(0, 2000);
+    if (entries.length > 2000) {
+      console.warn(
+        `Directory ${dirPath} has ${entries.length} entries, limiting to 2000`,
+      );
     }
 
-    // Skip hidden files if not requested
-    if (!includeHidden && isHidden && !isImportantHiddenFile(entry.name)) {
-      continue;
+    for (const entry of limitedEntries) {
+      const isHidden = entry.name.startsWith(".");
+      const isAlwaysIgnoredItem = isAlwaysIgnored(entry.name);
+
+      // Always skip certain directories
+      if (isAlwaysIgnoredItem) {
+        continue;
+      }
+
+      // Skip hidden files if not requested
+      if (!includeHidden && isHidden && !isImportantHiddenFile(entry.name)) {
+        continue;
+      }
+
+      // Check gitignore rules
+      const isIgnored =
+        gitignoreManager?.isIgnored(entry.name, dirPath, entry.isDirectory()) ||
+        false;
+      if (respectGitignore && isIgnored) {
+        continue;
+      }
+
+      const item: any = {
+        name: entry.name,
+        type: entry.isDirectory() ? "directory" : "file",
+        hidden: isHidden,
+      };
+
+      if (respectGitignore) {
+        item.ignored = isIgnored;
+      }
+
+      if (includeSize && entry.isFile()) {
+        try {
+          const stats = await stat(resolve(dirPath, entry.name));
+          item.size = stats.size;
+        } catch {
+          // Skip size if can't read stats
+        }
+      }
+
+      items.push(item);
     }
 
-    // Check gitignore rules
-    const isIgnored =
-      gitignoreManager?.isIgnored(entry.name, dirPath, entry.isDirectory()) ||
-      false;
-    if (respectGitignore && isIgnored) {
-      continue;
-    }
+    const formatted = items
+      .map((item) => {
+        const typeIndicator = item.type === "directory" ? "[DIR]" : "[FILE]";
+        const sizeInfo =
+          item.size !== undefined ? ` (${formatBytes(item.size)})` : "";
+        const hiddenIndicator = item.hidden ? " (hidden)" : "";
+        const ignoredIndicator = item.ignored ? " (ignored)" : "";
+        return `${typeIndicator} ${item.name}${sizeInfo}${hiddenIndicator}${ignoredIndicator}`;
+      })
+      .join("\n");
 
-    const item: any = {
-      name: entry.name,
-      type: entry.isDirectory() ? "directory" : "file",
-      hidden: isHidden,
+    const result = {
+      operation: "list",
+      path: dirPath,
+      count: items.length,
+      items,
+      respectGitignore,
+      formatted: formatted || "Directory is empty",
     };
 
-    if (respectGitignore) {
-      item.ignored = isIgnored;
+    // Add warning if we hit the limit
+    if (entries.length > 2000) {
+      result.warning = `Directory contains ${entries.length} entries, showing first 2000. Use 'find' action with patterns for more specific results.`;
     }
 
-    if (includeSize && entry.isFile()) {
-      try {
-        const stats = await stat(resolve(dirPath, entry.name));
-        item.size = stats.size;
-      } catch {
-        // Skip size if can't read stats
-      }
-    }
-
-    items.push(item);
+    return result;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to list directory: ${errorMessage}`);
   }
-
-  const formatted = items
-    .map((item) => {
-      const typeIndicator = item.type === "directory" ? "[DIR]" : "[FILE]";
-      const sizeInfo =
-        item.size !== undefined ? ` (${formatBytes(item.size)})` : "";
-      const hiddenIndicator = item.hidden ? " (hidden)" : "";
-      const ignoredIndicator = item.ignored ? " (ignored)" : "";
-      return `${typeIndicator} ${item.name}${sizeInfo}${hiddenIndicator}${ignoredIndicator}`;
-    })
-    .join("\n");
-
-  return {
-    operation: "list",
-    path: dirPath,
-    count: items.length,
-    items,
-    respectGitignore,
-    formatted: formatted || "Directory is empty",
-  };
 }
 
 async function getDirectoryTree(
@@ -482,91 +923,115 @@ async function getDirectoryTree(
   respectGitignore: boolean = true,
   currentDepth: number = 0,
 ): Promise<any> {
-  const gitignoreManager = respectGitignore
-    ? await createGitignoreManager(dirPath)
-    : null;
+  try {
+    const gitignoreManager = respectGitignore
+      ? await createGitignoreManager(dirPath)
+      : null;
 
-  async function buildTree(
-    currentPath: string,
-    depth: number = 0,
-  ): Promise<TreeEntry[]> {
-    if (maxDepth !== undefined && depth >= maxDepth) {
-      return [];
-    }
-
-    try {
-      const entries = await readdir(currentPath, { withFileTypes: true });
-      const result: TreeEntry[] = [];
-
-      for (const entry of entries) {
-        const isHidden = entry.name.startsWith(".");
-        const isAlwaysIgnoredItem = isAlwaysIgnored(entry.name);
-
-        // Always skip certain directories
-        if (isAlwaysIgnoredItem) {
-          continue;
-        }
-
-        // Skip hidden files if not requested
-        if (!includeHidden && isHidden && !isImportantHiddenFile(entry.name)) {
-          continue;
-        }
-
-        // Check gitignore rules
-        const entryPath = resolve(currentPath, entry.name);
-        const relativePath = relative(dirPath, entryPath);
-        const isIgnored =
-          gitignoreManager?.isIgnored(
-            relativePath,
-            dirPath,
-            entry.isDirectory(),
-          ) || false;
-
-        if (respectGitignore && isIgnored) {
-          continue;
-        }
-
-        const entryData: TreeEntry = {
-          name: entry.name,
-          type: entry.isDirectory() ? "directory" : "file",
-        };
-
-        if (includeSize && entry.isFile()) {
-          try {
-            const stats = await stat(entryPath);
-            entryData.size = stats.size;
-          } catch {
-            // Skip size if can't read stats
-          }
-        }
-
-        if (entry.isDirectory()) {
-          entryData.children = await buildTree(entryPath, depth + 1);
-        }
-
-        result.push(entryData);
+    async function buildTree(
+      currentPath: string,
+      depth: number = 0,
+    ): Promise<TreeEntry[]> {
+      if (maxDepth !== undefined && depth >= maxDepth) {
+        return [];
       }
 
-      return result;
-    } catch (error) {
-      throw new Error(
-        `Failed to read directory ${currentPath}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      try {
+        const entries = await readdir(currentPath, { withFileTypes: true });
+        const result: TreeEntry[] = [];
+
+        // Limit the number of entries to prevent overflow
+        const limitedEntries = entries.slice(0, 1000);
+        if (entries.length > 1000) {
+          console.warn(
+            `Directory ${currentPath} has ${entries.length} entries, limiting to 1000`,
+          );
+        }
+
+        for (const entry of limitedEntries) {
+          const isHidden = entry.name.startsWith(".");
+          const isAlwaysIgnoredItem = isAlwaysIgnored(entry.name);
+
+          // Always skip certain directories
+          if (isAlwaysIgnoredItem) {
+            continue;
+          }
+
+          // Skip hidden files if not requested
+          if (
+            !includeHidden &&
+            isHidden &&
+            !isImportantHiddenFile(entry.name)
+          ) {
+            continue;
+          }
+
+          // Check gitignore rules
+          const entryPath = resolve(currentPath, entry.name);
+          const relativePath = relative(dirPath, entryPath);
+          const isIgnored =
+            gitignoreManager?.isIgnored(
+              relativePath,
+              dirPath,
+              entry.isDirectory(),
+            ) || false;
+
+          if (respectGitignore && isIgnored) {
+            continue;
+          }
+
+          const entryData: TreeEntry = {
+            name: entry.name,
+            type: entry.isDirectory() ? "directory" : "file",
+          };
+
+          if (includeSize && entry.isFile()) {
+            try {
+              const stats = await stat(entryPath);
+              entryData.size = stats.size;
+            } catch {
+              // Skip size if can't read stats
+            }
+          }
+
+          if (entry.isDirectory()) {
+            try {
+              entryData.children = await buildTree(entryPath, depth + 1);
+            } catch {
+              // Skip subdirectory if it can't be read
+              entryData.children = [];
+            }
+          }
+
+          result.push(entryData);
+        }
+
+        return result;
+      } catch (error) {
+        // Return empty array instead of throwing
+        console.warn(
+          `Failed to read directory ${currentPath}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        return [];
+      }
     }
+
+    const tree = await buildTree(dirPath, currentDepth);
+
+    return {
+      operation: "tree",
+      path: dirPath,
+      maxDepth: maxDepth || "unlimited",
+      includeHidden,
+      includeSize,
+      respectGitignore,
+      tree,
+      formatted: JSON.stringify(tree, null, 2),
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to build directory tree: ${errorMessage}`);
   }
-
-  const tree = await buildTree(dirPath, currentDepth);
-
-  return {
-    operation: "tree",
-    path: dirPath,
-    maxDepth: maxDepth || "unlimited",
-    includeHidden,
-    includeSize,
-    respectGitignore,
-    tree,
-    formatted: JSON.stringify(tree, null, 2),
-  };
 }
 
 async function getDirectoryStats(
@@ -574,88 +1039,121 @@ async function getDirectoryStats(
   includeHidden: boolean,
   respectGitignore: boolean,
 ) {
-  const stats: DirectoryStats = {
-    totalFiles: 0,
-    totalDirectories: 0,
-    totalSize: 0,
-    hiddenItems: 0,
-    ignoredItems: 0,
-  };
+  try {
+    const stats: DirectoryStats = {
+      totalFiles: 0,
+      totalDirectories: 0,
+      totalSize: 0,
+      hiddenItems: 0,
+      ignoredItems: 0,
+    };
 
-  // Always create gitignore manager to count ignored items even when not respecting gitignore
-  const gitignoreManager = await createGitignoreManager(dirPath);
+    // Always create gitignore manager to count ignored items even when not respecting gitignore
+    const gitignoreManager = await createGitignoreManager(dirPath);
+    let processedDirs = 0;
+    const maxDirs = 5000; // Limit to prevent overflow
 
-  async function collectStats(currentPath: string) {
-    try {
-      const entries = await readdir(currentPath, { withFileTypes: true });
+    async function collectStats(currentPath: string) {
+      if (processedDirs >= maxDirs) {
+        console.warn(
+          `Directory stats collection stopped at ${maxDirs} directories to prevent overflow`,
+        );
+        return;
+      }
 
-      for (const entry of entries) {
-        const isHidden = entry.name.startsWith(".");
-        const isAlwaysIgnoredItem = isAlwaysIgnored(entry.name);
+      try {
+        const entries = await readdir(currentPath, { withFileTypes: true });
 
-        // Always skip certain directories
-        if (isAlwaysIgnoredItem) {
-          continue;
+        // Limit entries to prevent overflow
+        const limitedEntries = entries.slice(0, 2000);
+        if (entries.length > 2000) {
+          console.warn(
+            `Directory ${currentPath} has ${entries.length} entries, limiting to 2000`,
+          );
         }
 
-        const entryPath = resolve(currentPath, entry.name);
-        const relativePath = relative(dirPath, entryPath);
-        const isIgnored =
-          gitignoreManager?.isIgnored(
-            relativePath,
-            dirPath,
-            entry.isDirectory(),
-          ) || false;
+        for (const entry of limitedEntries) {
+          const isHidden = entry.name.startsWith(".");
+          const isAlwaysIgnoredItem = isAlwaysIgnored(entry.name);
 
-        if (isHidden) {
-          stats.hiddenItems++;
-          if (!includeHidden && !isImportantHiddenFile(entry.name)) continue;
-        }
-
-        if (isIgnored) {
-          stats.ignoredItems++;
-        }
-
-        if (entry.isDirectory()) {
-          // Always recurse into directories to count ignored items, even if directory itself is ignored
-          await collectStats(entryPath);
-
-          // Only count directory in totals if not ignored (when respecting gitignore)
-          if (!isIgnored || !respectGitignore) {
-            stats.totalDirectories++;
+          // Always skip certain directories
+          if (isAlwaysIgnoredItem) {
+            continue;
           }
-        } else {
-          // Only count file in totals if not ignored (when respecting gitignore)
-          if (!isIgnored || !respectGitignore) {
-            stats.totalFiles++;
-            try {
-              const fileStat = await stat(entryPath);
-              stats.totalSize += fileStat.size;
-            } catch {
-              // Skip if can't read file stats
+
+          const entryPath = resolve(currentPath, entry.name);
+          const relativePath = relative(dirPath, entryPath);
+          const isIgnored =
+            gitignoreManager?.isIgnored(
+              relativePath,
+              dirPath,
+              entry.isDirectory(),
+            ) || false;
+
+          if (isHidden) {
+            stats.hiddenItems++;
+            if (!includeHidden && !isImportantHiddenFile(entry.name)) continue;
+          }
+
+          if (isIgnored) {
+            stats.ignoredItems++;
+          }
+
+          if (entry.isDirectory()) {
+            processedDirs++;
+            // Always recurse into directories to count ignored items, even if directory itself is ignored
+            if (processedDirs < maxDirs) {
+              await collectStats(entryPath);
+            }
+
+            // Only count directory in totals if not ignored (when respecting gitignore)
+            if (!isIgnored || !respectGitignore) {
+              stats.totalDirectories++;
+            }
+          } else {
+            // Only count file in totals if not ignored (when respecting gitignore)
+            if (!isIgnored || !respectGitignore) {
+              stats.totalFiles++;
+              try {
+                const fileStat = await stat(entryPath);
+                stats.totalSize += fileStat.size;
+              } catch {
+                // Skip if can't read file stats
+              }
             }
           }
         }
+      } catch {
+        // Skip directories that can't be accessed
       }
-    } catch {
-      // Skip directories that can't be accessed
     }
-  }
 
-  await collectStats(dirPath);
+    await collectStats(dirPath);
 
-  return {
-    operation: "stats",
-    path: dirPath,
-    respectGitignore,
-    stats,
-    formatted: `Directory Statistics:
-- Files: ${stats.totalFiles}
-- Directories: ${stats.totalDirectories}
+    const result = {
+      operation: "stats",
+      path: dirPath,
+      includeHidden,
+      respectGitignore,
+      stats,
+      formatted: `Directory Statistics for: ${dirPath}
+- Total Files: ${stats.totalFiles}
+- Total Directories: ${stats.totalDirectories}
 - Total Size: ${formatBytes(stats.totalSize)}
 - Hidden Items: ${stats.hiddenItems}${includeHidden ? " (included)" : " (excluded)"}
 - Ignored Items: ${stats.ignoredItems}${respectGitignore ? " (excluded)" : " (would be excluded)"}`,
-  };
+    };
+
+    // Add warning if we hit limits
+    if (processedDirs >= maxDirs) {
+      result.warning = `Statistics collection was limited to ${maxDirs} directories to prevent system resource issues. Results may be incomplete for very large directory structures.`;
+    }
+
+    return result;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to collect directory statistics: ${errorMessage}`);
+  }
 }
 
 async function findInDirectory(
@@ -665,7 +1163,73 @@ async function findInDirectory(
   includeHidden: boolean,
   respectGitignore: boolean,
 ) {
-  const basePatterns = [pattern];
+  // Convert pipe-separated patterns to array of glob patterns
+  // Also sanitize patterns to prevent array overflow issues
+  let basePatterns: string[];
+
+  if (pattern.includes("|")) {
+    const splitPatterns = pattern.split("|").map((p) => p.trim());
+    // Limit number of patterns to prevent overflow
+    if (splitPatterns.length > 50) {
+      return {
+        error: true,
+        suggestion: `Too many patterns (${splitPatterns.length}). Please limit to 50 or fewer patterns, or use broader glob patterns like "**/*{tic,toe,tac}*".`,
+        message: "Pattern contains too many alternatives",
+        providedPattern: pattern,
+        patternCount: splitPatterns.length,
+      };
+    }
+    basePatterns = splitPatterns.map(preprocessPattern);
+  } else {
+    // Preprocess single pattern to prevent overflow
+    const processedPattern = preprocessPattern(pattern);
+    basePatterns = [processedPattern];
+  }
+
+  // Validate each pattern for complexity that might cause overflow
+  for (const pat of basePatterns) {
+    if (pat.length > 300) {
+      return {
+        error: true,
+        suggestion: `Pattern "${pat}" is too long (${pat.length} characters). Please use shorter, simpler patterns.`,
+        message: "Individual pattern too long",
+        providedPattern: pat,
+      };
+    }
+
+    // Check for complex patterns that might cause array overflow
+    const wildcardCount = (pat.match(/\*/g) || []).length;
+    const questionMarkCount = (pat.match(/\?/g) || []).length;
+    const complexityScore = wildcardCount * 2 + questionMarkCount;
+
+    if (complexityScore > 25) {
+      const segments = pat.split("*").filter((s) => s.length > 0);
+      return {
+        error: true,
+        suggestion: `Pattern "${pat}" is too complex (${wildcardCount} wildcards, complexity score: ${complexityScore}). Try "**/*{${segments.slice(0, 3).join(",")}}*" or break into separate searches.`,
+        message: "Pattern too complex - might cause overflow",
+        providedPattern: pat,
+        complexityScore,
+        simplifiedSuggestion: `**/*{${segments.slice(0, 3).join(",")}}*`,
+        tip: "Use **/*word* for simple contains searches, or **/*.ext for file extensions",
+      };
+    }
+
+    // Special check for patterns like *word*word* which can cause exponential expansion
+    if (pat.includes("*") && pat.split("*").length > 6) {
+      const segments = pat.split("*").filter((s) => s.length > 0);
+      return {
+        error: true,
+        suggestion: `Pattern "${pat}" has too many wildcard segments (${pat.split("*").length}). Try "**/*{${segments.slice(0, 3).join(",")}}*" or use separate searches for each term.`,
+        message: "Pattern has too many wildcard segments",
+        providedPattern: pat,
+        segmentCount: pat.split("*").length,
+        simplifiedSuggestion: `**/*{${segments.slice(0, 3).join(",")}}*`,
+        alternativeSuggestions: segments.slice(0, 3).map((s) => `**/*${s}*`),
+      };
+    }
+  }
+
   const gitignoreManager = respectGitignore
     ? await createGitignoreManager(dirPath)
     : null;
@@ -675,6 +1239,11 @@ async function findInDirectory(
     "!**/.chara/**",
     "!**/.git/**",
     "!**/node_modules/**",
+    "!**/.svelte-kit/**",
+    "!**/build/**",
+    "!**/dist/**",
+    "!**/.next/**",
+    "!**/coverage/**",
   ];
 
   // Additional common exclusions when not using gitignore (disabled for now)
@@ -696,15 +1265,69 @@ async function findInDirectory(
     ...hiddenExclusions,
   ];
 
+  // Check total pattern count to prevent overflow
+  if (allPatterns.length > 100) {
+    return {
+      error: true,
+      suggestion: `Total pattern count (${allPatterns.length}) exceeds safe limit. Please use fewer, broader patterns.`,
+      message: "Too many total patterns",
+      totalPatterns: allPatterns.length,
+    };
+  }
+
   try {
-    const files = await globby(allPatterns, {
+    // Simplified approach using only the base patterns with proper exclusions
+    const safePatterns = basePatterns.concat([
+      "!**/node_modules/**",
+      "!**/.git/**",
+      "!**/.chara/**",
+      "!**/.svelte-kit/**",
+      "!**/build/**",
+      "!**/dist/**",
+      "!**/.next/**",
+      "!**/coverage/**",
+      ...userExclusions,
+    ]);
+
+    if (!includeHidden) {
+      safePatterns.push("!**/.*");
+    }
+
+    // Add timeout and safety checks for complex patterns
+    const globbyOptions = {
       cwd: dirPath,
       onlyFiles: false, // Include both files and directories
       markDirectories: true,
       absolute: false,
       dot: includeHidden,
       followSymbolicLinks: false,
+      caseSensitiveMatch: false,
+      // Add safety limits
+      deep: 8, // Allow deeper search since we're excluding large dirs
+      suppressErrors: true, // Don't fail on permission errors
+    };
+
+    // For simple patterns, use a shorter timeout
+    const isSimplePattern =
+      basePatterns.length === 1 &&
+      (basePatterns[0].match(/\*/g) || []).length <= 2;
+    const timeoutMs = isSimplePattern ? 5000 : 10000;
+
+    // Wrap globby in a Promise.race to add timeout
+    const globbyPromise = globby(safePatterns, globbyOptions);
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Pattern search timeout")), timeoutMs);
     });
+
+    const files = (await Promise.race([
+      globbyPromise,
+      timeoutPromise,
+    ])) as string[];
+
+    // Log results for debugging
+    console.log(
+      `Find operation: pattern="${pattern}" found ${files.length} results`,
+    );
 
     // If hidden files are not included, manually add important dotfiles
     let allFiles = files;
@@ -749,6 +1372,8 @@ async function findInDirectory(
       operation: "find",
       searchPath: dirPath,
       pattern,
+      originalPattern: pattern,
+      preprocessedPatterns: basePatterns,
       excludePatterns,
       includeHidden,
       respectGitignore,
@@ -766,6 +1391,8 @@ async function findInDirectory(
           : "No matches found",
     };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
     throw new Error(
       `Find operation failed: ${error instanceof Error ? error.message : String(error)}`,
     );
