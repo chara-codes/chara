@@ -7,6 +7,7 @@ import { ReactNode, useEffect } from "react";
 import { trpc } from "../services";
 import type { StackDTO } from "@chara/server";
 import { toast } from "../components";
+import { Screen, useRoutingStore } from "./routing-store";
 
 interface TechStacksState {
   // State
@@ -99,10 +100,12 @@ export function TechStacksProvider({ children }: { children: ReactNode }) {
 export function useTechStacksData() {
   const setTechStacks = useTechStacksStore((state) => state.setTechStacks);
   const setLoading = useTechStacksStore((state) => state.setLoading);
+  const currentScreen = useRoutingStore((state) => state.currentScreen);
 
   const { data: serverStacks = [], isFetching } = trpc.stacks.list.useQuery(
     undefined,
     {
+      enabled: currentScreen === Screen.TECH_STACKS,
       select: (rows) => rows,
       initialData: [],
     },
