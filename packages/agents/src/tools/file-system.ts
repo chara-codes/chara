@@ -79,6 +79,7 @@ const FileSystemAction = z.enum([
   "find",
   "info",
   "env",
+  "read",
 ]);
 
 // Default directories and patterns to always ignore
@@ -210,6 +211,7 @@ function getActionSuggestion(invalidAction: string): string {
     "find",
     "info",
     "env",
+    "read",
   ];
 
   // Common mappings for LLM mistakes
@@ -402,12 +404,13 @@ export const fileSystem = tool({
 **Directory Operations:**
 - **list**: Get a flat listing of files and directories with type indicators
 - **tree**: Get a recursive tree structure as JSON with optional depth limit
-- **create**: Create new directories (with recursive parent creation)
+- **create**: Create new directories or files (with recursive parent creation)
 - **current**: Get the current working directory path
 - **stats**: Get detailed statistics about directory contents
 - **find**: Search for files and directories using glob patterns
 
-**File Information:**
+**File Operations:**
+- **read**: Read the contents of a file
 - **info**: Get detailed metadata about a specific file or directory (size, timestamps, permissions)
 
 **Environment Information:**
@@ -425,7 +428,11 @@ export const fileSystem = tool({
 - Project configuration analysis`,
 
   parameters: z.object({
-    action: z.string().describe("Operation to perform"),
+    action: z
+      .string()
+      .describe(
+        "Operation to perform: 'list', 'tree', 'create', 'current', 'stats', 'find', 'read', 'info', or 'env'",
+      ),
 
     path: z
       .string()
@@ -525,6 +532,7 @@ export const fileSystem = tool({
         "find",
         "info",
         "env",
+        "read",
       ];
       if (!validActions.includes(action)) {
         const errorResponse = {
@@ -595,13 +603,33 @@ export const fileSystem = tool({
             if (!path) {
               throw new Error("Path is required for create operation");
             }
-            await mkdir(path, { recursive: true });
-            return {
-              operation: "create",
-              path: path,
-              absolutePath: resolve(path),
-              message: `Successfully created directory: ${path}`,
-            };
+            // Check if path looks like a file (has extension) or directory
+            const isFile = path.includes(".") && !path.endsWith("/");
+            if (isFile) {
+              // Create parent directory first
+              const parentDir = path.split("/").slice(0, -1).join("/");
+              if (parentDir) {
+                await mkdir(parentDir, { recursive: true });
+              }
+              // Create empty file
+              const { writeFile } = await import("fs/promises");
+              await writeFile(path, "");
+              return {
+                operation: "create",
+                path: path,
+                absolutePath: resolve(path),
+                message: `Successfully created file: ${path}`,
+              };
+            } else {
+              // Create directory
+              await mkdir(path, { recursive: true });
+              return {
+                operation: "create",
+                path: path,
+                absolutePath: resolve(path),
+                message: `Successfully created directory: ${path}`,
+              };
+            }
 
           case "list":
             return await listDirectory(
@@ -652,6 +680,12 @@ export const fileSystem = tool({
               includeProject,
             );
 
+          case "read":
+            if (!path) {
+              throw new Error("Path is required for read operation");
+            }
+            return await readFileContents(path);
+
           default:
             return {
               error: true,
@@ -665,6 +699,7 @@ export const fileSystem = tool({
                 "find",
                 "info",
                 "env",
+                "read",
               ],
               providedAction: action,
               message:
@@ -1153,6 +1188,32 @@ async function getDirectoryStats(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to collect directory statistics: ${errorMessage}`);
+  }
+}
+
+async function readFileContents(filePath: string) {
+  try {
+    const { readFile, stat } = await import("fs/promises");
+    const stats = await stat(filePath);
+
+    if (stats.isDirectory()) {
+      throw new Error(`Path is a directory, not a file: ${filePath}`);
+    }
+
+    const content = await readFile(filePath, "utf-8");
+
+    return {
+      operation: "read",
+      path: filePath,
+      absolutePath: resolve(filePath),
+      size: stats.size,
+      content,
+      encoding: "utf-8",
+      message: `Successfully read file: ${filePath}`,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to read file: ${errorMessage}`);
   }
 }
 

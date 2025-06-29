@@ -28,6 +28,54 @@ describe("fileSystem tool", () => {
     });
   });
 
+  describe("read operation", () => {
+    test("should read file contents successfully", async () => {
+      const content = "Hello, World!\nThis is a test file.";
+      await testFS.createFile("test.txt", content);
+
+      const result = await fileSystem.execute({
+        action: "read",
+        path: testFS.getPath("test.txt"),
+      });
+
+      expect(result.operation).toBe("read");
+      expect(result.path).toBe(testFS.getPath("test.txt"));
+      expect(result.content).toBe(content);
+      expect(result.encoding).toBe("utf-8");
+      expect(typeof result.size).toBe("number");
+    });
+
+    test("should throw error when path is not provided", async () => {
+      await expect(
+        fileSystem.execute({
+          action: "read",
+        }),
+      ).rejects.toThrow("Path is required for read operation");
+    });
+
+    test("should throw error for non-existent file", async () => {
+      const nonExistentFile = testFS.getPath("does-not-exist.txt");
+
+      await expect(
+        fileSystem.execute({
+          action: "read",
+          path: nonExistentFile,
+        }),
+      ).rejects.toThrow("Failed to read file");
+    });
+
+    test("should throw error when trying to read directory", async () => {
+      await testFS.createDir("test-dir");
+
+      await expect(
+        fileSystem.execute({
+          action: "read",
+          path: testFS.getPath("test-dir"),
+        }),
+      ).rejects.toThrow("Path is a directory, not a file");
+    });
+  });
+
   describe("create operation", () => {
     test("should create directory successfully", async () => {
       const dirPath = testFS.getPath("new-directory");
@@ -40,9 +88,42 @@ describe("fileSystem tool", () => {
       expect(result.operation).toBe("create");
       expect(result.path).toBe(dirPath);
       expect(result.message).toContain("Successfully created directory");
+      expect(await stat(dirPath)).toBeTruthy();
+    });
 
-      // Verify directory exists
-      expect(await testFS.fileExists("new-directory")).toBe(true);
+    test("should create file successfully", async () => {
+      const filePath = testFS.getPath("new-file.txt");
+
+      const result = await fileSystem.execute({
+        action: "create",
+        path: filePath,
+      });
+
+      expect(result.operation).toBe("create");
+      expect(result.path).toBe(filePath);
+      expect(result.message).toContain("Successfully created file");
+      expect(await stat(filePath)).toBeTruthy();
+
+      // File should be empty initially
+      const readResult = await fileSystem.execute({
+        action: "read",
+        path: filePath,
+      });
+      expect(readResult.content).toBe("");
+    });
+
+    test("should create file with nested directories", async () => {
+      const filePath = testFS.getPath("nested/deep/structure/test.js");
+
+      const result = await fileSystem.execute({
+        action: "create",
+        path: filePath,
+      });
+
+      expect(result.operation).toBe("create");
+      expect(result.path).toBe(filePath);
+      expect(result.message).toContain("Successfully created file");
+      expect(await stat(filePath)).toBeTruthy();
     });
 
     test("should create nested directories", async () => {
