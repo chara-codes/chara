@@ -17,13 +17,25 @@ import {
   ToolCallToggle,
 } from "./styles";
 import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
+// Import specialized tool components for enhanced display
 import { TerminalToolBlock } from "../tools";
+import { DiffBlock } from "../tools/diff-block";
 
 interface ToolCallData {
   name?: string;
   status?: string;
-  arguments?: unknown;
-  result?: unknown;
+  arguments?: {
+    path?: string;
+    mode?: string;
+    content?: string;
+    original_content?: string;
+    old_content?: string;
+    new_content?: string;
+  };
+  result?: {
+    operation?: string;
+    diff?: string;
+  };
 }
 
 interface ToolCallComponentProps {
@@ -43,7 +55,15 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
     setIsExpanded((prev) => !prev);
   }, []);
 
-  // Special handling for terminal tool calls
+  /*
+   * SPECIALIZED TOOL COMPONENT ROUTING
+   *
+   * This component routes different tool call types to specialized display components
+   * for enhanced user experience. Instead of showing raw JSON, these tools get
+   * custom interfaces that better represent their functionality.
+   */
+
+  // Terminal tool calls: Show command execution with syntax highlighting and streaming output
   if (toolCallType === "terminal") {
     return (
       <TerminalToolBlock
@@ -55,7 +75,25 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
     );
   }
 
-  // Default tool call component for non-terminal tools
+  // Edit file tool calls: Show diff view with before/after comparison
+  if (toolCallType === "edit-file") {
+    return (
+      <DiffBlock
+        toolCall={toolCall}
+        toolCallId={toolCallId}
+        isVisible={true}
+        showLineNumbers={true}
+        maxHeight={500}
+      />
+    );
+  }
+
+  /*
+   * DEFAULT TOOL CALL DISPLAY
+   *
+   * For tool calls that don't have specialized components, show a generic
+   * expandable interface with arguments and results in JSON format.
+   */
   return (
     <ToolCallsContainer>
       <div>

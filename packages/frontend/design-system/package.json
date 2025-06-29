@@ -37,8 +37,10 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "diff": "^8.0.2",
     "lucide-react": "^0.511.0",
     "react": "^18.3.1",
+    "react-diff-view": "^3.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7"
