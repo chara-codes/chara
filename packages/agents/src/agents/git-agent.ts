@@ -18,15 +18,8 @@ export const gitAgent = (
   return generateText({
     ...options,
     system:
-      "You are a helpful assistant, the main goal is make a commit message.",
+      "You are a helpful assistant, the main goal is make a commit message. Use previous messages and the current user prompt commit of changes, use maximum 200 symbols.",
     model: aiModel,
-    messages: [
-      ...messages,
-      {
-        role: "system",
-        content:
-          "Use previous messages and the current user prompt commit of changes, use maximum 200 symbols.",
-      },
-    ],
+    messages: [...messages],
   });
 };
