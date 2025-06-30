@@ -262,8 +262,8 @@ export const useChatStore = create<ChatState>()(
                 ? m.content
                 : [{ type: "text", text: m.content }],
               // Include tool calls in message history
-              tool_calls: m.toolCalls
-                ? Array.from(m.toolCalls.values()).map((tc) => ({
+              toolCalls: m.toolCalls
+                ? Object.values(m.toolCalls).map((tc) => ({
                     id: tc.id,
                     type: "function",
                     function: {
@@ -332,18 +332,17 @@ export const useChatStore = create<ChatState>()(
 
                   updateAIMessageInStore((msg) => {
                     const existingToolCalls =
-                      msg.toolCalls || new Map<string, ToolCall>();
+                      msg.toolCalls || ({} as Record<string, ToolCall>);
                     console.log("Store: Current tool calls", existingToolCalls);
 
-                    // Create new Map with updated tool call
-                    const updatedToolCalls = new Map(existingToolCalls);
-                    const existingToolCall = updatedToolCalls.get(
-                      incomingToolCall.id,
-                    );
+                    // Create new Record with updated tool call
+                    const updatedToolCalls = { ...existingToolCalls };
+                    const existingToolCall =
+                      updatedToolCalls[incomingToolCall.id];
 
                     console.log("Store: Existing tool call", existingToolCall);
 
-                    updatedToolCalls.set(incomingToolCall.id, incomingToolCall);
+                    updatedToolCalls[incomingToolCall.id] = incomingToolCall;
                     console.log("Store: Updated tool calls", updatedToolCalls);
 
                     return {

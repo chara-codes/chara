@@ -20,26 +20,10 @@ import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon
 // Import specialized tool components for enhanced display
 import { TerminalToolBlock } from "../tools";
 import { DiffBlock } from "../tools/diff-block";
-
-interface ToolCallData {
-  name?: string;
-  status?: string;
-  arguments?: {
-    path?: string;
-    mode?: string;
-    content?: string;
-    original_content?: string;
-    old_content?: string;
-    new_content?: string;
-  };
-  result?: {
-    operation?: string;
-    diff?: string;
-  };
-}
+import type { ToolCall } from "@chara/core";
 
 interface ToolCallComponentProps {
-  toolCall: ToolCallData;
+  toolCall: ToolCall;
   toolCallId: string;
   toolCallType: string;
 }

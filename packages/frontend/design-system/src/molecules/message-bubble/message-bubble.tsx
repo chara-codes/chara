@@ -67,7 +67,7 @@ const getMainMessageContent = (
 const renderMainMessageContent = (
   content: string | MessageContentType[],
   isUser = false,
-  toolCalls?: Map<
+  toolCalls?: Record<
     string,
     { name?: string; status?: string; arguments?: unknown; result?: unknown }
   >,
@@ -82,7 +82,7 @@ const renderMainMessageContent = (
   const cleanedContent = cleanThinkingTags(mainContent);
 
   // Process tool call backticks
-  if (toolCalls && toolCalls.size > 0) {
+  if (toolCalls && Object.keys(toolCalls).length > 0) {
     // Split content by tool call patterns and render accordingly
     const toolCallPattern = /\[toolCall:([^,]+),([^\]]+)\]/g;
     const parts = [];
@@ -110,7 +110,7 @@ const renderMainMessageContent = (
       // Add tool call component
       const toolCallId = match[1];
       const toolCallType = match[2];
-      const toolCall = toolCalls.get(toolCallId);
+      const toolCall = toolCalls[toolCallId];
 
       if (toolCall) {
         parts.push(

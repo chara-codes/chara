@@ -234,7 +234,7 @@ export const readFile = tool({
   parameters: ReadFileInput,
 
   execute: async ({ path, start_line, end_line }) => {
-    // Manual input validation
+    // Manual input validation - these are validation errors that should throw
     if (!path || typeof path !== "string") {
       throw new Error("Path is required and must be a string");
     }
@@ -257,7 +257,7 @@ export const readFile = tool({
       throw new Error("end_line must be a positive integer");
     }
 
-    // Validate and resolve path
+    // Validate and resolve path - security/permission errors should throw
     const pathValidation = validatePath(path);
     if (!pathValidation.isValid) {
       throw new Error(pathValidation.error || "Invalid path");
@@ -273,7 +273,7 @@ export const readFile = tool({
       const stats = await stat(resolvedPath);
 
       if (!stats.isFile()) {
-        throw new Error(`${path} is not a file`);
+        return `Error: ${path} is not a file`;
       }
 
       // Read file content
@@ -313,25 +313,23 @@ implementations of symbols in the outline.`;
       if (error instanceof Error) {
         const nodeError = error as NodeJS.ErrnoException;
         if (nodeError.code === "ENOENT") {
-          throw new Error(`${path} not found`);
+          return `Error: ${path} not found`;
         }
         if (nodeError.code === "EACCES") {
-          throw new Error(`Permission denied reading ${path}`);
+          return `Error: Permission denied reading ${path}`;
         }
         if (nodeError.code === "EISDIR") {
-          throw new Error(`${path} is a directory, not a file`);
+          return `Error: ${path} is a directory, not a file`;
         }
-        // Re-throw our custom validation errors
+        // Handle our custom validation errors
         if (
           error.message.includes("Cannot read file because") ||
           error.message.includes("not found in project")
         ) {
-          throw error;
+          return `Error: ${error.message}`;
         }
       }
-      throw new Error(
-        `Failed to read ${path}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      return `Error: Failed to read ${path}: ${error instanceof Error ? error.message : String(error)}`;
     }
   },
 });

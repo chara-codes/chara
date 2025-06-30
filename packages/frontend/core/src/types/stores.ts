@@ -17,7 +17,7 @@ export interface StreamToolCall {
 export interface StreamMessage {
   role: "user" | "system" | "assistant";
   content: string | MessageContent[];
-  tool_calls?: StreamToolCall[];
+  toolCalls?: StreamToolCall[];
 }
 
 export interface Message {
@@ -28,7 +28,7 @@ export interface Message {
   contextItems?: ContextItem[]; // Add context items to messages
   thinkingContent?: string; // Store thinking content separately
   isThinking?: boolean; // Track if message is currently in thinking mode
-  toolCalls?: Map<string, ToolCall>; // Add tool calls as Map with toolCall.id as key
+  toolCalls?: Record<string, ToolCall>; // Add tool calls as Record with toolCall.id as key
 }
 
 export interface Chat {
@@ -73,7 +73,7 @@ export interface ToolCall {
   arguments: Record<string, unknown>;
   status: "pending" | "in-progress" | "success" | "error";
   result?: ToolResult;
-  timestamp: string;
+  timestamp?: string;
 }
 
 export interface ToolResult {

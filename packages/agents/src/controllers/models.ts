@@ -61,12 +61,14 @@ const MODEL_WHITELIST = [
   "google/gemini-2.5-pro-preview",
   "google/gemini-2.5-flash-preview",
   "google/gemini-2.5-flash-preview-05-20",
+  "google/gemini-2.5-pro",
 
   // DeepSeek R1 models
   "deepseek/deepseek-r1",
   "deepseek/deepseek-r1-0528:free",
   "deepseek/deepseek-chat",
   "deepseek/deepseek-chat-v3-0324",
+  "deepseek/deepseek-chat-v3",
   // other models
   "moonshotai/kimi-dev-72b:free",
   "minimax/minimax-m1:extended",

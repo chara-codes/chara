@@ -113,39 +113,41 @@ describe("readFile tool", () => {
     expect(result).toBe(content);
   });
 
-  test("should throw error for non-existent file", async () => {
+  test("should return error message for non-existent file", async () => {
     const relativePath = join(testFS.getPath(), "does-not-exist.txt").replace(
       process.cwd() + "/",
       "",
     );
 
-    await expect(
-      readFile.execute(
-        { path: relativePath },
-        {
-          toolCallId: "test",
-          messages: [],
-        },
-      ),
-    ).rejects.toThrow("not found");
+    const result = await readFile.execute(
+      { path: relativePath },
+      {
+        toolCallId: "test",
+        messages: [],
+      },
+    );
+
+    expect(result).toContain("Error:");
+    expect(result).toContain("not found");
   });
 
-  test("should throw error when trying to read directory", async () => {
+  test("should return error message when trying to read directory", async () => {
     await testFS.createDir("test-dir");
     const relativePath = join(testFS.getPath(), "test-dir").replace(
       process.cwd() + "/",
       "",
     );
 
-    await expect(
-      readFile.execute(
-        { path: relativePath },
-        {
-          toolCallId: "test",
-          messages: [],
-        },
-      ),
-    ).rejects.toThrow("is not a file");
+    const result = await readFile.execute(
+      { path: relativePath },
+      {
+        toolCallId: "test",
+        messages: [],
+      },
+    );
+
+    expect(result).toContain("Error:");
+    expect(result).toContain("is not a file");
   });
 
   test("should read file with line range", async () => {

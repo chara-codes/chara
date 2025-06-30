@@ -8,7 +8,7 @@ export interface MessageBubbleProps {
   thinkingContent?: string;
   isThinking?: boolean;
   contextItems?: ContextItem[];
-  toolCalls?: Map<string, ToolCall>;
+  toolCalls?: Record<string, ToolCall>;
   onDeleteMessage?: (messageId: string) => void;
 }
 
