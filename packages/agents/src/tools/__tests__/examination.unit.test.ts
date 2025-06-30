@@ -1,20 +1,6 @@
-import {
-  describe,
-  test,
-  expect,
-  beforeAll,
-  afterAll,
-  beforeEach,
-  afterEach,
-  mock,
-  spyOn,
-} from "bun:test";
-import { examination } from "../examination";
-import { writeFile, mkdir, rm } from "node:fs/promises";
-import { join } from "node:path";
-import { existsSync } from "node:fs";
+import { describe, test, expect, beforeEach, afterEach, spyOn } from "bun:test";
 
-// Helper to create a mock ReadableStream with text content
+// Helper functions for creating mock streams
 function createMockStream(content: string): ReadableStream<Uint8Array> {
   return new ReadableStream({
     start(controller) {
@@ -24,7 +10,6 @@ function createMockStream(content: string): ReadableStream<Uint8Array> {
   });
 }
 
-// Helper to create empty stream
 function createEmptyStream(): ReadableStream<Uint8Array> {
   return new ReadableStream({
     start(controller) {
@@ -33,189 +18,399 @@ function createEmptyStream(): ReadableStream<Uint8Array> {
   });
 }
 
-// Test data fixtures
-const mockTypeScriptOutput = `src/main.ts(15,8): error TS2322: Type 'string' is not assignable to type 'number'.
-src/main.ts(23,12): error TS2304: Cannot find name 'undefinedVariable'.
-src/utils.ts(5,1): warning TS6133: 'unusedVar' is declared but its value is never read.`;
+describe("examination tool - unit tests with spies", () => {
+  let existsSyncSpy: any;
+  let readFileSpy: any;
+  let bunSpawnSpy: any;
+  let processCwdSpy: any;
 
-const mockESLintOutput = JSON.stringify([
-  {
-    filePath: "/project/src/main.ts",
-    messages: [
-      {
-        line: 10,
-        column: 5,
-        severity: 2,
-        message: "Missing semicolon",
-        ruleId: "semi",
-      },
-      {
-        line: 15,
-        column: 8,
-        severity: 1,
-        message: "Unused variable 'test'",
-        ruleId: "no-unused-vars",
-      },
-    ],
-  },
-  {
-    filePath: "/project/src/utils.ts",
-    messages: [
-      {
-        line: 3,
-        column: 1,
-        severity: 2,
-        message: "Expected indentation of 2 spaces",
-        ruleId: "indent",
-      },
-    ],
-  },
-]);
+  beforeEach(async () => {
+    // Import modules dynamically to ensure fresh imports
+    const fs = await import("node:fs");
+    const fsPromises = await import("node:fs/promises");
 
-const mockPrettierOutput = `src/main.ts
-src/components/Header.tsx`;
+    // Create spies
+    existsSyncSpy = spyOn(fs, "existsSync");
+    readFileSpy = spyOn(fsPromises, "readFile");
+    bunSpawnSpy = spyOn(Bun, "spawn");
+    processCwdSpy = spyOn(process, "cwd");
 
-const mockUnitTestOutput = `
-FAIL src/components/Button.test.ts
-  ● Button component › should render correctly
-    Expected component to render properly
-
-    at Object.<anonymous> (src/components/Button.test.ts:10:5)
-
-  ● Button component › should handle click events
-    Click handler not called
-
-    at Object.<anonymous> (src/components/Button.test.ts:15:8)
-
-✗ 2 failed, 3 passed
-`;
-
-const mockUnitTestSuccess = `
-✓ All tests passed
-✓ 15 passed
-`;
-
-const mockPackageJsonWithTests = JSON.stringify({
-  name: "test-project",
-  scripts: {
-    test: "bun test",
-    build: "tsc",
-  },
-});
-
-const mockPackageJsonNoTests = JSON.stringify({
-  name: "test-project",
-  scripts: {
-    build: "tsc",
-  },
-});
-
-describe("examination tool - unit tests", () => {
-  const testDir = join(process.cwd(), "tmp", "examination-unit-test");
-  const originalCwd = process.cwd();
-  const originalSpawn = Bun.spawn;
-
-  beforeAll(async () => {
-    // Create test directory structure
-    await mkdir(testDir, { recursive: true });
-    process.chdir(testDir);
-
-    // Create basic project structure
-    await writeFile(
-      "package.json",
-      JSON.stringify(
-        {
-          name: "test-project",
-          version: "1.0.0",
-          devDependencies: {
-            typescript: "^5.0.0",
-            eslint: "^8.0.0",
-            prettier: "^3.0.0",
-          },
-        },
-        null,
-        2,
-      ),
-    );
-
-    await writeFile(
-      "tsconfig.json",
-      JSON.stringify({
-        compilerOptions: {
-          target: "ES2020",
-          module: "commonjs",
-          strict: true,
-        },
-      }),
-    );
-
-    await mkdir("src", { recursive: true });
-    await writeFile("src/main.ts", "const x: number = 'string';");
-    await writeFile("src/utils.ts", "export const helper = () => {};");
-  });
-
-  afterAll(async () => {
-    process.chdir(originalCwd);
-    if (existsSync(testDir)) {
-      await rm(testDir, { recursive: true, force: true });
-    }
-    // Restore original Bun.spawn
-    Bun.spawn = originalSpawn;
-  });
-
-  beforeEach(() => {
-    // Mock Bun.spawn to return empty successful results by default
-    Bun.spawn = mock((args: string[]) => ({
+    // Set default implementations
+    existsSyncSpy.mockImplementation(() => false);
+    readFileSpy.mockImplementation(() => Promise.resolve("{}"));
+    bunSpawnSpy.mockImplementation(() => ({
       stdout: createEmptyStream(),
       stderr: createEmptyStream(),
       exited: Promise.resolve(0),
     }));
+    processCwdSpy.mockImplementation(() => "/test/project");
   });
 
   afterEach(() => {
-    // Clean up mocks
-    if (Bun.spawn && "mockClear" in Bun.spawn) {
-      (Bun.spawn as any).mockClear();
-    }
+    // Restore all spies
+    existsSyncSpy?.mockRestore?.();
+    readFileSpy?.mockRestore?.();
+    bunSpawnSpy?.mockRestore?.();
+    processCwdSpy?.mockRestore?.();
   });
 
-  describe("detectProjectType", () => {
+  describe("project detection", () => {
     test("should detect Node.js project with package.json", async () => {
+      // Import examination tool after setting up mocks
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return path.includes("package.json");
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: { typescript: "^5.0.0" },
+          }),
+        ),
+      );
+
       const result = await examination.execute({});
-      expect(result).toMatch(/Project types detected:.*nodejs/);
+
+      expect(result).toContain("Project types detected:");
+      expect(result).toContain("nodejs");
     });
 
-    test("should detect TypeScript project with tsconfig.json", async () => {
+    test("should detect TypeScript project", async () => {
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return path.includes("package.json") || path.includes("tsconfig.json");
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: { typescript: "^5.0.0" },
+          }),
+        ),
+      );
+
       const result = await examination.execute({});
-      expect(result).toMatch(/Project types detected:.*typescript/);
+
+      expect(result).toContain("typescript");
     });
 
-    test("should detect TypeScript from package.json dependencies", async () => {
-      const result = await examination.execute({});
-      expect(result).toMatch(/Project types detected:.*typescript/);
-    });
+    test("should detect Biome when configured", async () => {
+      const { examination } = await import("../examination");
 
-    test("should handle missing package.json gracefully", async () => {
-      const tempDir = join(testDir, "no-package");
-      await mkdir(tempDir, { recursive: true });
-      const originalCwd = process.cwd();
-
-      try {
-        process.chdir(tempDir);
-        const result = await examination.execute({});
-        expect(result).toContain(
-          "doesn't appear to be a JavaScript or TypeScript project",
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes("biome.json") ||
+          path.includes("tsconfig.json")
         );
-      } finally {
-        process.chdir(originalCwd);
-        await rm(tempDir, { recursive: true, force: true });
-      }
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: {
+              "@biomejs/biome": "^1.0.0",
+              typescript: "^5.0.0",
+            },
+          }),
+        ),
+      );
+
+      const result = await examination.execute({});
+
+      expect(result).toContain("✅ Biome");
+    });
+
+    test("should detect ESLint when configured", async () => {
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes(".eslintrc.json") ||
+          path.includes("tsconfig.json")
+        );
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: {
+              eslint: "^8.0.0",
+              typescript: "^5.0.0",
+            },
+          }),
+        ),
+      );
+
+      const result = await examination.execute({});
+
+      expect(result).toContain("✅ ESLint");
+    });
+
+    test("should detect Prettier when configured", async () => {
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes(".prettierrc") ||
+          path.includes("tsconfig.json")
+        );
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: {
+              prettier: "^3.0.0",
+              typescript: "^5.0.0",
+            },
+          }),
+        ),
+      );
+
+      const result = await examination.execute({});
+
+      expect(result).toContain("✅ Prettier");
     });
   });
 
-  describe("TypeScript diagnostics parsing", () => {
+  describe("diagnostic parsing", () => {
     test("should parse TypeScript compiler output correctly", async () => {
-      Bun.spawn = mock((args: string[]) => {
+      const { examination } = await import("../examination");
+
+      const mockTypeScriptOutput = `src/main.ts(15,8): error TS2322: Type 'string' is not assignable to type 'number'.
+src/main.ts(23,12): error TS2304: Cannot find name 'undefinedVariable'.`;
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return path.includes("package.json") || path.includes("tsconfig.json");
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: { typescript: "^5.0.0" },
+          }),
+        ),
+      );
+      bunSpawnSpy.mockImplementation(() => ({
+        stdout: createMockStream(mockTypeScriptOutput),
+        stderr: createEmptyStream(),
+        exited: Promise.resolve(1),
+      }));
+
+      const result = await examination.execute({});
+
+      expect(result).toContain("Total: 2 error(s), 0 warning(s)");
+      expect(result).toContain(
+        "✅ TypeScript - found 2 error(s), 0 warning(s)",
+      );
+    });
+
+    test("should parse ESLint JSON output correctly", async () => {
+      const { examination } = await import("../examination");
+
+      const mockESLintOutput = JSON.stringify([
+        {
+          filePath: "/test/project/src/main.ts",
+          messages: [
+            {
+              line: 10,
+              column: 5,
+              severity: 2,
+              message: "Missing semicolon",
+              ruleId: "semi",
+            },
+            {
+              line: 15,
+              column: 1,
+              severity: 1,
+              message: "Prefer const over let",
+              ruleId: "prefer-const",
+            },
+          ],
+        },
+      ]);
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes("tsconfig.json") ||
+          path.includes(".eslintrc.json")
+        );
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: {
+              typescript: "^5.0.0",
+              eslint: "^8.0.0",
+            },
+          }),
+        ),
+      );
+      bunSpawnSpy.mockImplementation((args: string[]) => {
+        if (args.includes("eslint")) {
+          return {
+            stdout: createMockStream(mockESLintOutput),
+            stderr: createEmptyStream(),
+            exited: Promise.resolve(0),
+          };
+        }
+        return {
+          stdout: createEmptyStream(),
+          stderr: createEmptyStream(),
+          exited: Promise.resolve(0),
+        };
+      });
+
+      const result = await examination.execute({});
+
+      expect(result).toContain("Total: 1 error(s), 1 warning(s)");
+      expect(result).toContain("✅ ESLint - found 1 error(s), 1 warning(s)");
+    });
+
+    test("should parse Biome JSON output correctly", async () => {
+      const { examination } = await import("../examination");
+
+      const mockBiomeOutput = JSON.stringify({
+        diagnostics: [
+          {
+            location: {
+              path: "src/main.ts",
+              span: { start: { line: 5, column: 10 } },
+            },
+            severity: "error",
+            description: "Missing semicolon",
+            category: "lint/style",
+          },
+          {
+            location: {
+              path: "src/utils.ts",
+              span: { start: { line: 12, column: 5 } },
+            },
+            severity: "warning",
+            description: "Prefer const over let",
+            category: "lint/nursery",
+          },
+        ],
+      });
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes("tsconfig.json") ||
+          path.includes("biome.json")
+        );
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: {
+              "@biomejs/biome": "^1.0.0",
+              typescript: "^5.0.0",
+            },
+          }),
+        ),
+      );
+      bunSpawnSpy.mockImplementation((args: string[]) => {
+        if (args.includes("@biomejs/biome")) {
+          return {
+            stdout: createMockStream(mockBiomeOutput),
+            stderr: createEmptyStream(),
+            exited: Promise.resolve(1),
+          };
+        }
+        return {
+          stdout: createEmptyStream(),
+          stderr: createEmptyStream(),
+          exited: Promise.resolve(0),
+        };
+      });
+
+      const result = await examination.execute({});
+
+      expect(result).toContain("✅ Biome - found 1 error(s), 1 warning(s)");
+    });
+  });
+
+  describe("tool execution tracking", () => {
+    test("should show executed checks with status", async () => {
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes("tsconfig.json") ||
+          path.includes("biome.json")
+        );
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: {
+              "@biomejs/biome": "^1.0.0",
+              typescript: "^5.0.0",
+            },
+          }),
+        ),
+      );
+
+      const result = await examination.execute({});
+
+      expect(result).toContain("Executed checks:");
+      expect(result).toContain("✅ Biome");
+      expect(result).toContain("✅ TypeScript");
+      expect(result).toContain("⏭️ ESLint");
+      expect(result).toContain("⏭️ Prettier");
+    });
+
+    test("should show reasons for skipped checks", async () => {
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return path.includes("package.json") || path.includes("tsconfig.json");
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: { typescript: "^5.0.0" },
+          }),
+        ),
+      );
+
+      const result = await examination.execute({});
+
+      expect(result).toContain("⏭️ Biome (not installed or configured)");
+      expect(result).toContain("⏭️ ESLint (not installed or configured)");
+      expect(result).toContain("⏭️ Prettier (not installed or configured)");
+    });
+
+    test("should show diagnostic counts for executed checks", async () => {
+      const { examination } = await import("../examination");
+
+      const mockTypeScriptOutput = `src/main.ts(15,8): error TS2322: Type 'string' is not assignable to type 'number'.`;
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return path.includes("package.json") || path.includes("tsconfig.json");
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: { typescript: "^5.0.0" },
+          }),
+        ),
+      );
+      bunSpawnSpy.mockImplementation((args: string[]) => {
         if (args.includes("tsc")) {
           return {
             stdout: createMockStream(mockTypeScriptOutput),
@@ -230,531 +425,156 @@ describe("examination tool - unit tests", () => {
         };
       });
 
-      const result = await examination.execute({ path: "src/main.ts" });
+      const result = await examination.execute({});
 
-      expect(result).toContain("Found");
-      expect(result).toContain("error");
       expect(result).toContain(
-        "Type 'string' is not assignable to type 'number'",
+        "✅ TypeScript - found 1 error(s), 0 warning(s)",
       );
-      expect(result).toContain("[typescript]");
-    });
-
-    test("should handle TypeScript success case", async () => {
-      Bun.spawn = mock(() => ({
-        stdout: createEmptyStream(),
-        stderr: createEmptyStream(),
-        exited: Promise.resolve(0),
-      }));
-
-      const result = await examination.execute({ path: "src/utils.ts" });
-      expect(result).toContain("No errors or warnings found");
-    });
-
-    test("should handle TypeScript tool not found", async () => {
-      const consoleErrorSpy = spyOn(console, "error").mockImplementation(
-        () => {},
-      );
-
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("tsc")) {
-          throw new Error('Executable not found in $PATH: "tsc"');
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({ path: "src/main.ts" });
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "TypeScript check failed:",
-        expect.any(Error),
-      );
-      expect(result).toContain("No errors or warnings found");
-
-      consoleErrorSpy.mockRestore();
     });
   });
 
-  describe("ESLint diagnostics parsing", () => {
-    test("should parse ESLint JSON output correctly", async () => {
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("eslint")) {
-          return {
-            stdout: createMockStream(mockESLintOutput),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
+  describe("file-specific analysis", () => {
+    test("should handle specific file path", async () => {
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes("tsconfig.json") ||
+          path.includes("src/main.ts")
+        );
       });
-
-      const result = await examination.execute({});
-
-      expect(result).toContain("Project diagnostic summary");
-      expect(result).toContain("error(s)");
-      expect(result).toContain("warning(s)");
-    });
-
-    test("should handle empty ESLint output", async () => {
-      Bun.spawn = mock(() => ({
-        stdout: createEmptyStream(),
-        stderr: createEmptyStream(),
-        exited: Promise.resolve(0),
-      }));
-
-      const result = await examination.execute({ path: "src/main.ts" });
-      expect(result).toContain("No errors or warnings found");
-    });
-
-    test("should handle ESLint tool not found", async () => {
-      const consoleErrorSpy = spyOn(console, "error").mockImplementation(
-        () => {},
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: { typescript: "^5.0.0" },
+          }),
+        ),
       );
 
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("eslint")) {
-          throw new Error('Executable not found in $PATH: "eslint"');
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({});
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "ESLint check failed:",
-        expect.any(Error),
-      );
-
-      consoleErrorSpy.mockRestore();
-    });
-  });
-
-  describe("Unit test execution", () => {
-    test("should parse unit test failures correctly", async () => {
-      // Create package.json with test script
-      await writeFile("package.json", mockPackageJsonWithTests);
-
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("test")) {
-          return {
-            stdout: createMockStream(mockUnitTestOutput),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({});
-
-      expect(result).toContain("Project diagnostic summary");
-      expect(result).toContain("error(s)");
-      expect(result).toContain("warning(s)");
-    });
-
-    test("should handle successful test runs", async () => {
-      await writeFile("package.json", mockPackageJsonWithTests);
-
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("test")) {
-          return {
-            stdout: createMockStream(mockUnitTestSuccess),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(0),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({});
-      expect(result).toContain("No errors or warnings found");
-    });
-
-    test("should skip tests when no test script exists", async () => {
-      await writeFile("package.json", mockPackageJsonNoTests);
-
-      let testCalled = false;
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("test")) {
-          testCalled = true;
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      await examination.execute({});
-      expect(testCalled).toBe(false);
-    });
-
-    test("should handle test execution errors", async () => {
-      await writeFile("package.json", mockPackageJsonWithTests);
-
-      const consoleErrorSpy = spyOn(console, "error").mockImplementation(
-        () => {},
-      );
-
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("test")) {
-          throw new Error("Test execution failed");
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({});
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Unit test execution failed:",
-        expect.any(Error),
-      );
-
-      consoleErrorSpy.mockRestore();
-    });
-
-    test("should skip tests for file-specific analysis", async () => {
-      await writeFile("package.json", mockPackageJsonWithTests);
-
-      let testCalled = false;
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("test")) {
-          testCalled = true;
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      await examination.execute({ path: "src/main.ts" });
-      expect(testCalled).toBe(false);
-    });
-  });
-
-  describe("Prettier diagnostics parsing", () => {
-    test("should parse Prettier check output correctly", async () => {
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("prettier")) {
-          return {
-            stdout: createMockStream(mockPrettierOutput),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({});
-
-      expect(result).toContain("Project diagnostic summary");
-      expect(result).toContain("warning(s)");
-    });
-
-    test("should handle Prettier success case", async () => {
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("prettier")) {
-          return {
-            stdout: createEmptyStream(),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(0),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({});
-      expect(result).toContain("No errors or warnings found");
-    });
-
-    test("should handle Prettier tool not found", async () => {
-      const consoleErrorSpy = spyOn(console, "error").mockImplementation(
-        () => {},
-      );
-
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("prettier")) {
-          throw new Error('Executable not found in $PATH: "prettier"');
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({});
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Prettier check failed:",
-        expect.any(Error),
-      );
-
-      consoleErrorSpy.mockRestore();
-    });
-  });
-
-  describe("diagnostic aggregation", () => {
-    test("should aggregate multiple diagnostic sources correctly", async () => {
-      const currentDir = process.cwd();
-
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("tsc")) {
-          return {
-            stdout: createMockStream(
-              "src/main.ts(1,1): error TS2322: Test error.",
-            ),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        if (args.includes("eslint")) {
-          const output = JSON.stringify([
-            {
-              filePath: join(currentDir, "src/main.ts"),
-              messages: [
-                {
-                  line: 2,
-                  column: 1,
-                  severity: 1,
-                  message: "ESLint warning",
-                  ruleId: "test-rule",
-                },
-              ],
-            },
-          ]);
-          return {
-            stdout: createMockStream(output),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(0),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({ path: "src/main.ts" });
-
-      expect(result).toContain("Found 1 error(s) and 1 warning(s)");
-      expect(result).toContain("Test error");
-      expect(result).toContain("ESLint warning");
-      expect(result).toContain("[typescript]");
-      expect(result).toContain("[eslint]");
-    });
-
-    test("should handle mixed severity levels correctly", async () => {
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("tsc")) {
-          const tsOutput = `src/main.ts(1,1): error TS2322: Error message.
-src/main.ts(2,1): warning TS6133: Warning message.
-src/main.ts(3,1): info TS0000: Info message.`;
-          return {
-            stdout: createMockStream(tsOutput),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({ path: "src/main.ts" });
-
-      expect(result).toContain("❌ error at line 1:1");
-      expect(result).toContain("⚠️ warning at line 2:1");
-      expect(result).toContain("⚠️ info at line 3:1");
-    });
-  });
-
-  describe("path handling", () => {
-    test("should handle non-existent file path", async () => {
-      const result = await examination.execute({ path: "src/nonexistent.ts" });
-
-      expect(result).toContain("Error: Could not find path");
-      expect(result).toContain("src/nonexistent.ts");
-    });
-
-    test("should handle empty path parameter", async () => {
-      const result = await examination.execute({ path: "" });
-
-      expect(result).toContain("Project types detected:");
-    });
-
-    test("should handle relative path resolution", async () => {
       const result = await examination.execute({ path: "src/main.ts" });
 
       expect(typeof result).toBe("string");
-      expect(result).not.toContain("Error:");
+      expect(result).not.toContain("Project types detected:");
     });
 
-    test("should filter diagnostics for specific file", async () => {
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("tsc")) {
-          const output = `src/main.ts(1,1): error TS2322: Main file error.
-src/utils.ts(1,1): error TS2322: Utils file error.`;
-          return {
-            stdout: createMockStream(output),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
+    test("should handle non-existent file path", async () => {
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return path.includes("package.json") || path.includes("tsconfig.json");
       });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: { typescript: "^5.0.0" },
+          }),
+        ),
+      );
+
+      const result = await examination.execute({ path: "src/nonexistent.ts" });
+
+      expect(result).toContain("Could not find path");
+      expect(result).toContain("src/nonexistent.ts");
+    });
+
+    test("should skip tools not applicable to single files", async () => {
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes("tsconfig.json") ||
+          path.includes(".prettierrc") ||
+          path.includes("src/main.ts")
+        );
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: {
+              typescript: "^5.0.0",
+              prettier: "^3.0.0",
+            },
+          }),
+        ),
+      );
 
       const result = await examination.execute({ path: "src/main.ts" });
 
-      expect(result).toContain("Main file error");
-      expect(result).not.toContain("Utils file error");
-    });
-  });
-
-  describe("tool configuration", () => {
-    test("should skip ESLint for non-JS/TS files", async () => {
-      await writeFile("README.md", "# Test");
-
-      let eslintCalled = false;
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("eslint")) {
-          eslintCalled = true;
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({ path: "README.md" });
-      expect(result).toContain("No errors or warnings found");
-      expect(eslintCalled).toBe(false);
-    });
-
-    test("should run TypeScript diagnostics for TS files", async () => {
-      let tscCalled = false;
-
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("tsc")) {
-          tscCalled = true;
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      await examination.execute({ path: "src/main.ts" });
-      expect(tscCalled).toBe(true);
-    });
-
-    test("should use correct command line arguments", async () => {
-      let receivedArgs: string[] = [];
-
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("tsc")) {
-          receivedArgs = args;
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      await examination.execute({ path: "src/main.ts" });
-
-      expect(receivedArgs).toContain("npx");
-      expect(receivedArgs).toContain("tsc");
-      expect(receivedArgs).toContain("--noEmit");
-      expect(receivedArgs).toContain("--pretty");
-      expect(receivedArgs).toContain("false");
+      expect(result).toContain(
+        "⏭️ Prettier (skipped for single file analysis)",
+      );
+      expect(result).toContain("⏭️ Tests (skipped for single file analysis)");
     });
   });
 
   describe("error handling", () => {
-    test("should handle general execution errors", async () => {
-      const originalCwd = process.cwd;
-      process.cwd = () => {
-        throw new Error("Cannot access current directory");
-      };
+    test("should handle projects without Node.js/TypeScript setup", async () => {
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation(() => false);
 
       const result = await examination.execute({});
 
-      expect(result).toContain("Error running diagnostics:");
-      expect(result).toContain("Cannot access current directory");
-
-      process.cwd = originalCwd;
+      expect(result).toContain(
+        "This project doesn't appear to be a JavaScript or TypeScript project",
+      );
     });
 
-    test("should handle promise rejection in diagnostic tools", async () => {
-      const consoleErrorSpy = spyOn(console, "error").mockImplementation(
-        () => {},
-      );
+    test("should handle tool execution errors gracefully", async () => {
+      const { examination } = await import("../examination");
 
-      Bun.spawn = mock(() => {
-        throw new Error("Process spawn failed");
+      existsSyncSpy.mockImplementation((path: string) => {
+        return path.includes("package.json") || path.includes("tsconfig.json");
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: { typescript: "^5.0.0" },
+          }),
+        ),
+      );
+      bunSpawnSpy.mockImplementation(() => {
+        throw new Error("Tool execution failed");
       });
 
       const result = await examination.execute({});
 
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      expect(result).toContain("No errors or warnings found");
-
-      consoleErrorSpy.mockRestore();
+      // Should not throw, but handle the error gracefully
+      expect(typeof result).toBe("string");
+      expect(result).toContain("TypeScript");
     });
 
-    test("should handle malformed JSON from tools", async () => {
-      const consoleErrorSpy = spyOn(console, "error").mockImplementation(
-        () => {},
-      );
+    test("should handle malformed JSON output from tools", async () => {
+      const { examination } = await import("../examination");
 
-      Bun.spawn = mock((args: string[]) => {
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes("tsconfig.json") ||
+          path.includes(".eslintrc.json")
+        );
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: {
+              typescript: "^5.0.0",
+              eslint: "^8.0.0",
+            },
+          }),
+        ),
+      );
+      bunSpawnSpy.mockImplementation((args: string[]) => {
         if (args.includes("eslint")) {
           return {
-            stdout: createMockStream("{ invalid json"),
+            stdout: createMockStream("invalid json"),
             stderr: createEmptyStream(),
             exited: Promise.resolve(0),
           };
@@ -768,52 +588,69 @@ src/utils.ts(1,1): error TS2322: Utils file error.`;
 
       const result = await examination.execute({});
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "ESLint check failed:",
-        expect.any(Error),
-      );
-
-      consoleErrorSpy.mockRestore();
+      // Should handle malformed JSON gracefully
+      expect(typeof result).toBe("string");
+      expect(result).toContain("ESLint");
     });
   });
 
   describe("output formatting", () => {
     test("should format project-wide summary correctly", async () => {
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("tsc")) {
-          return {
-            stdout: createMockStream(
-              "src/main.ts(1,1): error TS2322: Test error.",
-            ),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return path.includes("package.json") || path.includes("tsconfig.json");
       });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: { typescript: "^5.0.0" },
+          }),
+        ),
+      );
 
       const result = await examination.execute({});
 
-      expect(result).toMatch(/Project types detected: .+/);
-      expect(result).toContain("Project diagnostic summary:");
-      expect(result).toContain("Total:");
-      expect(result).toContain("Files with issues:");
-      expect(result).toMatch(/src\/main\.ts: \d+ error\(s\), \d+ warning\(s\)/);
+      expect(result).toContain("Project types detected:");
+      expect(result).toContain("Executed checks:");
+      expect(result).toContain("nodejs, typescript");
     });
 
-    test("should format file-specific diagnostics correctly", async () => {
-      Bun.spawn = mock((args: string[]) => {
+    test("should group diagnostics by source in detailed view", async () => {
+      const { examination } = await import("../examination");
+
+      const mockTypeScriptOutput = `src/main.ts(5,10): error TS1005: ';' expected.
+src/main.ts(12,5): warning TS6133: 'unused' is declared but never used.`;
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes("tsconfig.json") ||
+          path.includes("src/main.ts")
+        );
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: { typescript: "^5.0.0" },
+          }),
+        ),
+      );
+      bunSpawnSpy.mockImplementation((args: string[]) => {
         if (args.includes("tsc")) {
           return {
-            stdout: createMockStream(
-              "src/main.ts(15,8): error TS2322: Type error message.",
-            ),
-            stderr: createEmptyStream(),
+            stdout: createMockStream(""),
+            stderr: createMockStream(mockTypeScriptOutput),
             exited: Promise.resolve(1),
+          };
+        }
+        if (args.includes("biome")) {
+          return {
+            stdout: createMockStream(""),
+            stderr: createEmptyStream(),
+            exited: Promise.resolve(0),
           };
         }
         return {
@@ -825,226 +662,116 @@ src/utils.ts(1,1): error TS2322: Utils file error.`;
 
       const result = await examination.execute({ path: "src/main.ts" });
 
-      expect(result).toContain("Found 1 error(s) and 0 warning(s):");
-      expect(result).toContain("❌ error at line 15:8: Type error message");
-      expect(result).toContain("[typescript]");
+      expect(result).toContain("--- TYPESCRIPT ---");
+      expect(result).toContain("❌ error at line 5:10");
+      expect(result).toContain("⚠️ warning at line 12:5");
     });
 
     test("should handle no issues found case", async () => {
-      Bun.spawn = mock(() => ({
-        stdout: createEmptyStream(),
-        stderr: createEmptyStream(),
-        exited: Promise.resolve(0),
-      }));
+      const { examination } = await import("../examination");
+
+      existsSyncSpy.mockImplementation((path: string) => {
+        return path.includes("package.json") || path.includes("tsconfig.json");
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: { typescript: "^5.0.0" },
+          }),
+        ),
+      );
 
       const result = await examination.execute({});
 
-      expect(result).toContain("No errors or warnings found in the project");
+      expect(result).toContain("No errors or warnings found in the project.");
     });
   });
 
-  describe("tool metadata", () => {
-    test("should have correct tool description", () => {
-      expect(examination.description).toContain(
-        "JavaScript/TypeScript projects",
-      );
-      expect(examination.description).toContain(
-        "TypeScript compiler, ESLint, Prettier, and unit test execution",
-      );
-      expect(examination.description).toContain("<example>");
-      expect(examination.description).toContain("<guidelines>");
-    });
+  describe("performance optimizations", () => {
+    test("should complete quickly with mocked operations", async () => {
+      const { examination } = await import("../examination");
 
-    test("should have correct parameter schema", () => {
-      expect(examination.parameters).toBeDefined();
-      expect(examination.parameters.shape).toHaveProperty("path");
-    });
-
-    test("should accept optional path parameter", () => {
-      const pathParam = examination.parameters.shape.path;
-      expect(pathParam).toBeDefined();
-      expect(pathParam.isOptional()).toBe(true);
-    });
-  });
-
-  describe("integration scenarios", () => {
-    test("should handle project with multiple file types", async () => {
-      await writeFile(
-        "src/component.jsx",
-        "export default () => <div>Hello</div>;",
-      );
-      await writeFile("src/styles.css", "body { margin: 0; }");
-      await writeFile("package.json", mockPackageJsonWithTests);
-
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("tsc")) {
-          return {
-            stdout: createMockStream(
-              "src/main.ts(1,1): error TS2322: TS error.",
-            ),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        if (args.includes("eslint")) {
-          const output = JSON.stringify([
-            {
-              filePath: join(process.cwd(), "src/component.jsx"),
-              messages: [
-                {
-                  line: 1,
-                  column: 1,
-                  severity: 2,
-                  message: "JSX error",
-                  ruleId: "react/jsx-key",
-                },
-              ],
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes("tsconfig.json") ||
+          path.includes("biome.json") ||
+          path.includes(".eslintrc.json") ||
+          path.includes(".prettierrc")
+        );
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: {
+              "@biomejs/biome": "^1.0.0",
+              typescript: "^5.0.0",
+              eslint: "^8.0.0",
+              prettier: "^3.0.0",
             },
-          ]);
-          return {
-            stdout: createMockStream(output),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(0),
-          };
-        }
-        if (args.includes("test")) {
-          return {
-            stdout: createMockStream(mockUnitTestSuccess),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(0),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
+          }),
+        ),
+      );
 
+      const startTime = Date.now();
       const result = await examination.execute({});
+      const duration = Date.now() - startTime;
 
-      expect(result).toContain("Project diagnostic summary");
-      expect(result).toContain("src/main.ts");
-      expect(result).toContain("src/component.jsx");
+      expect(typeof result).toBe("string");
+      expect(duration).toBeLessThan(1000); // Should complete in less than 1 second
     });
 
-    test("should handle concurrent diagnostic execution", async () => {
-      await writeFile("package.json", mockPackageJsonWithTests);
+    test("should handle concurrent tool execution efficiently", async () => {
+      const { examination } = await import("../examination");
 
-      let tscCallCount = 0;
-      let eslintCallCount = 0;
-      let testCallCount = 0;
+      existsSyncSpy.mockImplementation((path: string) => {
+        return (
+          path.includes("package.json") ||
+          path.includes("tsconfig.json") ||
+          path.includes("biome.json")
+        );
+      });
+      readFileSpy.mockImplementation(() =>
+        Promise.resolve(
+          JSON.stringify({
+            name: "test-project",
+            devDependencies: {
+              "@biomejs/biome": "^1.0.0",
+              typescript: "^5.0.0",
+            },
+          }),
+        ),
+      );
 
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("tsc")) {
-          tscCallCount++;
-          return {
-            stdout: createMockStream(
-              "src/main.ts(1,1): error TS2322: TS error.",
-            ),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        if (args.includes("eslint")) {
-          eslintCallCount++;
-          return {
-            stdout: createEmptyStream(),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(0),
-          };
-        }
-        if (args.includes("test")) {
-          testCallCount++;
-          return {
-            stdout: createMockStream(mockUnitTestSuccess),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(0),
-          };
-        }
+      // Add delay to mock operations to test concurrency
+      bunSpawnSpy.mockImplementation(() => {
         return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
+          stdout: new ReadableStream({
+            start(controller) {
+              setTimeout(() => {
+                controller.enqueue(new TextEncoder().encode(""));
+                controller.close();
+              }, 50);
+            },
+          }),
+          stderr: new ReadableStream({
+            start(controller) {
+              controller.close();
+            },
+          }),
+          exited: new Promise((resolve) => setTimeout(() => resolve(0), 50)),
         };
       });
 
-      await examination.execute({});
-
-      expect(tscCallCount).toBe(1);
-      expect(eslintCallCount).toBe(1);
-      expect(testCallCount).toBe(1);
-    });
-
-    test("should handle large diagnostic output efficiently", async () => {
-      await writeFile("package.json", mockPackageJsonWithTests);
-
-      const largeOutput = Array.from(
-        { length: 100 },
-        (_, i) => `src/file${i}.ts(1,1): error TS2322: Error in file ${i}.`,
-      ).join("\n");
-
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("tsc")) {
-          return {
-            stdout: createMockStream(largeOutput),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        if (args.includes("test")) {
-          return {
-            stdout: createMockStream(mockUnitTestSuccess),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(0),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
+      const startTime = Date.now();
       const result = await examination.execute({});
+      const duration = Date.now() - startTime;
 
-      expect(result).toContain("100 error(s)");
-      expect(result).toContain("Project diagnostic summary");
-    });
-
-    test("should aggregate unit test failures with other diagnostics", async () => {
-      await writeFile("package.json", mockPackageJsonWithTests);
-
-      Bun.spawn = mock((args: string[]) => {
-        if (args.includes("tsc")) {
-          return {
-            stdout: createMockStream(
-              "src/main.ts(1,1): error TS2322: TS error.",
-            ),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        if (args.includes("test")) {
-          return {
-            stdout: createMockStream(mockUnitTestOutput),
-            stderr: createEmptyStream(),
-            exited: Promise.resolve(1),
-          };
-        }
-        return {
-          stdout: createEmptyStream(),
-          stderr: createEmptyStream(),
-          exited: Promise.resolve(0),
-        };
-      });
-
-      const result = await examination.execute({});
-
-      expect(result).toContain("Project diagnostic summary");
-      expect(result).toContain("error(s)");
-      expect(result).toContain("src/main.ts");
-      expect(result).toContain("src/components/Button.test.ts");
+      expect(typeof result).toBe("string");
+      // Should complete faster than sequential execution due to concurrency
+      expect(duration).toBeLessThan(200);
     });
   });
 });

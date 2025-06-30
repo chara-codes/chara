@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import z from "zod";
 import { readFile } from "node:fs/promises";
-import { resolve, join, relative } from "node:path";
+import { resolve, join, relative, isAbsolute } from "node:path";
 import { existsSync } from "node:fs";
 
 interface DiagnosticEntry {
@@ -21,19 +21,44 @@ interface DiagnosticSummary {
   infoCount: number;
 }
 
+interface ExecutedCheck {
+  name: string;
+  executed: boolean;
+  reason?: string;
+}
+
 interface ProjectDiagnostics {
   totalErrors: number;
   totalWarnings: number;
   totalInfo: number;
   files: DiagnosticSummary[];
   details?: DiagnosticEntry[];
+  executedChecks: ExecutedCheck[];
+}
+
+interface DetectedProject {
+  types: string[];
+  tools: {
+    biome: boolean;
+    eslint: boolean;
+    prettier: boolean;
+    typescript: boolean;
+  };
 }
 
 /**
- * Detects if project has TypeScript/JavaScript setup
+ * Detects if project has TypeScript/JavaScript setup and available tools
  */
-async function detectProjectType(projectRoot: string): Promise<string[]> {
+async function detectProjectType(
+  projectRoot: string,
+): Promise<DetectedProject> {
   const types: string[] = [];
+  const tools = {
+    biome: false,
+    eslint: false,
+    prettier: false,
+    typescript: false,
+  };
 
   // Check for package.json (Node.js/JavaScript/TypeScript)
   if (existsSync(join(projectRoot, "package.json"))) {
@@ -43,18 +68,74 @@ async function detectProjectType(projectRoot: string): Promise<string[]> {
       const pkg = JSON.parse(
         await readFile(join(projectRoot, "package.json"), "utf-8"),
       );
+
+      // Check for TypeScript
       if (pkg.devDependencies?.typescript || pkg.dependencies?.typescript) {
         types.push("typescript");
+        tools.typescript = true;
+      }
+
+      // Check for Biome
+      if (
+        pkg.devDependencies?.["@biomejs/biome"] ||
+        pkg.dependencies?.["@biomejs/biome"]
+      ) {
+        tools.biome = true;
+      }
+
+      // Check for ESLint
+      if (pkg.devDependencies?.eslint || pkg.dependencies?.eslint) {
+        tools.eslint = true;
+      }
+
+      // Check for Prettier
+      if (pkg.devDependencies?.prettier || pkg.dependencies?.prettier) {
+        tools.prettier = true;
       }
     } catch {}
   }
 
   // Check for TypeScript config
   if (existsSync(join(projectRoot, "tsconfig.json"))) {
-    types.push("typescript");
+    if (!types.includes("typescript")) {
+      types.push("typescript");
+    }
+    tools.typescript = true;
   }
 
-  return types.length > 0 ? types : ["unknown"];
+  // Check for Biome config
+  if (
+    existsSync(join(projectRoot, "biome.json")) ||
+    existsSync(join(projectRoot, "biome.jsonc"))
+  ) {
+    tools.biome = true;
+  }
+
+  // Check for ESLint config
+  const eslintConfigs = [
+    ".eslintrc.js",
+    ".eslintrc.json",
+    ".eslintrc.yml",
+    ".eslintrc.yaml",
+    "eslint.config.js",
+  ];
+  if (eslintConfigs.some((config) => existsSync(join(projectRoot, config)))) {
+    tools.eslint = true;
+  }
+
+  // Check for Prettier config
+  const prettierConfigs = [
+    ".prettierrc",
+    ".prettierrc.json",
+    ".prettierrc.yml",
+    ".prettierrc.yaml",
+    "prettier.config.js",
+  ];
+  if (prettierConfigs.some((config) => existsSync(join(projectRoot, config)))) {
+    tools.prettier = true;
+  }
+
+  return { types: types.length > 0 ? types : ["unknown"], tools };
 }
 
 /**
@@ -95,8 +176,12 @@ async function getTypeScriptDiagnostics(
       );
       if (match) {
         const [, file, lineStr, columnStr, severity, message] = match;
+        // Handle both absolute and relative file paths
+        const normalizedFile = isAbsolute(file)
+          ? relative(projectRoot, file)
+          : file;
         diagnostics.push({
-          file: relative(projectRoot, file),
+          file: normalizedFile,
           line: parseInt(lineStr),
           column: parseInt(columnStr),
           severity: severity as "error" | "warning" | "info",
@@ -216,6 +301,83 @@ async function getPrettierDiagnostics(
   } catch (error) {
     // Prettier might not be configured or installed
     console.error("Prettier check failed:", error);
+  }
+
+  return diagnostics;
+}
+
+/**
+ * Runs Biome diagnostics using Bun
+ */
+async function getBiomeDiagnostics(
+  projectRoot: string,
+  filePath?: string,
+): Promise<DiagnosticEntry[]> {
+  const diagnostics: DiagnosticEntry[] = [];
+
+  try {
+    const target = filePath || ".";
+    const args = ["npx", "@biomejs/biome", "check", "--reporter=json", target];
+
+    const proc = Bun.spawn(args, {
+      cwd: projectRoot,
+      stderr: "pipe",
+      stdout: "pipe",
+    });
+
+    const [stdout, stderr] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+    ]);
+
+    const exitCode = await proc.exited;
+
+    if (stdout.trim()) {
+      try {
+        const results = JSON.parse(stdout);
+
+        if (results.diagnostics && Array.isArray(results.diagnostics)) {
+          for (const diagnostic of results.diagnostics) {
+            const filePath = diagnostic.location?.path
+              ? relative(projectRoot, diagnostic.location.path)
+              : "unknown";
+
+            diagnostics.push({
+              file: filePath,
+              line: diagnostic.location?.span?.start?.line || 1,
+              column: diagnostic.location?.span?.start?.column || 1,
+              severity: diagnostic.severity === "error" ? "error" : "warning",
+              message:
+                diagnostic.description ||
+                diagnostic.message ||
+                "Biome diagnostic",
+              rule: diagnostic.category,
+              source: "biome",
+            });
+          }
+        }
+      } catch (parseError) {
+        // If JSON parsing fails, try to parse stderr for simple errors
+        const output = stderr;
+        const lines = output.split("\n").filter((line) => line.trim());
+
+        for (const line of lines) {
+          if (line.includes("error") || line.includes("warning")) {
+            diagnostics.push({
+              file: filePath ? relative(projectRoot, filePath) : "project",
+              line: 1,
+              column: 1,
+              severity: line.includes("error") ? "error" : "warning",
+              message: line.trim(),
+              source: "biome",
+            });
+          }
+        }
+      }
+    }
+  } catch (error) {
+    // Biome might not be available
+    console.error("Biome check failed:", error);
   }
 
   return diagnostics;
@@ -353,6 +515,7 @@ async function getUnitTestDiagnostics(
  */
 function aggregateDiagnostics(
   diagnostics: DiagnosticEntry[],
+  executedChecks: ExecutedCheck[] = [],
 ): ProjectDiagnostics {
   const fileMap = new Map<string, DiagnosticSummary>();
   let totalErrors = 0;
@@ -393,6 +556,7 @@ function aggregateDiagnostics(
     totalInfo,
     files: Array.from(fileMap.values()),
     details: diagnostics,
+    executedChecks,
   };
 }
 
@@ -403,26 +567,70 @@ function formatDiagnostics(
   diagnostics: ProjectDiagnostics,
   showDetails: boolean = false,
 ): string {
-  if (diagnostics.totalErrors === 0 && diagnostics.totalWarnings === 0) {
-    return "No errors or warnings found in the project.";
+  let output = "";
+
+  // Show executed checks information
+  if (diagnostics.executedChecks.length > 0) {
+    output += "Executed checks:\n";
+    for (const check of diagnostics.executedChecks) {
+      const status = check.executed ? "✅" : "⏭️";
+      output += `  ${status} ${check.name}`;
+      if (!check.executed && check.reason) {
+        output += ` (${check.reason})`;
+      } else if (check.executed) {
+        const checkDiagnostics =
+          diagnostics.details?.filter(
+            (d) => d.source === check.name.toLowerCase(),
+          ) || [];
+        const errors = checkDiagnostics.filter(
+          (d) => d.severity === "error",
+        ).length;
+        const warnings = checkDiagnostics.filter(
+          (d) => d.severity === "warning",
+        ).length;
+        if (errors > 0 || warnings > 0) {
+          output += ` - found ${errors} error(s), ${warnings} warning(s)`;
+        } else {
+          output += ` - no issues found`;
+        }
+      }
+      output += "\n";
+    }
+    output += "\n";
   }
 
-  let output = "";
+  if (diagnostics.totalErrors === 0 && diagnostics.totalWarnings === 0) {
+    output += "No errors or warnings found in the project.";
+    return output;
+  }
 
   if (showDetails && diagnostics.details) {
     // Show detailed diagnostics for specific file
     output += `Found ${diagnostics.totalErrors} error(s) and ${diagnostics.totalWarnings} warning(s):\n\n`;
 
+    // Group diagnostics by source
+    const diagnosticsBySource = new Map<string, DiagnosticEntry[]>();
     for (const diagnostic of diagnostics.details) {
-      const icon = diagnostic.severity === "error" ? "❌" : "⚠️";
-      output += `${icon} ${diagnostic.severity} at line ${diagnostic.line}:${diagnostic.column}: ${diagnostic.message}`;
-      if (diagnostic.rule) {
-        output += ` (${diagnostic.rule})`;
+      const source = diagnostic.source || "unknown";
+      if (!diagnosticsBySource.has(source)) {
+        diagnosticsBySource.set(source, []);
       }
-      if (diagnostic.source) {
-        output += ` [${diagnostic.source}]`;
+      diagnosticsBySource.get(source)!.push(diagnostic);
+    }
+
+    for (const [source, sourceDiagnostics] of diagnosticsBySource) {
+      if (sourceDiagnostics.length > 0) {
+        output += `--- ${source.toUpperCase()} ---\n`;
+        for (const diagnostic of sourceDiagnostics) {
+          const icon = diagnostic.severity === "error" ? "❌" : "⚠️";
+          output += `${icon} ${diagnostic.severity} at line ${diagnostic.line}:${diagnostic.column}: ${diagnostic.message}`;
+          if (diagnostic.rule) {
+            output += ` (${diagnostic.rule})`;
+          }
+          output += "\n";
+        }
+        output += "\n";
       }
-      output += "\n";
     }
   } else {
     // Show summary for project-wide diagnostics
@@ -450,7 +658,7 @@ This tool can be invoked after a series of edits to determine if further edits a
 When a path is provided, shows all diagnostics for that specific file.
 When no path is provided, shows a summary of error and warning counts for all files in the project.
 
-Supports TypeScript compiler, ESLint, Prettier, and unit test execution for JavaScript/TypeScript projects.
+Supports TypeScript compiler, ESLint, Prettier, Biome, and unit test execution for JavaScript/TypeScript projects.
 
 <example>
 To get diagnostics for a specific file:
@@ -482,17 +690,18 @@ To get a project-wide diagnostic summary:
     try {
       const projectRoot = process.cwd();
 
-      // Detect project type
-      const projectTypes = await detectProjectType(projectRoot);
+      // Detect project type and available tools
+      const detected = await detectProjectType(projectRoot);
 
       if (
-        !projectTypes.includes("nodejs") &&
-        !projectTypes.includes("typescript")
+        !detected.types.includes("nodejs") &&
+        !detected.types.includes("typescript")
       ) {
         return "This project doesn't appear to be a JavaScript or TypeScript project. No package.json or tsconfig.json found.";
       }
 
       let allDiagnostics: DiagnosticEntry[] = [];
+      const executedChecks: ExecutedCheck[] = [];
 
       // Resolve full path if specified
       let targetPath: string | undefined;
@@ -508,26 +717,96 @@ To get a project-wide diagnostic summary:
       // Run diagnostics based on available tools
       const diagnosticPromises: Promise<DiagnosticEntry[]>[] = [];
 
+      // Biome diagnostics (if available)
+      if (detected.tools.biome) {
+        diagnosticPromises.push(getBiomeDiagnostics(projectRoot, targetPath));
+        executedChecks.push({
+          name: "Biome",
+          executed: true,
+        });
+      } else {
+        executedChecks.push({
+          name: "Biome",
+          executed: false,
+          reason: "not installed or configured",
+        });
+      }
+
       // TypeScript diagnostics
-      if (projectTypes.includes("typescript")) {
+      if (detected.tools.typescript) {
         diagnosticPromises.push(
           getTypeScriptDiagnostics(projectRoot, targetPath),
         );
+        executedChecks.push({
+          name: "TypeScript",
+          executed: true,
+        });
+      } else {
+        executedChecks.push({
+          name: "TypeScript",
+          executed: false,
+          reason: "not installed or configured",
+        });
       }
 
       // ESLint diagnostics (only for project-wide or if targeting JS/TS files)
-      if (!targetPath || targetPath.match(/\.(js|jsx|ts|tsx)$/)) {
+      if (
+        detected.tools.eslint &&
+        (!targetPath || targetPath.match(/\.(js|jsx|ts|tsx)$/))
+      ) {
         diagnosticPromises.push(getESLintDiagnostics(projectRoot, targetPath));
+        executedChecks.push({
+          name: "ESLint",
+          executed: true,
+        });
+      } else if (detected.tools.eslint) {
+        executedChecks.push({
+          name: "ESLint",
+          executed: false,
+          reason: "file type not supported",
+        });
+      } else {
+        executedChecks.push({
+          name: "ESLint",
+          executed: false,
+          reason: "not installed or configured",
+        });
       }
 
       // Prettier diagnostics (only for project-wide scans to avoid noise)
-      if (!targetPath) {
+      if (detected.tools.prettier && !targetPath) {
         diagnosticPromises.push(getPrettierDiagnostics(projectRoot));
+        executedChecks.push({
+          name: "Prettier",
+          executed: true,
+        });
+      } else if (detected.tools.prettier) {
+        executedChecks.push({
+          name: "Prettier",
+          executed: false,
+          reason: "skipped for single file analysis",
+        });
+      } else {
+        executedChecks.push({
+          name: "Prettier",
+          executed: false,
+          reason: "not installed or configured",
+        });
       }
 
       // Unit test diagnostics (only for project-wide scans)
       if (!targetPath) {
         diagnosticPromises.push(getUnitTestDiagnostics(projectRoot));
+        executedChecks.push({
+          name: "Tests",
+          executed: true,
+        });
+      } else {
+        executedChecks.push({
+          name: "Tests",
+          executed: false,
+          reason: "skipped for single file analysis",
+        });
       }
 
       // Wait for all diagnostics to complete
@@ -541,14 +820,14 @@ To get a project-wide diagnostic summary:
       }
 
       // Aggregate and format results
-      const diagnostics = aggregateDiagnostics(allDiagnostics);
+      const diagnostics = aggregateDiagnostics(allDiagnostics, executedChecks);
       const showDetails = !!targetPath;
 
       let result = formatDiagnostics(diagnostics, showDetails);
 
       // Add project type information
       if (!targetPath) {
-        result = `Project types detected: ${projectTypes.join(", ")}\n\n${result}`;
+        result = `Project types detected: ${detected.types.join(", ")}\n\n${result}`;
       }
 
       return result;

@@ -4,6 +4,8 @@ CLI
 [ ] Run separatly mcp, server, web, and agents
 [ ] Use .env for urls
 [ ] Improve DX, remove useless logs
+[ ] Configure Chara (keys dialog)
+
 
 Server
 [ ] Move MCP to separate package
@@ -13,10 +15,20 @@ Server
 
 Web
 [x] Move to new one design
-[ ] Improve tool calling visualisation
+[x] Improve tool calling visualisation
 
 Agents
 [x] Tools for communication with cli
 [x] Debug MCP errors (mcp-client.ts)
 [ ] Add google ai support
 [ ] Add deepseek support
+
+
+Ideas
+[ ] Statistic for LLM usage (tokens, price)
+[ ] History interface
+[ ] History tool
+[ ] VSCode server integration
+[ ] Auth with github (add copilot models support)
+[ ] High quality code generation (TDD, TCR, Coverage, Mutation, Documentation etc)
+[ ] .rules support
