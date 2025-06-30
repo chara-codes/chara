@@ -211,12 +211,12 @@ describe("moveFile tool", () => {
     const nonExistentPath = testFS.getPath("does-not-exist.txt");
     const destPath = testFS.getPath("destination.txt");
 
-    await expect(
-      moveFile.execute({
+    expect(
+      await moveFile.execute({
         source: nonExistentPath,
         destination: destPath,
       }),
-    ).rejects.toThrow("Failed to move");
+    ).toInclude("Failed to move");
   });
 
   test("should overwrite destination when it already exists", async () => {
@@ -240,12 +240,12 @@ describe("moveFile tool", () => {
     const sourcePath = await testFS.createFile("source.txt", "content");
     const destPath = testFS.getPath("non-existent-dir/destination.txt");
 
-    await expect(
-      moveFile.execute({
+    expect(
+      await moveFile.execute({
         source: sourcePath,
         destination: destPath,
       }),
-    ).rejects.toThrow("Failed to move");
+    ).toInclude("Failed to move");
   });
 
   test("should handle moving hidden files", async () => {

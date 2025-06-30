@@ -24,9 +24,7 @@ export const moveFile = tool({
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `Failed to move ${source} to ${destination}: ${errorMessage}`,
-      );
+      return `Failed to move ${source} to ${destination}: ${errorMessage}`;
     }
   },
 });
