@@ -313,7 +313,7 @@ HTML content is automatically converted to markdown for better readability, but 
 
 The tool also checks for llms.txt files (https://llmstxt.org/) which provide structured information specifically designed for LLMs. When available, llms.txt content can be preferred over regular page content for more relevant information.`,
   parameters: z.object({
-    url: z.string().url().describe("URL to fetch"),
+    url: z.string().describe("URL to fetch (must be a valid HTTP/HTTPS URL)"),
     maxLength: z
       .number()
       .int()
