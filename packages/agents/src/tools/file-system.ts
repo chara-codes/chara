@@ -326,6 +326,21 @@ function levenshteinDistance(str1: string, str2: string): number {
 
 // Helper function to preprocess patterns to prevent overflow
 function preprocessPattern(pattern: string): string {
+  // Handle empty or whitespace patterns
+  if (!pattern || pattern.trim() === "") {
+    return "**/*";
+  }
+
+  // Handle bare wildcard patterns
+  if (pattern === "*" || pattern === "**") {
+    return "**/*";
+  }
+
+  // Handle question mark only patterns
+  if (pattern === "?" || pattern === "??") {
+    return "**/*";
+  }
+
   // Handle patterns like *tic*toe* which can cause overflow
   if (
     pattern.includes("*") &&
@@ -333,6 +348,11 @@ function preprocessPattern(pattern: string): string {
     !pattern.startsWith("**")
   ) {
     const segments = pattern.split("*").filter((s) => s.length > 0);
+
+    // If no segments (like bare "*" or "**"), convert to safe recursive pattern
+    if (segments.length === 0) {
+      return "**/*";
+    }
 
     // For simple patterns like *tic*, convert to recursive search
     if (segments.length === 1) {
@@ -357,45 +377,6 @@ function preprocessPattern(pattern: string): string {
   }
 
   return pattern;
-}
-
-// Helper function to suggest better glob patterns
-function suggestGlobPattern(pattern: string): string {
-  // Common regex-to-glob conversions
-  const suggestions = [];
-
-  if (pattern.includes("|")) {
-    const parts = pattern.split("|").map((p) => p.trim());
-    if (parts.length <= 10) {
-      // Convert to brace expansion
-      const cleanParts = parts.map((p) => p.replace(/^\*|\*$/g, ""));
-      suggestions.push(`**/*{${cleanParts.join(",")}}*`);
-    }
-    suggestions.push("Use separate calls for each pattern");
-  }
-
-  if (pattern.includes("*") && pattern.includes("|")) {
-    suggestions.push("Try: **/*pattern* for each term separately");
-  }
-
-  if (!pattern.includes("**") && !pattern.includes("*")) {
-    suggestions.push(`Try: **/*${pattern}* to search recursively`);
-  }
-
-  // Special handling for complex wildcard patterns
-  if (pattern.includes("*")) {
-    const segments = pattern.split("*").filter((s) => s.length > 0);
-    if (segments.length > 1) {
-      suggestions.push(`Try: **/*{${segments.join(",")}}* (brace expansion)`);
-      suggestions.push(
-        `Or: ${segments.map((s) => `**/*${s}*`).join(" in separate searches")}`,
-      );
-    }
-  }
-
-  return suggestions.length > 0
-    ? suggestions.join(" OR ")
-    : "Use standard glob patterns like **/*.js, *.txt, or **/*name*";
 }
 
 export const fileSystem = tool({

@@ -94,7 +94,22 @@ export const runner = tool({
           result += `   CWD: ${info.cwd}\n`;
           result += `   PID: ${info.pid || "N/A"}\n`;
           result += `   Uptime: ${info.uptime ? Math.round(info.uptime / 1000) : "unknown"} seconds\n`;
-          result += `   Start Time: ${info.startTime ? info.startTime.toISOString() : "N/A"}\n\n`;
+          result += `   Start Time: ${info.startTime ? info.startTime.toISOString() : "N/A"}\n`;
+
+          // Add logs for each process
+          const processLogs = runnerService.getProcessLogs(id);
+          if (processLogs.length > 0) {
+            result += `   Recent Logs (last ${Math.min(processLogs.length, 10)} entries):\n`;
+            const recentLogs = processLogs.slice(-10); // Get last 10 log entries
+            recentLogs.forEach((log: LogEntry) => {
+              const timestamp = log.timestamp.toISOString();
+              const type = log.type.toUpperCase();
+              result += `     [${timestamp}] ${type}: ${log.content}\n`;
+            });
+          } else {
+            result += `   Recent Logs: No logs available\n`;
+          }
+          result += `\n`;
         });
 
         result += `To get diagnostic logs for a specific process, use:\n`;
