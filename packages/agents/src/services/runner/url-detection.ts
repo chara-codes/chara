@@ -1,5 +1,5 @@
-import { appEvents } from "../events.js";
-import type { ProcessData } from "./types.js";
+import { appEvents } from "../events";
+import type { ProcessData } from "./types";
 
 /**
  * URL patterns commonly found in development server output

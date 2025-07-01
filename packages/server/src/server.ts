@@ -7,8 +7,6 @@ import { createContext, type Context } from "./api/context";
 import { cyan } from "picocolors";
 import { serve } from "bun";
 import { createBunWSHandler } from "./utils/create-bun-ws-handler";
-import { myLogger as logger } from "./utils/logger";
-import { chatRouter } from "./api/routes/chat";
 import { subscription } from "./api/routes/subscription";
 import { instructionsRouter } from "./api/routes/instructions";
 import { filesRouter } from "./api/routes/files";
@@ -22,22 +20,16 @@ import {
 import { createServer } from "./mcp/server";
 import { sessionRouter } from "./api/routes/sessions";
 import { parse } from "querystring";
-import {
-  McpServer,
-  ResourceTemplate,
-} from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
+import { logger } from "@chara/logger";
 
 const t = initTRPC.context<Context>().create({ transformer: superjson });
 
-const publicProcedure = t.procedure;
 const router = t.router;
 
 export const appRouter = router({
   lnks: linksRouter,
   stacks: stacksRouter,
   messages: messagesRouter,
-  chat: chatRouter,
   sessions: sessionRouter,
   events: subscription,
   instructions: instructionsRouter,
@@ -101,37 +93,6 @@ const server = serve({
         : new Response("WebSocket upgrade error", { status: 400 });
     }
 
-    if (url.pathname === "/chat") {
-      const generatorFunction = async function* () {
-        for (let i = 0; i < 5; i++) {
-          yield `Data chunk ${i}\n`;
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
-        }
-      };
-      const chatGenerator = generatorFunction(); // engineerAgent(body.message);
-
-      // Create a ReadableStream from the generator
-      const chatStream = new ReadableStream({
-        start(controller) {
-          const pushData = () => {
-            const { value, done }: any = chatGenerator.next();
-            if (done) {
-              controller.close();
-              return;
-            }
-            controller.enqueue(new TextEncoder().encode(value));
-            // setTimeout(pushData, 10); // Simulate streaming with delay
-          };
-          pushData();
-        },
-      });
-
-      return new Response(chatStream, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
-    }
     const response = await fetchRequestHandler({
       endpoint: "/trpc",
       req: request,
@@ -146,8 +107,8 @@ const server = serve({
 logger.server(`Server ready at: http://localhost:${server.port}/`);
 logger.success("WebSocket handler initialized");
 logger.info("Available endpoints:");
-logger.api(`- HTTP: ${cyan(`http://localhost:${server.port}/trpc`)}`);
-logger.api(`- WebSocket: ${cyan(`ws://localhost:${server.port}/events`)}`);
+logger.server(`- HTTP: ${cyan(`http://localhost:${server.port}/trpc`)}`);
+logger.server(`- WebSocket: ${cyan(`ws://localhost:${server.port}/events`)}`);
 
 // In-memory store for active SSE transports by session ID
 const transports: Record<string, BunSSEServerTransport> = {};
@@ -226,4 +187,4 @@ process.on("SIGINT", async () => {
 logger.server(`Server ready at: http://localhost:${SSEServer.port}/`);
 logger.success("MCP Server handler initialized");
 logger.info("Available endpoints:");
-logger.api(`- HTTP: ${cyan(`http://localhost:${SSEServer.port}/mcp`)}`);
+logger.info(`- HTTP: ${cyan(`http://localhost:${SSEServer.port}/mcp`)}`);

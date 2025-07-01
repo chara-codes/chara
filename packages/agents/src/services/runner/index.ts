@@ -1,17 +1,12 @@
 import os from "node:os";
 import { v4 as uuidv4 } from "uuid";
-import { appEvents } from "../events.js";
-import type {
-  ServerInfo,
-  RunnerOptions,
-  ProcessData,
-  LogEntry,
-} from "./types.js";
-import { setupUrlDetection } from "./url-detection.js";
-import { generateProcessName } from "./process-names.js";
-import { streamOutput } from "./output-streaming.js";
+import { appEvents } from "../events";
+import type { ServerInfo, RunnerOptions, ProcessData, LogEntry } from "./types";
+import { setupUrlDetection } from "./url-detection";
+import { generateProcessName } from "./process-names";
+import { streamOutput } from "./output-streaming";
 
-export type { ServerInfo, RunnerOptions } from "./types.js";
+export type { ServerInfo, RunnerOptions } from "./types";
 
 /**
  * Service for managing long-running processes like development servers
@@ -20,7 +15,7 @@ class RunnerService {
   private processes = new Map<string, ProcessData>();
   private defaultShell = "/bin/bash";
   private defaultCwd = process.cwd();
-  private readonly LOG_BUFFER_SIZE = 100; // Maximum number of logs to keep in buffer
+  private readonly LOG_BUFFER_SIZE = 30; // Maximum number of logs to keep in buffer
 
   constructor() {
     this.setupEventListeners();

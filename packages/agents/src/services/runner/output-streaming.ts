@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import { appEvents } from "../events.js";
-import type { ProcessData, LogEntry } from "./types.js";
+import { appEvents } from "../events";
+import type { ProcessData, LogEntry } from "./types";
 
 /**
  * Stream output from a readable stream to events

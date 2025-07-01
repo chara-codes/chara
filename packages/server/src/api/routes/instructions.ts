@@ -3,7 +3,7 @@ import { publicProcedure, router } from "../trpc";
 import { ee } from "../../utils/event-emitter";
 import { streamText } from "ai";
 import { nanoid } from "nanoid";
-import { myLogger } from "../../utils/logger";
+import { logger } from "@chara/logger";
 
 // Define the schema for action results
 const actionStatusSchema = z.enum(["success", "failure", "skipped"]);
@@ -75,7 +75,7 @@ Be concise but informative, focusing on helping the user understand what happene
     },
   };
 
-  console.log(
+  logger.dump(
     `[SUMMARY ${summaryId}] Formatted results for LLM:`,
     JSON.stringify(formattedResults, null, 2),
   );
@@ -92,7 +92,7 @@ Be concise but informative, focusing on helping the user understand what happene
         content: JSON.stringify(formattedResults),
       },
     ],
-  });  
+  });
 
   return textStream;
 }
@@ -102,7 +102,7 @@ export const instructionsRouter = router({
     .input(instructionsResultSchema)
     .mutation(async ({ ctx, input }) => {
       // Log the results
-      myLogger.debug("Received instruction results", {
+      logger.debug("Received instruction results", {
         success: input.success,
         actionCount: input.actions.length,
         successCount: input.actions.filter((a) => a.status === "success")
@@ -134,8 +134,7 @@ export const instructionsRouter = router({
           timestamp: Date.now(),
         };
       } catch (error) {
-        myLogger.error(`Error generating summary: ${(error as Error).message}`);
-        console.error("Error generating summary:", error);
+        logger.error(`Error generating summary: ${(error as Error).message}`);
         return {
           received: true,
           error: "Failed to generate summary",

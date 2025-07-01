@@ -15,7 +15,6 @@ import { logWithPreset } from "./utils";
 import { runnerService } from "./services/runner";
 import { appEvents } from "./services/events";
 import type { ServerWebSocket } from "bun";
-import { Laminar } from "@lmnr-ai/lmnr";
 
 // Export agents for programmatic use
 export { chatAgent } from "./agents/chat-agent";
@@ -32,10 +31,13 @@ export { providersRegistry } from "./providers/";
 // Store connected WebSocket clients
 const wsClients = new Set<ServerWebSocket<unknown>>();
 
-async function startServer(charaConfigFile = ".chara.json") {
+export async function initializeCharaConfig(
+  charaConfigFile = ".chara.json",
+  model = "dial:::gpt-4.1-mini-2025-04-14",
+) {
   if (!(await Bun.file(charaConfigFile).exists())) {
     const init = initAgent({
-      model: "dial:::gpt-4.1-mini-2025-04-14",
+      model,
     });
     logger.info("🛠️  Initializing Chara configuration...");
     for await (const chunk of init.fullStream) {
@@ -46,7 +48,12 @@ async function startServer(charaConfigFile = ".chara.json") {
     const fallbackConfig = { dev: "npx serve ." };
     Bun.write(charaConfigFile, JSON.stringify(fallbackConfig));
   }
-  const charaConfig = await Bun.file(charaConfigFile).json();
+  return await Bun.file(charaConfigFile).json();
+}
+
+export async function startServer(charaConfigFile = ".chara.json") {
+  const configFile = Bun.file(charaConfigFile);
+  const charaConfig = await configFile.json();
 
   // Set up WebSocket broadcasting for runner events
   const broadcastToClients = (eventName: string, data: any) => {
@@ -194,17 +201,20 @@ async function startServer(charaConfigFile = ".chara.json") {
   logger.debug(`🔌 WebSocket server ready at ws://localhost:${server.port}/ws`);
   logger.debug("🎉 Server fully ready to accept requests");
 }
-// Check if current working directory is the parent directory and change to ../tmp if so
-const currentDir = process.cwd();
-const parentDir = resolve(__dirname, "..");
-if (currentDir === parentDir) {
-  const tmpDir = resolve(parentDir, "tmp");
-  process.chdir(tmpDir);
-  logger.debug(`📁 Changed working directory to: ${tmpDir}`);
-}
 
-// Start the server
-startServer().catch((error) => {
-  logger.error("Failed to start server:", error);
-  process.exit(1);
-});
+if (import.meta.main) {
+  // Check if current working directory is the parent directory and change to ../tmp if so
+  const currentDir = process.cwd();
+  const parentDir = resolve(__dirname, "..");
+  if (currentDir === parentDir) {
+    const tmpDir = resolve(parentDir, "tmp");
+    process.chdir(tmpDir);
+    logger.debug(`📁 Changed working directory to: ${tmpDir}`);
+  }
+  await initializeCharaConfig();
+  // Start the dev server
+  startServer().catch((error) => {
+    logger.error("Failed to start server:", error);
+    process.exit(1);
+  });
+}
