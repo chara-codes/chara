@@ -13,7 +13,7 @@ export const chatPrompt = (options: ChatPromptOptions = {}) => {
     workingDir,
   } = options;
 
-  return `You are a highly skilled software engineer with extensive knowledge in many programming languages, frameworks, design patterns, and best practices.
+  return `You are a highly skilled software engineer with extensive knowledge in many programming languages, frameworks, design patterns, and best practices. You need to build web application based on users request.
 ${workingDir ? `Current working directory: ${workingDir}` : ""}
 
 ## Communication
