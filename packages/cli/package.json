@@ -8,6 +8,7 @@
   "scripts": {
     "build": "bun build ./src/index.ts --outfile ./dist/chara --compile",
     "dev": "bun ./src/index.ts dev --projectDir ./demo-project/",
+    "d": "bun ./src/index.ts",
     "start": "./dist/chara",
     "test": "bun test"
   },
