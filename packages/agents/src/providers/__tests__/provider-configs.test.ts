@@ -25,8 +25,10 @@ describe("ProviderConfigs", () => {
     expect(typeof initializers.openai).toBe("function");
     expect(typeof initializers.anthropic).toBe("function");
     expect(typeof initializers.google).toBe("function");
-    expect(typeof initializers.mistral).toBe("function");
-    expect(typeof initializers.groq).toBe("function");
+    expect(typeof initializers.openrouter).toBe("function");
+    expect(typeof initializers.ollama).toBe("function");
+    expect(typeof initializers.lmstudio).toBe("function");
+    expect(typeof initializers.dial).toBe("function");
   });
 
   test("initializeProvider method should handle API key validation", () => {
@@ -44,6 +46,7 @@ describe("ProviderConfigs", () => {
     providerConfigs.registerProvider("custom-provider", {
       name: "Custom Provider",
       createProviderFn: () => () => ({ type: "custom" }),
+      fetchModelsMethod: () => Promise.resolve([]),
       requiresApiKey: false,
     });
 
@@ -61,6 +64,85 @@ describe("ProviderConfigs", () => {
     if (provider) {
       expect(provider.name).toBe("Custom Provider");
     }
+  });
+
+  test("removed providers should not be available", () => {
+    const initializers = providerConfigs.getAllProviderInitializers();
+
+    // These providers were removed and should not be available
+    expect(initializers.mistral).toBeUndefined();
+    expect(initializers.groq).toBeUndefined();
+    expect(initializers.xai).toBeUndefined();
+    expect(initializers.bedrock).toBeUndefined();
+    expect(initializers.huggingface).toBeUndefined();
+  });
+
+  test("getProvider should return null for removed providers", () => {
+    // These providers should return null since they were removed
+    expect(providerConfigs.getProvider("mistral")).toBeNull();
+    expect(providerConfigs.getProvider("groq")).toBeNull();
+    expect(providerConfigs.getProvider("xai")).toBeNull();
+    expect(providerConfigs.getProvider("bedrock")).toBeNull();
+    expect(providerConfigs.getProvider("huggingface")).toBeNull();
+  });
+
+  test("all remaining providers should have fetchModelsMethod", () => {
+    const registeredKeys = providerConfigs.getRegisteredProviderKeys();
+
+    // Check that we have the expected remaining providers
+    expect(registeredKeys).toContain("openai");
+    expect(registeredKeys).toContain("anthropic");
+    expect(registeredKeys).toContain("google");
+    expect(registeredKeys).toContain("openrouter");
+    expect(registeredKeys).toContain("ollama");
+    expect(registeredKeys).toContain("lmstudio");
+    expect(registeredKeys).toContain("dial");
+
+    // Verify removed providers are not in registered keys
+    expect(registeredKeys).not.toContain("mistral");
+    expect(registeredKeys).not.toContain("groq");
+    expect(registeredKeys).not.toContain("xai");
+    expect(registeredKeys).not.toContain("bedrock");
+    expect(registeredKeys).not.toContain("huggingface");
+  });
+
+  test("provider initialization should work for remaining providers with proper env vars", () => {
+    // Set up environment variables for testing
+    process.env.OPENAI_API_KEY = "test-openai-key";
+    process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = "test-google-key";
+    process.env.OPEN_ROUTER_API_KEY = "test-openrouter-key";
+    process.env.OLLAMA_API_BASE_URL = "http://localhost:11434";
+    process.env.LMSTUDIO_API_BASE_URL = "http://localhost:1234/v1";
+    process.env.DIAL_API_KEY = "test-dial-key";
+    process.env.DIAL_API_BASE_URL = "http://localhost:8080";
+
+    // Test that providers can be initialized
+    const openaiProvider = providerConfigs.getProvider("openai");
+    const anthropicProvider = providerConfigs.getProvider("anthropic");
+    const googleProvider = providerConfigs.getProvider("google");
+    const openrouterProvider = providerConfigs.getProvider("openrouter");
+    const ollamaProvider = providerConfigs.getProvider("ollama");
+    const lmstudioProvider = providerConfigs.getProvider("lmstudio");
+    const dialProvider = providerConfigs.getProvider("dial");
+
+    expect(openaiProvider).not.toBeNull();
+    expect(anthropicProvider).not.toBeNull();
+    expect(googleProvider).not.toBeNull();
+    expect(openrouterProvider).not.toBeNull();
+    expect(ollamaProvider).not.toBeNull();
+    expect(lmstudioProvider).not.toBeNull();
+    expect(dialProvider).not.toBeNull();
+
+    // Verify all providers have fetchModels method
+    if (openaiProvider) expect(openaiProvider.fetchModels).toBeDefined();
+    if (anthropicProvider) expect(anthropicProvider.fetchModels).toBeDefined();
+    if (googleProvider) expect(googleProvider.fetchModels).toBeDefined();
+    if (openrouterProvider)
+      expect(openrouterProvider.fetchModels).toBeDefined();
+    if (ollamaProvider) expect(ollamaProvider.fetchModels).toBeDefined();
+    if (lmstudioProvider) expect(lmstudioProvider.fetchModels).toBeDefined();
+    if (dialProvider) expect(dialProvider.fetchModels).toBeDefined();
   });
 
   test("registerProvider should validate input", () => {

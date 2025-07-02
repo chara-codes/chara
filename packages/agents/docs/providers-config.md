@@ -30,22 +30,6 @@ GOOGLE_GENERATIVE_AI_API_KEY=your_google_api_key_here
 - **Popular Models**: gemini-1.5-pro, gemini-1.5-flash, gemini-pro (specify when calling)
 - **Cost**: Free tier available, then pay-per-use
 
-### Mistral AI
-```
-MISTRAL_API_KEY=your_mistral_api_key_here
-```
-- **How to get**: Visit [Mistral AI Console](https://console.mistral.ai/)
-- **Popular Models**: mistral-large-latest, mistral-medium-latest, mistral-small-latest (specify when calling)
-- **Cost**: Pay-per-use, competitive pricing
-
-### Groq
-```
-GROQ_API_KEY=your_groq_api_key_here
-```
-- **How to get**: Visit [Groq Console](https://console.groq.com/keys)
-- **Popular Models**: llama-3.1-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768 (specify when calling)
-- **Cost**: Free tier available, very fast inference
-
 ### OpenRouter
 ```
 OPEN_ROUTER_API_KEY=your_openrouter_api_key_here
@@ -53,14 +37,6 @@ OPEN_ROUTER_API_KEY=your_openrouter_api_key_here
 - **How to get**: Visit [OpenRouter](https://openrouter.ai/keys)
 - **Models**: Access to multiple models from different providers (check OpenRouter docs for current models)
 - **Cost**: Varies by model, competitive pricing
-
-### xAI (Grok)
-```
-XAI_API_KEY=your_xai_api_key_here
-```
-- **How to get**: Visit [xAI Console](https://console.x.ai/)
-- **Popular Models**: grok-beta (specify when calling)
-- **Cost**: Pay-per-use
 
 ### Ollama (Local)
 ```
@@ -73,20 +49,25 @@ OLLAMA_API_BASE_URL=http://127.0.0.1:11434
 - **Models**: Any model you've pulled with Ollama (llama3.1, codellama, mistral, etc.)
 - **Cost**: Free (runs locally)
 
-### AWS Bedrock
+### LMStudio (Local)
 ```
-AWS_BEDROCK_CONFIG={"region":"us-east-1","accessKeyId":"your_access_key","secretAccessKey":"your_secret_key"}
+LMSTUDIO_API_BASE_URL=http://127.0.0.1:1234/v1
 ```
-- **How to get**: Configure AWS IAM credentials with Bedrock access
-- **Popular Models**: anthropic.claude-3-sonnet-20240229-v1:0, meta.llama3-70b-instruct-v1:0 (check AWS docs for current models)
-- **Cost**: Pay-per-use through AWS
+- **How to setup**: 
+  1. Install [LMStudio](https://lmstudio.ai/)
+  2. Load a model and start the local server
+  3. Configure the API base URL (default: http://127.0.0.1:1234/v1)
+- **Models**: Any model you've loaded in LMStudio
+- **Cost**: Free (runs locally)
 
-### HuggingFace (Placeholder)
+### DIAL
 ```
-HuggingFace_API_KEY=your_huggingface_api_key_here
+DIAL_API_KEY=your_dial_api_key_here
+DIAL_API_BASE_URL=your_dial_base_url_here
 ```
-- **Status**: Not yet implemented
-- **How to get**: Visit [HuggingFace Tokens](https://huggingface.co/settings/tokens)
+- **How to get**: Contact your DIAL provider for API credentials
+- **Models**: Depends on your DIAL deployment
+- **Cost**: Varies by deployment
 
 ## Quick Setup
 
@@ -96,9 +77,9 @@ HuggingFace_API_KEY=your_huggingface_api_key_here
    ```
 
 2. **Choose your providers**: You don't need all providers. Pick 1-3 that suit your needs:
-   - **For experimentation**: Groq (free, fast)
+   - **For experimentation**: Google AI (generous free tier)
    - **For production**: OpenAI or Anthropic
-   - **For local development**: Ollama
+   - **For local development**: Ollama or LMStudio
    - **For cost optimization**: Google AI (generous free tier)
 
 3. **Add your API keys**: Replace the empty values in `.env` with your actual API keys
@@ -111,21 +92,20 @@ HuggingFace_API_KEY=your_huggingface_api_key_here
 ## Provider Recommendations
 
 ### For Development
-- **Groq**: Free tier, very fast responses
 - **Ollama**: Completely free, runs offline
+- **LMStudio**: Free, user-friendly local interface
 - **Google AI**: Generous free tier
 
 ### For Production
 - **OpenAI**: Most reliable, best documentation
 - **Anthropic**: Excellent for complex reasoning
-- **Mistral AI**: Good balance of performance and cost
 - **OpenRouter**: Access to multiple models with one API
 
 ### For Specific Use Cases
-- **Code generation**: Groq (fast), OpenAI GPT-4, Mistral AI
-- **Creative writing**: Anthropic Claude, OpenAI GPT-4, Mistral AI
-- **Analysis**: Anthropic Claude, Google Gemini, Mistral AI
-- **Cost-sensitive**: Google AI, Groq free tier
+- **Code generation**: OpenAI GPT-4, Anthropic Claude
+- **Creative writing**: Anthropic Claude, OpenAI GPT-4
+- **Analysis**: Anthropic Claude, Google Gemini
+- **Cost-sensitive**: Google AI, Ollama/LMStudio (local)
 
 ## Security Best Practices
 
@@ -159,14 +139,15 @@ Here's a minimal `.env` for getting started:
 ```env
 # Required: Choose at least one
 OPENAI_API_KEY=sk-your-openai-key-here
-GROQ_API_KEY=gsk_your-groq-key-here
+GOOGLE_GENERATIVE_AI_API_KEY=your-google-key-here
 
 # Optional: Local development
 OLLAMA_API_BASE_URL=http://127.0.0.1:11434
+LMSTUDIO_API_BASE_URL=http://127.0.0.1:1234/v1
 
 # Optional: Additional providers
 ANTHROPIC_API_KEY=your-anthropic-key-here
-GOOGLE_GENERATIVE_AI_API_KEY=your-google-key-here
+OPEN_ROUTER_API_KEY=your-openrouter-key-here
 ```
 
-This configuration gives you access to both cloud providers (OpenAI, Groq) and a local option (Ollama) for development.
+This configuration gives you access to both cloud providers (OpenAI, Google AI) and local options (Ollama, LMStudio) for development.

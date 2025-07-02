@@ -1,13 +1,9 @@
 import { openai, createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { createAzure } from "@ai-sdk/azure";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { createGroq } from "@ai-sdk/groq";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createOllama } from "ollama-ai-provider";
-import { bedrock } from "@ai-sdk/amazon-bedrock";
 import { logger } from "@chara/logger";
 import type { ProviderConfig } from "./types";
 import { ModelFetcher } from "./model-fetcher";
@@ -53,21 +49,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
       createProviderFn: () => (modelId: string) => google(modelId),
       fetchModelsMethod: ModelFetcher.fetchGoogleModels,
     },
-    mistral: {
-      name: "Mistral",
-      envApiKey: "MISTRAL_API_KEY",
-      createProviderFn: () => (modelId: string) => mistral(modelId),
-    },
-    groq: {
-      name: "Groq",
-      envApiKey: "GROQ_API_KEY",
-      createProviderFn: (config) => {
-        const groqProvider = createGroq({
-          apiKey: config.apiKey as string,
-        });
-        return (modelId: string) => groqProvider(modelId);
-      },
-    },
+
     openrouter: {
       name: "OpenRouter",
       envApiKey: "OPEN_ROUTER_API_KEY",
@@ -108,25 +90,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
         return ModelFetcher.fetchLMStudioModels(url);
       },
     },
-    xai: {
-      name: "xAI",
-      envApiKey: "XAI_API_KEY",
-      createProviderFn: (config) => {
-        const xaiProvider = createOpenAI({
-          apiKey: config.apiKey as string,
-          baseURL: "https://api.x.ai/v1",
-        });
-        return (modelId: string) => xaiProvider(modelId);
-      },
-    },
-    bedrock: {
-      name: "AWS Bedrock",
-      createProviderFn: (config) => {
-        return () =>
-          bedrock(JSON.parse(process.env.AWS_BEDROCK_CONFIG || "{}"));
-      },
-      additionalValidation: () => !!process.env.AWS_BEDROCK_CONFIG,
-    },
+
     dial: {
       name: "DIAL",
       envApiKey: "DIAL_API_KEY",
@@ -172,19 +136,6 @@ export class ProviderConfigs extends BaseProviderInitializer {
       fetchModelsMethod: function () {
         const url = process.env.DIAL_API_BASE_URL || "";
         return ModelFetcher.fetchDIALModels(url);
-      },
-    },
-    huggingface: {
-      name: "HuggingFace",
-      envApiKey: "HuggingFace_API_KEY",
-      createProviderFn: () => {
-        return (_modelId: string) => {
-          throw new Error("HuggingFace provider not yet implemented");
-        };
-      },
-      additionalValidation: () => {
-        logger.warning("HuggingFace provider detected but not yet implemented");
-        return false;
       },
     },
   };
@@ -281,20 +232,6 @@ export class ProviderConfigs extends BaseProviderInitializer {
   }
 
   /**
-   * Initialize Mistral provider
-   */
-  public initializeMistral(): ProviderConfig | null {
-    return this.initializeProvider("mistral");
-  }
-
-  /**
-   * Initialize Groq provider
-   */
-  public initializeGroq(): ProviderConfig | null {
-    return this.initializeProvider("groq");
-  }
-
-  /**
    * Initialize OpenRouter provider
    */
   public initializeOpenRouter(): ProviderConfig | null {
@@ -309,13 +246,6 @@ export class ProviderConfigs extends BaseProviderInitializer {
   }
 
   /**
-   * Initialize xAI provider
-   */
-  public initializeXAI(): ProviderConfig | null {
-    return this.initializeProvider("xai");
-  }
-
-  /**
    * Initialize LMStudio provider
    */
   public initializeLMStudio(): ProviderConfig | null {
@@ -323,24 +253,10 @@ export class ProviderConfigs extends BaseProviderInitializer {
   }
 
   /**
-   * Initialize AWS Bedrock provider
-   */
-  public initializeBedrock(): ProviderConfig | null {
-    return this.initializeProvider("bedrock");
-  }
-
-  /**
    * Initialize DIAL provider
    */
   public initializeDIAL(): ProviderConfig | null {
     return this.initializeProvider("dial");
-  }
-
-  /**
-   * Initialize HuggingFace provider (placeholder)
-   */
-  public initializeHuggingFace(): ProviderConfig | null {
-    return this.initializeProvider("huggingface");
   }
 
   /**
@@ -399,15 +315,10 @@ export class ProviderConfigs extends BaseProviderInitializer {
       openai: () => this.initializeOpenAI(),
       anthropic: () => this.initializeAnthropic(),
       google: () => this.initializeGoogle(),
-      mistral: () => this.initializeMistral(),
-      groq: () => this.initializeGroq(),
       openrouter: () => this.initializeOpenRouter(),
       ollama: () => this.initializeOllama(),
       lmstudio: () => this.initializeLMStudio(),
-      xai: () => this.initializeXAI(),
-      bedrock: () => this.initializeBedrock(),
       dial: () => this.initializeDIAL(),
-      huggingface: () => this.initializeHuggingFace(),
     };
   }
 
