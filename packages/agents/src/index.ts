@@ -33,7 +33,7 @@ const wsClients = new Set<ServerWebSocket<unknown>>();
 
 export async function initializeCharaConfig(
   charaConfigFile = ".chara.json",
-  model = "dial:::gpt-4.1-mini-2025-04-14",
+  model = "deepseek:::deepseek-chat",
 ) {
   if (!(await Bun.file(charaConfigFile).exists())) {
     const init = initAgent({

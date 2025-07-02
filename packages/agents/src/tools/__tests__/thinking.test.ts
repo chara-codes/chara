@@ -298,31 +298,28 @@ describe("thinking tool", () => {
 
   test("should have correct tool metadata", () => {
     expect(thinking.description).toContain(
-      "dynamic and reflective problem-solving",
+      "engineering-focused problem-solving",
     );
     expect(thinking.description).toContain("sequential thoughts");
-    expect(thinking.description).toContain("Breaking down complex problems");
+    expect(thinking.description).toContain("complex technical problems");
     expect(thinking.description).toContain(
-      "Hypothesis generation and verification",
+      "systematic engineering methodologies",
     );
     expect(thinking.parameters).toBeDefined();
   });
 
-  test("should format thoughts with proper borders", async () => {
+  test("should format thoughts with proper structure", async () => {
     const result = await thinking.execute({
-      thought: "Short thought",
+      thought: "Short engineering thought",
       nextThoughtNeeded: false,
       thoughtNumber: 1,
       totalThoughts: 1,
     });
 
-    expect(result).toContain("┌");
-    expect(result).toContain("┐");
-    expect(result).toContain("├");
-    expect(result).toContain("┤");
-    expect(result).toContain("└");
-    expect(result).toContain("┘");
-    expect(result).toContain("─");
+    expect(result).toContain("💭 Thought 1/1");
+    expect(result).toContain("Short engineering thought");
+    expect(result).toContain("**Thinking Progress:**");
+    expect(result).toContain("**Summary:**");
   });
 
   test("should include JSON summary in output", async () => {
@@ -374,5 +371,98 @@ describe("thinking tool", () => {
 
     expect(result).toContain(longThought);
     expect(result).toContain("💭 Thought 1/1");
+  });
+
+  test("should handle engineering-focused system design scenario", async () => {
+    // Requirements analysis
+    const result1 = await thinking.execute({
+      thought:
+        "Requirements: Build a scalable user authentication system. Need to handle 100k+ concurrent users, ensure security, and maintain 99.9% uptime.",
+      nextThoughtNeeded: true,
+      thoughtNumber: 1,
+      totalThoughts: 5,
+    });
+
+    // Architecture design
+    const result2 = await thinking.execute({
+      thought:
+        "Architecture: Microservices approach with JWT tokens, Redis for session management, PostgreSQL for user data, and load balancer for horizontal scaling.",
+      nextThoughtNeeded: true,
+      thoughtNumber: 2,
+      totalThoughts: 5,
+    });
+
+    // Performance considerations
+    const result3 = await thinking.execute({
+      thought:
+        "Performance: Implement connection pooling, database indexing on user_id and email, caching layer with 5-minute TTL, and circuit breaker pattern for fault tolerance.",
+      nextThoughtNeeded: true,
+      thoughtNumber: 3,
+      totalThoughts: 5,
+    });
+
+    // Security analysis
+    const result4 = await thinking.execute({
+      thought:
+        "Security: Hash passwords with bcrypt, implement rate limiting (5 requests/minute), use HTTPS only, add input validation, and implement CSRF protection.",
+      nextThoughtNeeded: true,
+      thoughtNumber: 4,
+      totalThoughts: 5,
+    });
+
+    // Testing strategy
+    const result5 = await thinking.execute({
+      thought:
+        "Testing: Unit tests for auth logic, integration tests for API endpoints, load testing with 120k concurrent users, security penetration testing, and monitoring setup.",
+      nextThoughtNeeded: false,
+      thoughtNumber: 5,
+      totalThoughts: 5,
+    });
+
+    expect(result1).toContain("scalable user authentication");
+    expect(result2).toContain("Microservices approach");
+    expect(result3).toContain("connection pooling");
+    expect(result4).toContain("bcrypt");
+    expect(result5).toContain("load testing");
+    expect(result5).toContain("Total thoughts processed: 5");
+  });
+
+  test("should handle engineering trade-off analysis with revisions", async () => {
+    // Initial approach
+    await thinking.execute({
+      thought:
+        "Initial approach: Use MongoDB for flexible schema and faster development.",
+      nextThoughtNeeded: true,
+      thoughtNumber: 1,
+      totalThoughts: 3,
+    });
+
+    // Trade-off analysis revision
+    const result = await thinking.execute({
+      thought:
+        "Revision: After analyzing requirements, PostgreSQL is better choice. We need ACID compliance for financial data, complex queries for reporting, and our team has more SQL expertise. MongoDB's flexibility isn't needed here.",
+      nextThoughtNeeded: true,
+      thoughtNumber: 2,
+      totalThoughts: 3,
+      isRevision: true,
+      revisesThought: 1,
+    });
+
+    expect(result).toContain("🔄 Revision 2/3");
+    expect(result).toContain("ACID compliance");
+    expect(result).toContain("PostgreSQL is better choice");
+  });
+
+  test("should validate engineering methodology in descriptions", () => {
+    expect(thinking.description).toContain(
+      "systematic engineering methodologies",
+    );
+    expect(thinking.description).toContain(
+      "scalability, maintainability, performance",
+    );
+    expect(thinking.description).toContain("system architecture");
+    expect(thinking.description).toContain("testing strategy");
+    expect(thinking.description).toContain("requirements analysis");
+    expect(thinking.description).toContain("design patterns");
   });
 });

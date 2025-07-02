@@ -43,17 +43,11 @@ class ThinkingEngine {
     }
 
     const header = `${prefix} ${thoughtNumber}/${totalThoughts}${context}`;
-    const border = "─".repeat(Math.max(header.length, thought.length + 4));
 
     return `
-┌${border}┐
-│ ${header.padEnd(border.length - 2)} │
-├${border}┤
-│ ${thought
-      .split("\n")
-      .map((line) => `${line.padEnd(border.length - 4)} `)
-      .join("│\n│ ")} │
-└${border}┘`;
+${header}
+
+${thought}`;
   }
 
   public processThought(thoughtData: ThoughtData): string {
@@ -131,50 +125,61 @@ export const resetThinkingEngine = () => {
 };
 
 export const thinking = tool({
-  description: `A detailed tool for dynamic and reflective problem-solving through sequential thoughts.
-This tool helps analyze complex problems through a flexible thinking process that can adapt and evolve.
-Each thought can build on, question, or revise previous insights as understanding deepens.
+  description: `A detailed tool for engineering-focused problem-solving through systematic, sequential thoughts.
+This tool helps analyze complex technical problems using structured engineering methodologies.
+Each thought should build upon previous analysis using sound engineering principles and practices.
+
+Engineering Problem-Solving Focus:
+- Apply systematic engineering methodologies (requirements analysis, design patterns, testing strategies)
+- Consider scalability, maintainability, performance, and reliability implications
+- Evaluate trade-offs between different technical approaches
+- Follow engineering best practices and industry standards
+- Consider system architecture, dependencies, and integration points
+- Think through error handling, edge cases, and failure modes
+- Plan for testing, deployment, and monitoring
 
 When to use this tool:
-- Breaking down complex problems into manageable steps
-- Planning and design work that might need revision
-- Analysis that could require course correction
-- Problems where the full scope isn't initially clear
-- Multi-step solutions requiring context maintenance
-- Filtering out irrelevant information
-- Hypothesis generation and verification
+- Breaking down complex technical problems into manageable engineering tasks
+- System design and architecture planning
+- Technical analysis requiring engineering rigor
+- Code design and implementation planning
+- Performance optimization and troubleshooting
+- Infrastructure and deployment strategy
+- Technical risk assessment and mitigation
+- Multi-step engineering solutions requiring context maintenance
 
-Key features:
-- Adjust total_thoughts up or down as you progress
-- Question or revise previous thoughts
-- Add more thoughts even after reaching initial end
-- Express uncertainty and explore alternatives
-- Branch or backtrack non-linearly
-- Generate and verify solution hypotheses
-- Repeat until satisfied with the solution
+Key engineering features:
+- Systematic decomposition of technical problems
+- Structured analysis of requirements and constraints
+- Evaluation of multiple solution approaches
+- Risk assessment and mitigation planning
+- Design pattern identification and application
+- Performance and scalability considerations
+- Testing and validation strategy development
 
-Best practices:
-1. Start with an initial estimate of needed thoughts, but be ready to adjust
-2. Question or revise previous thoughts when needed
-3. Add more thoughts if needed, even at the "end"
-4. Express uncertainty when present
-5. Mark thoughts that revise previous thinking or branch into new paths
-6. Ignore irrelevant information
-7. Generate solution hypotheses when appropriate
-8. Verify hypotheses based on previous thoughts
-9. Repeat until satisfied with the solution
-10. Only set nextThoughtNeeded to false when truly done`,
+Engineering best practices:
+1. Start with clear problem definition and requirements analysis
+2. Consider multiple solution approaches and evaluate trade-offs
+3. Think through system boundaries, interfaces, and dependencies
+4. Plan for error handling, logging, and monitoring
+5. Consider scalability, performance, and security implications
+6. Apply appropriate design patterns and architectural principles
+7. Plan testing strategy (unit, integration, system, performance)
+8. Consider deployment, rollback, and operational concerns
+9. Document key decisions and rationale
+10. Validate solutions against requirements and constraints
+11. Only set nextThoughtNeeded to false when engineering analysis is complete`,
 
   parameters: z.object({
     thought: z
       .string()
       .describe(
-        "Your current thinking step - can include analysis, revisions, questions, realizations, or hypothesis generation/verification",
+        "Your current engineering thinking step - should include technical analysis, design considerations, trade-off evaluations, risk assessments, or solution validation using engineering principles",
       ),
     nextThoughtNeeded: z
       .boolean()
       .describe(
-        "Whether another thought step is needed to complete the problem-solving process",
+        "Whether another thought step is needed to complete the engineering analysis and solution design",
       ),
     thoughtNumber: z
       .number()
@@ -191,14 +196,16 @@ Best practices:
     isRevision: z
       .boolean()
       .optional()
-      .describe("Whether this thought revises or questions previous thinking"),
+      .describe(
+        "Whether this thought revises previous technical analysis or design decisions based on new engineering insights",
+      ),
     revisesThought: z
       .number()
       .int()
       .min(1)
       .optional()
       .describe(
-        "Which thought number is being reconsidered (required if isRevision is true)",
+        "Which engineering analysis or design decision is being reconsidered (required if isRevision is true)",
       ),
     branchFromThought: z
       .number()
@@ -206,7 +213,7 @@ Best practices:
       .min(1)
       .optional()
       .describe(
-        "If branching to explore an alternative, which thought number is the branching point",
+        "If branching to explore an alternative technical approach or design solution, which thought number is the branching point",
       ),
     branchId: z
       .string()
@@ -218,7 +225,7 @@ Best practices:
       .boolean()
       .optional()
       .describe(
-        "If reaching the estimated end but realizing more thoughts are needed",
+        "If reaching the estimated end but realizing more engineering analysis or design work is needed",
       ),
   }),
   execute: async ({
