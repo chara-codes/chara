@@ -1,14 +1,14 @@
-import { openai, createOpenAI } from "@ai-sdk/openai";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import type { LanguageModelV1 } from "@ai-sdk/provider";
+import { logger } from "@chara/logger";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createOllama } from "ollama-ai-provider";
-import { logger } from "@chara/logger";
-import type { ProviderConfig } from "./types";
-import { ModelFetcher } from "./model-fetcher";
 import { BaseProviderInitializer } from "./base-initializer";
-import type { LanguageModelV1 } from "@ai-sdk/provider";
+import { ModelFetcher } from "./model-fetcher";
+import type { ProviderConfig } from "./types";
 
 /**
  * Provider factory configuration type
@@ -85,7 +85,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
         });
         return (modelId: string) => lmstudioProvider(modelId);
       },
-      fetchModelsMethod: function () {
+      fetchModelsMethod: () => {
         const url = process.env.LMSTUDIO_API_BASE_URL || "";
         return ModelFetcher.fetchLMStudioModels(url);
       },
@@ -100,26 +100,8 @@ export class ProviderConfigs extends BaseProviderInitializer {
           // DIAL expects model in URL path: baseURL/openai/deployments/{modelId}/chat/completions
           const baseURL = config.baseURL as string;
 
-          // Handle various base URL formats to avoid duplication
-          let cleanBaseURL = baseURL;
-
-          // Remove trailing slashes
-          cleanBaseURL = cleanBaseURL.replace(/\/+$/, "");
-
-          // Remove any existing /openai/deployments/{model}/chat/completions paths
-          cleanBaseURL = cleanBaseURL.replace(
-            /\/openai\/deployments\/[^\/]+\/chat\/completions$/,
-            "",
-          );
-
-          // Remove any partial /openai/deployments paths
-          cleanBaseURL = cleanBaseURL.replace(/\/openai\/deployments.*$/, "");
-
-          // Remove any trailing /chat/completions
-          cleanBaseURL = cleanBaseURL.replace(/\/chat\/completions$/, "");
-
           // Build the correct DIAL URL
-          const dialModelURL = `${cleanBaseURL}/openai/deployments/${modelId}`;
+          const dialModelURL = `${baseURL}/${modelId}`;
 
           const dialProvider = createOpenAICompatible({
             name: "dial",
@@ -130,10 +112,10 @@ export class ProviderConfigs extends BaseProviderInitializer {
           });
 
           // Return model with empty modelId since it's already in the URL
-          return dialProvider("");
+          return dialProvider(modelId);
         };
       },
-      fetchModelsMethod: function () {
+      fetchModelsMethod: () => {
         const url = process.env.DIAL_API_BASE_URL || "";
         return ModelFetcher.fetchDIALModels(url);
       },
@@ -199,7 +181,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
       }
 
       // Set up fetch models method
-      let fetchModels = config.fetchModelsMethod;
+      const fetchModels = config.fetchModelsMethod;
 
       return {
         name: config.name,

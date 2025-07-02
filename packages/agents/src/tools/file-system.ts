@@ -388,7 +388,7 @@ export const fileSystem = tool({
 - **create**: Create new directories or files (with recursive parent creation)
 - **current**: Get the current working directory path
 - **stats**: Get detailed statistics about directory contents
-- **find**: Search for files and directories using glob patterns
+- **find**: Search for files and directories using glob patterns (defaults to '**/*' if no pattern provided)
 
 **File Operations:**
 - **read**: Read the contents of a file
@@ -443,7 +443,9 @@ export const fileSystem = tool({
     pattern: z
       .string()
       .optional()
-      .describe("Glob pattern for find operation (e.g., '**/*.js', '*.txt')"),
+      .describe(
+        "Glob pattern for find operation (e.g., '**/*.js', '*.txt'). Defaults to '**/*' if not specified.",
+      ),
 
     excludePatterns: z
       .array(z.string())
@@ -580,7 +582,7 @@ export const fileSystem = tool({
               absolutePath: resolve(process.cwd()),
             };
 
-          case "create":
+          case "create": {
             if (!path) {
               throw new Error("Path is required for create operation");
             }
@@ -597,8 +599,8 @@ export const fileSystem = tool({
               await writeFile(path, "");
               return {
                 operation: "create",
-                path: path,
-                absolutePath: resolve(path),
+                type: "file",
+                path,
                 message: `Successfully created file: ${path}`,
               };
             } else {
@@ -606,11 +608,12 @@ export const fileSystem = tool({
               await mkdir(path, { recursive: true });
               return {
                 operation: "create",
-                path: path,
-                absolutePath: resolve(path),
+                type: "directory",
+                path,
                 message: `Successfully created directory: ${path}`,
               };
             }
+          }
 
           case "list":
             return await listDirectory(
@@ -636,17 +639,17 @@ export const fileSystem = tool({
               respectGitignore,
             );
 
-          case "find":
-            if (!pattern) {
-              throw new Error("Pattern is required for find operation");
-            }
+          case "find": {
+            // Provide a default pattern if none is specified
+            const searchPattern = pattern || "**/*";
             return await findInDirectory(
               workingPath,
-              pattern,
+              searchPattern,
               excludePatterns,
               includeHidden,
               respectGitignore,
             );
+          }
 
           case "info":
             if (!path) {
@@ -692,29 +695,6 @@ export const fileSystem = tool({
           error instanceof Error ? error.message : String(error);
 
         // Check if it's a parameter-related error and provide suggestions
-        if (errorMessage.includes("Pattern is required for find operation")) {
-          const errorResponse = {
-            error: true,
-            suggestion: `The "find" action requires a "pattern" parameter. Example: {"action": "find", "pattern": "**/*.js"}`,
-            message: "Missing required parameter for find operation",
-            requiredParams: {
-              action: "find",
-              pattern: "string (e.g., '**/*.js', '*.txt', '**/*keyword*')",
-            },
-            examplePatterns: [
-              "**/*.js - all JavaScript files",
-              "src/**/*.ts - TypeScript files in src",
-              "**/*test* - files containing 'test'",
-              "*.json - JSON files in current directory",
-            ],
-          };
-          if (returnErrorObjects) {
-            return errorResponse;
-          } else {
-            throw new Error("Pattern is required for find operation");
-          }
-        }
-
         if (errorMessage.includes("Path is required")) {
           const errorResponse = {
             error: true,

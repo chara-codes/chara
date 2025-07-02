@@ -425,13 +425,49 @@ describe("fileSystem tool", () => {
       expect(result.formatted).not.toContain("test.js");
     });
 
-    test("should throw error when pattern is missing", async () => {
-      await expect(
-        fileSystem.execute({
-          action: "find",
-          path: testFS.getPath(),
-        }),
-      ).rejects.toThrow("Pattern is required for find operation");
+    test("should use default pattern when pattern is missing", async () => {
+      await testFS.createFile("test.js", "javascript");
+      await testFS.createFile("test.ts", "typescript");
+      await mkdir(testFS.getPath("src"));
+      await testFS.createFile("src/app.js", "app code");
+
+      const result = await fileSystem.execute({
+        action: "find",
+        path: testFS.getPath(),
+      });
+
+      expect(result.operation).toBe("find");
+      expect(result.count).toBeGreaterThan(0);
+      expect(result.formatted).toContain("[FILE] test.js");
+      expect(result.formatted).toContain("[FILE] test.ts");
+      expect(result.formatted).toContain("[FILE] src/app.js");
+    });
+
+    test("should work with original error scenario - find without pattern", async () => {
+      // Simulate the original error scenario from the stream
+      await testFS.createFile("space-invaders/game.js", "game logic");
+      await testFS.createFile("space-invaders/player.js", "player code");
+      await mkdir(testFS.getPath("space-invaders/assets"));
+      await testFS.createFile("space-invaders/assets/sprite.png", "image data");
+
+      // This should now work without throwing "Pattern is required for find operation"
+      const result = await fileSystem.execute({
+        action: "find",
+        path: testFS.getPath("space-invaders"),
+        includeHidden: false,
+        includeSize: false,
+        excludePatterns: [],
+        respectGitignore: true,
+        includeSystem: true,
+        includeProject: true,
+        returnErrorObjects: false,
+      });
+
+      expect(result.operation).toBe("find");
+      expect(result.count).toBeGreaterThan(0);
+      expect(result.formatted).toContain("[FILE] game.js");
+      expect(result.formatted).toContain("[FILE] player.js");
+      expect(result.formatted).toContain("[FILE] assets/sprite.png");
     });
   });
 
