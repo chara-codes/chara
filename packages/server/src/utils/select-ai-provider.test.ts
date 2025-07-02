@@ -1,100 +1,112 @@
-import { describe, it, expect } from 'vitest';
-import { selectAIProvider } from './select-ai-provider';
+import { describe, it, expect } from "vitest";
+import { selectAIProvider } from "./select-ai-provider";
 
-describe('selectAIProvider', () => {
-  it('should create OpenAI provider', () => {
+describe("selectAIProvider", () => {
+  it("should create OpenAI provider", () => {
     const config = {
-      apiUrl: 'https://api.openai.com/v1',
-      apiKey: 'test-key'
+      apiUrl: "https://api.openai.com/v1",
+      apiKey: "test-key",
     };
     const provider = selectAIProvider(config);
     expect(provider).toBeDefined();
   });
 
-  it('should create Azure provider', () => {
+  it("should create Azure provider", () => {
     const config = {
-      apiUrl: 'https://myresource.azure.com/openai',
-      apiKey: 'test-key'
+      apiUrl: "https://myresource.azure.com/openai",
+      apiKey: "test-key",
     };
     const provider = selectAIProvider(config);
     expect(provider).toBeDefined();
   });
 
-  it('should create Anthropic provider', () => {
+  it("should create Anthropic provider", () => {
     const config = {
-      apiUrl: 'https://api.anthropic.com/v1',
-      apiKey: 'test-key'
+      apiUrl: "https://api.anthropic.com/v1",
+      apiKey: "test-key",
     };
     const provider = selectAIProvider(config);
     expect(provider).toBeDefined();
   });
 
-  it('should create Cohere provider', () => {
+  it("should create Cohere provider", () => {
     const config = {
-      apiUrl: 'https://api.cohere.ai/v1',
-      apiKey: 'test-key'
+      apiUrl: "https://api.cohere.ai/v1",
+      apiKey: "test-key",
     };
     const provider = selectAIProvider(config);
     expect(provider).toBeDefined();
   });
 
-  it('should create Perplexity provider', () => {
+  it("should create Perplexity provider", () => {
     const config = {
-      apiUrl: 'https://api.perplexity.ai/v1',
-      apiKey: 'test-key'
+      apiUrl: "https://api.perplexity.ai/v1",
+      apiKey: "test-key",
     };
     const provider = selectAIProvider(config);
     expect(provider).toBeDefined();
   });
 
-  it('should create Mistral provider', () => {
+  it("should create Mistral provider", () => {
     const config = {
-      apiUrl: 'https://api.mistral.ai/v1',
-      apiKey: 'test-key'
+      apiUrl: "https://api.mistral.ai/v1",
+      apiKey: "test-key",
     };
     const provider = selectAIProvider(config);
     expect(provider).toBeDefined();
   });
 
-  it('should create Deepseek provider', () => {
+  it("should create Deepseek provider", () => {
     const config = {
-      apiUrl: 'https://api.deepseek.com/v1',
-      apiKey: 'test-key'
+      apiUrl: "https://api.deepseek.com/v1",
+      apiKey: "test-key",
     };
     const provider = selectAIProvider(config);
     expect(provider).toBeDefined();
   });
 
-  it('should create Ollama provider', () => {
+  it("should create Ollama provider", () => {
     const config = {
-      apiUrl: 'http://localhost:11434/v1',
-      apiKey: 'test-key'
+      apiUrl: "http://localhost:11434/v1",
+      apiKey: "test-key",
     };
     const provider = selectAIProvider(config);
     expect(provider).toBeDefined();
   });
 
-  it('should create DeepInfra provider', () => {
+  it("should create DeepInfra provider", () => {
     const config = {
-      apiUrl: 'https://api.deepinfra.com/v1',
-      apiKey: 'test-key'
+      apiUrl: "https://api.deepinfra.com/v1",
+      apiKey: "test-key",
     };
     const provider = selectAIProvider(config);
     expect(provider).toBeDefined();
   });
 
-  it('should throw error for unsupported provider', () => {
+  it("should create DIAL provider", () => {
     const config = {
-      apiUrl: 'https://api.unsupported.com/v1',
-      apiKey: 'test-key'
+      apiUrl:
+        "https://ai-proxy.lab.epam.com/openai/deployments/claude-sonnet-4@20250514/chat/completions",
+      apiKey: "test-key",
     };
-    expect(() => selectAIProvider(config)).toThrow('Unsupported AI provider for URL');
+    const provider = selectAIProvider(config);
+    expect(provider).toBeDefined();
   });
 
-  it('should handle config with only required parameters', () => {
+  it("should throw error for unsupported provider", () => {
     const config = {
-      apiUrl: 'https://api.openai.com/v1',
-      apiKey: 'test-key'
+      apiUrl: "https://api.unsupported.com/v1",
+      apiKey: "test-key",
+    };
+    expect(() => selectAIProvider(config)).toThrow(
+      "Unsupported AI provider for URL",
+    );
+  });
+
+  it("should handle config with only required parameters", () => {
+    const config = {
+      apiUrl: "https://api.openai.com/v1",
+      apiKey: "test-key",
     };
     const provider = selectAIProvider(config);
     expect(provider).toBeDefined();

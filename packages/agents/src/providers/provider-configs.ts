@@ -132,12 +132,42 @@ export class ProviderConfigs extends BaseProviderInitializer {
       envApiKey: "DIAL_API_KEY",
       baseUrlEnvName: "DIAL_API_BASE_URL",
       createProviderFn: (config) => {
-        const dialProvider = createAzure({
-          apiKey: config.apiKey as string,
-          baseURL: config.baseURL as string,
-          apiVersion: "2024-12-01-preview",
-        });
-        return (modelId: string) => dialProvider(modelId);
+        return (modelId: string) => {
+          // DIAL expects model in URL path: baseURL/openai/deployments/{modelId}/chat/completions
+          const baseURL = config.baseURL as string;
+
+          // Handle various base URL formats to avoid duplication
+          let cleanBaseURL = baseURL;
+
+          // Remove trailing slashes
+          cleanBaseURL = cleanBaseURL.replace(/\/+$/, "");
+
+          // Remove any existing /openai/deployments/{model}/chat/completions paths
+          cleanBaseURL = cleanBaseURL.replace(
+            /\/openai\/deployments\/[^\/]+\/chat\/completions$/,
+            "",
+          );
+
+          // Remove any partial /openai/deployments paths
+          cleanBaseURL = cleanBaseURL.replace(/\/openai\/deployments.*$/, "");
+
+          // Remove any trailing /chat/completions
+          cleanBaseURL = cleanBaseURL.replace(/\/chat\/completions$/, "");
+
+          // Build the correct DIAL URL
+          const dialModelURL = `${cleanBaseURL}/openai/deployments/${modelId}`;
+
+          const dialProvider = createOpenAICompatible({
+            name: "dial",
+            baseURL: dialModelURL,
+            headers: {
+              "Api-Key": config.apiKey as string,
+            },
+          });
+
+          // Return model with empty modelId since it's already in the URL
+          return dialProvider("");
+        };
       },
       fetchModelsMethod: function () {
         const url = process.env.DIAL_API_BASE_URL || "";
