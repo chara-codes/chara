@@ -1,4 +1,5 @@
 import { anthropic } from "@ai-sdk/anthropic";
+import { deepseek } from "@ai-sdk/deepseek";
 import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
@@ -48,6 +49,12 @@ export class ProviderConfigs extends BaseProviderInitializer {
       envApiKey: "GOOGLE_GENERATIVE_AI_API_KEY",
       createProviderFn: () => (modelId: string) => google(modelId),
       fetchModelsMethod: ModelFetcher.fetchGoogleModels,
+    },
+    deepseek: {
+      name: "DeepSeek",
+      envApiKey: "DEEPSEEK_API_KEY",
+      createProviderFn: () => (modelId: string) => deepseek(modelId),
+      fetchModelsMethod: ModelFetcher.fetchDeepSeekModels,
     },
 
     openrouter: {
@@ -242,6 +249,13 @@ export class ProviderConfigs extends BaseProviderInitializer {
   }
 
   /**
+   * Initialize DeepSeek provider
+   */
+  public initializeDeepSeek(): ProviderConfig | null {
+    return this.initializeProvider("deepseek");
+  }
+
+  /**
    * Register a new provider or override an existing one
    * @param key The unique key for the provider
    * @param config The provider configuration
@@ -301,6 +315,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
       ollama: () => this.initializeOllama(),
       lmstudio: () => this.initializeLMStudio(),
       dial: () => this.initializeDIAL(),
+      deepseek: () => this.initializeDeepSeek(),
     };
   }
 

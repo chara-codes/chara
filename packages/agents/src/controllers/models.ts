@@ -74,6 +74,9 @@ const MODEL_WHITELIST = [
   "minimax/minimax-m1:extended",
   "minimax/minimax-m1",
   "qwen/qwen3-32b:free",
+
+  "deepseek-chat",
+  "deepseek-reasoner",
 ];
 
 export const modelsController = {

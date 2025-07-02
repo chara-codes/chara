@@ -30,6 +30,14 @@ GOOGLE_GENERATIVE_AI_API_KEY=your_google_api_key_here
 - **Popular Models**: gemini-1.5-pro, gemini-1.5-flash, gemini-pro (specify when calling)
 - **Cost**: Free tier available, then pay-per-use
 
+### DeepSeek
+```
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+```
+- **How to get**: Visit [DeepSeek Platform](https://platform.deepseek.com/)
+- **Popular Models**: deepseek-chat, deepseek-reasoner (specify when calling)
+- **Cost**: Pay-per-use with competitive pricing
+
 ### OpenRouter
 ```
 OPEN_ROUTER_API_KEY=your_openrouter_api_key_here
@@ -78,9 +86,9 @@ DIAL_API_BASE_URL=your_dial_base_url_here
 
 2. **Choose your providers**: You don't need all providers. Pick 1-3 that suit your needs:
    - **For experimentation**: Google AI (generous free tier)
-   - **For production**: OpenAI or Anthropic
+   - **For production**: OpenAI, Anthropic, or DeepSeek
    - **For local development**: Ollama or LMStudio
-   - **For cost optimization**: Google AI (generous free tier)
+   - **For cost optimization**: Google AI (generous free tier), DeepSeek
 
 3. **Add your API keys**: Replace the empty values in `.env` with your actual API keys
 
@@ -99,13 +107,14 @@ DIAL_API_BASE_URL=your_dial_base_url_here
 ### For Production
 - **OpenAI**: Most reliable, best documentation
 - **Anthropic**: Excellent for complex reasoning
+- **DeepSeek**: Strong reasoning capabilities, competitive pricing
 - **OpenRouter**: Access to multiple models with one API
 
 ### For Specific Use Cases
-- **Code generation**: OpenAI GPT-4, Anthropic Claude
+- **Code generation**: OpenAI GPT-4, Anthropic Claude, DeepSeek Chat
 - **Creative writing**: Anthropic Claude, OpenAI GPT-4
-- **Analysis**: Anthropic Claude, Google Gemini
-- **Cost-sensitive**: Google AI, Ollama/LMStudio (local)
+- **Analysis & Reasoning**: Anthropic Claude, DeepSeek Reasoner, Google Gemini
+- **Cost-sensitive**: Google AI, DeepSeek, Ollama/LMStudio (local)
 
 ## Security Best Practices
 
@@ -147,7 +156,8 @@ LMSTUDIO_API_BASE_URL=http://127.0.0.1:1234/v1
 
 # Optional: Additional providers
 ANTHROPIC_API_KEY=your-anthropic-key-here
+DEEPSEEK_API_KEY=your-deepseek-key-here
 OPEN_ROUTER_API_KEY=your-openrouter-key-here
 ```
 
-This configuration gives you access to both cloud providers (OpenAI, Google AI) and local options (Ollama, LMStudio) for development.
+This configuration gives you access to both cloud providers (OpenAI, Google AI, DeepSeek) and local options (Ollama, LMStudio) for development.

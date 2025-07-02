@@ -13,6 +13,7 @@ import type { LanguageModelV1 } from "ai";
  * - OPENAI_API_KEY: OpenAI GPT models (specify model when calling getModel)
  * - ANTHROPIC_API_KEY: Anthropic Claude models (specify model when calling getModel)
  * - GOOGLE_GENERATIVE_AI_API_KEY: Google Gemini models (specify model when calling getModel)
+ * - DEEPSEEK_API_KEY: DeepSeek models (specify model when calling getModel)
  * - MISTRAL_API_KEY: Mistral AI models (specify model when calling getModel)
  * - GROQ_API_KEY: Groq models (specify model when calling getModel)
  * - OPEN_ROUTER_API_KEY: OpenRouter models (specify model when calling getModel)
@@ -40,6 +41,10 @@ import type { LanguageModelV1 } from "ai";
  * if (providersRegistry.hasProvider('anthropic')) {
  *   const claudeModel = getModel('anthropic', 'claude-3-5-sonnet-20241022');
  * }
+ *
+ * // Use DeepSeek models
+ * const deepseekChat = getModel('deepseek', 'deepseek-chat');
+ * const deepseekReasoner = getModel('deepseek', 'deepseek-reasoner');
  * ```
  */
 export class ProvidersRegistry {
@@ -137,6 +142,7 @@ export class ProvidersRegistry {
    * // Get a specific model
    * const gpt4 = registry.getModel('openai', 'gpt-4o');
    * const claude = registry.getModel('anthropic', 'claude-3-5-sonnet-20241022');
+   * const deepseek = registry.getModel('deepseek', 'deepseek-chat');
    * ```
    */
   public getModel(providerName: string, modelName: string): LanguageModelV1 {

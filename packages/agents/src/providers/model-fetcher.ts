@@ -11,6 +11,8 @@ import type {
   AnthropicModel,
   GoogleModelsResponse,
   GoogleModel,
+  DeepSeekModelsResponse,
+  DeepSeekModel,
 } from "./types";
 
 /**
@@ -256,6 +258,56 @@ export namespace ModelFetcher {
 
       // Fallback to known models if API fails
       return [];
+    }
+  }
+
+  /**
+   * Fetches available models from DeepSeek API
+   * @returns Array of DeepSeek models or fallback models if API fails
+   */
+  export async function fetchDeepSeekModels(): Promise<ModelInfo[]> {
+    try {
+      const response = await fetch("https://api.deepseek.com/v1/models", {
+        headers: {
+          Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `DeepSeek API error: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const data = (await response.json()) as DeepSeekModelsResponse;
+      return data.data.map((model: DeepSeekModel) => ({
+        id: model.id,
+        name: model.id,
+        created: model.created,
+        ownedBy: model.owned_by,
+      }));
+    } catch (error) {
+      logger.warning(
+        "Failed to fetch DeepSeek models from API, using fallback models:",
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      );
+
+      // Fallback to known models if API fails
+      return [
+        {
+          id: "deepseek-chat",
+          name: "DeepSeek Chat",
+          description: "DeepSeek's main chat model",
+        },
+        {
+          id: "deepseek-reasoner",
+          name: "DeepSeek Reasoner",
+          description: "DeepSeek's reasoning model",
+        },
+      ];
     }
   }
 

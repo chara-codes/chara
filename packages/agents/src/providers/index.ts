@@ -1,22 +1,24 @@
 // Export all types
-export type { 
-  InitializationError, 
-  ModelInfo, 
-  OpenAIModel, 
-  OpenAIModelsResponse, 
-  ProviderConfig 
-} from './types';
+export type {
+  InitializationError,
+  ModelInfo,
+  OpenAIModel,
+  OpenAIModelsResponse,
+  DeepSeekModel,
+  DeepSeekModelsResponse,
+  ProviderConfig,
+} from "./types";
 
 // Export main registry class
-export { ProvidersRegistry } from './registry';
+export { ProvidersRegistry } from "./registry";
 
 // Export utility classes (in case they're needed)
-export { BaseProviderInitializer } from './base-initializer';
-export { ModelFetcher } from './model-fetcher';
-export { ProviderConfigs } from './provider-configs';
+export { BaseProviderInitializer } from "./base-initializer";
+export { ModelFetcher } from "./model-fetcher";
+export { ProviderConfigs } from "./provider-configs";
 
 // Create and export a singleton instance
-import { ProvidersRegistry } from './registry';
+import { ProvidersRegistry } from "./registry";
 export const providersRegistry = new ProvidersRegistry();
 
 /**
@@ -44,5 +46,4 @@ export const fetchModels = (providerName: string) =>
   providersRegistry.fetchModels(providerName);
 
 /** Fetch available models for all providers */
-export const fetchAllModels = () =>
-  providersRegistry.fetchAllModels();
+export const fetchAllModels = () => providersRegistry.fetchAllModels();

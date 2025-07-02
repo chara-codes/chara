@@ -124,6 +124,21 @@ export interface GoogleModelsResponse {
 }
 
 /**
+ * DeepSeek API response types
+ */
+export interface DeepSeekModel {
+  id: string;
+  object: string;
+  created: number;
+  owned_by: string;
+}
+
+export interface DeepSeekModelsResponse {
+  object: string;
+  data: DeepSeekModel[];
+}
+
+/**
  * Configuration object for an AI provider
  */
 export interface ProviderConfig {
