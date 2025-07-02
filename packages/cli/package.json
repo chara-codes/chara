@@ -8,23 +8,25 @@
   "scripts": {
     "build": "bun build ./src/index.ts --outfile ./dist/chara --compile",
     "dev": "bun ./src/index.ts dev --projectDir ./demo-project/",
-    "start": "./dist/chara"
+    "start": "./dist/chara",
+    "test": "bun test"
   },
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
     "@types/yargs": "^17.0.33",
-    "vitest": "^3.0.9"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@chara/server": "workspace:*",
     "@chara/logger": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.9.0",
+    "@chara/server": "workspace:*",
+    "@clack/prompts": "^0.11.0",
+    "@modelcontextprotocol/sdk": "^1.13.3",
+    "picocolors": "^1.1.1",
     "superjson": "^2.2.2",
-    "picocolors": "^1.0.0",
     "yargs": "^17.7.2"
   }
 }
