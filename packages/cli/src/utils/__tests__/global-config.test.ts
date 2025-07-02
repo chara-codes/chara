@@ -11,6 +11,7 @@
  * Uses Bun's native test API and mocks the environment utility.
  * Run with: bun test
  */
+/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resolve } from "node:path";
 import { unlinkSync, mkdirSync, existsSync } from "node:fs";
@@ -159,7 +160,7 @@ describe("Global Config Utilities", () => {
         await readGlobalConfig(testConfigFile);
         expect(false).toBe(true); // Should not reach here
       } catch (error) {
-        expect(error.message).toBe(
+        expect((error as any).message).toBe(
           `Config file ${testConfigFile} does not exist`,
         );
       }
