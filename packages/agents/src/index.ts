@@ -1,32 +1,30 @@
+import { resolve } from "node:path";
 import { logger } from "@chara/logger";
-import { mcpWrapper } from "./mcp/mcp-client";
-import { tools as localTools } from "./tools/";
+import type { ServerWebSocket } from "bun";
+import { initAgent } from "./agents";
 import {
-  statusController,
-  miscController,
   beautifyController,
+  chatController,
+  miscController,
   modelsController,
   providersController,
-  chatController,
+  statusController,
 } from "./controllers";
-import { resolve } from "node:path";
-import { initAgent } from "./agents";
-import { logWithPreset } from "./utils";
-import { runnerService } from "./services/runner";
+import { mcpWrapper } from "./mcp/mcp-client";
 import { appEvents } from "./services/events";
-import type { ServerWebSocket } from "bun";
+import { runnerService } from "./services/runner";
+import { tools as localTools } from "./tools/";
+import { logWithPreset } from "./utils";
 
+export { beautifyAgent } from "./agents/beautify-agent";
 // Export agents for programmatic use
 export { chatAgent } from "./agents/chat-agent";
-export { initAgent } from "./agents/init-agent";
-export { beautifyAgent } from "./agents/beautify-agent";
 export { gitAgent } from "./agents/git-agent";
-
-// Export tools for external use
-export { tools } from "./tools/";
-
+export { initAgent } from "./agents/init-agent";
 // Export providers for external use
 export { providersRegistry } from "./providers/";
+// Export tools for external use
+export { tools } from "./tools/";
 
 // Store connected WebSocket clients
 const wsClients = new Set<ServerWebSocket<unknown>>();
