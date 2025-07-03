@@ -14,7 +14,7 @@ export interface ActionContext {
 }
 
 export type ActionFunction<T extends ActionOptions = ActionOptions> = (
-  options?: T
+  options?: T,
 ) => Promise<void>;
 
 export interface BaseAction {
@@ -32,5 +32,5 @@ export interface ResetActionOptions extends ActionOptions {
 }
 
 export interface ShowActionOptions extends ActionOptions {
-  format?: 'table' | 'json' | 'yaml';
+  format?: "table" | "json" | "yaml";
 }
