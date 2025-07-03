@@ -1,11 +1,11 @@
 import { logger } from "@chara/logger";
 import type { CommandModule } from "yargs";
-import { ActionFactory } from "../actions";
 import type {
   InitActionOptions,
   ResetActionOptions,
   ShowActionOptions,
 } from "../actions";
+import { ActionFactory } from "../actions";
 
 interface InitCommandArgs {
   force?: boolean;
