@@ -49,7 +49,10 @@ export async function initializeCharaConfig(
   return await Bun.file(charaConfigFile).json();
 }
 
-export async function startServer(charaConfigFile = ".chara.json") {
+export async function startServer(
+  options: { charaConfigFile?: string; port?: number } = {},
+) {
+  const { charaConfigFile = ".chara.json", port = 3031 } = options;
   const configFile = Bun.file(charaConfigFile);
   const charaConfig = await configFile.json();
 
@@ -119,7 +122,7 @@ export async function startServer(charaConfigFile = ".chara.json") {
 
   // biome-ignore lint/suspicious/noExplicitAny: Server config requires any type for Bun compatibility
   const serverConfig: any = {
-    port: 3031,
+    port,
     idleTimeout: 255,
     routes: {
       // Static routes
@@ -198,6 +201,8 @@ export async function startServer(charaConfigFile = ".chara.json") {
   logger.server(`Server started on ${protocol}://localhost:${server.port}`);
   logger.debug(`🔌 WebSocket server ready at ws://localhost:${server.port}/ws`);
   logger.debug("🎉 Server fully ready to accept requests");
+
+  return server;
 }
 
 if (import.meta.main) {

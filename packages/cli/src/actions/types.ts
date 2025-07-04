@@ -34,3 +34,7 @@ export interface ResetActionOptions extends ActionOptions {
 export interface ShowActionOptions extends ActionOptions {
   format?: "table" | "json" | "yaml";
 }
+
+export interface DefaultModelActionOptions extends ActionOptions {
+  port?: number;
+}

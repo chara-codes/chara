@@ -8,10 +8,12 @@ import {
 import { initAction } from "./init";
 import { resetAction } from "./reset";
 import { showAction } from "./show";
+import { defaultModelAction } from "./default-model";
 import type {
   InitActionOptions,
   ResetActionOptions,
   ShowActionOptions,
+  DefaultModelActionOptions,
 } from "./types";
 
 // Register all actions with the factory
@@ -46,6 +48,17 @@ export function registerActions(): void {
       compose<ShowActionOptions>(withErrorHandling, (fn) =>
         withLogging(fn, "show"),
       )(showAction),
+    ),
+  );
+
+  // Register default-model action
+  ActionFactory.register(
+    createAction(
+      "default-model",
+      "Set default AI model for Chara Codes",
+      compose<DefaultModelActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "default-model"),
+      )(defaultModelAction),
     ),
   );
 }

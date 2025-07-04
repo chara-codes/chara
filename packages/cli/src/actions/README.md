@@ -203,6 +203,13 @@ Shows current configuration.
 - `format`: Output format (table, json, yaml)
 - `verbose`: Enable verbose output
 
+### `default-model`
+Sets the default AI model for Chara Codes.
+
+**Options:**
+- `port`: Port to start server on (default: 3031)
+- `verbose`: Enable verbose output
+
 ## Adding New Actions
 
 To add a new action:
@@ -267,6 +274,60 @@ await ActionFactory.execute<ResetActionOptions>("reset", {
 await ActionFactory.execute<ShowActionOptions>("show", {
   verbose: argv.verbose,
 });
+
+await ActionFactory.execute<DefaultModelActionOptions>("default-model", {
+  port: argv.port,
+  verbose: argv.verbose,
+});
+```
+
+This provides:
+- **Consistent execution**: All actions use the same execution pipeline
+- **Enhanced logging**: Automatic timing and debug information
+- **Error handling**: Standardized error processing and reporting
+- **Validation**: Built-in option validation
+- **Composition**: Easy to add new enhancers and middleware
+
+## Command Integration
+
+The actions are integrated with CLI commands, making them accessible via the command line:
+
+### Available Commands
+
+#### `chara init`
+Initialize Chara configuration with AI provider settings.
+```bash
+chara init --force --verbose
+```
+
+#### `chara default-model`
+Set default AI model for Chara Codes.
+```bash
+chara default-model --port 3031 --verbose
+```
+
+The command will:
+1. Start a temporary server on the specified port
+2. Fetch available models from `/api/models`
+3. Present an interactive selection interface
+4. Save the selected model to configuration
+5. Clean up the server
+
+### Command Structure
+
+Each command follows the same pattern:
+```typescript
+export const commandName: CommandModule = {
+  command: "command-name",
+  describe: "Description of the command",
+  builder: (yargs) => yargs.option(...),
+  handler: async (argv) => {
+    await ActionFactory.execute("action-name", {
+      option: argv.option,
+      verbose: argv.verbose,
+    });
+  },
+};
 ```
 
 This provides:
