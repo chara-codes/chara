@@ -26,8 +26,6 @@ The `env` utility provides a consistent interface for accessing environment vari
 import { env } from "@chara/settings";
 
 const environment = env();
-console.log(environment.publicUrl); // SERVER_URL environment variable
-console.log(environment.apiUrl);    // API_URL environment variable
 console.log(environment.homeDir);   // User's home directory (cross-platform)
 ```
 
@@ -42,7 +40,8 @@ import {
   updateGlobalConfig,
   existsGlobalConfig,
   removeGlobalConfig,
-  getPathToGlobalConfig
+  getPathToGlobalConfig,
+  getVarFromEnvOrGlobalConfig
 } from "@chara/settings";
 
 // Check if config exists
@@ -75,6 +74,9 @@ const configPath = getPathToGlobalConfig();
 
 // Remove configuration
 await removeGlobalConfig();
+
+// Get variable from environment or global config `env` field
+const param = getVarFromEnvOrGlobalConfig('VAR_NAME')
 ```
 
 ### Custom Configuration Files
@@ -94,8 +96,6 @@ await updateGlobalConfig(updates, ".my-custom-config");
 
 ```typescript
 interface Env {
-  publicUrl: string;  // SERVER_URL environment variable
-  apiUrl: string;     // API_URL environment variable
   homeDir: string;    // User's home directory
 }
 ```
@@ -108,6 +108,7 @@ interface Env {
 - `updateGlobalConfig(config: any, file?: string)`: Merge updates with existing config
 - `existsGlobalConfig(file?: string)`: Check if configuration file exists
 - `removeGlobalConfig(file?: string)`: Delete configuration file
+- `getVarFromEnvOrGlobalConfig(name: string)`: Get variable from environment or global config `env` field
 
 ## Default Configuration
 
