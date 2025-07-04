@@ -16,8 +16,8 @@ export const beautifyController = {
 
     return createDataStreamResponse({
       headers: CORS_HEADERS,
-      execute: (dataStream) => {
-        const result = beautifyAgent({
+      execute: async (dataStream) => {
+        const result = await beautifyAgent({
           model,
           messages,
         });

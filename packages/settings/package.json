@@ -1,0 +1,22 @@
+{
+  "name": "@chara/settings",
+  "version": "0.1.0",
+  "description": "Utility to work with different type of settings - project settings, global settings",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun build ./src/index.ts --outfile ./dist/index.ts",
+    "test": "bun test",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch"
+  },
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

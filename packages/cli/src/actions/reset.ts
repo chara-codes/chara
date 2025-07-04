@@ -8,7 +8,7 @@ import {
   spinner,
 } from "@clack/prompts";
 import { bold, cyan, green } from "picocolors";
-import { existsGlobalConfig, updateGlobalConfig } from "../utils/global-config";
+import { existsGlobalConfig, updateGlobalConfig } from "@chara/settings";
 import type { ResetActionOptions } from "./types";
 
 export async function resetAction(

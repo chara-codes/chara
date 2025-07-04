@@ -31,14 +31,16 @@ describe("ProviderConfigs", () => {
     expect(typeof initializers.dial).toBe("function");
   });
 
-  test("initializeProvider method should handle API key validation", () => {
+  test("initializeProvider method should handle API key validation", async () => {
     // Test with non-existent provider registry entry
     // @ts-ignore - Accessing private method for testing
-    const result = providerConfigs.initializeProvider("non-existent-provider");
+    const result = await providerConfigs.initializeProvider(
+      "non-existent-provider",
+    );
     expect(result).toBeNull();
   });
 
-  test("registerProvider should add a new provider", () => {
+  test("registerProvider should add a new provider", async () => {
     // Get initial provider count
     const initialCount = providerConfigs.getRegisteredProviderKeys().length;
 
@@ -59,7 +61,7 @@ describe("ProviderConfigs", () => {
     );
 
     // Try to get the provider (should be null as no env vars are set)
-    const provider = providerConfigs.getProvider("custom-provider");
+    const provider = await providerConfigs.getProvider("custom-provider");
     expect(provider).not.toBeNull();
     if (provider) {
       expect(provider.name).toBe("Custom Provider");
@@ -77,13 +79,13 @@ describe("ProviderConfigs", () => {
     expect(initializers.huggingface).toBeUndefined();
   });
 
-  test("getProvider should return null for removed providers", () => {
+  test("getProvider should return null for removed providers", async () => {
     // These providers should return null since they were removed
-    expect(providerConfigs.getProvider("mistral")).toBeNull();
-    expect(providerConfigs.getProvider("groq")).toBeNull();
-    expect(providerConfigs.getProvider("xai")).toBeNull();
-    expect(providerConfigs.getProvider("bedrock")).toBeNull();
-    expect(providerConfigs.getProvider("huggingface")).toBeNull();
+    expect(await providerConfigs.getProvider("mistral")).toBeNull();
+    expect(await providerConfigs.getProvider("groq")).toBeNull();
+    expect(await providerConfigs.getProvider("xai")).toBeNull();
+    expect(await providerConfigs.getProvider("bedrock")).toBeNull();
+    expect(await providerConfigs.getProvider("huggingface")).toBeNull();
   });
 
   test("all remaining providers should have fetchModelsMethod", () => {
@@ -106,7 +108,7 @@ describe("ProviderConfigs", () => {
     expect(registeredKeys).not.toContain("huggingface");
   });
 
-  test("provider initialization should work for remaining providers with proper env vars", () => {
+  test("provider initialization should work for remaining providers with proper env vars", async () => {
     // Set up environment variables for testing
     process.env.OPENAI_API_KEY = "test-openai-key";
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
@@ -118,13 +120,13 @@ describe("ProviderConfigs", () => {
     process.env.DIAL_API_BASE_URL = "http://localhost:8080";
 
     // Test that providers can be initialized
-    const openaiProvider = providerConfigs.getProvider("openai");
-    const anthropicProvider = providerConfigs.getProvider("anthropic");
-    const googleProvider = providerConfigs.getProvider("google");
-    const openrouterProvider = providerConfigs.getProvider("openrouter");
-    const ollamaProvider = providerConfigs.getProvider("ollama");
-    const lmstudioProvider = providerConfigs.getProvider("lmstudio");
-    const dialProvider = providerConfigs.getProvider("dial");
+    const openaiProvider = await providerConfigs.getProvider("openai");
+    const anthropicProvider = await providerConfigs.getProvider("anthropic");
+    const googleProvider = await providerConfigs.getProvider("google");
+    const openrouterProvider = await providerConfigs.getProvider("openrouter");
+    const ollamaProvider = await providerConfigs.getProvider("ollama");
+    const lmstudioProvider = await providerConfigs.getProvider("lmstudio");
+    const dialProvider = await providerConfigs.getProvider("dial");
 
     expect(openaiProvider).not.toBeNull();
     expect(anthropicProvider).not.toBeNull();

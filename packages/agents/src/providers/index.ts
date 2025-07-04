@@ -26,24 +26,25 @@ export const providersRegistry = new ProvidersRegistry();
  */
 
 /** Get a provider configuration by name */
-export const getProvider = (name: string) =>
-  providersRegistry.getProvider(name);
+export const getProvider = async (name: string) =>
+  await providersRegistry.getProvider(name);
 
 /** Get all available providers */
-export const getAvailableProviders = () =>
-  providersRegistry.getAvailableProviders();
+export const getAvailableProviders = async () =>
+  await providersRegistry.getAvailableProviders();
 
 /** Get a model instance from a provider */
-export const getModel = (providerName: string, modelName: string) =>
-  providersRegistry.getModel(providerName, modelName);
+export const getModel = async (providerName: string, modelName: string) =>
+  await providersRegistry.getModel(providerName, modelName);
 
 /** Check if a provider is available */
-export const hasProvider = (name: string) =>
-  providersRegistry.hasProvider(name);
+export const hasProvider = async (name: string) =>
+  await providersRegistry.hasProvider(name);
 
 /** Fetch available models for a specific provider */
-export const fetchModels = (providerName: string) =>
-  providersRegistry.fetchModels(providerName);
+export const fetchModels = async (providerName: string) =>
+  await providersRegistry.fetchModels(providerName);
 
 /** Fetch available models for all providers */
-export const fetchAllModels = () => providersRegistry.fetchAllModels();
+export const fetchAllModels = async () =>
+  await providersRegistry.fetchAllModels();

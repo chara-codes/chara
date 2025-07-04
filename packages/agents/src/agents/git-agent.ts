@@ -1,7 +1,7 @@
 import { generateText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
 
-export const gitAgent = (
+export const gitAgent = async (
   {
     model,
     messages,
@@ -13,7 +13,7 @@ export const gitAgent = (
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");
-  const aiModel = providersRegistry.getModel(providerName, modelName);
+  const aiModel = await providersRegistry.getModel(providerName, modelName);
 
   return generateText({
     ...options,

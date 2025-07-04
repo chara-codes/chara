@@ -50,6 +50,8 @@ import type { LanguageModelV1 } from "ai";
 export class ProvidersRegistry {
   private providers: Map<string, ProviderConfig> = new Map();
   private providerConfigs: ProviderConfigs;
+  private initialized = false;
+  private initializationPromise: Promise<void> | null = null;
 
   constructor() {
     this.providerConfigs = new ProviderConfigs();
@@ -60,14 +62,27 @@ export class ProvidersRegistry {
    * Initialize all available providers
    */
   private initializeProviders(): void {
+    if (this.initializationPromise) {
+      return;
+    }
+
+    this.initializationPromise = this.doInitializeProviders();
+  }
+
+  /**
+   * Async initialization implementation
+   */
+  private async doInitializeProviders(): Promise<void> {
     const initializers = this.providerConfigs.getAllProviderInitializers();
 
     for (const [providerKey, initializer] of Object.entries(initializers)) {
-      const config = initializer();
+      const config = await initializer();
       if (config) {
         this.providers.set(providerKey, config);
       }
     }
+
+    this.initialized = true;
 
     // Log initialization summary
     const totalProviders = this.providers.size;
@@ -88,11 +103,21 @@ export class ProvidersRegistry {
   }
 
   /**
+   * Ensure providers are initialized
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (!this.initialized && this.initializationPromise) {
+      await this.initializationPromise;
+    }
+  }
+
+  /**
    * Gets a provider configuration by name
    * @param name - The provider name (e.g., 'openai', 'anthropic')
    * @returns The provider configuration or undefined if not found
    */
-  public getProvider(name: string): ProviderConfig | undefined {
+  public async getProvider(name: string): Promise<ProviderConfig | undefined> {
+    await this.ensureInitialized();
     return this.providers.get(name);
   }
 
@@ -100,7 +125,8 @@ export class ProvidersRegistry {
    * Gets all providers that are available and properly initialized
    * @returns Array of available provider configurations
    */
-  public getAvailableProviders(): ProviderConfig[] {
+  public async getAvailableProviders(): Promise<ProviderConfig[]> {
+    await this.ensureInitialized();
     return Array.from(this.providers.values()).filter((p) => p.isAvailable);
   }
 
@@ -108,7 +134,8 @@ export class ProvidersRegistry {
    * Gets the names of all configured providers (both available and unavailable)
    * @returns Array of provider names
    */
-  public getProviderNames(): string[] {
+  public async getProviderNames(): Promise<string[]> {
+    await this.ensureInitialized();
     return Array.from(this.providers.keys());
   }
 
@@ -116,8 +143,9 @@ export class ProvidersRegistry {
    * Gets the names of all available providers
    * @returns Array of available provider names
    */
-  public getAvailableProviderNames(): string[] {
-    return this.getAvailableProviders().map((p) => p.name.toLowerCase());
+  public async getAvailableProviderNames(): Promise<string[]> {
+    const providers = await this.getAvailableProviders();
+    return providers.map((p) => p.name.toLowerCase());
   }
 
   /**
@@ -125,7 +153,8 @@ export class ProvidersRegistry {
    * @param name - The provider name to check
    * @returns true if the provider is available, false otherwise
    */
-  public hasProvider(name: string): boolean {
+  public async hasProvider(name: string): Promise<boolean> {
+    await this.ensureInitialized();
     const provider = this.providers.get(name);
     return provider ? provider.isAvailable : false;
   }
@@ -145,8 +174,11 @@ export class ProvidersRegistry {
    * const deepseek = registry.getModel('deepseek', 'deepseek-chat');
    * ```
    */
-  public getModel(providerName: string, modelName: string): LanguageModelV1 {
-    const provider = this.getProvider(providerName);
+  public async getModel(
+    providerName: string,
+    modelName: string,
+  ): Promise<LanguageModelV1> {
+    const provider = await this.getProvider(providerName);
     if (!provider || !provider.isAvailable) {
       throw new Error(`Provider ${providerName} is not available`);
     }
@@ -165,7 +197,7 @@ export class ProvidersRegistry {
    * @throws Error if the provider is not available or doesn't support model fetching
    */
   public async fetchModels(providerName: string): Promise<ModelInfo[]> {
-    const provider = this.getProvider(providerName);
+    const provider = await this.getProvider(providerName);
     if (!provider || !provider.isAvailable) {
       throw new Error(`Provider ${providerName} is not available`);
     }
@@ -188,7 +220,7 @@ export class ProvidersRegistry {
    */
   public async fetchAllModels(): Promise<Record<string, ModelInfo[]>> {
     const results: Record<string, ModelInfo[]> = {};
-    const availableProviders = this.getAvailableProviders().filter(
+    const availableProviders = (await this.getAvailableProviders()).filter(
       (p) => p.fetchModels,
     );
     const fetchPromises = availableProviders.map(async (provider) => {
@@ -220,9 +252,10 @@ export class ProvidersRegistry {
    * Gets the status of all providers including availability and any errors
    * @returns Object mapping provider names to their status and potential errors
    */
-  public getProviderStatus(): {
+  public async getProviderStatus(): Promise<{
     [key: string]: { available: boolean; error?: string };
-  } {
+  }> {
+    await this.ensureInitialized();
     const status: { [key: string]: { available: boolean; error?: string } } =
       {};
 

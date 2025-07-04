@@ -4,7 +4,7 @@ import { logger } from "@chara/logger";
 import { initTools } from "../tools/init-tools";
 import { initPrompt } from "../prompts/init";
 
-export const initAgent = (
+export const initAgent = async (
   {
     model,
     workingDir,
@@ -16,7 +16,7 @@ export const initAgent = (
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");
-  const aiModel = providersRegistry.getModel(providerName, modelName);
+  const aiModel = await providersRegistry.getModel(providerName, modelName);
   logger.info(providerName, modelName);
 
   const cwd = workingDir || process.cwd();

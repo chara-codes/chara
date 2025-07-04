@@ -1,6 +1,10 @@
+import { unlinkSync } from "node:fs";
 import { resolve } from "node:path";
 import { env } from "./env";
-import { unlinkSync } from "node:fs";
+
+interface GlobalConfig {
+  env: Record<string, string>;
+}
 
 export const getPathToGlobalConfig = (file: string = ".chararc") => {
   return resolve(env().homeDir, file);
@@ -18,7 +22,7 @@ export const readGlobalConfig = async (file: string = ".chararc") => {
 };
 
 export const writeGlobalConfig = async (
-  config: any,
+  config: GlobalConfig,
   file: string = ".chararc",
 ) => {
   const configPath = getPathToGlobalConfig(file);
@@ -28,7 +32,7 @@ export const writeGlobalConfig = async (
 };
 
 export const updateGlobalConfig = async (
-  config: any,
+  config: GlobalConfig,
   file: string = ".chararc",
 ) => {
   const currentConfig = (await existsGlobalConfig(file))
@@ -51,4 +55,11 @@ export const removeGlobalConfig = async (file: string = ".chararc") => {
     await Bun.file(configPath).writer().end();
     unlinkSync(configPath);
   }
+};
+
+export const getVarFromEnvOrGlobalConfig = async (name: string) => {
+  const { env = {} } = await readGlobalConfig();
+  const res = process.env[name] ?? env[name];
+  console.log(`${name}=${res}`);
+  return res;
 };

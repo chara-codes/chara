@@ -3,7 +3,7 @@ import { providersRegistry } from "../providers";
 import { getTracer } from "@lmnr-ai/lmnr";
 import { logger } from "@chara/logger";
 
-export const beautifyAgent = (
+export const beautifyAgent = async (
   {
     model,
     messages,
@@ -15,7 +15,7 @@ export const beautifyAgent = (
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");
-  const aiModel = providersRegistry.getModel(providerName, modelName);
+  const aiModel = await providersRegistry.getModel(providerName, modelName);
 
   return streamText({
     ...options,

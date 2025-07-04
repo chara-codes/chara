@@ -14,6 +14,7 @@
     },
     "packages/agents": {
       "name": "@chara/agents",
+      "version": "0.1.0",
       "dependencies": {
         "@ai-sdk/amazon-bedrock": "^2.2.11",
         "@ai-sdk/anthropic": "^1.2.12",
@@ -56,6 +57,7 @@
       "dependencies": {
         "@chara/logger": "workspace:*",
         "@chara/server": "workspace:*",
+        "@chara/settings": "workspace:*",
         "@clack/prompts": "^0.11.0",
         "@modelcontextprotocol/sdk": "^1.13.3",
         "picocolors": "^1.1.1",
@@ -194,6 +196,16 @@
       },
       "peerDependencies": {
         "typescript": "^5.8.2",
+      },
+    },
+    "packages/settings": {
+      "name": "@chara/settings",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
       },
     },
     "packages/tunnel": {
@@ -498,6 +510,8 @@
     "@chara/logger": ["@chara/logger@workspace:packages/logger"],
 
     "@chara/server": ["@chara/server@workspace:packages/server"],
+
+    "@chara/settings": ["@chara/settings@workspace:packages/settings"],
 
     "@chara/tunnel": ["@chara/tunnel@workspace:packages/tunnel"],
 

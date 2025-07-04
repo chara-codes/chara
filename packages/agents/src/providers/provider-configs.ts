@@ -5,6 +5,11 @@ import { openai } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { LanguageModelV1 } from "@ai-sdk/provider";
 import { logger } from "@chara/logger";
+import {
+  readGlobalConfig,
+  existsGlobalConfig,
+  getVarFromEnvOrGlobalConfig,
+} from "@chara/settings";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createOllama } from "ollama-ai-provider";
 import { BaseProviderInitializer } from "./base-initializer";
@@ -92,9 +97,9 @@ export class ProviderConfigs extends BaseProviderInitializer {
         });
         return (modelId: string) => lmstudioProvider(modelId);
       },
-      fetchModelsMethod: () => {
-        const url = process.env.LMSTUDIO_API_BASE_URL || "";
-        return ModelFetcher.fetchLMStudioModels(url);
+      fetchModelsMethod: async () => {
+        const url = await getVarFromEnvOrGlobalConfig("LMSTUDIO_API_BASE_URL");
+        return ModelFetcher.fetchLMStudioModels(url || "");
       },
     },
 
@@ -122,9 +127,9 @@ export class ProviderConfigs extends BaseProviderInitializer {
           return dialProvider(modelId);
         };
       },
-      fetchModelsMethod: () => {
-        const url = process.env.DIAL_API_BASE_URL || "";
-        return ModelFetcher.fetchDIALModels(url);
+      fetchModelsMethod: async () => {
+        const url = await getVarFromEnvOrGlobalConfig("DIAL_API_BASE_URL");
+        return ModelFetcher.fetchDIALModels(url || "");
       },
     },
   };
@@ -132,27 +137,31 @@ export class ProviderConfigs extends BaseProviderInitializer {
   /**
    * Generic provider initialization method that uses the factory pattern
    */
-  protected initializeProvider(providerKey: string): ProviderConfig | null {
+  protected async initializeProvider(
+    providerKey: string,
+  ): Promise<ProviderConfig | null> {
     const config = this.providerRegistry[providerKey];
     if (!config) {
       logger.warning(`No configuration found for provider: ${providerKey}`);
       return null;
     }
 
-    // Check API key if needed
+    // Get API key with fallback to global config
+    let apiKey: string | undefined;
     if (config.requiresApiKey !== false && config.envApiKey) {
-      if (!this.validateApiKey(process.env[config.envApiKey], config.name)) {
+      apiKey = await getVarFromEnvOrGlobalConfig(config.envApiKey);
+      if (!this.validateApiKey(apiKey, config.name)) {
         return null;
       }
     }
 
-    // Check base URL if needed
+    // Get base URL with fallback to global config
     let baseURL: string | undefined;
     if (config.baseUrlEnvName) {
-      baseURL = process.env[config.baseUrlEnvName];
+      baseURL = await getVarFromEnvOrGlobalConfig(config.baseUrlEnvName);
       if (!baseURL) {
         logger.warning(
-          `${config.baseUrlEnvName} is required for ${config.name} provider`,
+          `${config.baseUrlEnvName} or global config baseURL is required for ${config.name} provider`,
         );
         return null;
       }
@@ -160,7 +169,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
       try {
         // Validate URL format
         new URL(baseURL);
-      } catch (e) {
+      } catch (error) {
         logger.error(
           `Invalid URL format for ${config.name} provider: ${baseURL}`,
         );
@@ -171,9 +180,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
     // Create provider config with additional validation if needed
     return this.safeInitialize(config.name, () => {
       const providerConfig = {
-        apiKey: config.envApiKey
-          ? (process.env[config.envApiKey] as string)
-          : undefined,
+        apiKey,
         baseURL,
       };
 
@@ -202,57 +209,57 @@ export class ProviderConfigs extends BaseProviderInitializer {
   /**
    * Initialize OpenAI provider
    */
-  public initializeOpenAI(): ProviderConfig | null {
-    return this.initializeProvider("openai");
+  public async initializeOpenAI(): Promise<ProviderConfig | null> {
+    return await this.initializeProvider("openai");
   }
 
   /**
    * Initialize Anthropic provider
    */
-  public initializeAnthropic(): ProviderConfig | null {
-    return this.initializeProvider("anthropic");
+  public async initializeAnthropic(): Promise<ProviderConfig | null> {
+    return await this.initializeProvider("anthropic");
   }
 
   /**
    * Initialize Google provider
    */
-  public initializeGoogle(): ProviderConfig | null {
-    return this.initializeProvider("google");
+  public async initializeGoogle(): Promise<ProviderConfig | null> {
+    return await this.initializeProvider("google");
   }
 
   /**
    * Initialize OpenRouter provider
    */
-  public initializeOpenRouter(): ProviderConfig | null {
-    return this.initializeProvider("openrouter");
+  public async initializeOpenRouter(): Promise<ProviderConfig | null> {
+    return await this.initializeProvider("openrouter");
   }
 
   /**
    * Initialize Ollama provider
    */
-  public initializeOllama(): ProviderConfig | null {
-    return this.initializeProvider("ollama");
+  public async initializeOllama(): Promise<ProviderConfig | null> {
+    return await this.initializeProvider("ollama");
   }
 
   /**
    * Initialize LMStudio provider
    */
-  public initializeLMStudio(): ProviderConfig | null {
-    return this.initializeProvider("lmstudio");
+  public async initializeLMStudio(): Promise<ProviderConfig | null> {
+    return await this.initializeProvider("lmstudio");
   }
 
   /**
    * Initialize DIAL provider
    */
-  public initializeDIAL(): ProviderConfig | null {
-    return this.initializeProvider("dial");
+  public async initializeDIAL(): Promise<ProviderConfig | null> {
+    return await this.initializeProvider("dial");
   }
 
   /**
    * Initialize DeepSeek provider
    */
-  public initializeDeepSeek(): ProviderConfig | null {
-    return this.initializeProvider("deepseek");
+  public async initializeDeepSeek(): Promise<ProviderConfig | null> {
+    return await this.initializeProvider("deepseek");
   }
 
   /**
@@ -305,7 +312,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
    */
   public getAllProviderInitializers(): Record<
     string,
-    () => ProviderConfig | null
+    () => Promise<ProviderConfig | null>
   > {
     return {
       openai: () => this.initializeOpenAI(),
@@ -327,7 +334,9 @@ export class ProviderConfigs extends BaseProviderInitializer {
   /**
    * Get a provider with lazy initialization
    */
-  public getProvider(providerName: string): ProviderConfig | null {
+  public async getProvider(
+    providerName: string,
+  ): Promise<ProviderConfig | null> {
     const providerKey = providerName.toLowerCase();
 
     // Return cached provider if already initialized
@@ -338,7 +347,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
     // Check if it's a registered provider in our registry
     if (this.providerRegistry[providerKey]) {
       // Initialize using the factory pattern
-      const config = this.initializeProvider(providerKey);
+      const config = await this.initializeProvider(providerKey);
       this.providerCache.set(providerKey, config);
       return config;
     }
@@ -352,7 +361,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
     }
 
     // Initialize provider and cache result
-    const config = initializer();
+    const config = await initializer();
     this.providerCache.set(providerKey, config);
     return config;
   }
@@ -361,7 +370,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
    * Check if a provider is healthy
    */
   public async checkProviderHealth(providerName: string): Promise<boolean> {
-    const provider = this.getProvider(providerName);
+    const provider = await this.getProvider(providerName);
     if (!provider || !provider.isAvailable) {
       return false;
     }

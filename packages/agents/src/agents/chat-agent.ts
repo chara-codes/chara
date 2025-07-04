@@ -21,7 +21,7 @@ export const chatAgent = async (
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");
-  const aiModel = providersRegistry.getModel(providerName, modelName);
+  const aiModel = await providersRegistry.getModel(providerName, modelName);
 
   // Always start with local tools
   const mcpTools = mcpWrapper.getToolsSync();

@@ -14,7 +14,7 @@ import {
   getPathToGlobalConfig,
   readGlobalConfig,
   updateGlobalConfig,
-} from "../utils/global-config";
+} from "@chara/settings";
 import { PROVIDER_CONFIGS } from "../config/provider-configs";
 import {
   promptForProviderConfig,

@@ -14,6 +14,7 @@ import type {
   DeepSeekModelsResponse,
   DeepSeekModel,
 } from "./types";
+import { getVarFromEnvOrGlobalConfig } from "@chara/settings";
 
 /**
  * Utilities for fetching models from different providers
@@ -27,7 +28,7 @@ export namespace ModelFetcher {
     try {
       const response = await fetch("https://api.openai.com/v1/models", {
         headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("OPENAI_API_KEY")}`,
           "Content-Type": "application/json",
         },
       });
@@ -66,7 +67,7 @@ export namespace ModelFetcher {
     try {
       const response = await fetch("https://openrouter.ai/api/v1/models", {
         headers: {
-          Authorization: `Bearer ${process.env.OPEN_ROUTER_API_KEY}`,
+          Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("OPEN_ROUTER_API_KEY")}`,
           "Content-Type": "application/json",
         },
       });
@@ -191,7 +192,7 @@ export namespace ModelFetcher {
       const rootDomain = new URL(baseUrl).origin;
       const response = await fetch(`${rootDomain}/openai/models`, {
         headers: {
-          "Api-Key": `${process.env.DIAL_API_KEY}`,
+          "Api-Key": `${await getVarFromEnvOrGlobalConfig("DIAL_API_KEY")}`,
           "Content-Type": "application/json",
         },
       });
@@ -230,7 +231,7 @@ export namespace ModelFetcher {
     try {
       const response = await fetch("https://api.anthropic.com/v1/models", {
         headers: {
-          "x-api-key": `${process.env.ANTHROPIC_API_KEY}`,
+          "x-api-key": `${await getVarFromEnvOrGlobalConfig("ANTHROPIC_API_KEY")}`,
           "Content-Type": "application/json",
           "anthropic-version": "2023-06-01",
         },
@@ -269,7 +270,7 @@ export namespace ModelFetcher {
     try {
       const response = await fetch("https://api.deepseek.com/v1/models", {
         headers: {
-          Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+          Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("DEEPSEEK_API_KEY")}`,
           "Content-Type": "application/json",
         },
       });
@@ -318,7 +319,7 @@ export namespace ModelFetcher {
   export async function fetchGoogleModels(): Promise<ModelInfo[]> {
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GOOGLE_GENERATIVE_AI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${await getVarFromEnvOrGlobalConfig("GOOGLE_GENERATIVE_AI_API_KEY")}`,
         {
           headers: {
             "Content-Type": "application/json",

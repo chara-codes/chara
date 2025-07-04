@@ -1,7 +1,7 @@
 import { logger } from "@chara/logger";
 import { intro, outro } from "@clack/prompts";
 import { bold, cyan, green } from "picocolors";
-import { existsGlobalConfig, readGlobalConfig } from "../utils/global-config";
+import { existsGlobalConfig, readGlobalConfig } from "@chara/settings";
 import {
   getConfiguredProviders,
   maskSensitiveValue,
