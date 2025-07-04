@@ -11,17 +11,16 @@
  * Uses Bun's native test API and mocks the environment utility.
  * Run with: bun test
  */
-/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { existsSync, mkdirSync, unlinkSync } from "node:fs";
 import { resolve } from "node:path";
-import { unlinkSync, mkdirSync, existsSync } from "node:fs";
 import {
+  existsGlobalConfig,
   getPathToGlobalConfig,
   readGlobalConfig,
-  writeGlobalConfig,
-  updateGlobalConfig,
-  existsGlobalConfig,
   removeGlobalConfig,
+  updateGlobalConfig,
+  writeGlobalConfig,
 } from "../global-config";
 
 // Mock the env utility

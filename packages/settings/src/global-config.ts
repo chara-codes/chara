@@ -3,7 +3,12 @@ import { resolve } from "node:path";
 import { env } from "./env";
 
 interface GlobalConfig {
-  env: Record<string, string>;
+  env?: Record<string, string>;
+  models?: {
+    whitelist?: any[];
+    customModels?: any[];
+  };
+  [key: string]: any;
 }
 
 export const getPathToGlobalConfig = (file: string = ".chararc") => {
@@ -22,7 +27,7 @@ export const readGlobalConfig = async (file: string = ".chararc") => {
 };
 
 export const writeGlobalConfig = async (
-  config: GlobalConfig,
+  config: any,
   file: string = ".chararc",
 ) => {
   const configPath = getPathToGlobalConfig(file);
@@ -32,7 +37,7 @@ export const writeGlobalConfig = async (
 };
 
 export const updateGlobalConfig = async (
-  config: GlobalConfig,
+  config: any,
   file: string = ".chararc",
 ) => {
   const currentConfig = (await existsGlobalConfig(file))
@@ -59,7 +64,5 @@ export const removeGlobalConfig = async (file: string = ".chararc") => {
 
 export const getVarFromEnvOrGlobalConfig = async (name: string) => {
   const { env = {} } = await readGlobalConfig();
-  const res = process.env[name] ?? env[name];
-  console.log(`${name}=${res}`);
-  return res;
+  return process.env[name] ?? env[name];
 };
