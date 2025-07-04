@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
-import { ChevronDownIcon, SearchIcon } from "../../atoms/icons";
+import { ChevronDownIcon, SearchIcon, StarIcon } from "../../atoms/icons";
 import {
   FooterContainer,
   ModeSelector,
@@ -21,7 +21,7 @@ import {
   SourceBadge,
   ModelOptionContent,
 } from "./styles";
-import { getModelSourceType, getSourceLabel } from "./utils";
+import { getModelSourceType } from "./utils";
 import { useChatStore, useModelsStore } from "@chara/core";
 
 /**
@@ -50,8 +50,12 @@ const Footer: React.FC = () => {
     return { name: model, sourceType: "unknown", provider: "unknown" };
   };
 
-  // Group models by provider
-  const groupedModels = models.reduce(
+  // Separate recommended models from others
+  const recommendedModels = models.filter((model) => model.recommended);
+  const otherModels = models.filter((model) => !model.recommended);
+
+  // Group other models by provider
+  const groupedOtherModels = otherModels.reduce(
     (acc, model) => {
       if (!acc[model.provider]) {
         acc[model.provider] = [];
@@ -62,8 +66,15 @@ const Footer: React.FC = () => {
     {} as Record<string, typeof models>,
   );
 
-  // Filter models based on search query
-  const filteredModelData = Object.entries(groupedModels)
+  // Filter recommended models based on search query (no provider grouping)
+  const filteredRecommendedModels = recommendedModels.filter(
+    (model) =>
+      model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      model.provider.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  // Filter other models based on search query
+  const filteredOtherModels = Object.entries(groupedOtherModels)
     .map(([provider, providerModels]) => ({
       provider,
       models: providerModels.filter(
@@ -141,32 +152,67 @@ const Footer: React.FC = () => {
               </SearchIconWrapper>
             </SearchContainer>
 
-            {filteredModelData.length > 0 ? (
-              filteredModelData.map((provider) => (
-                <ProviderGroup key={provider.provider}>
-                  <ProviderHeader>{provider.provider}</ProviderHeader>
-                  {provider.models.map((modelOption) => (
-                    <ModelOption
-                      key={modelOption.id}
-                      $selected={model === modelOption.id}
-                      onClick={() => handleModelChange(modelOption.id)}
-                    >
-                      <ModelOptionContent>
-                        <span>{modelOption.name}</span>
-                        <span>
-                          <SourceBadge
-                            $sourceType={getModelSourceType(
-                              modelOption.provider,
-                            )}
-                          >
-                            {modelOption.provider}
-                          </SourceBadge>
-                        </span>
-                      </ModelOptionContent>
-                    </ModelOption>
-                  ))}
-                </ProviderGroup>
-              ))
+            {filteredRecommendedModels.length > 0 ||
+            filteredOtherModels.length > 0 ? (
+              <>
+                {filteredRecommendedModels.length > 0 && (
+                  <>
+                    <ProviderGroup>
+                      <ProviderHeader>
+                        <StarIcon width={14} height={14} /> Recommended
+                      </ProviderHeader>
+                      {filteredRecommendedModels.map((modelOption) => (
+                        <ModelOption
+                          key={modelOption.id}
+                          $selected={model === modelOption.id}
+                          onClick={() => handleModelChange(modelOption.id)}
+                        >
+                          <ModelOptionContent>
+                            <span>{modelOption.name}</span>
+                            <span>
+                              <SourceBadge
+                                $sourceType={getModelSourceType(
+                                  modelOption.provider,
+                                )}
+                              >
+                                {modelOption.provider}
+                              </SourceBadge>
+                            </span>
+                          </ModelOptionContent>
+                        </ModelOption>
+                      ))}
+                    </ProviderGroup>
+                    {filteredOtherModels.length > 0 && (
+                      <div style={{ height: "8px" }} />
+                    )}
+                  </>
+                )}
+                {filteredOtherModels.map((provider) => (
+                  <ProviderGroup key={provider.provider}>
+                    <ProviderHeader>{provider.provider}</ProviderHeader>
+                    {provider.models.map((modelOption) => (
+                      <ModelOption
+                        key={modelOption.id}
+                        $selected={model === modelOption.id}
+                        onClick={() => handleModelChange(modelOption.id)}
+                      >
+                        <ModelOptionContent>
+                          <span>{modelOption.name}</span>
+                          <span>
+                            <SourceBadge
+                              $sourceType={getModelSourceType(
+                                modelOption.provider,
+                              )}
+                            >
+                              {modelOption.provider}
+                            </SourceBadge>
+                          </span>
+                        </ModelOptionContent>
+                      </ModelOption>
+                    ))}
+                  </ProviderGroup>
+                ))}
+              </>
             ) : (
               <NoResults>No models found</NoResults>
             )}

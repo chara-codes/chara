@@ -47,12 +47,16 @@ export type ContextItem = {
   mimeType?: string; // MIME type of the file
 };
 
-export type ChatMode = "write" | "ask";
+export type ChatMode = "write" | "ask" | "none";
 
 export interface Model {
   id: string;
   name: string;
   provider: string;
+  contextSize?: number;
+  hasTools?: boolean;
+  recommended?: boolean;
+  approved?: boolean;
 }
 
 // New types for file structure

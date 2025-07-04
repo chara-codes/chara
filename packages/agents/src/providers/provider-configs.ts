@@ -1,15 +1,11 @@
-import { anthropic } from "@ai-sdk/anthropic";
-import { deepseek } from "@ai-sdk/deepseek";
-import { google } from "@ai-sdk/google";
-import { openai } from "@ai-sdk/openai";
+import { anthropic, createAnthropic } from "@ai-sdk/anthropic";
+import { createDeepSeek } from "@ai-sdk/deepseek";
+import { createGoogleGenerativeAI, google } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { LanguageModelV1 } from "@ai-sdk/provider";
 import { logger } from "@chara/logger";
-import {
-  readGlobalConfig,
-  existsGlobalConfig,
-  getVarFromEnvOrGlobalConfig,
-} from "@chara/settings";
+import { getVarFromEnvOrGlobalConfig } from "@chara/settings";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createOllama } from "ollama-ai-provider";
 import { BaseProviderInitializer } from "./base-initializer";
@@ -40,25 +36,47 @@ export class ProviderConfigs extends BaseProviderInitializer {
     openai: {
       name: "OpenAI",
       envApiKey: "OPENAI_API_KEY",
-      createProviderFn: () => (modelId: string) => openai(modelId),
+      createProviderFn: (config) => {
+        const openai = createOpenAI({
+          apiKey: config.apiKey,
+        });
+        return (modelId: string) => openai(modelId);
+      },
       fetchModelsMethod: ModelFetcher.fetchOpenAIModels,
     },
     anthropic: {
       name: "Anthropic",
       envApiKey: "ANTHROPIC_API_KEY",
-      createProviderFn: () => (modelId: string) => anthropic(modelId),
+      createProviderFn: (config) => {
+        const anthropic = createAnthropic({
+          apiKey: config.apiKey,
+        });
+        return (modelId: string) => anthropic(modelId);
+      },
       fetchModelsMethod: ModelFetcher.fetchAnthropicModels,
     },
     google: {
       name: "Google",
       envApiKey: "GOOGLE_GENERATIVE_AI_API_KEY",
-      createProviderFn: () => (modelId: string) => google(modelId),
+      createProviderFn: (config) => {
+        const google = createGoogleGenerativeAI({
+          apiKey: config.apiKey,
+        });
+        return (modelId: string) => google(modelId);
+      },
       fetchModelsMethod: ModelFetcher.fetchGoogleModels,
     },
     deepseek: {
       name: "DeepSeek",
       envApiKey: "DEEPSEEK_API_KEY",
-      createProviderFn: () => (modelId: string) => deepseek(modelId),
+      createProviderFn: (config) => {
+        const deepseek = createDeepSeek({
+          apiKey: config.apiKey,
+        });
+        return (modelId: string) => {
+          return deepseek(modelId);
+        };
+      },
       fetchModelsMethod: ModelFetcher.fetchDeepSeekModels,
     },
 
@@ -122,8 +140,6 @@ export class ProviderConfigs extends BaseProviderInitializer {
               "Api-Key": config.apiKey as string,
             },
           });
-
-          // Return model with empty modelId since it's already in the URL
           return dialProvider(modelId);
         };
       },

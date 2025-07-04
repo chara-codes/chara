@@ -43,7 +43,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "dial",
     contextSize: 128000,
     hasTools: true,
-    recommended: true,
+    recommended: false,
     approved: true,
   },
   {
@@ -52,7 +52,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "dial",
     contextSize: 2000000,
     hasTools: true,
-    recommended: false,
+    recommended: true,
     approved: true,
   },
   {
@@ -70,7 +70,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "dial",
     contextSize: 200000,
     hasTools: true,
-    recommended: false,
+    recommended: true,
     approved: true,
   },
   {
@@ -99,7 +99,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "anthropic",
     contextSize: 200000,
     hasTools: true,
-    recommended: true,
+    recommended: false,
     approved: true,
   },
   {
@@ -108,7 +108,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "anthropic",
     contextSize: 200000,
     hasTools: true,
-    recommended: false,
+    recommended: true,
     approved: true,
   },
   {
@@ -154,7 +154,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "openrouter",
     contextSize: 200000,
     hasTools: true,
-    recommended: false,
+    recommended: true,
     approved: true,
   },
   {
@@ -237,7 +237,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "openai",
     contextSize: 128000,
     hasTools: true,
-    recommended: false,
+    recommended: true,
     approved: true,
   },
   {
@@ -322,7 +322,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "openrouter",
     contextSize: 2000000,
     hasTools: true,
-    recommended: false,
+    recommended: true,
     approved: true,
   },
 
@@ -333,7 +333,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "deepseek",
     contextSize: 128000,
     hasTools: true,
-    recommended: false,
+    recommended: true,
     approved: true,
   },
   {
@@ -342,7 +342,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "deepseek",
     contextSize: 128000,
     hasTools: true,
-    recommended: true,
+    recommended: false,
     approved: true,
   },
 ];
