@@ -1,5 +1,5 @@
 import { logger } from "@chara/logger";
-import { intro, outro } from "@clack/prompts";
+import { intro, outro } from "../utils/prompts";
 import { bold, cyan, green } from "picocolors";
 import { existsGlobalConfig, readGlobalConfig } from "@chara/settings";
 import {

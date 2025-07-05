@@ -1,5 +1,6 @@
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { logger } from "@chara/logger";
+import { LogLevel, logger } from "@chara/logger";
 import type { ServerWebSocket } from "bun";
 import { initAgent } from "./agents";
 import {
@@ -29,6 +30,9 @@ export { tools } from "./tools/";
 // Store connected WebSocket clients
 const wsClients = new Set<ServerWebSocket<unknown>>();
 
+// Store active runner process ID
+let activeRunnerProcessId: string | null = null;
+
 export async function initializeCharaConfig(
   charaConfigFile = ".chara.json",
   model = "deepseek:::deepseek-chat",
@@ -49,80 +53,83 @@ export async function initializeCharaConfig(
   return await Bun.file(charaConfigFile).json();
 }
 
-export async function startServer(
-  options: { charaConfigFile?: string; port?: number } = {},
-) {
-  const { charaConfigFile = ".chara.json", port = 3031 } = options;
-  const configFile = Bun.file(charaConfigFile);
-  const charaConfig = await configFile.json();
-
-  // Set up WebSocket broadcasting for runner events
-  const broadcastToClients = (eventName: string, data: any) => {
-    const message = JSON.stringify({ event: eventName, data });
-    for (const client of wsClients) {
-      if (client.readyState === 1) {
-        // WebSocket.OPEN
-        client.send(message);
-      }
-    }
+export interface StartServerOptions {
+  /** Path to the Chara configuration file */
+  charaConfigFile?: string;
+  /** Port number for the HTTP server */
+  port?: number;
+  /** Log level for the server */
+  logLevel?: LogLevel;
+  /** MCP (Model Context Protocol) configuration */
+  mcp?: {
+    /** Whether to enable MCP initialization */
+    enabled?: boolean;
+    /** Whether to initialize MCP synchronously (blocks server start) */
+    initializeSync?: boolean;
   };
+  /** WebSocket configuration */
+  websocket?: {
+    /** Whether to enable WebSocket server */
+    enabled?: boolean;
+    /** WebSocket endpoint path */
+    endpoint?: string;
+  };
+  /** Runner service configuration */
+  runner?: {
+    /** Whether to enable runner service */
+    enabled?: boolean;
+    /** Command to run (overrides config file) */
+    command?: string;
+    /** Working directory for the command */
+    cwd?: string;
+  };
+}
 
-  // Subscribe to runner events using pattern matching
-  appEvents.onPattern("runner:*", (eventName: string, data: any) => {
-    if (
-      eventName !== "runner:get-status" &&
-      eventName !== "runner:restart" &&
-      eventName !== "runner:clear-logs"
-    ) {
-      broadcastToClients(eventName, data);
-    }
-  });
+export interface ServerInstance {
+  /** The underlying Bun server */
+  server: ReturnType<typeof Bun.serve>;
+  /** Stop the server and cleanup resources */
+  stop: () => Promise<void>;
+  /** Restart specific services */
+  restart: (services?: ("mcp" | "runner")[]) => Promise<void>;
+}
 
-  appEvents.on("runner:status", (status) => {
-    logger.dumpDebug(status);
-    // setInterval(() => {
-    //   appEvents.emit("runner:get-status", { processId: status.processId });
-    // }, 3000);
-  });
+/**
+ * Validates server options and throws if invalid
+ */
+function validateServerOptions(options: StartServerOptions): void {
+  if (
+    options.port !== undefined &&
+    (options.port < 1 || options.port > 65535)
+  ) {
+    throw new Error("Port must be between 1 and 65535");
+  }
 
-  runnerService.start({
-    command: charaConfig.dev || "npx serve .",
-    cwd: process.cwd(),
-  });
+  if (
+    options.websocket?.endpoint &&
+    !options.websocket.endpoint.startsWith("/")
+  ) {
+    throw new Error("WebSocket endpoint must start with '/'");
+  }
 
-  // Start MCP initialization in the background (don't wait)
-  logger.info("🚀 Starting server initialization...");
-  logger.info("🔧 Starting MCP client initialization in background...");
+  if (options.runner?.cwd && !existsSync(options.runner.cwd)) {
+    throw new Error(
+      `Runner working directory does not exist: ${options.runner.cwd}`,
+    );
+  }
+}
 
-  // Initialize MCP in background - don't await it
-  mcpWrapper.initializeInBackground();
-
-  // Show initial tool status
-  const localCount = Object.keys(localTools).length;
-  logger.info(
-    `📦 Starting with ${localCount} local tools (MCP loading in background)`,
-  );
-
-  // Log when MCP is fully ready (don't wait for it)
-  mcpWrapper
-    .initialize()
-    .then(() => {
-      const mcpTools = mcpWrapper.getToolsSync();
-      const mcpCount = Object.keys(mcpTools).length;
-      logger.info(
-        `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${localCount + mcpCount} total`,
-      );
-    })
-    .catch((error) => {
-      logger.warning(
-        "⚠️ MCP initialization failed, continuing with local tools only:",
-        error.message,
-      );
-    });
-
+/**
+ * Helper function to create server configuration
+ */
+function createServerConfig(config: {
+  port: number;
+  websocket: { enabled: boolean; endpoint: string };
+  runner: { enabled: boolean };
+}) {
   // biome-ignore lint/suspicious/noExplicitAny: Server config requires any type for Bun compatibility
   const serverConfig: any = {
-    port,
+    port: config.port,
     idleTimeout: 255,
     routes: {
       // Static routes
@@ -140,8 +147,11 @@ export async function startServer(
     fetch(req: Request, server: any) {
       const url = new URL(req.url);
 
-      // Handle WebSocket upgrade for /ws endpoint
-      if (url.pathname === "/ws") {
+      // Handle WebSocket upgrade if enabled
+      if (
+        config.websocket.enabled &&
+        url.pathname === config.websocket.endpoint
+      ) {
         const success = server.upgrade(req);
         if (success) {
           return undefined; // Bun automatically returns 101 Switching Protocols
@@ -152,16 +162,19 @@ export async function startServer(
       // Handle other routes normally
       return miscController.fallback();
     },
+  };
 
-    // WebSocket configuration
-    websocket: {
+  // Add WebSocket configuration if enabled
+  if (config.websocket.enabled) {
+    serverConfig.websocket = {
       message(ws: any, message: any) {
         try {
           const data = JSON.parse(message.toString());
           logger.debug("WebSocket message received:", data);
 
-          // Handle runner commands from client
+          // Handle runner commands from client (only if runner is enabled)
           if (
+            config.runner.enabled &&
             [
               "runner:get-status",
               "runner:restart",
@@ -193,16 +206,247 @@ export async function startServer(
         logger.error("WebSocket error:", error);
         wsClients.delete(ws);
       },
+    };
+  }
+
+  return serverConfig;
+}
+
+/**
+ * Starts the Chara server with configurable options
+ * @param options Configuration options for the server
+ * @returns Promise that resolves to a ServerInstance with control methods
+ */
+export async function startServer(
+  options: StartServerOptions = {},
+): Promise<ServerInstance> {
+  // Validate options
+  validateServerOptions(options);
+
+  const {
+    charaConfigFile = ".chara.json",
+    port = 3031,
+    logLevel = LogLevel.INFO,
+    mcp = { enabled: true, initializeSync: false },
+    websocket = { enabled: true, endpoint: "/ws" },
+    runner = { enabled: true },
+  } = options;
+
+  logger.setLevel(logLevel);
+  const configFile = Bun.file(charaConfigFile);
+  const charaConfig = await configFile.json();
+
+  // Set up WebSocket broadcasting for runner events (only if WebSocket is enabled)
+  let broadcastToClients: ((eventName: string, data: any) => void) | undefined;
+
+  if (websocket.enabled) {
+    broadcastToClients = (eventName: string, data: any) => {
+      const message = JSON.stringify({ event: eventName, data });
+      for (const client of wsClients) {
+        if (client.readyState === 1) {
+          // WebSocket.OPEN
+          client.send(message);
+        }
+      }
+    };
+
+    // Subscribe to runner events using pattern matching
+    appEvents.onPattern("runner:*", (eventName: string, data: any) => {
+      if (
+        eventName !== "runner:get-status" &&
+        eventName !== "runner:restart" &&
+        eventName !== "runner:clear-logs"
+      ) {
+        broadcastToClients?.(eventName, data);
+      }
+    });
+  }
+
+  // Initialize runner service if enabled
+  if (runner.enabled) {
+    appEvents.on("runner:status", (status) => {
+      logger.dumpDebug(status);
+    });
+
+    try {
+      activeRunnerProcessId = await runnerService.start({
+        command: runner.command || charaConfig.dev || "npx serve .",
+        cwd: runner.cwd || process.cwd(),
+      });
+    } catch (error: any) {
+      logger.error("Failed to start runner service:", error);
+    }
+  }
+
+  // Initialize MCP if enabled
+  if (mcp.enabled) {
+    logger.debug("🚀 Starting server initialization...");
+
+    const localCount = Object.keys(localTools).length;
+
+    if (mcp.initializeSync) {
+      logger.debug("🔧 Starting MCP client initialization (sync)...");
+      try {
+        await mcpWrapper.initialize();
+        const mcpTools = mcpWrapper.getToolsSync();
+        const mcpCount = Object.keys(mcpTools).length;
+        logger.debug(
+          `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${localCount + mcpCount} total`,
+        );
+      } catch (error: any) {
+        logger.warning(
+          "⚠️ MCP initialization failed, continuing with local tools only:",
+          error.message,
+        );
+      }
+    } else {
+      logger.debug("🔧 Starting MCP client initialization in background...");
+
+      // Initialize MCP in background - don't await it
+      mcpWrapper.initializeInBackground();
+
+      // Show initial tool status
+      logger.debug(
+        `📦 Starting with ${localCount} local tools (MCP loading in background)`,
+      );
+
+      // Log when MCP is fully ready (don't wait for it)
+      mcpWrapper
+        .initialize()
+        .then(() => {
+          const mcpTools = mcpWrapper.getToolsSync();
+          const mcpCount = Object.keys(mcpTools).length;
+          logger.debug(
+            `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${localCount + mcpCount} total`,
+          );
+        })
+        .catch((error: any) => {
+          logger.warning(
+            "⚠️ MCP initialization failed, continuing with local tools only:",
+            error.message,
+          );
+        });
+    }
+  } else {
+    logger.debug("🚀 Starting server initialization...");
+    const localCount = Object.keys(localTools).length;
+    logger.debug(`📦 Starting with ${localCount} local tools (MCP disabled)`);
+  }
+
+  // Create server configuration
+  const serverConfig = createServerConfig({
+    port,
+    websocket: {
+      enabled: websocket.enabled ?? true,
+      endpoint: websocket.endpoint ?? "/ws",
     },
-  };
-  logger.info("🌐 Starting HTTP server ");
+    runner: {
+      enabled: runner.enabled ?? true,
+    },
+  });
+
+  logger.debug("🌐 Starting HTTP server ");
   const server = Bun.serve(serverConfig);
   const protocol = serverConfig.tls ? "https" : "http";
-  logger.server(`Server started on ${protocol}://localhost:${server.port}`);
-  logger.debug(`🔌 WebSocket server ready at ws://localhost:${server.port}/ws`);
+  logger.debug(`Server started on ${protocol}://localhost:${server.port}`);
+
+  if (websocket.enabled) {
+    logger.debug(
+      `🔌 WebSocket server ready at ws://localhost:${server.port}${websocket.endpoint}`,
+    );
+  }
+
+  if (runner.enabled) {
+    logger.debug("🏃 Runner service initialized");
+  }
+
+  if (mcp.enabled) {
+    logger.debug(
+      `🔧 MCP service ${mcp.initializeSync ? "initialized" : "initializing in background"}`,
+    );
+  }
+
+  // Log configuration summary
+  logger.info("📋 Server configuration:");
+  logger.info(`   Port: ${server.port}`);
+  logger.info(`   MCP: ${mcp.enabled ? "enabled" : "disabled"}`);
+  logger.info(`   WebSocket: ${websocket.enabled ? "enabled" : "disabled"}`);
+  logger.info(`   Runner: ${runner.enabled ? "enabled" : "disabled"}`);
+
   logger.debug("🎉 Server fully ready to accept requests");
 
-  return server;
+  // Create server instance with control methods
+  const serverInstance: ServerInstance = {
+    server,
+
+    async stop() {
+      logger.debug("🛑 Stopping server...");
+
+      // Stop runner service if enabled
+      if (runner.enabled) {
+        logger.debug("🛑 Stopping runner service...");
+        if (activeRunnerProcessId) {
+          await runnerService.stop(activeRunnerProcessId);
+        } else {
+          await runnerService.stopAll();
+        }
+      }
+
+      // Close WebSocket connections
+      if (websocket.enabled) {
+        logger.debug("🛑 Closing WebSocket connections...");
+        for (const client of wsClients) {
+          client.close();
+        }
+        wsClients.clear();
+      }
+
+      // Stop MCP if enabled
+      if (mcp.enabled) {
+        logger.debug("🛑 Stopping MCP services...");
+        // MCP wrapper cleanup would go here if available
+      }
+
+      // Stop the server
+      server.stop(true);
+      logger.debug("✅ Server stopped successfully");
+    },
+
+    async restart(services = ["mcp", "runner"]) {
+      logger.debug("🔄 Restarting services:", services);
+
+      if (services.includes("runner") && runner.enabled) {
+        logger.debug("🔄 Restarting runner service...");
+        if (activeRunnerProcessId) {
+          await runnerService.stop(activeRunnerProcessId);
+        } else {
+          await runnerService.stopAll();
+        }
+        try {
+          activeRunnerProcessId = await runnerService.start({
+            command: runner.command || charaConfig.dev || "npx serve .",
+            cwd: runner.cwd || process.cwd(),
+          });
+        } catch (error: any) {
+          logger.error("Failed to restart runner service:", error);
+        }
+      }
+
+      if (services.includes("mcp") && mcp.enabled) {
+        logger.debug("🔄 Restarting MCP service...");
+        try {
+          await mcpWrapper.initialize();
+          logger.debug("✅ MCP service restarted successfully");
+        } catch (error: any) {
+          logger.error("❌ Failed to restart MCP service:", error);
+        }
+      }
+
+      logger.debug("✅ Service restart complete");
+    },
+  };
+
+  return serverInstance;
 }
 
 if (import.meta.main) {
@@ -215,9 +459,27 @@ if (import.meta.main) {
     logger.debug(`📁 Changed working directory to: ${tmpDir}`);
   }
   await initializeCharaConfig();
+
   // Start the dev server
-  startServer().catch((error) => {
+  let serverInstance: ServerInstance;
+
+  try {
+    serverInstance = await startServer();
+
+    // Handle graceful shutdown
+    process.on("SIGINT", async () => {
+      logger.info("🛑 Received SIGINT, shutting down gracefully...");
+      await serverInstance.stop();
+      process.exit(0);
+    });
+
+    process.on("SIGTERM", async () => {
+      logger.info("🛑 Received SIGTERM, shutting down gracefully...");
+      await serverInstance.stop();
+      process.exit(0);
+    });
+  } catch (error) {
     logger.error("Failed to start server:", error);
     process.exit(1);
-  });
+  }
 }

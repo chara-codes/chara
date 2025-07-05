@@ -7,23 +7,38 @@ import {
   outro,
   select,
   spinner,
-} from "@clack/prompts";
-import { bold, cyan, green } from "picocolors";
+} from "../utils/prompts";
+import { bold, cyan, green, yellow } from "picocolors";
 import {
   existsGlobalConfig,
   readGlobalConfig,
   updateGlobalConfig,
 } from "@chara/settings";
 import type { DefaultModelActionOptions } from "./types";
+import { startServer } from "@chara/agents";
 
 interface Model {
   id: string;
   name: string;
   provider: string;
+  recommended?: boolean;
 }
 
 interface ApiModelsResponse {
   models: Model[];
+}
+
+/**
+ * Helper function to safely stop the server
+ */
+function stopServer(server: any): void {
+  if (server?.stop && typeof server.stop === "function") {
+    try {
+      server.stop();
+    } catch (closeError) {
+      logger.debug("Error stopping server:", closeError);
+    }
+  }
 }
 
 export async function defaultModelAction(
@@ -58,9 +73,13 @@ export async function defaultModelAction(
 
   let server: any;
   try {
-    const { startServer } = await import("@chara/agents");
     const port = options.port || 3031;
-    server = await startServer({ port });
+    server = await startServer({
+      port,
+      mcp: { enabled: false },
+      runner: { enabled: false },
+      websocket: { enabled: false },
+    });
     s.stop(`Server started on port ${port}`);
   } catch (error) {
     s.stop("Failed to start server");
@@ -74,7 +93,9 @@ export async function defaultModelAction(
   let models: Model[] = [];
   try {
     const port = options.port || 3031;
-    const response = await fetch(`http://localhost:${port}/api/models`);
+    const modelsUrl = `http://localhost:${port}/api/models`;
+    console.log(modelsUrl);
+    const response = await fetch(modelsUrl);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -88,13 +109,7 @@ export async function defaultModelAction(
     logger.error("Error fetching models:", error);
 
     // Clean up server
-    if (server?.stop && typeof server.stop === "function") {
-      try {
-        server.stop();
-      } catch (closeError) {
-        logger.debug("Error stopping server:", closeError);
-      }
-    }
+    stopServer(server);
     throw error;
   }
 
@@ -104,13 +119,7 @@ export async function defaultModelAction(
     );
 
     // Clean up server
-    if (server?.stop && typeof server.stop === "function") {
-      try {
-        server.stop();
-      } catch (closeError) {
-        logger.debug("Error stopping server:", closeError);
-      }
-    }
+    stopServer(server);
     return;
   }
 
@@ -120,10 +129,19 @@ export async function defaultModelAction(
     logger.info(`\nCurrent default model: ${green(currentDefault)}`);
   }
 
+  // Sort models: recommended first, then others
+  const sortedModels = models.sort((a, b) => {
+    if (a.recommended && !b.recommended) return -1;
+    if (!a.recommended && b.recommended) return 1;
+    return 0;
+  });
+
   // Present model selection
-  const modelOptions = models.map((model) => ({
+  const modelOptions = sortedModels.map((model) => ({
     value: `${model.provider}:::${model.id}`,
-    label: `${model.name} (${model.provider})`,
+    label: model.recommended
+      ? `${yellow("★")} ${model.name} (${model.provider})`
+      : `${model.name} (${model.provider})`,
     hint: model.provider,
   }));
 
@@ -137,13 +155,7 @@ export async function defaultModelAction(
     cancel("Model selection cancelled.");
 
     // Clean up server
-    if (server?.stop && typeof server.stop === "function") {
-      try {
-        server.stop();
-      } catch (closeError) {
-        logger.debug("Error stopping server:", closeError);
-      }
-    }
+    stopServer(server);
     return;
   }
 
@@ -157,13 +169,7 @@ export async function defaultModelAction(
     cancel("Default model not saved.");
 
     // Clean up server
-    if (server?.stop && typeof server.stop === "function") {
-      try {
-        server.stop();
-      } catch (closeError) {
-        logger.debug("Error stopping server:", closeError);
-      }
-    }
+    stopServer(server);
     return;
   }
 
@@ -192,15 +198,6 @@ This model will be used by default in Chara Codes unless overridden by project-s
     throw error;
   } finally {
     // Clean up server
-    if (server?.stop && typeof server.stop === "function") {
-      try {
-        s.start("Stopping server...");
-        server.stop();
-        s.stop("Server stopped");
-      } catch (closeError) {
-        s.stop("Error stopping server");
-        logger.debug("Error stopping server:", closeError);
-      }
-    }
+    stopServer(server);
   }
 }

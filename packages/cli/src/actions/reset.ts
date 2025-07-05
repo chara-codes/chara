@@ -6,7 +6,7 @@ import {
   isCancel,
   outro,
   spinner,
-} from "@clack/prompts";
+} from "../utils/prompts";
 import { bold, cyan, green } from "picocolors";
 import { existsGlobalConfig, updateGlobalConfig } from "@chara/settings";
 import type { ResetActionOptions } from "./types";

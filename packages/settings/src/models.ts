@@ -52,7 +52,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "dial",
     contextSize: 2000000,
     hasTools: true,
-    recommended: true,
+    recommended: false,
     approved: true,
   },
   {
@@ -88,7 +88,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     provider: "dial",
     contextSize: 128000,
     hasTools: true,
-    recommended: false,
+    recommended: true,
     approved: true,
   },
 

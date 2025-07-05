@@ -7,6 +7,7 @@
  * - Assertion helpers
  * - Common test patterns
  * - Mock factories
+ * - Prompts mock utilities
  *
  * Used across all action test files to maintain consistency and reduce duplication.
  */
@@ -37,7 +38,9 @@ export const mockActions = {
   /**
    * Mock action that can be configured to fail
    */
-  configurable: async (options?: ActionOptions & { shouldFail?: boolean }): Promise<void> => {
+  configurable: async (
+    options?: ActionOptions & { shouldFail?: boolean },
+  ): Promise<void> => {
     if (options?.shouldFail) {
       throw new Error("Configurable mock action failed");
     }
@@ -50,9 +53,11 @@ export const mockActions = {
   /**
    * Async mock action with delay
    */
-  async: async (options?: ActionOptions & { delay?: number }): Promise<void> => {
+  async: async (
+    options?: ActionOptions & { delay?: number },
+  ): Promise<void> => {
     const delay = options?.delay || 10;
-    await new Promise(resolve => setTimeout(resolve, delay));
+    await new Promise((resolve) => setTimeout(resolve, delay));
     if (options?.verbose) {
       console.log(`Async mock action executed with ${delay}ms delay`);
     }
@@ -62,17 +67,21 @@ export const mockActions = {
   /**
    * Mock action that throws different error types
    */
-  errorThrowing: async (options?: ActionOptions & { errorType?: 'string' | 'object' | 'error' | 'null' }): Promise<void> => {
-    const errorType = options?.errorType || 'error';
+  errorThrowing: async (
+    options?: ActionOptions & {
+      errorType?: "string" | "object" | "error" | "null";
+    },
+  ): Promise<void> => {
+    const errorType = options?.errorType || "error";
 
     switch (errorType) {
-      case 'string':
+      case "string":
         throw "String error";
-      case 'object':
+      case "object":
         throw { code: 500, message: "Object error" };
-      case 'null':
+      case "null":
         throw null;
-      case 'error':
+      case "error":
       default:
         throw new Error("Standard error");
     }
@@ -103,7 +112,9 @@ export const testData = {
   /**
    * Generate reset action options
    */
-  resetOptions: (overrides?: Partial<ResetActionOptions>): ResetActionOptions => ({
+  resetOptions: (
+    overrides?: Partial<ResetActionOptions>,
+  ): ResetActionOptions => ({
     verbose: false,
     confirm: false,
     ...overrides,
@@ -114,7 +125,7 @@ export const testData = {
    */
   showOptions: (overrides?: Partial<ShowActionOptions>): ShowActionOptions => ({
     verbose: false,
-    format: 'table',
+    format: "table",
     ...overrides,
   }),
 
@@ -140,6 +151,55 @@ export const testData = {
 };
 
 /**
+ * Prompts mock utilities
+ */
+export const promptsMocks = {
+  /**
+   * Create mock prompts utilities
+   */
+  createMockPrompts: () => ({
+    intro: mockFactories.createSpy((message: string) => {}),
+    outro: mockFactories.createSpy((message: string) => {}),
+    cancel: mockFactories.createSpy((message: string) => {}),
+    confirm: mockFactories.createSpy((options: any) => Promise.resolve(true)),
+    select: mockFactories.createSpy((options: any) =>
+      Promise.resolve("default"),
+    ),
+    multiselect: mockFactories.createSpy((options: any) => Promise.resolve([])),
+    text: mockFactories.createSpy((options: any) => Promise.resolve("")),
+    spinner: mockFactories.createSpy(() => ({
+      start: mockFactories.createSpy((message: string) => {}),
+      stop: mockFactories.createSpy((message?: string) => {}),
+    })),
+    isCancel: mockFactories.createSpy((value: any) => false),
+    resetCancellation: mockFactories.createSpy(() => {}),
+  }),
+
+  /**
+   * Setup prompts mocks for testing
+   */
+  setupPromptsMocks: () => {
+    const mocks = promptsMocks.createMockPrompts();
+
+    // Mock the prompts utility module
+    const mockModule = {
+      intro: mocks.intro,
+      outro: mocks.outro,
+      cancel: mocks.cancel,
+      confirm: mocks.confirm,
+      select: mocks.select,
+      multiselect: mocks.multiselect,
+      text: mocks.text,
+      spinner: mocks.spinner,
+      isCancel: mocks.isCancel,
+      resetCancellation: mocks.resetCancellation,
+    };
+
+    return { mocks, mockModule };
+  },
+};
+
+/**
  * Mock factories for creating test doubles
  */
 export const mockFactories = {
@@ -147,11 +207,17 @@ export const mockFactories = {
    * Create a spy function that tracks calls
    */
   createSpy: <T extends (...args: any[]) => any>(implementation?: T) => {
-    const calls: Array<{ args: Parameters<T>; result?: ReturnType<T>; error?: Error }> = [];
+    const calls: Array<{
+      args: Parameters<T>;
+      result?: ReturnType<T>;
+      error?: Error;
+    }> = [];
 
     const spy = async (...args: Parameters<T>): Promise<ReturnType<T>> => {
       try {
-        const result = implementation ? await implementation(...args) : undefined;
+        const result = implementation
+          ? await implementation(...args)
+          : undefined;
         calls.push({ args, result });
         return result;
       } catch (error) {
@@ -163,15 +229,15 @@ export const mockFactories = {
     spy.calls = calls;
     spy.callCount = () => calls.length;
     spy.calledWith = (...args: Parameters<T>) =>
-      calls.some(call => JSON.stringify(call.args) === JSON.stringify(args));
+      calls.some((call) => JSON.stringify(call.args) === JSON.stringify(args));
     spy.lastCall = () => calls[calls.length - 1];
-    spy.reset = () => calls.length = 0;
+    spy.reset = () => (calls.length = 0);
 
     return spy as T & {
       calls: typeof calls;
       callCount: () => number;
       calledWith: (...args: Parameters<T>) => boolean;
-      lastCall: () => typeof calls[0] | undefined;
+      lastCall: () => (typeof calls)[0] | undefined;
       reset: () => void;
     };
   },
@@ -199,13 +265,15 @@ export const mockFactories = {
       }),
       get: mockFactories.createSpy((name: string) => actions.get(name)),
       getAll: mockFactories.createSpy(() => Array.from(actions.values())),
-      execute: mockFactories.createSpy(async (name: string, options?: ActionOptions) => {
-        const action = actions.get(name);
-        if (!action) {
-          throw new Error(`Action "${name}" not found`);
-        }
-        await action.execute(options);
-      }),
+      execute: mockFactories.createSpy(
+        async (name: string, options?: ActionOptions) => {
+          const action = actions.get(name);
+          if (!action) {
+            throw new Error(`Action "${name}" not found`);
+          }
+          await action.execute(options);
+        },
+      ),
       _actions: actions, // For testing purposes
     };
   },
@@ -220,10 +288,10 @@ export const assertions = {
    */
   isValidAction: (action: any): action is BaseAction => {
     return (
-      typeof action === 'object' &&
-      typeof action.name === 'string' &&
-      typeof action.description === 'string' &&
-      typeof action.execute === 'function'
+      typeof action === "object" &&
+      typeof action.name === "string" &&
+      typeof action.description === "string" &&
+      typeof action.execute === "function"
     );
   },
 
@@ -232,8 +300,8 @@ export const assertions = {
    */
   isValidActionOptions: (options: any): options is ActionOptions => {
     return (
-      typeof options === 'object' &&
-      (options.verbose === undefined || typeof options.verbose === 'boolean')
+      typeof options === "object" &&
+      (options.verbose === undefined || typeof options.verbose === "boolean")
     );
   },
 
@@ -241,7 +309,7 @@ export const assertions = {
    * Assert that a function is a valid ActionFunction
    */
   isValidActionFunction: (fn: any): fn is ActionFunction => {
-    return typeof fn === 'function';
+    return typeof fn === "function";
   },
 
   /**
@@ -249,10 +317,10 @@ export const assertions = {
    */
   isValidActionResult: (result: any): result is ActionResult => {
     return (
-      typeof result === 'object' &&
-      typeof result.success === 'boolean' &&
-      (result.message === undefined || typeof result.message === 'string') &&
-      (result.data === undefined || typeof result.data !== 'undefined')
+      typeof result === "object" &&
+      typeof result.success === "boolean" &&
+      (result.message === undefined || typeof result.message === "string") &&
+      (result.data === undefined || typeof result.data !== "undefined")
     );
   },
 };
@@ -275,7 +343,7 @@ export const testPatterns = {
   testActionErrorHandling: async (
     action: BaseAction,
     errorOptions: ActionOptions,
-    expectedError: string | RegExp
+    expectedError: string | RegExp,
   ) => {
     expect(assertions.isValidAction(action)).toBe(true);
     await expect(action.execute(errorOptions)).rejects.toThrow(expectedError);
@@ -296,7 +364,7 @@ export const testPatterns = {
    */
   testActionWithOptions: async (
     action: BaseAction,
-    optionCombinations: ActionOptions[]
+    optionCombinations: ActionOptions[],
   ) => {
     for (const options of optionCombinations) {
       await expect(action.execute(options)).resolves.toBeUndefined();
@@ -311,7 +379,10 @@ export const performanceUtils = {
   /**
    * Measure action execution time
    */
-  measureExecutionTime: async (action: BaseAction, options?: ActionOptions): Promise<number> => {
+  measureExecutionTime: async (
+    action: BaseAction,
+    options?: ActionOptions,
+  ): Promise<number> => {
     const startTime = performance.now();
     await action.execute(options);
     const endTime = performance.now();
@@ -324,11 +395,11 @@ export const performanceUtils = {
   testActionLoad: async (
     action: BaseAction,
     concurrency: number,
-    options?: ActionOptions
+    options?: ActionOptions,
   ): Promise<number[]> => {
-    const promises = Array(concurrency).fill(null).map(() =>
-      performanceUtils.measureExecutionTime(action, options)
-    );
+    const promises = Array(concurrency)
+      .fill(null)
+      .map(() => performanceUtils.measureExecutionTime(action, options));
     return Promise.all(promises);
   },
 
@@ -336,7 +407,7 @@ export const performanceUtils = {
    * Memory usage estimation (basic)
    */
   estimateMemoryUsage: (): number => {
-    if (typeof process !== 'undefined' && process.memoryUsage) {
+    if (typeof process !== "undefined" && process.memoryUsage) {
       return process.memoryUsage().heapUsed;
     }
     return 0;
@@ -377,14 +448,16 @@ export const setupUtils = {
   /**
    * Setup common test actions
    */
-  setupTestActions: (factory: ReturnType<typeof mockFactories.createMockActionFactory>) => {
+  setupTestActions: (
+    factory: ReturnType<typeof mockFactories.createMockActionFactory>,
+  ) => {
     const testActions = [
       testData.baseAction({ name: "test1", description: "Test action 1" }),
       testData.baseAction({ name: "test2", description: "Test action 2" }),
       testData.baseAction({ name: "test3", description: "Test action 3" }),
     ];
 
-    testActions.forEach(action => factory.register(action));
+    testActions.forEach((action) => factory.register(action));
     return testActions;
   },
 };
@@ -396,6 +469,7 @@ export default {
   mockActions,
   testData,
   mockFactories,
+  promptsMocks,
   assertions,
   testPatterns,
   performanceUtils,

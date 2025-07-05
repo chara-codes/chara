@@ -1,5 +1,5 @@
 import { logger } from "@chara/logger";
-import { isCancel, text } from "@clack/prompts";
+import { isCancel, text } from "./prompts";
 import { green, yellow } from "picocolors";
 import type { ProviderConfig } from "../config/provider-configs";
 import { PROVIDER_CONFIGS } from "../config/provider-configs";

@@ -53,13 +53,14 @@ export const modelsController = {
               name: model.name || model.id,
               provider: provider,
               // Add enhanced fields from whitelist if available
-              ...(whitelistModel && {
-                name: whitelistModel.name,
-                contextSize: whitelistModel.contextSize,
-                hasTools: whitelistModel.hasTools,
-                recommended: whitelistModel.recommended,
-                approved: whitelistModel.approved,
-              }),
+              ...(whitelistModel &&
+                provider === whitelistModel.provider && {
+                  name: whitelistModel.name,
+                  contextSize: whitelistModel.contextSize,
+                  hasTools: whitelistModel.hasTools,
+                  recommended: whitelistModel.recommended,
+                  approved: whitelistModel.approved,
+                }),
             };
           }),
       );
