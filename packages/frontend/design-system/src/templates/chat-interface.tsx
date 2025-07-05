@@ -47,7 +47,7 @@ const Container = styled.div`
   height: 100vh;
   width: 100%;
   background-color: ${({ theme }) => (theme as Theme).colors.background};
-  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  border-width: 0px;
 `;
 
 const Content = styled.div`
@@ -247,59 +247,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
       case Screen.TERMINAL: {
         // Sample terminal logs for demonstration
-        const sampleLogs = [
-          {
-            id: "log-1",
-            type: "stdout" as const,
-            content:
-              "✓ Installing dependencies...\n✓ @chara/core@1.0.0 installed successfully",
-            timestamp: new Date(Date.now() - 60000),
-            exitCode: 0,
-          },
-          {
-            id: "log-2",
-            type: "stdout" as const,
-            content:
-              "Building application...\n✓ Build completed in 2.3s\n✓ Output: dist/",
-            timestamp: new Date(Date.now() - 45000),
-            exitCode: 0,
-          },
-          {
-            id: "log-3",
-            type: "stdout" as const,
-            content:
-              "On branch main\nYour branch is up to date with 'origin/main'.\n\nnothing to commit, working tree clean",
-            timestamp: new Date(Date.now() - 30000),
-            exitCode: 0,
-          },
-          {
-            id: "log-4",
-            type: "stderr" as const,
-            content:
-              "Error: Command 'deploy' failed\nPermission denied: /var/www/html",
-            timestamp: new Date(Date.now() - 15000),
-            exitCode: 1,
-          },
-        ];
-
-        // Sample server information
-        const sampleServerInfo = {
-          serverUrl: "https://api.chara.dev",
-          name: "chara-dev-server",
-          status: "active",
-          os: "Ubuntu 22.04 LTS",
-          shell: "/bin/bash",
-          cwd: "/home/user/projects/chara",
-          command: "npm run dev",
-        };
-
-        return (
-          <TerminalView
-            onBack={navigateToConversation}
-            logs={sampleLogs}
-            serverInfo={sampleServerInfo}
-          />
-        );
+        return <TerminalView onBack={navigateToConversation} />;
       }
 
       default:
