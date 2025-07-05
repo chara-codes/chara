@@ -1,6 +1,25 @@
 # Providers Usage Guide
 
-This guide demonstrates how to use the providers module with the new initialization and reinitialization functionality.
+This guide demonstrates how to use the providers module with the unified initialization approach.
+
+## Quick Start
+
+```typescript
+import { initialize, getModel } from '@chara/agents';
+
+// Step 1: Initialize (required before any provider usage)
+await initialize();
+
+// Step 2: Use any available provider
+const model = await getModel('openai', 'gpt-4o');
+
+// Step 3: When settings change, simply call initialize() again
+process.env.ANTHROPIC_API_KEY = 'new-key';
+await initialize(); // Automatically handles reinitialization
+
+// Step 4: Use updated providers
+const claudeModel = await getModel('anthropic', 'claude-3-5-sonnet-20241022');
+```
 
 ## Basic Usage
 
@@ -55,7 +74,7 @@ console.log('All provider models:', allModels);
 
 ### When to Reinitialize
 
-Reinitialize providers when:
+Call `initialize()` again when:
 - Environment variables change
 - Configuration files are updated
 - API keys are rotated
@@ -64,17 +83,18 @@ Reinitialize providers when:
 ### How to Reinitialize
 
 ```typescript
-import { reinitialize, getAvailableProviders } from '@chara/agents';
+import { initialize, getAvailableProviders } from '@chara/agents';
 
-// Before: limited providers
+// Initial setup
+await initialize();
 let providers = await getAvailableProviders();
 console.log('Before:', providers.length, 'providers');
 
 // Update environment or configuration
 process.env.ANTHROPIC_API_KEY = 'new-api-key';
 
-// Reinitialize to pick up changes
-await reinitialize();
+// Simply call initialize() again - it handles reinitialization automatically
+await initialize();
 
 // After: potentially more providers
 providers = await getAvailableProviders();
@@ -86,7 +106,6 @@ console.log('After:', providers.length, 'providers');
 ```typescript
 import { 
   initialize, 
-  reinitialize, 
   getModel, 
   getAvailableProviders,
   hasProvider 
@@ -113,8 +132,8 @@ async function exampleUsage() {
     console.log('\nSimulating configuration update...');
     process.env.DEEPSEEK_API_KEY = 'new-deepseek-key';
     
-    // Step 5: Reinitialize to pick up changes
-    await reinitialize();
+    // Step 5: Call initialize() again - it automatically handles reinitialization
+    await initialize();
     
     // Step 6: Check for new providers
     const updatedProviders = await getAvailableProviders();
@@ -203,7 +222,7 @@ if (errors.length > 0) {
 }
 
 // Reinitialize
-await providersRegistry.reinitialize();
+await providersRegistry.initialize();
 ```
 
 ## Server Integration
@@ -227,9 +246,10 @@ const server = await startServer({
 
 1. **Always initialize first**: Never use providers without calling `initialize()` first
 2. **Handle errors gracefully**: Check if providers are available before using them
-3. **Reinitialize when needed**: Call `reinitialize()` when configuration changes
+3. **Reinitialize when needed**: Call `initialize()` again when configuration changes - it's smart enough to handle both first-time setup and reinitialization
 4. **Use await**: All provider methods are async and must be awaited
 5. **Check availability**: Use `hasProvider()` to verify a provider is configured before using it
+6. **One method for all**: There's only one `initialize()` method - use it for both initial setup and reinitialization
 
 ## Environment Variables
 

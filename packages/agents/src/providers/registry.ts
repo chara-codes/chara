@@ -48,7 +48,7 @@ import type { InitializationError, ModelInfo, ProviderConfig } from "./types";
  * const deepseekReasoner = await getModel('deepseek', 'deepseek-reasoner');
  *
  * // Reinitialize when settings change
- * await providersRegistry.reinitialize();
+ * await providersRegistry.initialize();
  * ```
  */
 export class ProvidersRegistry {
@@ -62,33 +62,26 @@ export class ProvidersRegistry {
   }
 
   /**
-   * Initialize all available providers - must be called explicitly
+   * Initialize or reinitialize all available providers
+   * Can be called multiple times to pick up configuration changes
    */
   public async initialize(): Promise<void> {
-    if (this.initializationPromise) {
-      return this.initializationPromise;
+    // If already initialized or in progress, clear state first
+    if (this.initialized || this.initializationPromise) {
+      // Clear existing state
+      this.providers.clear();
+      this.initialized = false;
+      this.initializationPromise = null;
+
+      // Clear cache from existing provider configs
+      this.providerConfigs.clearCache();
+
+      // Reinitialize provider configs to pick up new settings
+      this.providerConfigs = new ProviderConfigs();
     }
+
     this.initializationPromise = this.doInitializeProviders();
     return this.initializationPromise;
-  }
-
-  /**
-   * Reinitialize all providers (useful when settings are updated)
-   */
-  public async reinitialize(): Promise<void> {
-    // Clear existing state
-    this.providers.clear();
-    this.initialized = false;
-    this.initializationPromise = null;
-
-    // Clear cache from existing provider configs
-    this.providerConfigs.clearCache();
-
-    // Reinitialize provider configs to pick up new settings
-    this.providerConfigs = new ProviderConfigs();
-
-    // Start fresh initialization
-    return this.initialize();
   }
 
   /**

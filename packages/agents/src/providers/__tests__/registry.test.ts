@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { ProvidersRegistry } from "../registry";
-import { logger } from "@chara/logger";
 
 describe("ProvidersRegistry", () => {
   let registry: ProvidersRegistry;
@@ -46,7 +45,7 @@ describe("ProvidersRegistry", () => {
     expect(Array.isArray(providers)).toBe(true);
   });
 
-  test("should reinitialize providers when reinitialize() is called", async () => {
+  test("should reinitialize providers when initialize() is called again", async () => {
     // Set up initial environment
     process.env.OPENAI_API_KEY = "test-key-1";
     await registry.initialize();
@@ -59,8 +58,8 @@ describe("ProvidersRegistry", () => {
     process.env.OPENAI_API_KEY = "test-key-2";
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
 
-    // Reinitialize
-    await registry.reinitialize();
+    // Reinitialize by calling initialize again
+    await registry.initialize();
 
     // Should be able to access providers again
     const newProviders = await registry.getAvailableProviders();
@@ -81,8 +80,8 @@ describe("ProvidersRegistry", () => {
     const initialProviderNames = await registry.getProviderNames();
     expect(initialProviderNames.length).toBeGreaterThanOrEqual(0);
 
-    // Reinitialize
-    await registry.reinitialize();
+    // Reinitialize by calling initialize again
+    await registry.initialize();
 
     // Should still work
     const newProviderNames = await registry.getProviderNames();
@@ -173,9 +172,9 @@ describe("ProvidersRegistry", () => {
     await registry.initialize();
 
     // Should throw if provider doesn't exist
-    await expect(registry.getModel("non-existent", "some-model")).rejects.toThrow(
-      "Provider non-existent is not available",
-    );
+    await expect(
+      registry.getModel("non-existent", "some-model"),
+    ).rejects.toThrow("Provider non-existent is not available");
   });
 
   test("should return initialization errors", async () => {
@@ -197,10 +196,35 @@ describe("ProvidersRegistry", () => {
     // Add some environment variables
     process.env.OPENAI_API_KEY = "test-key";
 
-    // Reinitialize should work
-    await registry.reinitialize();
+    // Reinitialize should work by calling initialize again
+    await registry.initialize();
 
     const providers = await registry.getAvailableProviders();
     expect(Array.isArray(providers)).toBe(true);
+  });
+
+  test("should handle initialize as both first-time and reinitialization", async () => {
+    // First call should work as initial setup
+    await registry.initialize();
+    const firstProviders = await registry.getAvailableProviders();
+
+    // Change environment
+    process.env.OPENAI_API_KEY = "first-key";
+
+    // Second call should work as reinitialization
+    await registry.initialize();
+    const secondProviders = await registry.getAvailableProviders();
+
+    // Both should return valid arrays
+    expect(Array.isArray(firstProviders)).toBe(true);
+    expect(Array.isArray(secondProviders)).toBe(true);
+
+    // Change environment again
+    process.env.ANTHROPIC_API_KEY = "anthropic-key";
+
+    // Third call should still work
+    await registry.initialize();
+    const thirdProviders = await registry.getAvailableProviders();
+    expect(Array.isArray(thirdProviders)).toBe(true);
   });
 });

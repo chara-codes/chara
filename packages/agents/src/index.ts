@@ -16,7 +16,7 @@ import { appEvents } from "./services/events";
 import { runnerService } from "./services/runner";
 import { tools as localTools } from "./tools/";
 import { logWithPreset } from "./utils";
-import { providersRegistry } from "./providers/";
+import { initialize } from "./providers/";
 
 export { beautifyAgent } from "./agents/beautify-agent";
 // Export agents for programmatic use
@@ -222,7 +222,7 @@ export async function startServer(
   options: StartServerOptions = {},
 ): Promise<ServerInstance> {
   // initialize providers
-  await providersRegistry.reinitialize();
+  await initialize();
 
   // Validate options
   validateServerOptions(options);
