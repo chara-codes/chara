@@ -1,6 +1,6 @@
-import { anthropic, createAnthropic } from "@ai-sdk/anthropic";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { createDeepSeek } from "@ai-sdk/deepseek";
-import { createGoogleGenerativeAI, google } from "@ai-sdk/google";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { LanguageModelV1 } from "@ai-sdk/provider";
@@ -403,6 +403,13 @@ export class ProviderConfigs extends BaseProviderInitializer {
       logger.error(`Health check failed for ${providerName}:`, error);
       return false;
     }
+  }
+
+  /**
+   * Clear the provider cache (useful for reinitialization)
+   */
+  public clearCache(): void {
+    this.providerCache.clear();
   }
 
   /**

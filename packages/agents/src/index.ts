@@ -222,7 +222,7 @@ export async function startServer(
   options: StartServerOptions = {},
 ): Promise<ServerInstance> {
   // initialize providers
-  providersRegistry.initializeProviders();
+  await providersRegistry.reinitialize();
 
   // Validate options
   validateServerOptions(options);

@@ -5,7 +5,9 @@ import { ProviderConfigs } from "./provider-configs";
 import type { InitializationError, ModelInfo, ProviderConfig } from "./types";
 
 /**
- * Registry for AI providers that automatically initializes providers based on environment variables.
+ * Registry for AI providers that initializes providers based on environment variables.
+ *
+ * IMPORTANT: Must call initialize() before using any providers.
  *
  * Environment variables should follow the pattern: {PROVIDER_NAME}_API_KEY
  *
@@ -22,25 +24,31 @@ import type { InitializationError, ModelInfo, ProviderConfig } from "./types";
  *
  * @example
  * ```typescript
- * import { providersRegistry, getModel } from './providers-registry';
+ * import { providersRegistry, getModel, initialize } from './providers-registry';
+ *
+ * // Initialize providers first
+ * await initialize();
  *
  * // Get a specific model
  * const openaiModel = getModel('openai', 'gpt-4o');
  *
  * // List available providers
- * const providers = providersRegistry.getAvailableProviders();
+ * const providers = await providersRegistry.getAvailableProviders();
  * console.log('Available providers:', providers.map(p => p.name));
  *
  * // Note: Models are specified when calling getModel(), not stored in the registry
  *
  * // Check if a provider is available
- * if (providersRegistry.hasProvider('anthropic')) {
- *   const claudeModel = getModel('anthropic', 'claude-3-5-sonnet-20241022');
+ * if (await providersRegistry.hasProvider('anthropic')) {
+ *   const claudeModel = await getModel('anthropic', 'claude-3-5-sonnet-20241022');
  * }
  *
  * // Use DeepSeek models
- * const deepseekChat = getModel('deepseek', 'deepseek-chat');
- * const deepseekReasoner = getModel('deepseek', 'deepseek-reasoner');
+ * const deepseekChat = await getModel('deepseek', 'deepseek-chat');
+ * const deepseekReasoner = await getModel('deepseek', 'deepseek-reasoner');
+ *
+ * // Reinitialize when settings change
+ * await providersRegistry.reinitialize();
  * ```
  */
 export class ProvidersRegistry {
@@ -50,18 +58,37 @@ export class ProvidersRegistry {
   private initializationPromise: Promise<void> | null = null;
 
   constructor() {
-    this.initializeProviders();
+    this.providerConfigs = new ProviderConfigs();
   }
 
   /**
-   * Initialize all available providers
+   * Initialize all available providers - must be called explicitly
    */
-  public initializeProviders(): void {
-    this.providerConfigs = new ProviderConfigs();
+  public async initialize(): Promise<void> {
     if (this.initializationPromise) {
-      return;
+      return this.initializationPromise;
     }
     this.initializationPromise = this.doInitializeProviders();
+    return this.initializationPromise;
+  }
+
+  /**
+   * Reinitialize all providers (useful when settings are updated)
+   */
+  public async reinitialize(): Promise<void> {
+    // Clear existing state
+    this.providers.clear();
+    this.initialized = false;
+    this.initializationPromise = null;
+
+    // Clear cache from existing provider configs
+    this.providerConfigs.clearCache();
+
+    // Reinitialize provider configs to pick up new settings
+    this.providerConfigs = new ProviderConfigs();
+
+    // Start fresh initialization
+    return this.initialize();
   }
 
   /**
@@ -81,7 +108,7 @@ export class ProvidersRegistry {
 
     // Log initialization summary
     const totalProviders = this.providers.size;
-    const availableProviders = this.getAvailableProviders().length;
+    const availableProviders = (await this.getAvailableProviders()).length;
     const initializationErrors = this.getInitializationErrors();
 
     logger.debug("Provider Registry Summary:", {
@@ -101,7 +128,10 @@ export class ProvidersRegistry {
    * Ensure providers are initialized
    */
   private async ensureInitialized(): Promise<void> {
-    if (!this.initialized && this.initializationPromise) {
+    if (!this.initialized) {
+      if (!this.initializationPromise) {
+        throw new Error("Providers not initialized. Call initialize() first.");
+      }
       await this.initializationPromise;
     }
   }

@@ -25,6 +25,12 @@ export const providersRegistry = new ProvidersRegistry();
  * Convenience functions for accessing the singleton registry
  */
 
+/** Initialize providers - must be called before using any providers */
+export const initialize = async () => await providersRegistry.initialize();
+
+/** Reinitialize providers - useful when settings are updated */
+export const reinitialize = async () => await providersRegistry.reinitialize();
+
 /** Get a provider configuration by name */
 export const getProvider = async (name: string) =>
   await providersRegistry.getProvider(name);
