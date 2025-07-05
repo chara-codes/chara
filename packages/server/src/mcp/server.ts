@@ -1,21 +1,21 @@
+import { logger } from "@chara/logger";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
   CallToolRequestSchema,
   GetPromptRequestSchema,
   ListPromptsRequestSchema,
+  type ListPromptsResultSchema,
   ListResourcesRequestSchema,
+  type ListResourcesResultSchema,
+  ListResourceTemplatesRequestSchema,
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
-  type Tool,
-  ListPromptsResultSchema,
-  ListResourcesResultSchema,
-  ListResourceTemplatesRequestSchema,
   type ResourceTemplate,
+  type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { z } from "zod";
 import * as eventsource from "eventsource";
+import type { z } from "zod";
 import { trpcMCPCalls } from "../api/routes/mcpservers";
-import { logger } from "@chara/logger";
 
 const CLIENT_ID = "client-123";
 global.EventSource = eventsource.EventSource;
@@ -190,7 +190,6 @@ export const createServer = async () => {
 
   // Read resource
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    let resource = {};
     const { uri } = request.params;
     try {
       const params = JSON.stringify({
