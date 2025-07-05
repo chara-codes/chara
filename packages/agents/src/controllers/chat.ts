@@ -1,9 +1,8 @@
-import { createDataStreamResponse, type CoreMessage } from "ai";
-import { chatAgent } from "../agents/chat-agent";
 import { logger } from "@chara/logger";
-import { isoGitService } from "../services/isogit";
+import { type CoreMessage, createDataStreamResponse } from "ai";
+import { chatAgent } from "../agents/chat-agent";
 import { gitAgent } from "../agents/git-agent";
-import { appEvents } from "../services/events";
+import { isoGitService } from "../services/isogit";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",

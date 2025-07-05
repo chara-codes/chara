@@ -176,7 +176,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
     if (config.baseUrlEnvName) {
       baseURL = await getVarFromEnvOrGlobalConfig(config.baseUrlEnvName);
       if (!baseURL) {
-        logger.warning(
+        logger.debug(
           `${config.baseUrlEnvName} or global config baseURL is required for ${config.name} provider`,
         );
         return null;

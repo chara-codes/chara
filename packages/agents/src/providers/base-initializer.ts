@@ -1,5 +1,5 @@
-import { logger } from '@chara/logger';
-import type { InitializationError, ProviderConfig } from './types';
+import { logger } from "@chara/logger";
+import type { InitializationError, ProviderConfig } from "./types";
 
 /**
  * Base class for provider initialization with common utilities
@@ -18,7 +18,7 @@ export abstract class BaseProviderInitializer {
     providerName: string,
   ): boolean {
     if (!apiKey || apiKey.trim() === "") {
-      logger.warning(
+      logger.debug(
         `${providerName} API key not found or empty - skipping initialization`,
       );
       return false;
@@ -38,7 +38,7 @@ export abstract class BaseProviderInitializer {
     error?: string,
   ): void {
     if (status === "success") {
-      logger.success(`${provider} provider initialized successfully`);
+      logger.debug(`${provider} provider initialized successfully`);
     } else {
       logger.error(`${provider} provider initialization failed: ${error}`);
       this.initializationErrors.push({

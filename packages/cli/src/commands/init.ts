@@ -1,6 +1,7 @@
 import { logger } from "@chara/logger";
 import type { CommandModule } from "yargs";
 import type {
+  DefaultModelActionOptions,
   InitActionOptions,
   ResetActionOptions,
   ShowActionOptions,
@@ -73,6 +74,10 @@ export const initCommand: CommandModule<
         force: argv.force,
         verbose: argv.verbose,
       });
+      await ActionFactory.execute<DefaultModelActionOptions>("default-model", {
+        verbose: argv.verbose,
+      });
+      return;
     } catch (error) {
       if (error && typeof error === "object" && "message" in error) {
         logger.error("Command failed:", (error as Error).message);

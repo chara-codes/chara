@@ -1,19 +1,19 @@
+import { defaultModelAction } from "./default-model";
 import {
   ActionFactory,
+  compose,
   createAction,
   withErrorHandling,
   withLogging,
-  compose,
 } from "./factory";
 import { initAction } from "./init";
 import { resetAction } from "./reset";
 import { showAction } from "./show";
-import { defaultModelAction } from "./default-model";
 import type {
+  DefaultModelActionOptions,
   InitActionOptions,
   ResetActionOptions,
   ShowActionOptions,
-  DefaultModelActionOptions,
 } from "./types";
 
 // Register all actions with the factory
@@ -67,5 +67,5 @@ export function registerActions(): void {
 registerActions();
 
 // Export the factory for external use
-export { ActionFactory };
 export * from "./types";
+export { ActionFactory };

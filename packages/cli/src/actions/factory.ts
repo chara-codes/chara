@@ -1,9 +1,9 @@
 import { logger } from "@chara/logger";
 import type {
-  ActionOptions,
-  ActionFunction,
-  BaseAction,
   ActionContext,
+  ActionFunction,
+  ActionOptions,
+  BaseAction,
 } from "./types";
 
 const actions = new Map<string, BaseAction>();
@@ -25,6 +25,7 @@ export const ActionFactory = {
     name: string,
     options: T = {} as T,
   ): Promise<void> {
+    logger.info("Execute action:", name);
     const action = ActionFactory.get(name);
     if (!action) {
       throw new Error(`Action "${name}" not found`);

@@ -1,8 +1,8 @@
 import { logger } from "@chara/logger";
-import type { ProviderConfig, ModelInfo, InitializationError } from "./types";
-import { ProviderConfigs } from "./provider-configs";
-import { ModelFetcher } from "./model-fetcher";
 import type { LanguageModelV1 } from "ai";
+import { ModelFetcher } from "./model-fetcher";
+import { ProviderConfigs } from "./provider-configs";
+import type { InitializationError, ModelInfo, ProviderConfig } from "./types";
 
 /**
  * Registry for AI providers that automatically initializes providers based on environment variables.
@@ -14,15 +14,11 @@ import type { LanguageModelV1 } from "ai";
  * - ANTHROPIC_API_KEY: Anthropic Claude models (specify model when calling getModel)
  * - GOOGLE_GENERATIVE_AI_API_KEY: Google Gemini models (specify model when calling getModel)
  * - DEEPSEEK_API_KEY: DeepSeek models (specify model when calling getModel)
- * - MISTRAL_API_KEY: Mistral AI models (specify model when calling getModel)
- * - GROQ_API_KEY: Groq models (specify model when calling getModel)
  * - OPEN_ROUTER_API_KEY: OpenRouter models (specify model when calling getModel)
- * - XAI_API_KEY: xAI Grok models (specify model when calling getModel)
  * - OLLAMA_API_BASE_URL: Local Ollama instance (specify model when calling getModel)
  * - LMSTUDIO_API_BASE_URL: Local LMStudio instance (specify model when calling getModel)
  * - AWS_BEDROCK_CONFIG: AWS Bedrock (JSON config, specify model when calling getModel)
  * - DIAL_API_KEY + DIAL_API_BASE_URL: DIAL compatible API endpoint (specify model when calling getModel)
- * - HuggingFace_API_KEY: HuggingFace models (placeholder, not yet implemented)
  *
  * @example
  * ```typescript
@@ -54,18 +50,17 @@ export class ProvidersRegistry {
   private initializationPromise: Promise<void> | null = null;
 
   constructor() {
-    this.providerConfigs = new ProviderConfigs();
     this.initializeProviders();
   }
 
   /**
    * Initialize all available providers
    */
-  private initializeProviders(): void {
+  public initializeProviders(): void {
+    this.providerConfigs = new ProviderConfigs();
     if (this.initializationPromise) {
       return;
     }
-
     this.initializationPromise = this.doInitializeProviders();
   }
 
@@ -89,14 +84,14 @@ export class ProvidersRegistry {
     const availableProviders = this.getAvailableProviders().length;
     const initializationErrors = this.getInitializationErrors();
 
-    logger.info("Provider Registry Summary:", {
+    logger.debug("Provider Registry Summary:", {
       totalProviders,
       availableProviders,
       failedInitializations: initializationErrors.length,
     });
 
     if (initializationErrors.length > 0) {
-      logger.warning("Initialization Errors:", {
+      logger.debug("Initialization Errors:", {
         errors: initializationErrors,
       });
     }

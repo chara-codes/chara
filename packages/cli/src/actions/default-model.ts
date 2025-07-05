@@ -74,6 +74,7 @@ export async function defaultModelAction(
   let server: any;
   try {
     const port = options.port || 3031;
+    console.trace("start server");
     server = await startServer({
       port,
       mcp: { enabled: false },
