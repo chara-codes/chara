@@ -99,8 +99,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
         const ollamaProvider = createOllama({
           baseURL: config.baseURL as string,
         });
-        return (modelId: string) =>
-          ollamaProvider(modelId, { simulateStreaming: true });
+        return (modelId: string) => ollamaProvider(modelId);
       },
       fetchModelsMethod: ModelFetcher.fetchOllamaModels,
     },
