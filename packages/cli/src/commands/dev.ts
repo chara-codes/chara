@@ -1,8 +1,8 @@
+import { logger } from "@chara/logger";
+import { bold, cyan, green } from "picocolors";
 import type { CommandModule } from "yargs";
 import { ActionFactory } from "../actions";
 import { intro, outro } from "../utils/prompts";
-import { bold, cyan, green } from "picocolors";
-import { logger } from "@chara/logger";
 
 interface DevCommandArgs {
   projectDir?: string;
