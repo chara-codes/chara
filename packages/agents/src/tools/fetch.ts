@@ -1,5 +1,6 @@
 import { tool } from "ai";
 import z from "zod";
+import { NodeHtmlMarkdown } from "node-html-markdown";
 
 const DEFAULT_USER_AGENT =
   "Chara-Codes/1.0 (+https://github.com/chara-ai/chara)";
@@ -14,110 +15,11 @@ interface FetchResult {
   isHtml: boolean;
 }
 
-interface LlmsTxtResult {
-  content: string;
-  url: string;
-  available: boolean;
-}
-
 /**
- * Simple HTML to Markdown conversion
- * This is a basic implementation - for production use, consider using a library like turndown
+ * Convert HTML to Markdown using node-html-markdown
  */
 function htmlToMarkdown(html: string): string {
-  let markdown = html;
-
-  // Remove script and style tags completely
-  markdown = markdown.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
-  markdown = markdown.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
-
-  // Convert headings
-  markdown = markdown.replace(/<h1[^>]*>(.*?)<\/h1>/gi, "# $1\n\n");
-  markdown = markdown.replace(/<h2[^>]*>(.*?)<\/h2>/gi, "## $1\n\n");
-  markdown = markdown.replace(/<h3[^>]*>(.*?)<\/h3>/gi, "### $1\n\n");
-  markdown = markdown.replace(/<h4[^>]*>(.*?)<\/h4>/gi, "#### $1\n\n");
-  markdown = markdown.replace(/<h5[^>]*>(.*?)<\/h5>/gi, "##### $1\n\n");
-  markdown = markdown.replace(/<h6[^>]*>(.*?)<\/h6>/gi, "###### $1\n\n");
-
-  // Convert block quotes before paragraphs
-  markdown = markdown.replace(
-    /<blockquote[^>]*>(.*?)<\/blockquote>/gis,
-    (_, content) => {
-      const cleanContent = content.replace(/<[^>]*>/g, "").trim();
-      return `> ${cleanContent}\n\n`;
-    },
-  );
-
-  // Convert code blocks before inline code
-  markdown = markdown.replace(/<pre[^>]*>(.*?)<\/pre>/gis, (_, content) => {
-    const cleanContent = content.replace(/<[^>]*>/g, "");
-    return `\`\`\`\n${cleanContent}\n\`\`\`\n\n`;
-  });
-
-  // Convert inline code
-  markdown = markdown.replace(/<code[^>]*>(.*?)<\/code>/gi, "`$1`");
-
-  // Convert links
-  markdown = markdown.replace(
-    /<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi,
-    "[$2]($1)",
-  );
-
-  // Convert bold and italic
-  markdown = markdown.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**");
-  markdown = markdown.replace(/<b[^>]*>(.*?)<\/b>/gi, "**$1**");
-  markdown = markdown.replace(/<em[^>]*>(.*?)<\/em>/gi, "*$1*");
-  markdown = markdown.replace(/<i[^>]*>(.*?)<\/i>/gi, "*$1*");
-
-  // Convert unordered lists
-  markdown = markdown.replace(/<ul[^>]*>(.*?)<\/ul>/gis, (_, content) => {
-    const listItems = content.match(/<li[^>]*>(.*?)<\/li>/gis) || [];
-    const markdownItems = listItems.map((item: string) => {
-      const cleanItem = item
-        .replace(/<li[^>]*>(.*?)<\/li>/is, "$1")
-        .replace(/<[^>]*>/g, "")
-        .trim();
-      return `- ${cleanItem}`;
-    });
-    return `${markdownItems.join("\n")}\n\n`;
-  });
-
-  // Convert ordered lists
-  markdown = markdown.replace(/<ol[^>]*>(.*?)<\/ol>/gis, (_, content) => {
-    const listItems = content.match(/<li[^>]*>(.*?)<\/li>/gis) || [];
-    const markdownItems = listItems.map((item: string, index: number) => {
-      const cleanItem = item
-        .replace(/<li[^>]*>(.*?)<\/li>/is, "$1")
-        .replace(/<[^>]*>/g, "")
-        .trim();
-      return `${index + 1}. ${cleanItem}`;
-    });
-    return `${markdownItems.join("\n")}\n\n`;
-  });
-
-  // Convert paragraphs
-  markdown = markdown.replace(/<p[^>]*>(.*?)<\/p>/gis, "$1\n\n");
-
-  // Convert line breaks
-  markdown = markdown.replace(/<br\s*\/?>/gi, "\n");
-
-  // Remove remaining HTML tags
-  markdown = markdown.replace(/<[^>]*>/g, "");
-
-  // Decode HTML entities
-  markdown = markdown.replace(/&lt;/g, "<");
-  markdown = markdown.replace(/&gt;/g, ">");
-  markdown = markdown.replace(/&amp;/g, "&");
-  markdown = markdown.replace(/&quot;/g, '"');
-  markdown = markdown.replace(/&#39;/g, "'");
-  markdown = markdown.replace(/&nbsp;/g, " ");
-
-  // Clean up whitespace
-  markdown = markdown.replace(/\n\s*\n\s*\n/g, "\n\n");
-  markdown = markdown.replace(/^\s+|\s+$/gm, ""); // Trim each line
-  markdown = markdown.trim();
-
-  return markdown;
+  return NodeHtmlMarkdown.translate(html);
 }
 
 /**
@@ -142,18 +44,6 @@ function getRobotsTxtUrl(url: string): string {
   try {
     const parsedUrl = new URL(url);
     return `${parsedUrl.protocol}//${parsedUrl.host}/robots.txt`;
-  } catch {
-    throw new Error(`Invalid URL: ${url}`);
-  }
-}
-
-/**
- * Get llms.txt URL for a given URL
- */
-function getLlmsTxtUrl(url: string): string {
-  try {
-    const parsedUrl = new URL(url);
-    return `${parsedUrl.protocol}//${parsedUrl.host}/llms.txt`;
   } catch {
     throw new Error(`Invalid URL: ${url}`);
   }
@@ -234,45 +124,6 @@ async function checkRobotsTxt(url: string, userAgent: string): Promise<void> {
 }
 
 /**
- * Check for and fetch llms.txt content if available
- */
-async function fetchLlmsTxt(
-  url: string,
-  userAgent: string,
-): Promise<LlmsTxtResult> {
-  try {
-    const llmsTxtUrl = getLlmsTxtUrl(url);
-
-    const response = await globalThis.fetch(llmsTxtUrl, {
-      headers: { "User-Agent": userAgent },
-      signal: AbortSignal.timeout(10000), // 10 second timeout for llms.txt
-    });
-
-    if (!response.ok) {
-      return {
-        content: "",
-        url: llmsTxtUrl,
-        available: false,
-      };
-    }
-
-    const content = await response.text();
-
-    return {
-      content: content.trim(),
-      url: llmsTxtUrl,
-      available: true,
-    };
-  } catch {
-    return {
-      content: "",
-      url: getLlmsTxtUrl(url),
-      available: false,
-    };
-  }
-}
-
-/**
  * Fetch URL and return processed content
  */
 async function fetchUrl(
@@ -309,9 +160,7 @@ export const fetchTool = tool({
   description: `Fetches a URL from the internet and optionally extracts its contents as markdown.
 
 This tool grants you internet access. You can fetch the most up-to-date information from websites.
-HTML content is automatically converted to markdown for better readability, but you can request raw HTML if needed.
-
-The tool also checks for llms.txt files (https://llmstxt.org/) which provide structured information specifically designed for LLMs. When available, llms.txt content can be preferred over regular page content for more relevant information.`,
+HTML content is automatically converted to markdown for better readability, but you can request raw HTML if needed.`,
   parameters: z.object({
     url: z.string().describe("URL to fetch (must be a valid HTTP/HTTPS URL)"),
     maxLength: z
@@ -344,18 +193,6 @@ The tool also checks for llms.txt files (https://llmstxt.org/) which provide str
       .max(60000)
       .default(DEFAULT_TIMEOUT)
       .describe("Request timeout in milliseconds (max 60 seconds)"),
-    preferLlmsTxt: z
-      .boolean()
-      .default(true)
-      .describe(
-        "Prefer llms.txt content when available (provides structured LLM-friendly information)",
-      ),
-    includeLlmsTxt: z
-      .boolean()
-      .default(false)
-      .describe(
-        "Include llms.txt content in addition to regular content (when both preferLlmsTxt is false and llms.txt is available)",
-      ),
   }),
   execute: async ({
     url,
@@ -364,8 +201,6 @@ The tool also checks for llms.txt files (https://llmstxt.org/) which provide str
     raw = false,
     ignoreRobotsTxt = false,
     timeout = DEFAULT_TIMEOUT,
-    preferLlmsTxt = true,
-    includeLlmsTxt = false,
   }) => {
     try {
       // Validate URL
@@ -377,30 +212,6 @@ The tool also checks for llms.txt files (https://llmstxt.org/) which provide str
     // Check robots.txt unless explicitly ignored
     if (!ignoreRobotsTxt) {
       await checkRobotsTxt(url, DEFAULT_USER_AGENT);
-    }
-
-    // Check for llms.txt
-    const llmsTxtResult = await fetchLlmsTxt(url, DEFAULT_USER_AGENT);
-
-    // If llms.txt is available and preferred, use it instead of fetching the main page
-    if (llmsTxtResult.available && preferLlmsTxt) {
-      const llmsContent = llmsTxtResult.content;
-      const originalLength = llmsContent.length;
-
-      if (startIndex >= originalLength) {
-        return `Contents of ${llmsTxtResult.url} (llms.txt):\n\n<error>No more content available. Start index ${startIndex} exceeds content length ${originalLength}.</error>`;
-      }
-
-      const endIndex = Math.min(startIndex + maxLength, originalLength);
-      const truncatedContent = llmsContent.slice(startIndex, endIndex);
-
-      let paginationInfo = "";
-      if (endIndex < originalLength) {
-        const remainingChars = originalLength - endIndex;
-        paginationInfo = `\n\n<truncated>Content truncated. Showing characters ${startIndex}-${endIndex} of ${originalLength}. ${remainingChars} characters remaining. Use startIndex=${endIndex} to continue.</truncated>`;
-      }
-
-      return `Contents of ${llmsTxtResult.url} (llms.txt - structured LLM-friendly information):\n\n${truncatedContent}${paginationInfo}`;
     }
 
     // Fetch the URL
@@ -434,14 +245,6 @@ The tool also checks for llms.txt files (https://llmstxt.org/) which provide str
       paginationInfo = `\n\n<truncated>Content truncated. Showing characters ${startIndex}-${endIndex} of ${originalLength}. ${remainingChars} characters remaining. Use startIndex=${endIndex} to continue.</truncated>`;
     }
 
-    // Include llms.txt content if requested and available
-    let llmsTxtSection = "";
-    if (llmsTxtResult.available && includeLlmsTxt) {
-      llmsTxtSection = `\n\n---\n\nAdditional structured information from ${llmsTxtResult.url} (llms.txt):\n\n${llmsTxtResult.content}\n\n---\n`;
-    } else if (llmsTxtResult.available && !preferLlmsTxt) {
-      llmsTxtSection = `\n\n<info>Note: This site provides structured LLM information at ${llmsTxtResult.url}. Use preferLlmsTxt=true or includeLlmsTxt=true to access it.</info>`;
-    }
-
-    return `${prefix}Contents of ${result.url}:\n\n${truncatedContent}${paginationInfo}${llmsTxtSection}`;
+    return `${prefix}Contents of ${result.url}:\n\n${truncatedContent}${paginationInfo}`;
   },
 });

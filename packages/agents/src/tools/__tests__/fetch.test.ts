@@ -18,25 +18,18 @@ afterEach(() => {
 describe("fetch tool", () => {
   test("should fetch simple text content", async () => {
     const mockContent = "This is plain text content";
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com/test.txt",
-        headers: new Headers({ "content-type": "text/plain" }),
-        text: () => Promise.resolve(mockContent),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url: "https://example.com/test.txt",
+      headers: new Headers({ "content-type": "text/plain" }),
+      text: () => Promise.resolve(mockContent),
+    });
 
     const result = await fetchTool.execute({
       url: "https://example.com/test.txt",
       ignoreRobotsTxt: true,
-      preferLlmsTxt: false,
     });
 
     expect(result).toContain("Contents of https://example.com/test.txt:");
@@ -60,57 +53,43 @@ describe("fetch tool", () => {
       </html>
     `;
 
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com/test.html",
-        headers: new Headers({ "content-type": "text/html" }),
-        text: () => Promise.resolve(mockHtml),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url: "https://example.com/test.html",
+      headers: new Headers({ "content-type": "text/html" }),
+      text: () => Promise.resolve(mockHtml),
+    });
 
     const result = await fetchTool.execute({
       url: "https://example.com/test.html",
       ignoreRobotsTxt: true,
-      preferLlmsTxt: false,
     });
 
     expect(result).toContain("# Main Title");
     expect(result).toContain("**paragraph**");
-    expect(result).toContain("*emphasis*");
-    expect(result).toContain("- First item");
-    expect(result).toContain("- Second item");
+    expect(result).toContain("_emphasis_");
+    expect(result).toContain("* First item");
+    expect(result).toContain("* Second item");
     expect(result).toContain("[Link text](https://example.com)");
   });
 
   test("should return raw HTML when raw=true", async () => {
     const mockHtml = "<html><body><h1>Raw HTML</h1></body></html>";
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com/raw.html",
-        headers: new Headers({ "content-type": "text/html" }),
-        text: () => Promise.resolve(mockHtml),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url: "https://example.com/raw.html",
+      headers: new Headers({ "content-type": "text/html" }),
+      text: () => Promise.resolve(mockHtml),
+    });
 
     const result = await fetchTool.execute({
       url: "https://example.com/raw.html",
       raw: true,
       ignoreRobotsTxt: true,
-      preferLlmsTxt: false,
     });
 
     expect(result).toContain(mockHtml);
@@ -119,26 +98,19 @@ describe("fetch tool", () => {
 
   test("should handle content truncation", async () => {
     const longContent = "x".repeat(10000);
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com/long.txt",
-        headers: new Headers({ "content-type": "text/plain" }),
-        text: () => Promise.resolve(longContent),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url: "https://example.com/long.txt",
+      headers: new Headers({ "content-type": "text/plain" }),
+      text: () => Promise.resolve(longContent),
+    });
 
     const result = await fetchTool.execute({
       url: "https://example.com/long.txt",
       maxLength: 1000,
       ignoreRobotsTxt: true,
-      preferLlmsTxt: false,
     });
 
     expect(result).toContain("<truncated>");
@@ -148,27 +120,20 @@ describe("fetch tool", () => {
 
   test("should handle pagination with startIndex", async () => {
     const content = "0123456789".repeat(100); // 1000 chars
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com/paginate.txt",
-        headers: new Headers({ "content-type": "text/plain" }),
-        text: () => Promise.resolve(content),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url: "https://example.com/paginate.txt",
+      headers: new Headers({ "content-type": "text/plain" }),
+      text: () => Promise.resolve(content),
+    });
 
     const result = await fetchTool.execute({
       url: "https://example.com/paginate.txt",
       startIndex: 500,
       maxLength: 300,
       ignoreRobotsTxt: true,
-      preferLlmsTxt: false,
     });
 
     expect(result).toContain("Showing characters 500-800 of 1000");
@@ -177,26 +142,19 @@ describe("fetch tool", () => {
 
   test("should handle startIndex beyond content length", async () => {
     const content = "Short content";
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com/short.txt",
-        headers: new Headers({ "content-type": "text/plain" }),
-        text: () => Promise.resolve(content),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url: "https://example.com/short.txt",
+      headers: new Headers({ "content-type": "text/plain" }),
+      text: () => Promise.resolve(content),
+    });
 
     const result = await fetchTool.execute({
       url: "https://example.com/short.txt",
       startIndex: 100,
       ignoreRobotsTxt: true,
-      preferLlmsTxt: false,
     });
 
     expect(result).toContain("<error>No more content available");
@@ -204,23 +162,16 @@ describe("fetch tool", () => {
   });
 
   test("should handle HTTP errors", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }); // main page (not found)
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      statusText: "Not Found",
+    });
 
     await expect(
       fetchTool.execute({
         url: "https://example.com/notfound.txt",
         ignoreRobotsTxt: true,
-        preferLlmsTxt: false,
       }),
     ).rejects.toThrow(
       "Failed to fetch https://example.com/notfound.txt - HTTP 404: Not Found",
@@ -235,7 +186,6 @@ describe("fetch tool", () => {
         url: "https://example.com/timeout.txt",
         timeout: 1000,
         ignoreRobotsTxt: true,
-        preferLlmsTxt: false,
       }),
     ).rejects.toThrow();
   });
@@ -245,7 +195,6 @@ describe("fetch tool", () => {
       fetchTool.execute({
         url: "not-a-valid-url",
         ignoreRobotsTxt: true,
-        preferLlmsTxt: false,
       }),
     ).rejects.toThrow("Invalid URL: not-a-valid-url");
   });
@@ -363,25 +312,18 @@ describe("fetch tool", () => {
   test("should handle redirects", async () => {
     const content = "Redirected content";
 
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com/redirected.txt", // Final URL after redirect
-        headers: new Headers({ "content-type": "text/plain" }),
-        text: () => Promise.resolve(content),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url: "https://example.com/redirected.txt", // Final URL after redirect
+      headers: new Headers({ "content-type": "text/plain" }),
+      text: () => Promise.resolve(content),
+    });
 
     const result = await fetchTool.execute({
       url: "https://example.com/redirect-me.txt",
       ignoreRobotsTxt: true,
-      preferLlmsTxt: false,
     });
 
     expect(result).toContain("Contents of https://example.com/redirected.txt:");
@@ -403,25 +345,18 @@ describe("fetch tool", () => {
       </html>
     `;
 
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com/clean.html",
-        headers: new Headers({ "content-type": "text/html" }),
-        text: () => Promise.resolve(htmlWithScripts),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url: "https://example.com/clean.html",
+      headers: new Headers({ "content-type": "text/html" }),
+      text: () => Promise.resolve(htmlWithScripts),
+    });
 
     const result = await fetchTool.execute({
       url: "https://example.com/clean.html",
       ignoreRobotsTxt: true,
-      preferLlmsTxt: false,
     });
 
     expect(result).toContain("# Clean Title");
@@ -448,31 +383,24 @@ describe("fetch tool", () => {
       </html>
     `;
 
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com/rich.html",
-        headers: new Headers({ "content-type": "text/html" }),
-        text: () => Promise.resolve(richHtml),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url: "https://example.com/rich.html",
+      headers: new Headers({ "content-type": "text/html" }),
+      text: () => Promise.resolve(richHtml),
+    });
 
     const result = await fetchTool.execute({
       url: "https://example.com/rich.html",
       ignoreRobotsTxt: true,
-      preferLlmsTxt: false,
     });
 
     expect(result).toContain("## Subtitle");
     expect(result).toContain("> This is a quote");
     expect(result).toContain("`inline code`");
-    expect(result).toContain("```\ncode block\n```");
+    expect(result).toContain("code block");
     expect(result).toContain("1. First");
     expect(result).toContain("2. Second");
   });
@@ -486,25 +414,18 @@ describe("fetch tool", () => {
   test("should handle JSON content", async () => {
     const jsonContent = '{"name": "test", "value": 123}';
 
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://api.example.com/data.json",
-        headers: new Headers({ "content-type": "application/json" }),
-        text: () => Promise.resolve(jsonContent),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url: "https://api.example.com/data.json",
+      headers: new Headers({ "content-type": "application/json" }),
+      text: () => Promise.resolve(jsonContent),
+    });
 
     const result = await fetchTool.execute({
       url: "https://api.example.com/data.json",
       ignoreRobotsTxt: true,
-      preferLlmsTxt: false,
     });
 
     expect(result).toContain("Content type: application/json");
@@ -512,25 +433,18 @@ describe("fetch tool", () => {
   });
 
   test("should handle empty content", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com/empty.txt",
-        headers: new Headers({ "content-type": "text/plain" }),
-        text: () => Promise.resolve(""),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url: "https://example.com/empty.txt",
+      headers: new Headers({ "content-type": "text/plain" }),
+      text: () => Promise.resolve(""),
+    });
 
     const result = await fetchTool.execute({
       url: "https://example.com/empty.txt",
       ignoreRobotsTxt: true,
-      preferLlmsTxt: false,
     });
 
     expect(result).toContain("Contents of https://example.com/empty.txt:");
@@ -541,16 +455,9 @@ describe("fetch tool", () => {
     const content1 = "Content 1";
     const content2 = "Content 2";
 
-    // Set up mocks for both requests - need to handle all possible fetch calls
+    // Set up mocks for both requests
     mockFetch.mockImplementation((url) => {
-      if (url.includes("llms.txt")) {
-        // Return not found for llms.txt requests
-        return Promise.resolve({
-          ok: false,
-          status: 404,
-          statusText: "Not Found",
-        });
-      } else if (url.includes("file1.txt")) {
+      if (url.includes("file1.txt")) {
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -576,12 +483,10 @@ describe("fetch tool", () => {
       fetchTool.execute({
         url: "https://example.com/file1.txt",
         ignoreRobotsTxt: true,
-        preferLlmsTxt: false,
       }),
       fetchTool.execute({
         url: "https://example.com/file2.txt",
         ignoreRobotsTxt: true,
-        preferLlmsTxt: false,
       }),
     ]);
 
@@ -596,7 +501,6 @@ describe("fetch tool", () => {
         url: "https://example.com/test.txt",
         maxLength: -1,
         ignoreRobotsTxt: true,
-        preferLlmsTxt: false,
       }),
     ).rejects.toThrow();
 
@@ -606,7 +510,6 @@ describe("fetch tool", () => {
         url: "https://example.com/test.txt",
         maxLength: 2000000,
         ignoreRobotsTxt: true,
-        preferLlmsTxt: false,
       }),
     ).rejects.toThrow();
 
@@ -616,7 +519,6 @@ describe("fetch tool", () => {
         url: "https://example.com/test.txt",
         startIndex: -1,
         ignoreRobotsTxt: true,
-        preferLlmsTxt: false,
       }),
     ).rejects.toThrow();
 
@@ -626,266 +528,7 @@ describe("fetch tool", () => {
         url: "https://example.com/test.txt",
         timeout: 100000,
         ignoreRobotsTxt: true,
-        preferLlmsTxt: false,
       }),
     ).rejects.toThrow();
-  });
-});
-
-describe("llms.txt functionality", () => {
-  test("should prefer llms.txt when available and preferLlmsTxt is true", async () => {
-    const mockLlmsTxtContent = `# Example Site
-
-This is structured information for LLMs about our site.
-
-## About
-We provide AI tools and services.
-
-## API Documentation
-- Endpoint: /api/v1
-- Authentication: Bearer token required`;
-
-    // Mock responses
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve("User-agent: *\nAllow: /"),
-        headers: new Headers([["content-type", "text/plain"]]),
-      }) // robots.txt
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve(mockLlmsTxtContent),
-        headers: new Headers([["content-type", "text/plain"]]),
-      }); // llms.txt
-
-    const result = await fetchTool.execute({
-      url: "https://example.com",
-      preferLlmsTxt: true,
-    });
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      "https://example.com/robots.txt",
-      expect.any(Object),
-    );
-    expect(mockFetch).toHaveBeenCalledWith(
-      "https://example.com/llms.txt",
-      expect.any(Object),
-    );
-    expect(result).toContain("llms.txt - structured LLM-friendly information");
-    expect(result).toContain("AI tools and services");
-    expect(mockFetch).toHaveBeenCalledTimes(2); // Only robots.txt and llms.txt, not the main page
-  });
-
-  test("should fetch main page when llms.txt is not available", async () => {
-    const mockPageContent = `<!DOCTYPE html>
-<html>
-<head><title>Test Page</title></head>
-<body>
-<h1>Welcome</h1>
-<p>This is a test page.</p>
-</body>
-</html>`;
-
-    // Mock responses
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve("User-agent: *\nAllow: /"),
-        headers: new Headers([["content-type", "text/plain"]]),
-      }) // robots.txt
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-      }) // llms.txt (not found)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com",
-        text: () => Promise.resolve(mockPageContent),
-        headers: new Headers([["content-type", "text/html"]]),
-      }); // main page
-
-    const result = await fetchTool.execute({
-      url: "https://example.com",
-      preferLlmsTxt: true,
-    });
-
-    expect(result).toContain("Contents of https://example.com:");
-    expect(result).toContain("# Welcome");
-    expect(result).toContain("This is a test page.");
-    expect(mockFetch).toHaveBeenCalledTimes(3);
-  });
-
-  test("should include llms.txt as additional content when includeLlmsTxt is true", async () => {
-    const mockLlmsTxtContent = "# Site Info\nThis is LLM-friendly content.";
-    const mockPageContent = `<!DOCTYPE html>
-<html><body><h1>Main Content</h1><p>Regular page content.</p></body></html>`;
-
-    // Mock responses
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve("User-agent: *\nAllow: /"),
-      }) // robots.txt
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve(mockLlmsTxtContent),
-      }) // llms.txt
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com",
-        text: () => Promise.resolve(mockPageContent),
-        headers: new Headers([["content-type", "text/html"]]),
-      }); // main page
-
-    const result = await fetchTool.execute({
-      url: "https://example.com",
-      preferLlmsTxt: false,
-      includeLlmsTxt: true,
-    });
-
-    expect(result).toContain("# Main Content");
-    expect(result).toContain("Regular page content.");
-    expect(result).toContain("Additional structured information");
-    expect(result).toContain("LLM-friendly content");
-    expect(mockFetch).toHaveBeenCalledTimes(3);
-  });
-
-  test("should show info about available llms.txt when not using it", async () => {
-    const mockPageContent = `<html><body><h1>Test</h1></body></html>`;
-
-    // Mock responses
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve("User-agent: *\nAllow: /"),
-      }) // robots.txt
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve("# Site info for LLMs"),
-      }) // llms.txt
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com",
-        text: () => Promise.resolve(mockPageContent),
-        headers: new Headers([["content-type", "text/html"]]),
-      }); // main page
-
-    const result = await fetchTool.execute({
-      url: "https://example.com",
-      preferLlmsTxt: false,
-      includeLlmsTxt: false,
-    });
-
-    expect(result).toContain("# Test");
-    expect(result).toContain(
-      "Note: This site provides structured LLM information",
-    );
-    expect(result).toContain("https://example.com/llms.txt");
-  });
-
-  test("should handle llms.txt fetch errors gracefully", async () => {
-    const mockPageContent = `<html><body><h1>Test</h1></body></html>`;
-
-    // Mock responses
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve("User-agent: *\nAllow: /"),
-      }) // robots.txt
-      .mockRejectedValueOnce(new Error("Network error")) // llms.txt (error)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        url: "https://example.com",
-        text: () => Promise.resolve(mockPageContent),
-        headers: new Headers([["content-type", "text/html"]]),
-      }); // main page
-
-    const result = await fetchTool.execute({
-      url: "https://example.com",
-      preferLlmsTxt: true,
-    });
-
-    expect(result).toContain("# Test");
-    expect(result).not.toContain("llms.txt");
-    expect(mockFetch).toHaveBeenCalledTimes(3);
-  });
-
-  test("should respect maxLength when using llms.txt", async () => {
-    const longLlmsTxtContent = "A".repeat(1000);
-
-    // Mock responses
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve("User-agent: *\nAllow: /"),
-      }) // robots.txt
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve(longLlmsTxtContent),
-      }); // llms.txt
-
-    const result = await fetchTool.execute({
-      url: "https://example.com",
-      preferLlmsTxt: true,
-      maxLength: 100,
-    });
-
-    expect(result).toContain("Content truncated");
-    expect(result).toContain("characters 0-100 of 1000");
-    expect(result).toContain("900 characters remaining");
-  });
-
-  test("should handle startIndex pagination with llms.txt", async () => {
-    const llmsTxtContent = "0123456789".repeat(10); // 100 characters
-
-    // Mock responses
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve("User-agent: *\nAllow: /"),
-      }) // robots.txt
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve(llmsTxtContent),
-      }); // llms.txt
-
-    const result = await fetchTool.execute({
-      url: "https://example.com",
-      preferLlmsTxt: true,
-      maxLength: 20,
-      startIndex: 30,
-    });
-
-    expect(result).toContain("characters 30-50 of 100");
-    expect(result).toContain("0123456789".repeat(10).slice(30, 50));
-  });
-
-  test("should have correct default values for new parameters", () => {
-    const params = fetchTool.parameters.parse({
-      url: "https://example.com",
-    });
-
-    expect(params.preferLlmsTxt).toBe(true);
-    expect(params.includeLlmsTxt).toBe(false);
-  });
-
-  test("should allow overriding llms.txt parameters", () => {
-    const params = fetchTool.parameters.parse({
-      url: "https://example.com",
-      preferLlmsTxt: false,
-      includeLlmsTxt: true,
-    });
-
-    expect(params.preferLlmsTxt).toBe(false);
-    expect(params.includeLlmsTxt).toBe(true);
   });
 });
