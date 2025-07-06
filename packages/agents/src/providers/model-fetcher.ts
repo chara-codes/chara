@@ -21,17 +21,73 @@ import { getVarFromEnvOrGlobalConfig } from "@chara/settings";
  */
 export namespace ModelFetcher {
   /**
+   * Wraps a fetch request with a timeout
+   * @param fetchPromise - The fetch promise to wrap
+   * @param timeoutMs - Timeout in milliseconds (default: 5000)
+   * @returns Promise that resolves with the fetch result or rejects with timeout error
+   */
+  function withTimeout<T>(
+    fetchPromise: Promise<T>,
+    timeoutMs: number = 5000,
+  ): Promise<T> {
+    return Promise.race([
+      fetchPromise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Request timeout")), timeoutMs),
+      ),
+    ]);
+  }
+
+  /**
+   * Handles fetch errors consistently across all providers
+   * @param error - The error that occurred
+   * @param provider - Name of the provider
+   * @param url - URL that was being fetched
+   * @param additionalSuggestion - Additional provider-specific suggestion
+   * @returns Array of fallback models
+   */
+  function handleFetchError(
+    error: unknown,
+    provider: string,
+    url: string,
+    additionalSuggestion?: string,
+  ): ModelInfo[] {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    const isTimeout = errorMessage === "Request timeout";
+
+    const baseSuggestion =
+      "Check your network connection, VPN, or firewall settings";
+    const suggestion = additionalSuggestion
+      ? `${baseSuggestion}. ${additionalSuggestion}`
+      : baseSuggestion;
+
+    logger.warning(
+      `Failed to fetch ${provider} models from API, using fallback models:`,
+      {
+        provider,
+        url,
+        error: errorMessage,
+        ...(isTimeout && { suggestion }),
+      },
+    );
+    return [];
+  }
+
+  /**
    * Fetches available models from OpenAI API
    * @returns Array of OpenAI models or fallback models if API fails
    */
   export async function fetchOpenAIModels(): Promise<ModelInfo[]> {
     try {
-      const response = await fetch("https://api.openai.com/v1/models", {
-        headers: {
-          Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("OPENAI_API_KEY")}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await withTimeout(
+        fetch("https://api.openai.com/v1/models", {
+          headers: {
+            Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("OPENAI_API_KEY")}`,
+            "Content-Type": "application/json",
+          },
+        }),
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -47,15 +103,11 @@ export namespace ModelFetcher {
         ownedBy: model.owned_by,
       }));
     } catch (error) {
-      logger.warning(
-        "Failed to fetch OpenAI models from API, using fallback models:",
-        {
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
+      return handleFetchError(
+        error,
+        "OpenAI",
+        "https://api.openai.com/v1/models",
       );
-
-      // Fallback to known models if API fails
-      return [];
     }
   }
 
@@ -65,12 +117,14 @@ export namespace ModelFetcher {
    */
   export async function fetchOpenRouterModels(): Promise<ModelInfo[]> {
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/models", {
-        headers: {
-          Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("OPEN_ROUTER_API_KEY")}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await withTimeout(
+        fetch("https://openrouter.ai/api/v1/models", {
+          headers: {
+            Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("OPEN_ROUTER_API_KEY")}`,
+            "Content-Type": "application/json",
+          },
+        }),
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -87,15 +141,11 @@ export namespace ModelFetcher {
         created: model.created,
       }));
     } catch (error) {
-      logger.warning(
-        "Failed to fetch OpenRouter models from API, using fallback models:",
-        {
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
+      return handleFetchError(
+        error,
+        "OpenRouter",
+        "https://openrouter.ai/api/v1/models",
       );
-
-      // Fallback to known popular models if API fails
-      return [];
     }
   }
 
@@ -108,11 +158,13 @@ export namespace ModelFetcher {
     baseUrl = "http://localhost:11434",
   ): Promise<ModelInfo[]> {
     try {
-      const response = await fetch(`${baseUrl}/api/tags`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await withTimeout(
+        fetch(`${baseUrl}/api/tags`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -127,15 +179,12 @@ export namespace ModelFetcher {
         description: `${model.details.family} (${model.details.parameter_size})`,
       }));
     } catch (error) {
-      logger.warning(
-        "Failed to fetch Ollama models from API, using fallback models:",
-        {
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
+      return handleFetchError(
+        error,
+        "Ollama",
+        `${baseUrl}/api/tags`,
+        "Ensure Ollama server is running",
       );
-
-      // Fallback to known popular models if API fails
-      return [];
     }
   }
 
@@ -148,11 +197,13 @@ export namespace ModelFetcher {
     baseUrl = "http://localhost:1234/v1",
   ): Promise<ModelInfo[]> {
     try {
-      const response = await fetch(`${baseUrl}/models`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await withTimeout(
+        fetch(`${baseUrl}/models`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }),
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -170,15 +221,12 @@ export namespace ModelFetcher {
           ownedBy: model.owned_by,
         }));
     } catch (error) {
-      logger.warning(
-        "Failed to fetch LMStudio models from API, using fallback models:",
-        {
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
+      return handleFetchError(
+        error,
+        "LMStudio",
+        `${baseUrl}/models`,
+        "Ensure LMStudio server is running",
       );
-
-      // Fallback to known popular models if API fails
-      return [];
     }
   }
 
@@ -188,14 +236,16 @@ export namespace ModelFetcher {
    * @returns Array of DIAL models or fallback models if API fails
    */
   export async function fetchDIALModels(baseUrl: string): Promise<ModelInfo[]> {
+    const rootDomain = new URL(baseUrl).origin;
     try {
-      const rootDomain = new URL(baseUrl).origin;
-      const response = await fetch(`${rootDomain}/openai/models`, {
-        headers: {
-          "Api-Key": `${await getVarFromEnvOrGlobalConfig("DIAL_API_KEY")}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await withTimeout(
+        fetch(`${rootDomain}/openai/models`, {
+          headers: {
+            "Api-Key": `${await getVarFromEnvOrGlobalConfig("DIAL_API_KEY")}`,
+            "Content-Type": "application/json",
+          },
+        }),
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -211,15 +261,7 @@ export namespace ModelFetcher {
         ownedBy: model.owned_by,
       }));
     } catch (error) {
-      logger.warning(
-        "Failed to fetch DIAL models from API, using fallback models:",
-        {
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-      );
-
-      // Fallback to known models if API fails
-      return [];
+      return handleFetchError(error, "DIAL", `${rootDomain}/openai/models`);
     }
   }
 
@@ -229,13 +271,15 @@ export namespace ModelFetcher {
    */
   export async function fetchAnthropicModels(): Promise<ModelInfo[]> {
     try {
-      const response = await fetch("https://api.anthropic.com/v1/models", {
-        headers: {
-          "x-api-key": `${await getVarFromEnvOrGlobalConfig("ANTHROPIC_API_KEY")}`,
-          "Content-Type": "application/json",
-          "anthropic-version": "2023-06-01",
-        },
-      });
+      const response = await withTimeout(
+        fetch("https://api.anthropic.com/v1/models", {
+          headers: {
+            "x-api-key": `${await getVarFromEnvOrGlobalConfig("ANTHROPIC_API_KEY")}`,
+            "Content-Type": "application/json",
+            "anthropic-version": "2023-06-01",
+          },
+        }),
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -250,15 +294,11 @@ export namespace ModelFetcher {
         created: new Date(model.created_at).getTime() / 1000,
       }));
     } catch (error) {
-      logger.warning(
-        "Failed to fetch Anthropic models from API, using fallback models:",
-        {
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
+      return handleFetchError(
+        error,
+        "Anthropic",
+        "https://api.anthropic.com/v1/models",
       );
-
-      // Fallback to known models if API fails
-      return [];
     }
   }
 
@@ -268,12 +308,14 @@ export namespace ModelFetcher {
    */
   export async function fetchDeepSeekModels(): Promise<ModelInfo[]> {
     try {
-      const response = await fetch("https://api.deepseek.com/v1/models", {
-        headers: {
-          Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("DEEPSEEK_API_KEY")}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await withTimeout(
+        fetch("https://api.deepseek.com/v1/models", {
+          headers: {
+            Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("DEEPSEEK_API_KEY")}`,
+            "Content-Type": "application/json",
+          },
+        }),
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -289,26 +331,15 @@ export namespace ModelFetcher {
         ownedBy: model.owned_by,
       }));
     } catch (error) {
-      logger.warning(
-        "Failed to fetch DeepSeek models from API, using fallback models:",
-        {
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      const isTimeout = errorMessage === "Request timeout";
 
-      // Fallback to known models if API fails
-      return [
-        {
-          id: "deepseek-chat",
-          name: "DeepSeek Chat",
-          description: "DeepSeek's main chat model",
-        },
-        {
-          id: "deepseek-reasoner",
-          name: "DeepSeek Reasoner",
-          description: "DeepSeek's reasoning model",
-        },
-      ];
+      return handleFetchError(
+        error,
+        "DeepSeek",
+        "https://api.deepseek.com/v1/models",
+      );
     }
   }
 
@@ -318,14 +349,16 @@ export namespace ModelFetcher {
    */
   export async function fetchGoogleModels(): Promise<ModelInfo[]> {
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${await getVarFromEnvOrGlobalConfig("GOOGLE_GENERATIVE_AI_API_KEY")}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
+      const response = await withTimeout(
+        fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${await getVarFromEnvOrGlobalConfig("GOOGLE_GENERATIVE_AI_API_KEY")}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            method: "GET",
           },
-          method: "GET",
-        },
+        ),
       );
 
       if (!response.ok) {
@@ -346,15 +379,11 @@ export namespace ModelFetcher {
           contextLength: model.inputTokenLimit,
         }));
     } catch (error) {
-      logger.warning(
-        "Failed to fetch Google models from API, using fallback models:",
-        {
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
+      return handleFetchError(
+        error,
+        "Google",
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${await getVarFromEnvOrGlobalConfig("GOOGLE_GENERATIVE_AI_API_KEY")}`,
       );
-
-      // Fallback to known models if API fails
-      return [];
     }
   }
 
