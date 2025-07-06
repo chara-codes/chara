@@ -1,8 +1,8 @@
-import { streamText } from "ai";
-import { providersRegistry } from "../providers";
 import { logger } from "@chara/logger";
-import { initTools } from "../tools/init-tools";
+import { streamText } from "ai";
 import { initPrompt } from "../prompts/init";
+import { providersRegistry } from "../providers";
+import { initTools } from "../tools/init-tools";
 
 export const initAgent = async (
   {

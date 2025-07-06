@@ -1,7 +1,6 @@
-import { streamText, type CoreMessage } from "ai";
-import { providersRegistry } from "../providers";
-import { getTracer } from "@lmnr-ai/lmnr";
 import { logger } from "@chara/logger";
+import { type CoreMessage, streamText } from "ai";
+import { providersRegistry } from "../providers";
 
 export const beautifyAgent = async (
   {

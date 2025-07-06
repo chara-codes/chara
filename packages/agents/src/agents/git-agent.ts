@@ -1,4 +1,4 @@
-import { generateText, type CoreMessage } from "ai";
+import { type CoreMessage, generateText } from "ai";
 import { providersRegistry } from "../providers";
 
 export const gitAgent = async (
