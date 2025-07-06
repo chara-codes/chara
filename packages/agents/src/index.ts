@@ -20,7 +20,7 @@ import { initialize } from "./providers/";
 
 export { beautifyAgent } from "./agents/beautify-agent";
 // Export agents for programmatic use
-export { chatAgent } from "./agents/chat-agent";
+export { chatAgent, cleanMessages } from "./agents/chat-agent";
 export { gitAgent } from "./agents/git-agent";
 export { initAgent } from "./agents/init-agent";
 // Export providers for external use
