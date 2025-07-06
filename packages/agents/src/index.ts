@@ -39,6 +39,7 @@ export async function initializeCharaConfig(
   model = "deepseek:::deepseek-chat",
 ) {
   if (!(await Bun.file(charaConfigFile).exists())) {
+    await initialize();
     const init = await initAgent({
       model,
     });
