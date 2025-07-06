@@ -296,34 +296,6 @@ describe("RunnerService", () => {
     });
   });
 
-  describe("convenience functions", () => {
-    it("should export convenience functions", async () => {
-      const {
-        startNpmDev,
-        startBunDev,
-        startYarnDev,
-        startPnpmDev,
-        startNextDev,
-        startViteDev,
-        startServe,
-        startDevelopmentServer,
-        requestStatus,
-        requestRestart,
-      } = await import("../runner");
-
-      expect(typeof startNpmDev).toBe("function");
-      expect(typeof startBunDev).toBe("function");
-      expect(typeof startYarnDev).toBe("function");
-      expect(typeof startPnpmDev).toBe("function");
-      expect(typeof startNextDev).toBe("function");
-      expect(typeof startViteDev).toBe("function");
-      expect(typeof startServe).toBe("function");
-      expect(typeof startDevelopmentServer).toBe("function");
-      expect(typeof requestStatus).toBe("function");
-      expect(typeof requestRestart).toBe("function");
-    });
-  });
-
   describe("error handling", () => {
     it("should handle malformed options gracefully", async () => {
       try {

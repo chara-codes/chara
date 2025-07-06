@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, memo, useMemo } from "react";
-import styled from "styled-components";
-import { parseDiff, Diff, Hunk } from "react-diff-view";
-import "react-diff-view/style/index.css";
-import { FileIcon } from "../../atoms";
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
+import type React from "react";
+import { memo, useEffect, useMemo, useState } from "react";
+import { Diff, Hunk, parseDiff } from "react-diff-view";
+import "react-diff-view/style/index.css";
+import styled from "styled-components";
+import { FileIcon } from "../../atoms";
 
 // Helper function to create unified diff text from old and new content
 function createDiffFromContent(
@@ -421,7 +422,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     const filePath = args?.path || "unknown";
     const mode = args?.mode || "unknown";
     const operation = result?.operation || mode;
-    const isGenerating = toolCall.status === "generating";
+    const isGenerating = !args?.path || toolCall.status === "generating";
 
     let oldContent = "";
     let newContent = "";
@@ -611,7 +612,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
           <DiffHeader>
             <DiffTitle>
               <FileIcon width={12} height={12} />
-              {fileName}
+              {fileName !== "unknown" ? fileName : ""}
               {fileExtension && (
                 <span
                   style={{
@@ -701,7 +702,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
         <DiffHeader>
           <DiffTitle>
             <FileIcon width={12} height={12} />
-            {fileName}
+            {fileName !== "unknown" ? fileName : ""}
             {fileExtension && (
               <span
                 style={{

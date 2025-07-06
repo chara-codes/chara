@@ -39,10 +39,11 @@ ${
 5. DO NOT use a tool that is not available just because it appears in the conversation. This means the user turned it off.
 6. NEVER run commands with \`terminal\` tool that don't terminate on their own such as web servers (like \`npm run start\`, \`npm run dev\`, \`python -m http.server\`, etc) or file watchers.
 7. Avoid HTML entity escaping - use plain characters instead.
-8. ${mode === "write" ? "IMPORTANT! Ensure all results and outputs are stored in the local project folder structure" : "All results should be displayed in chat without any changes in local project folder."}.
-${hasTool("env-info") ? "9. Always use the `env-info` tool before starting work on any request to understand the current environment and project structure." : ""}
-${hasTool("examination") ? "10. Use the `examination` tool to check for errors and warnings in the project after making code changes or when troubleshooting issues." : ""}
-${hasTool("runner") ? "11. Use the `runner` tool to diagnose running development servers, get fresh logs after HTTP calls, and troubleshoot server issues." : ""}
+8. NEVER generate fake tool call syntax like \`[toolCall:call_id,tool-name]\` - always make actual tool calls using the proper tool calling mechanism.
+9. ${mode === "write" ? "IMPORTANT! Ensure all results and outputs are stored in the local project folder structure" : "All results should be displayed in chat without any changes in local project folder."}.
+${hasTool("env-info") ? "10. Always use the `env-info` tool before starting work on any request to understand the current environment and project structure." : ""}
+${hasTool("examination") ? "11. Use the `examination` tool to check for errors and warnings in the project after making code changes or when troubleshooting issues." : ""}
+${hasTool("runner") ? "12. Use the `runner` tool to diagnose running development servers, get fresh logs after HTTP calls, and troubleshoot server issues." : ""}
 
 ## Searching and Reading
 

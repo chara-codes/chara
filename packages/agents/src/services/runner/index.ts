@@ -637,46 +637,6 @@ export { RunnerService };
 // Create a singleton instance
 export const runnerService = new RunnerService();
 
-// Convenience functions
-export const startDevelopmentServer = (command: string): Promise<string> => {
-  return runnerService.start({ command });
-};
-
-export const startNpmDev = (): Promise<string> => {
-  return runnerService.start({ command: "npm run dev" });
-};
-
-export const startBunDev = (): Promise<string> => {
-  return runnerService.start({ command: "bun run dev" });
-};
-
-export const startYarnDev = (): Promise<string> => {
-  return runnerService.start({ command: "yarn dev" });
-};
-
-export const startPnpmDev = (): Promise<string> => {
-  return runnerService.start({ command: "pnpm dev" });
-};
-
-export const startNextDev = (): Promise<string> => {
-  return runnerService.start({ command: "next dev" });
-};
-
-export const startViteDev = (port = 3000): Promise<string> => {
-  return runnerService.start({
-    command: `vite --port ${port}`,
-  });
-};
-
-export const startServe = (
-  directory = "dist",
-  port = 3000,
-): Promise<string> => {
-  return runnerService.start({
-    command: `npx serve ${directory} -l ${port}`,
-  });
-};
-
 // Event-based control functions
 export const requestStatus = (processId?: string): void => {
   appEvents.emit("runner:get-status", { processId });
