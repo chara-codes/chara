@@ -23,12 +23,12 @@ export namespace ModelFetcher {
   /**
    * Wraps a fetch request with a timeout
    * @param fetchPromise - The fetch promise to wrap
-   * @param timeoutMs - Timeout in milliseconds (default: 5000)
+   * @param timeoutMs - Timeout in milliseconds (default: 3000)
    * @returns Promise that resolves with the fetch result or rejects with timeout error
    */
   function withTimeout<T>(
     fetchPromise: Promise<T>,
-    timeoutMs: number = 5000,
+    timeoutMs: number = 3000,
   ): Promise<T> {
     return Promise.race([
       fetchPromise,
