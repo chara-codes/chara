@@ -24,7 +24,7 @@ export const ActionFactory = {
   async execute<T extends ActionOptions = ActionOptions>(
     name: string,
     options: T = {} as T,
-  ): Promise<void> {
+  ): Promise<any> {
     logger.info("Execute action:", name);
     const action = ActionFactory.get(name);
     if (!action) {
@@ -39,10 +39,11 @@ export const ActionFactory = {
     }
 
     try {
-      await action.execute(options);
+      const result = await action.execute(options);
       if (context.verbose) {
         logger.debug(`Action "${name}" completed successfully`);
       }
+      return result;
     } catch (error) {
       if (context.verbose) {
         logger.debug(`Action "${name}" failed:`, error);

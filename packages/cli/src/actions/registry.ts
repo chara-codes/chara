@@ -1,4 +1,11 @@
 import { defaultModelAction } from "./default-model";
+import { setupLoggingAction } from "./setup-logging";
+import { setupProjectAction } from "./setup-project";
+import { loadConfigAction } from "./load-config";
+import { connectMcpAction } from "./connect-mcp";
+import { connectEventsAction } from "./connect-events";
+import { initApiAction } from "./init-api";
+import { initMcpClientAction } from "./init-mcp-client";
 import {
   ActionFactory,
   compose,
@@ -11,6 +18,13 @@ import { resetAction } from "./reset";
 import { showAction } from "./show";
 import type {
   DefaultModelActionOptions,
+  SetupLoggingActionOptions,
+  SetupProjectActionOptions,
+  LoadConfigActionOptions,
+  ConnectMcpActionOptions,
+  ConnectEventsActionOptions,
+  InitApiActionOptions,
+  InitMcpClientActionOptions,
   InitActionOptions,
   ResetActionOptions,
   ShowActionOptions,
@@ -59,6 +73,83 @@ export function registerActions(): void {
       compose<DefaultModelActionOptions>(withErrorHandling, (fn) =>
         withLogging(fn, "default-model"),
       )(defaultModelAction),
+    ),
+  );
+
+  // Register setup-logging action
+  ActionFactory.register(
+    createAction(
+      "setup-logging",
+      "Setup logging configuration",
+      compose<SetupLoggingActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "setup-logging"),
+      )(setupLoggingAction),
+    ),
+  );
+
+  // Register setup-project action
+  ActionFactory.register(
+    createAction(
+      "setup-project",
+      "Setup project directory",
+      compose<SetupProjectActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "setup-project"),
+      )(setupProjectAction),
+    ),
+  );
+
+  // Register load-config action
+  ActionFactory.register(
+    createAction(
+      "load-config",
+      "Load project configuration",
+      compose<LoadConfigActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "load-config"),
+      )(loadConfigAction),
+    ),
+  );
+
+  // Register connect-mcp action
+  ActionFactory.register(
+    createAction(
+      "connect-mcp",
+      "Connect to MCP servers",
+      compose<ConnectMcpActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "connect-mcp"),
+      )(connectMcpAction),
+    ),
+  );
+
+  // Register connect-events action
+  ActionFactory.register(
+    createAction(
+      "connect-events",
+      "Connect to server events",
+      compose<ConnectEventsActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "connect-events"),
+      )(connectEventsAction),
+    ),
+  );
+
+  // Register init-api action
+  ActionFactory.register(
+    createAction(
+      "init-api",
+      "Initialize API client",
+      compose<InitApiActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "init-api"),
+      )(initApiAction),
+    ),
+  );
+
+  // Register init-mcp-client action
+  ActionFactory.register(
+    createAction(
+      "init-mcp-client",
+      "Initialize MCP client",
+      compose<InitMcpClientActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "init-mcp-client"),
+      )(initMcpClientAction),
     ),
   );
 }

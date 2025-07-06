@@ -5,14 +5,22 @@
   "mcpServers": {
     "puppeteer": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
-      "env": {
-        "PUPPETEER_LAUNCH_OPTIONS": "{ \"headless\": true }"
-      }
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
     },
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "exa": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "exa",
+        "--key",
+        "568aa2de-2c9b-44df-9585-c932dd388953"
+      ]
     }
   }
 }
