@@ -1,4 +1,11 @@
 export { defaultModelAction } from "./default-model";
+export { setupLoggingAction } from "./setup-logging";
+export { setupProjectAction } from "./setup-project";
+export { loadConfigAction } from "./load-config";
+export { connectMcpAction } from "./connect-mcp";
+export { connectEventsAction } from "./connect-events";
+export { initApiAction } from "./init-api";
+export { initMcpClientAction } from "./init-mcp-client";
 export {
   compose,
   createAction,
@@ -17,6 +24,13 @@ export type {
   ActionResult,
   BaseAction,
   DefaultModelActionOptions,
+  SetupLoggingActionOptions,
+  SetupProjectActionOptions,
+  LoadConfigActionOptions,
+  ConnectMcpActionOptions,
+  ConnectEventsActionOptions,
+  InitApiActionOptions,
+  InitMcpClientActionOptions,
   InitActionOptions,
   ResetActionOptions,
   ShowActionOptions,
