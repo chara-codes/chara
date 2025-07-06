@@ -1,18 +1,15 @@
-import { EventEmitter } from 'eventemitter3';
-import { logger } from '@chara/logger';
-import { URL } from 'url';
-import type { 
-  TunnelClientOptions, 
-  HttpRequestMessage, 
-  HttpResponseStartMessage,
-  HttpDataMessage,
-  HttpResponseEndMessage,
+import { logger } from "@chara/logger";
+import { EventEmitter } from "eventemitter3";
+import { URL } from "url";
+import type {
+  HttpRequestMessage,
   RouteOptions,
+  RouteReply,
   RouteRequest,
-  RouteReply
-} from '../types/client.types';
-import { RouteMatcher } from './route-matcher';
-import { WebSocketHandler } from './websocket-handler';
+  TunnelClientOptions,
+} from "../types/client.types";
+import { RouteMatcher } from "./route-matcher";
+import type { WebSocketHandler } from "./websocket-handler";
 
 /**
  * RequestHandler processes incoming HTTP requests from the tunnel
@@ -26,7 +23,10 @@ export class RequestHandler extends EventEmitter {
   /**
    * Create a new RequestHandler
    */
-  constructor(options: TunnelClientOptions, websocketHandler: WebSocketHandler) {
+  constructor(
+    options: TunnelClientOptions,
+    websocketHandler: WebSocketHandler,
+  ) {
     super();
     this.options = options;
     this.websocketHandler = websocketHandler;
@@ -49,21 +49,36 @@ export class RequestHandler extends EventEmitter {
 
     try {
       logger.debug(`Received request: ${method} ${path}`);
-      
+
       // Check if there's a matching custom route handler
       const routeMatch = this.routeMatcher.findMatch(method, path);
-      
+
       if (routeMatch) {
         logger.debug(`Using custom handler for route: ${method} ${path}`);
-        await this.handleCustomRoute(requestId, routeMatch.route, method, path, headers, body, routeMatch.params);
+        await this.handleCustomRoute(
+          requestId,
+          routeMatch.route,
+          method,
+          path,
+          headers,
+          body,
+          routeMatch.params,
+        );
       } else {
         logger.debug(`Forwarding request: ${method} ${path}`);
-        logger.debug(`Request details: ID=${requestId}, Headers=${JSON.stringify(headers, null, 2)}`);
+        logger.debug(
+          `Request details: ID=${requestId}, Headers=${JSON.stringify(headers, null, 2)}`,
+        );
         logger.debug(`Request body size: ${body ? body.length : 0} bytes`);
 
         const url = `http://${host}:${port}${path}`;
-        const response = await this.makeLocalRequest(url, method, headers, body);
-        
+        const response = await this.makeLocalRequest(
+          url,
+          method,
+          headers,
+          body,
+        );
+
         await this.streamResponseToTunnel(requestId, response);
       }
     } catch (error) {
@@ -75,10 +90,10 @@ export class RequestHandler extends EventEmitter {
    * Make a request to the local server
    */
   private async makeLocalRequest(
-    url: string, 
-    method: string, 
+    url: string,
+    method: string,
     headers: Record<string, string>,
-    body: string | null
+    body: string | null,
   ): Promise<Response> {
     // Filter out problematic headers
     const filteredHeaders: Record<string, string> = { ...headers };
@@ -92,19 +107,24 @@ export class RequestHandler extends EventEmitter {
       headers: filteredHeaders,
       body: body || undefined,
     });
-    
-    logger.debug(`Received response from local server with status: ${response.status}`);
+
+    logger.debug(
+      `Received response from local server with status: ${response.status}`,
+    );
     logger.debug(
       `Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`,
     );
-    
+
     return response;
   }
 
   /**
    * Stream a response back to the tunnel server
    */
-  private async streamResponseToTunnel(requestId: string, response: Response): Promise<void> {
+  private async streamResponseToTunnel(
+    requestId: string,
+    response: Response,
+  ): Promise<void> {
     if (!this.websocketHandler.isWebSocketOpen()) {
       logger.error("WebSocket connection is not open");
       this.emit("error", new Error("WebSocket connection is not open"));
@@ -157,71 +177,78 @@ export class RequestHandler extends EventEmitter {
     path: string,
     headers: Record<string, string>,
     requestBody: string | null,
-    params: Record<string, string> = {}
+    params: Record<string, string> = {},
   ): Promise<void> {
     if (!route.redirect) {
-      return this.handleRequestError(requestId, new Error("Redirect configuration is missing"));
+      return this.handleRequestError(
+        requestId,
+        new Error("Redirect configuration is missing"),
+      );
     }
 
     try {
-      const { url: redirectUrl, headers: redirectHeaders = {} } = route.redirect;
-      
+      const { url: redirectUrl, headers: redirectHeaders = {} } =
+        route.redirect;
+
       // Build the full URL for the redirect
       let targetUrl = redirectUrl;
-      
+
       // If we have a wildcard parameter, append it to the redirect URL
       if (params && Object.keys(params).length > 0) {
-        const pathParam = params['path'];
+        const pathParam = params["path"];
         if (pathParam) {
           // Ensure we don't duplicate slashes
-          if (targetUrl.endsWith('/') && pathParam.startsWith('/')) {
+          if (targetUrl.endsWith("/") && pathParam.startsWith("/")) {
             targetUrl += pathParam.substring(1);
-          } else if (!targetUrl.endsWith('/') && !pathParam.startsWith('/')) {
-            targetUrl += '/' + pathParam;
+          } else if (!targetUrl.endsWith("/") && !pathParam.startsWith("/")) {
+            targetUrl += "/" + pathParam;
           } else {
             targetUrl += pathParam;
           }
         }
       }
-      
+
       // Parse the original URL to get query parameters
       const originalUrl = new URL(`http://dummy${path}`);
       const searchParams = originalUrl.searchParams.toString();
-      
+
       // Append query parameters if any
       if (searchParams) {
-        targetUrl += (targetUrl.includes('?') ? '&' : '?') + searchParams;
+        targetUrl += (targetUrl.includes("?") ? "&" : "?") + searchParams;
       }
-      
+
       logger.debug(`Redirecting request to: ${targetUrl}`);
-      
+
       // Set up headers for the redirect request
       const mergedHeaders: Record<string, string> = { ...headers };
-      
+
       // Remove problematic headers
       delete mergedHeaders.host;
       delete mergedHeaders.connection;
       delete mergedHeaders["content-length"];
-      
+
       // Add redirect-specific headers
       Object.entries(redirectHeaders).forEach(([key, value]) => {
         mergedHeaders[key] = value;
       });
-      
-      logger.debug(`Redirect headers: ${JSON.stringify(mergedHeaders, null, 2)}`);
-      
+
+      logger.debug(
+        `Redirect headers: ${JSON.stringify(mergedHeaders, null, 2)}`,
+      );
+
       // Make the request to the redirect URL
       const response = await fetch(targetUrl, {
         method,
         headers: mergedHeaders,
         body: requestBody || undefined,
       });
-      
-      logger.debug(`Received response from redirected request with status: ${response.status}`);
-      
+
+      logger.debug(
+        `Received response from redirected request with status: ${response.status}`,
+      );
+
       // Stream the response back through the tunnel
       await this.streamResponseToTunnel(requestId, response);
-      
     } catch (error) {
       logger.error(`Error in redirect route: ${error}`);
       return this.handleRequestError(requestId, error);
@@ -231,7 +258,10 @@ export class RequestHandler extends EventEmitter {
   /**
    * Stream response body from local server to tunnel
    */
-  private async streamResponseBody(requestId: string, body: ReadableStream<Uint8Array>): Promise<void> {
+  private async streamResponseBody(
+    requestId: string,
+    body: ReadableStream<Uint8Array>,
+  ): Promise<void> {
     const reader = body.getReader();
     logger.debug(`Starting to stream response body for request ${requestId}`);
 
@@ -250,7 +280,9 @@ export class RequestHandler extends EventEmitter {
 
         // Convert Uint8Array to Binary string for safe JSON transport
         const chunk = Buffer.from(value).toString("binary");
-        logger.debug(`Streaming chunk: ${value.length} bytes for request ${requestId}`);
+        logger.debug(
+          `Streaming chunk: ${value.length} bytes for request ${requestId}`,
+        );
 
         this.websocketHandler.sendMessage({
           type: "http_data",
@@ -276,17 +308,28 @@ export class RequestHandler extends EventEmitter {
     path: string,
     headers: Record<string, string>,
     requestBody: string | null,
-    params: Record<string, string> = {}
+    params: Record<string, string> = {},
   ): Promise<void> {
     // Check if this is a redirect route
     if (route.redirect) {
-      return this.handleRedirectRoute(requestId, route, method, path, headers, requestBody, params);
+      return this.handleRedirectRoute(
+        requestId,
+        route,
+        method,
+        path,
+        headers,
+        requestBody,
+        params,
+      );
     }
 
     // This is a normal custom route with a handler
     if (!route.handler) {
       logger.error(`Route is missing both handler and redirect configuration`);
-      return this.handleRequestError(requestId, new Error("Route configuration error: missing handler"));
+      return this.handleRequestError(
+        requestId,
+        new Error("Route configuration error: missing handler"),
+      );
     }
 
     // Parse URL to get query parameters
@@ -295,7 +338,7 @@ export class RequestHandler extends EventEmitter {
     url.searchParams.forEach((value, key) => {
       query[key] = value;
     });
-    
+
     // Parse body if present
     let parsedBody = null;
     if (requestBody) {
@@ -306,7 +349,7 @@ export class RequestHandler extends EventEmitter {
         parsedBody = requestBody;
       }
     }
-    
+
     // Create request object
     const request: RouteRequest = {
       method,
@@ -314,16 +357,16 @@ export class RequestHandler extends EventEmitter {
       query,
       headers,
       body: parsedBody,
-      params: params
+      params: params,
     };
-    
+
     // Prepare response object
     let statusCode = 200;
     let responseHeaders: Record<string, string> = {
-      'content-type': 'application/json'
+      "content-type": "application/json",
     };
     let responseSent = false;
-    
+
     const reply: RouteReply = {
       status: (code: number) => {
         statusCode = code;
@@ -336,41 +379,41 @@ export class RequestHandler extends EventEmitter {
       send: async (payload: any) => {
         if (responseSent) return;
         responseSent = true;
-        
+
         // Start response
         this.websocketHandler.sendMessage({
           type: "http_response_start",
           id: requestId,
           status: statusCode,
-          headers: responseHeaders
+          headers: responseHeaders,
         });
-        
+
         // Send response body
         if (payload !== undefined) {
           let responseData: string;
-          
-          if (typeof payload === 'string') {
+
+          if (typeof payload === "string") {
             responseData = payload;
           } else {
             responseData = JSON.stringify(payload);
           }
-          
+
           const chunk = Buffer.from(responseData).toString("binary");
           this.websocketHandler.sendMessage({
             type: "http_data",
             id: requestId,
-            data: chunk
+            data: chunk,
           });
         }
-        
+
         // End response
         this.websocketHandler.sendMessage({
           type: "http_response_end",
-          id: requestId
+          id: requestId,
         });
-      }
+      },
     };
-    
+
     // Execute preHandler if defined
     if (route.preHandler) {
       try {
@@ -380,12 +423,12 @@ export class RequestHandler extends EventEmitter {
         return this.handleRequestError(requestId, error);
       }
     }
-    
+
     // If response wasn't sent in preHandler, execute main handler
     if (!responseSent) {
       try {
         const result = await route.handler(request, reply);
-        
+
         // If the handler returned a value and didn't call reply.send(),
         // automatically send the response
         if (!responseSent && result !== undefined) {
@@ -425,7 +468,7 @@ export class RequestHandler extends EventEmitter {
       const errorData = Buffer.from(
         "Bad Gateway: Could not connect to local server",
       ).toString("binary");
-      
+
       this.websocketHandler.sendMessage({
         type: "http_data",
         id: requestId,
