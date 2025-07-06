@@ -59,3 +59,7 @@ export interface ConnectEventsActionOptions extends ActionOptions {}
 export interface InitApiActionOptions extends ActionOptions {}
 
 export interface InitMcpClientActionOptions extends ActionOptions {}
+
+export interface InitializeConfigActionOptions extends ActionOptions {
+  configFile?: string;
+}

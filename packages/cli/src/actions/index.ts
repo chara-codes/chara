@@ -6,6 +6,7 @@ export { connectMcpAction } from "./connect-mcp";
 export { connectEventsAction } from "./connect-events";
 export { initApiAction } from "./init-api";
 export { initMcpClientAction } from "./init-mcp-client";
+export { initializeConfigAction } from "./initialize-config";
 export {
   compose,
   createAction,
@@ -31,6 +32,7 @@ export type {
   ConnectEventsActionOptions,
   InitApiActionOptions,
   InitMcpClientActionOptions,
+  InitializeConfigActionOptions,
   InitActionOptions,
   ResetActionOptions,
   ShowActionOptions,

@@ -24,7 +24,7 @@ export { chatAgent } from "./agents/chat-agent";
 export { gitAgent } from "./agents/git-agent";
 export { initAgent } from "./agents/init-agent";
 // Export providers for external use
-export { providersRegistry } from "./providers/";
+export { providersRegistry, initialize } from "./providers/";
 // Export tools for external use
 export { tools } from "./tools/";
 

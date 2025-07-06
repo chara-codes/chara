@@ -6,6 +6,7 @@ import { connectMcpAction } from "./connect-mcp";
 import { connectEventsAction } from "./connect-events";
 import { initApiAction } from "./init-api";
 import { initMcpClientAction } from "./init-mcp-client";
+import { initializeConfigAction } from "./initialize-config";
 import {
   ActionFactory,
   compose,
@@ -25,6 +26,7 @@ import type {
   ConnectEventsActionOptions,
   InitApiActionOptions,
   InitMcpClientActionOptions,
+  InitializeConfigActionOptions,
   InitActionOptions,
   ResetActionOptions,
   ShowActionOptions,
@@ -150,6 +152,17 @@ export function registerActions(): void {
       compose<InitMcpClientActionOptions>(withErrorHandling, (fn) =>
         withLogging(fn, "init-mcp-client"),
       )(initMcpClientAction),
+    ),
+  );
+
+  // Register initialize-config action
+  ActionFactory.register(
+    createAction(
+      "initialize-config",
+      "Initialize Chara configuration with default model from global config",
+      compose<InitializeConfigActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "initialize-config"),
+      )(initializeConfigAction),
     ),
   );
 }
