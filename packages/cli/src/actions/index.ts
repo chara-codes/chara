@@ -1,5 +1,7 @@
 export { defaultModelAction } from "./default-model";
 export { startAgentsAction, stopAgentsAction } from "./start-agents";
+export { startServerAction } from "./start-server";
+export { stopServerAction } from "./stop-server";
 export { setupLoggingAction } from "./setup-logging";
 export { setupProjectAction } from "./setup-project";
 export { loadConfigAction } from "./load-config";
@@ -28,6 +30,8 @@ export type {
   DefaultModelActionOptions,
   StartAgentsActionOptions,
   StopAgentsActionOptions,
+  StartServerActionOptions,
+  StopServerActionOptions,
   SetupLoggingActionOptions,
   SetupProjectActionOptions,
   LoadConfigActionOptions,

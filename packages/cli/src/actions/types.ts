@@ -77,3 +77,22 @@ export interface InitMcpClientActionOptions extends ActionOptions {}
 export interface InitializeConfigActionOptions extends ActionOptions {
   configFile?: string;
 }
+
+export interface StartServerActionOptions extends ActionOptions {
+  port?: number;
+  host?: string;
+  mcpEnabled?: boolean;
+  mcpTransport?: string;
+  websocketEnabled?: boolean;
+  websocketPath?: string;
+  corsEnabled?: boolean;
+  corsOrigin?: string;
+  loggingEnabled?: boolean;
+  silent?: boolean;
+}
+
+export interface StopServerActionOptions extends ActionOptions {
+  server?: any;
+  silent?: boolean;
+  force?: boolean;
+}

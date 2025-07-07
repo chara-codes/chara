@@ -210,6 +210,27 @@ Sets the default AI model for Chara Codes.
 - `port`: Port to start server on (default: 3031)
 - `verbose`: Enable verbose output
 
+### `start-server`
+Start the Chara server with configurable options.
+
+**Options:**
+- `port`: Port to start server on (default: 3030)
+- `host`: Host to bind to (default: "localhost")
+- `mcpEnabled`: Enable Model Context Protocol (default: false)
+- `websocketEnabled`: Enable WebSocket support (default: false)
+- `corsEnabled`: Enable CORS (default: true)
+- `silent`: Suppress UI output (default: false)
+- `verbose`: Enable verbose output
+
+### `stop-server`
+Stop the Chara server and cleanup resources.
+
+**Options:**
+- `server`: Server manager instance to stop
+- `force`: Force stop without graceful shutdown (default: false)
+- `silent`: Suppress UI output (default: false)
+- `verbose`: Enable verbose output
+
 ### `setup-logging`
 Setup logging configuration based on verbose and trace flags.
 
@@ -313,7 +334,7 @@ export const myCommand = {
 
 ## Current Implementation
 
-The actions pattern is now fully integrated into the Chara CLI. The `init` command uses the action factory pattern to execute actions with enhanced logging, error handling, and validation.
+The actions pattern is now fully integrated into the Chara CLI. All commands use the action factory pattern to execute actions with enhanced logging, error handling, and validation.
 
 ### Unified Init Command
 
@@ -351,7 +372,7 @@ This provides:
 
 The actions are integrated with CLI commands, making them accessible via the command line:
 
-### Available Commands
+## Available Commands
 
 #### `chara init`
 Initialize Chara configuration with AI provider settings.
@@ -397,6 +418,23 @@ This provides:
 - **Composition**: Easy to add new enhancers and middleware
 
 This pattern makes the codebase more modular, testable, and maintainable while providing a consistent interface for all operations.
+
+## Server Actions
+
+The CLI includes dedicated server actions for managing the Chara server:
+
+- **start-server**: Start the server with configurable options
+- **stop-server**: Stop the server and cleanup resources
+
+These actions work directly with `@chara/server` and are registered in the main registry. See [Server Actions Documentation](./SERVER_ACTIONS.md) for complete usage information.
+
+### Key Features
+
+- **Flexible Configuration**: Port, host, features (MCP, WebSocket, CORS)
+- **Error Handling**: Comprehensive error handling and cleanup
+- **Graceful Shutdown**: Support for both graceful and forced stops
+- **Integration Ready**: Works with Action Factory and CLI commands
+- **Well Tested**: Full unit test coverage
 
 ## Dev Command Refactoring
 

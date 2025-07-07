@@ -1,13 +1,6 @@
-import { defaultModelAction } from "./default-model";
-import { startAgentsAction, stopAgentsAction } from "./start-agents";
-import { setupLoggingAction } from "./setup-logging";
-import { setupProjectAction } from "./setup-project";
-import { loadConfigAction } from "./load-config";
-import { connectMcpAction } from "./connect-mcp";
 import { connectEventsAction } from "./connect-events";
-import { initApiAction } from "./init-api";
-import { initMcpClientAction } from "./init-mcp-client";
-import { initializeConfigAction } from "./initialize-config";
+import { connectMcpAction } from "./connect-mcp";
+import { defaultModelAction } from "./default-model";
 import {
   ActionFactory,
   compose,
@@ -16,23 +9,34 @@ import {
   withLogging,
 } from "./factory";
 import { initAction } from "./init";
+import { initApiAction } from "./init-api";
+import { initMcpClientAction } from "./init-mcp-client";
+import { initializeConfigAction } from "./initialize-config";
+import { loadConfigAction } from "./load-config";
 import { resetAction } from "./reset";
+import { setupLoggingAction } from "./setup-logging";
+import { setupProjectAction } from "./setup-project";
 import { showAction } from "./show";
+import { startAgentsAction, stopAgentsAction } from "./start-agents";
+import { startServerAction } from "./start-server";
+import { stopServerAction } from "./stop-server";
 import type {
+  ConnectEventsActionOptions,
+  ConnectMcpActionOptions,
   DefaultModelActionOptions,
-  StartAgentsActionOptions,
-  StopAgentsActionOptions,
+  InitActionOptions,
+  InitApiActionOptions,
+  InitializeConfigActionOptions,
+  InitMcpClientActionOptions,
+  LoadConfigActionOptions,
+  ResetActionOptions,
   SetupLoggingActionOptions,
   SetupProjectActionOptions,
-  LoadConfigActionOptions,
-  ConnectMcpActionOptions,
-  ConnectEventsActionOptions,
-  InitApiActionOptions,
-  InitMcpClientActionOptions,
-  InitializeConfigActionOptions,
-  InitActionOptions,
-  ResetActionOptions,
   ShowActionOptions,
+  StartAgentsActionOptions,
+  StartServerActionOptions,
+  StopAgentsActionOptions,
+  StopServerActionOptions,
 } from "./types";
 
 // Register all actions with the factory
@@ -100,6 +104,29 @@ export function registerActions(): void {
       withLogging(
         withErrorHandling<StopAgentsActionOptions, void>(stopAgentsAction),
         "stop-agents",
+      ),
+    ),
+  );
+
+  // Register start-server action
+  ActionFactory.register(
+    createAction(
+      "start-server",
+      "Start Chara server",
+      compose<StartServerActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "start-server"),
+      )(startServerAction),
+    ),
+  );
+
+  // Register stop-server action
+  ActionFactory.register(
+    createAction(
+      "stop-server",
+      "Stop Chara server",
+      withLogging(
+        withErrorHandling<StopServerActionOptions, void>(stopServerAction),
+        "stop-server",
       ),
     ),
   );
