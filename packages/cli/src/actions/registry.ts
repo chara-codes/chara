@@ -1,4 +1,5 @@
 import { defaultModelAction } from "./default-model";
+import { startAgentsAction, stopAgentsAction } from "./start-agents";
 import { setupLoggingAction } from "./setup-logging";
 import { setupProjectAction } from "./setup-project";
 import { loadConfigAction } from "./load-config";
@@ -19,6 +20,8 @@ import { resetAction } from "./reset";
 import { showAction } from "./show";
 import type {
   DefaultModelActionOptions,
+  StartAgentsActionOptions,
+  StopAgentsActionOptions,
   SetupLoggingActionOptions,
   SetupProjectActionOptions,
   LoadConfigActionOptions,
@@ -75,6 +78,29 @@ export function registerActions(): void {
       compose<DefaultModelActionOptions>(withErrorHandling, (fn) =>
         withLogging(fn, "default-model"),
       )(defaultModelAction),
+    ),
+  );
+
+  // Register start-agents action
+  ActionFactory.register(
+    createAction(
+      "start-agents",
+      "Start Chara agents server",
+      compose<StartAgentsActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "start-agents"),
+      )(startAgentsAction),
+    ),
+  );
+
+  // Register stop-agents action
+  ActionFactory.register(
+    createAction(
+      "stop-agents",
+      "Stop Chara agents server",
+      withLogging(
+        withErrorHandling<StopAgentsActionOptions, void>(stopAgentsAction),
+        "stop-agents",
+      ),
     ),
   );
 

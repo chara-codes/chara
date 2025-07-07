@@ -1,7 +1,11 @@
 import { logger } from "@chara/logger";
 import type { CommandModule } from "yargs";
-import type { DefaultModelActionOptions } from "../actions";
-import { ActionFactory } from "../actions";
+import type {
+  DefaultModelActionOptions,
+  StartAgentsActionOptions,
+  StopAgentsActionOptions,
+} from "../actions";
+import { ActionFactory, startAgentsAction, stopAgentsAction } from "../actions";
 
 interface DefaultModelCommandArgs {
   port?: number;
@@ -33,9 +37,23 @@ export const defaultModelCommand: CommandModule<
       logger.setLevel("debug");
     }
 
+    let server: any;
     try {
+      // Start server for model fetching using startAgentsAction directly
+      const result = await startAgentsAction({
+        port: argv.port,
+        mcp: false,
+        runner: false,
+        websocket: false,
+        silent: true,
+        verbose: argv.verbose,
+      });
+      server = result.server;
+
+      // Execute default-model action with server URL
       await ActionFactory.execute<DefaultModelActionOptions>("default-model", {
         port: argv.port,
+        serverUrl: `http://localhost:${result.port}`,
         verbose: argv.verbose,
       });
     } catch (error) {
@@ -45,6 +63,15 @@ export const defaultModelCommand: CommandModule<
         logger.error("Command failed:", error);
       }
       process.exit(1);
+    } finally {
+      // Clean up server using stopAgentsAction directly
+      if (server) {
+        await stopAgentsAction({
+          server,
+          silent: true,
+          verbose: false,
+        });
+      }
     }
   },
 };

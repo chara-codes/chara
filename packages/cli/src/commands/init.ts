@@ -5,8 +5,10 @@ import type {
   InitActionOptions,
   ResetActionOptions,
   ShowActionOptions,
+  StartAgentsActionOptions,
+  StopAgentsActionOptions,
 } from "../actions";
-import { ActionFactory } from "../actions";
+import { ActionFactory, startAgentsAction, stopAgentsAction } from "../actions";
 
 interface InitCommandArgs {
   force?: boolean;
@@ -74,9 +76,39 @@ export const initCommand: CommandModule<
         force: argv.force,
         verbose: argv.verbose,
       });
-      await ActionFactory.execute<DefaultModelActionOptions>("default-model", {
-        verbose: argv.verbose,
-      });
+
+      // Start server for model selection
+      let server: any;
+      try {
+        const result = await startAgentsAction({
+          port: 3031,
+          mcp: false,
+          runner: false,
+          websocket: false,
+          silent: true,
+          verbose: argv.verbose,
+        });
+        server = result.server;
+
+        // Execute default-model action with server URL
+        await ActionFactory.execute<DefaultModelActionOptions>(
+          "default-model",
+          {
+            port: 3031,
+            serverUrl: `http://localhost:${result.port}`,
+            verbose: argv.verbose,
+          },
+        );
+      } finally {
+        // Clean up server
+        if (server) {
+          await stopAgentsAction({
+            server,
+            silent: true,
+            verbose: false,
+          });
+        }
+      }
       return;
     } catch (error) {
       if (error && typeof error === "object" && "message" in error) {

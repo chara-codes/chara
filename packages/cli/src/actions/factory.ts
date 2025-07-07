@@ -72,12 +72,12 @@ export function createAction(
   };
 }
 
-export function withErrorHandling<T extends ActionOptions>(
-  actionFn: ActionFunction<T>,
-): ActionFunction<T> {
+export function withErrorHandling<T extends ActionOptions, R = void>(
+  actionFn: ActionFunction<T, R>,
+): ActionFunction<T, R> {
   return async (options?: T) => {
     try {
-      await actionFn(options);
+      return await actionFn(options);
     } catch (error) {
       if (error instanceof Error) {
         logger.error(`Action failed: ${error.message}`);
@@ -89,10 +89,10 @@ export function withErrorHandling<T extends ActionOptions>(
   };
 }
 
-export function withLogging<T extends ActionOptions>(
-  actionFn: ActionFunction<T>,
+export function withLogging<T extends ActionOptions, R = void>(
+  actionFn: ActionFunction<T, R>,
   actionName: string,
-): ActionFunction<T> {
+): ActionFunction<T, R> {
   return async (options?: T) => {
     const startTime = Date.now();
 
@@ -101,12 +101,14 @@ export function withLogging<T extends ActionOptions>(
     }
 
     try {
-      await actionFn(options);
+      const result = await actionFn(options);
 
       if (options?.verbose) {
         const duration = Date.now() - startTime;
         logger.debug(`Action "${actionName}" completed in ${duration}ms`);
       }
+
+      return result;
     } catch (error) {
       if (options?.verbose) {
         const duration = Date.now() - startTime;
@@ -117,10 +119,10 @@ export function withLogging<T extends ActionOptions>(
   };
 }
 
-export function withValidation<T extends ActionOptions>(
-  actionFn: ActionFunction<T>,
+export function withValidation<T extends ActionOptions, R = void>(
+  actionFn: ActionFunction<T, R>,
   validator: (options?: T) => boolean | string,
-): ActionFunction<T> {
+): ActionFunction<T, R> {
   return async (options?: T) => {
     const validationResult = validator(options);
 
@@ -132,15 +134,15 @@ export function withValidation<T extends ActionOptions>(
       throw new Error(`Action validation failed: ${validationResult}`);
     }
 
-    await actionFn(options);
+    return await actionFn(options);
   };
 }
 
 // Decorator for composing multiple action enhancers
-export function compose<T extends ActionOptions>(
-  ...enhancers: Array<(fn: ActionFunction<T>) => ActionFunction<T>>
-): (actionFn: ActionFunction<T>) => ActionFunction<T> {
-  return (actionFn: ActionFunction<T>) => {
+export function compose<T extends ActionOptions, R = void>(
+  ...enhancers: Array<(fn: ActionFunction<T, R>) => ActionFunction<T, R>>
+): (actionFn: ActionFunction<T, R>) => ActionFunction<T, R> {
+  return (actionFn: ActionFunction<T, R>) => {
     return enhancers.reduceRight((acc, enhancer) => enhancer(acc), actionFn);
   };
 }

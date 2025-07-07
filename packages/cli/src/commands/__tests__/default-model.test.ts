@@ -28,16 +28,54 @@ mock.module("@chara/logger", () => ({
 
 // Mock ActionFactory
 const mockActionFactory = {
-  execute: mock(() => Promise.resolve()),
+  execute: mock((actionName: string, options: any) => {
+    if (actionName === "default-model") {
+      return Promise.resolve();
+    }
+    return Promise.resolve();
+  }),
 };
+
+// Mock startAgentsAction
+const mockStartAgentsAction = mock((options: any) => {
+  return Promise.resolve({
+    server: { stop: () => Promise.resolve() },
+    port: options?.port || 3031,
+  });
+});
+
+// Mock stopAgentsAction
+const mockStopAgentsAction = mock((options: any) => {
+  return Promise.resolve();
+});
 
 mock.module("../../actions", () => ({
   ActionFactory: mockActionFactory,
+  startAgentsAction: mockStartAgentsAction,
+  stopAgentsAction: mockStopAgentsAction,
 }));
 
-// Reset ActionFactory mock to resolve by default
+// Reset mocks to resolve by default
 beforeEach(() => {
-  mockActionFactory.execute.mockImplementation(() => Promise.resolve());
+  mockActionFactory.execute.mockImplementation(
+    (actionName: string, options: any) => {
+      if (actionName === "default-model") {
+        return Promise.resolve();
+      }
+      return Promise.resolve();
+    },
+  );
+
+  mockStartAgentsAction.mockImplementation((options: any) => {
+    return Promise.resolve({
+      server: { stop: () => Promise.resolve() },
+      port: options?.port || 3031,
+    });
+  });
+
+  mockStopAgentsAction.mockImplementation((options: any) => {
+    return Promise.resolve();
+  });
 });
 
 // Mock process.exit
@@ -57,10 +95,31 @@ describe("Default Model Command", () => {
     mockLogger.error.mockClear();
     mockLogger.setLevel.mockClear();
     mockActionFactory.execute.mockClear();
+    mockStartAgentsAction.mockClear();
+    mockStopAgentsAction.mockClear();
+
     mockProcessExit.mockClear();
 
-    // Ensure ActionFactory.execute resolves by default
-    mockActionFactory.execute.mockImplementation(() => Promise.resolve());
+    // Ensure mocks resolve by default
+    mockActionFactory.execute.mockImplementation(
+      (actionName: string, options: any) => {
+        if (actionName === "default-model") {
+          return Promise.resolve();
+        }
+        return Promise.resolve();
+      },
+    );
+
+    mockStartAgentsAction.mockImplementation((options: any) => {
+      return Promise.resolve({
+        server: { stop: () => Promise.resolve() },
+        port: options?.port || 3031,
+      });
+    });
+
+    mockStopAgentsAction.mockImplementation((options: any) => {
+      return Promise.resolve();
+    });
   });
 
   afterEach(() => {
@@ -71,6 +130,9 @@ describe("Default Model Command", () => {
     mockLogger.error.mockClear();
     mockLogger.setLevel.mockClear();
     mockActionFactory.execute.mockClear();
+    mockStartAgentsAction.mockClear();
+    mockStopAgentsAction.mockClear();
+
     mockProcessExit.mockClear();
   });
 
@@ -135,9 +197,23 @@ describe("Default Model Command", () => {
 
       await defaultModelCommand.handler(argv);
 
-      expect(mockActionFactory.execute).toHaveBeenCalledTimes(1);
+      expect(mockStartAgentsAction).toHaveBeenCalledTimes(1);
+      expect(mockStartAgentsAction).toHaveBeenCalledWith({
+        port: 3031,
+        mcp: false,
+        runner: false,
+        websocket: false,
+        silent: true,
+        verbose: false,
+      });
       expect(mockActionFactory.execute).toHaveBeenCalledWith("default-model", {
         port: 3031,
+        serverUrl: "http://localhost:3031",
+        verbose: false,
+      });
+      expect(mockStopAgentsAction).toHaveBeenCalledWith({
+        server: { stop: expect.any(Function) },
+        silent: true,
         verbose: false,
       });
     });
@@ -152,8 +228,18 @@ describe("Default Model Command", () => {
 
       await defaultModelCommand.handler(argv);
 
+      expect(mockStartAgentsAction).toHaveBeenCalledWith({
+        port: 8080,
+        mcp: false,
+        runner: false,
+        websocket: false,
+        silent: true,
+        verbose: true,
+      });
+
       expect(mockActionFactory.execute).toHaveBeenCalledWith("default-model", {
         port: 8080,
+        serverUrl: "http://localhost:8080",
         verbose: true,
       });
     });
@@ -186,9 +272,12 @@ describe("Default Model Command", () => {
 
     test("should handle action execution errors", async () => {
       const testError = new Error("Action execution failed");
-      mockActionFactory.execute.mockImplementation(() =>
-        Promise.reject(testError),
-      );
+      mockActionFactory.execute.mockImplementation((actionName: string) => {
+        if (actionName === "default-model") {
+          return Promise.reject(testError);
+        }
+        return Promise.resolve();
+      });
 
       const argv = {
         port: 3031,
@@ -209,6 +298,11 @@ describe("Default Model Command", () => {
         "Action execution failed",
       );
       expect(mockProcessExit).toHaveBeenCalledWith(1);
+      expect(mockStopAgentsAction).toHaveBeenCalledWith({
+        server: { stop: expect.any(Function) },
+        silent: true,
+        verbose: false,
+      });
     });
 
     test("should handle non-Error objects", async () => {
@@ -274,10 +368,28 @@ describe("Default Model Command", () => {
       // Verify logger was set to debug
       expect(mockLogger.setLevel).toHaveBeenCalledWith("debug");
 
+      // Verify server was started
+      expect(mockStartAgentsAction).toHaveBeenCalledWith({
+        port: 3001,
+        mcp: false,
+        runner: false,
+        websocket: false,
+        silent: true,
+        verbose: true,
+      });
+
       // Verify action was executed with correct parameters
       expect(mockActionFactory.execute).toHaveBeenCalledWith("default-model", {
         port: 3001,
+        serverUrl: "http://localhost:3001",
         verbose: true,
+      });
+
+      // Verify server was stopped
+      expect(mockStopAgentsAction).toHaveBeenCalledWith({
+        server: { stop: expect.any(Function) },
+        silent: true,
+        verbose: false,
       });
 
       // Verify no errors were logged
@@ -293,8 +405,18 @@ describe("Default Model Command", () => {
 
       await defaultModelCommand.handler(argv);
 
+      expect(mockStartAgentsAction).toHaveBeenCalledWith({
+        port: undefined,
+        mcp: false,
+        runner: false,
+        websocket: false,
+        silent: true,
+        verbose: undefined,
+      });
+
       expect(mockActionFactory.execute).toHaveBeenCalledWith("default-model", {
         port: undefined,
+        serverUrl: "http://localhost:3031",
         verbose: undefined,
       });
     });
@@ -309,8 +431,19 @@ describe("Default Model Command", () => {
       await defaultModelCommand.handler(argv);
 
       expect(mockLogger.setLevel).toHaveBeenCalledWith("debug");
+
+      expect(mockStartAgentsAction).toHaveBeenCalledWith({
+        port: undefined,
+        mcp: false,
+        runner: false,
+        websocket: false,
+        silent: true,
+        verbose: true,
+      });
+
       expect(mockActionFactory.execute).toHaveBeenCalledWith("default-model", {
         port: undefined,
+        serverUrl: "http://localhost:3031",
         verbose: true,
       });
     });
@@ -345,9 +478,9 @@ describe("Default Model Command", () => {
       );
     });
 
-    test("should handle action factory being unavailable", async () => {
-      mockActionFactory.execute.mockImplementation(() => {
-        throw new Error("ActionFactory not available");
+    test("should handle start agents action being unavailable", async () => {
+      mockStartAgentsAction.mockImplementation(() => {
+        throw new Error("startAgentsAction not available");
       });
 
       const argv = {
@@ -366,8 +499,10 @@ describe("Default Model Command", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Command failed:",
-        "ActionFactory not available",
+        "startAgentsAction not available",
       );
+      // When start-agents fails, server is undefined, so stop-agents is not called
+      expect(mockStopAgentsAction).not.toHaveBeenCalled();
     });
 
     test("should handle concurrent command executions", async () => {
@@ -381,13 +516,15 @@ describe("Default Model Command", () => {
 
       await Promise.all(promises);
 
-      expect(mockActionFactory.execute).toHaveBeenCalledTimes(2);
+      expect(mockStartAgentsAction).toHaveBeenCalledTimes(2); // 1 call per handler
       expect(mockActionFactory.execute).toHaveBeenCalledWith("default-model", {
         port: 3031,
+        serverUrl: "http://localhost:3031",
         verbose: false,
       });
       expect(mockActionFactory.execute).toHaveBeenCalledWith("default-model", {
         port: 3001,
+        serverUrl: "http://localhost:3001",
         verbose: true,
       });
     });
@@ -407,6 +544,7 @@ describe("Default Model Command", () => {
 
       expect(mockActionFactory.execute).toHaveBeenCalledWith("default-model", {
         port: 3031,
+        serverUrl: "http://localhost:3031",
         verbose: true,
       });
     });
@@ -423,6 +561,7 @@ describe("Default Model Command", () => {
 
       expect(mockActionFactory.execute).toHaveBeenCalledWith("default-model", {
         port: undefined,
+        serverUrl: "http://localhost:3031",
         verbose: true,
       });
     });

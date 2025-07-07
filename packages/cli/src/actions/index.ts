@@ -1,4 +1,5 @@
 export { defaultModelAction } from "./default-model";
+export { startAgentsAction, stopAgentsAction } from "./start-agents";
 export { setupLoggingAction } from "./setup-logging";
 export { setupProjectAction } from "./setup-project";
 export { loadConfigAction } from "./load-config";
@@ -25,6 +26,8 @@ export type {
   ActionResult,
   BaseAction,
   DefaultModelActionOptions,
+  StartAgentsActionOptions,
+  StopAgentsActionOptions,
   SetupLoggingActionOptions,
   SetupProjectActionOptions,
   LoadConfigActionOptions,

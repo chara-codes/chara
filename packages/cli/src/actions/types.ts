@@ -38,6 +38,20 @@ export interface ShowActionOptions extends ActionOptions {
 
 export interface DefaultModelActionOptions extends ActionOptions {
   port?: number;
+  serverUrl?: string;
+}
+
+export interface StartAgentsActionOptions extends ActionOptions {
+  port?: number;
+  mcp?: boolean;
+  runner?: boolean;
+  websocket?: boolean;
+  silent?: boolean;
+}
+
+export interface StopAgentsActionOptions extends ActionOptions {
+  server?: any;
+  silent?: boolean;
 }
 
 export interface SetupLoggingActionOptions extends ActionOptions {

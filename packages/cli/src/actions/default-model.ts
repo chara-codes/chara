@@ -15,7 +15,6 @@ import {
   updateGlobalConfig,
 } from "@chara/settings";
 import type { DefaultModelActionOptions } from "./types";
-import { startServer } from "@chara/agents";
 
 interface Model {
   id: string;
@@ -26,19 +25,6 @@ interface Model {
 
 interface ApiModelsResponse {
   models: Model[];
-}
-
-/**
- * Helper function to safely stop the server
- */
-function stopServer(server: any): void {
-  if (server?.stop && typeof server.stop === "function") {
-    try {
-      server.stop();
-    } catch (closeError) {
-      logger.debug("Error stopping server:", closeError);
-    }
-  }
 }
 
 export async function defaultModelAction(
@@ -67,35 +53,23 @@ export async function defaultModelAction(
     throw error;
   }
 
-  // Start server
-  const s = spinner();
-  s.start("Starting server...");
-
-  let server: any;
-  try {
-    const port = options.port || 3031;
-    console.trace("start server");
-    server = await startServer({
-      port,
-      mcp: { enabled: false },
-      runner: { enabled: false },
-      websocket: { enabled: false },
-    });
-    s.stop(`Server started on port ${port}`);
-  } catch (error) {
-    s.stop("Failed to start server");
-    logger.error("Error starting server:", error);
-    throw error;
+  // Check if serverUrl is provided, otherwise throw error
+  if (!options.serverUrl) {
+    throw new Error(
+      "Server URL is required. Please start the server first or provide a serverUrl.",
+    );
   }
 
+  const serverUrl = options.serverUrl;
+
   // Fetch models from API
+  const s = spinner();
   s.start("Fetching available models...");
 
   let models: Model[] = [];
   try {
-    const port = options.port || 3031;
-    const modelsUrl = `http://localhost:${port}/api/models`;
-    console.log(modelsUrl);
+    const modelsUrl = `${serverUrl}/api/models`;
+    logger.debug(`Fetching models from: ${modelsUrl}`);
     const response = await fetch(modelsUrl);
 
     if (!response.ok) {
@@ -108,9 +82,6 @@ export async function defaultModelAction(
   } catch (error) {
     s.stop("Failed to fetch models");
     logger.error("Error fetching models:", error);
-
-    // Clean up server
-    stopServer(server);
     throw error;
   }
 
@@ -118,9 +89,6 @@ export async function defaultModelAction(
     logger.info(
       "No models available. Please check your provider configuration.",
     );
-
-    // Clean up server
-    stopServer(server);
     return;
   }
 
@@ -154,9 +122,6 @@ export async function defaultModelAction(
 
   if (isCancel(selectedModel)) {
     cancel("Model selection cancelled.");
-
-    // Clean up server
-    stopServer(server);
     return;
   }
 
@@ -168,14 +133,12 @@ export async function defaultModelAction(
 
   if (isCancel(shouldSave) || !shouldSave) {
     cancel("Default model not saved.");
-
-    // Clean up server
-    stopServer(server);
     return;
   }
 
   // Save to config
-  s.start("Saving default model...");
+  const saveSpinner = spinner();
+  saveSpinner.start("Saving default model...");
 
   try {
     const updatedConfig = {
@@ -184,7 +147,7 @@ export async function defaultModelAction(
     };
 
     await updateGlobalConfig(updatedConfig);
-    s.stop("Default model saved successfully!");
+    saveSpinner.stop("Default model saved successfully!");
 
     outro(
       `${bold(green("✅ Default model set!"))}
@@ -194,11 +157,8 @@ Your default model has been set to: ${bold(cyan(selectedModel))}
 This model will be used by default in Chara Codes unless overridden by project-specific settings.`,
     );
   } catch (error) {
-    s.stop("Failed to save default model");
+    saveSpinner.stop("Failed to save default model");
     logger.error("Error saving default model:", error);
     throw error;
-  } finally {
-    // Clean up server
-    stopServer(server);
   }
 }
