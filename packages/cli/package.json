@@ -1,5 +1,5 @@
 {
-  "name": "chara",
+  "name": "@chara-codes/cli",
   "version": "0.1.1",
   "description": "Chara CLI - AI-powered development assistant",
   "main": "dist/chara",
