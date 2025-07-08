@@ -1,13 +1,6 @@
 import { logger } from "@chara/logger";
 import type { AppRouter } from "@chara/server";
 import {
-  createTRPCProxyClient,
-  createWSClient,
-  loggerLink,
-  wsLink,
-} from "@trpc/client";
-
-import {
   CompatibilityCallToolResultSchema,
   GetPromptResultSchema,
   ListPromptsResultSchema,
@@ -18,11 +11,17 @@ import {
   type ResourceTemplate,
   type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
+import {
+  createTRPCProxyClient,
+  createWSClient,
+  loggerLink,
+  wsLink,
+} from "@trpc/client";
 import superjson from "superjson";
 import type { z } from "zod";
-import { readConfig } from "../config.ts";
-import type { ActiveClient } from "../types/index.ts";
-import { prepareClients } from "./client.ts";
+import { readConfig } from "../config.js";
+import type { ActiveClient } from "../types/index.js";
+import { prepareClients } from "./client.js";
 
 const CLIENT_ID = "client-123";
 

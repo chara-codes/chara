@@ -1,5 +1,5 @@
 import { logger } from "@chara/logger";
-import { initMCPClient } from "../mcp/mcpWsclient";
+import { initMCPClient } from "../mcp/mcp-ws-client";
 import type { InitMcpClientActionOptions } from "./types";
 
 export async function initMcpClientAction(
