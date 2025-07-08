@@ -6,7 +6,7 @@
     "tunnel": "./dist/tunnel"
   },
   "scripts": {
-    "build": "bun build ./src/cli.ts --outfile ./dist/tunnel --compile",
+    "bbuild": "bun build ./src/cli.ts --outfile ./dist/tunnel --compile",
     "d": "bun ./src/cli.ts",
     "start": "./dist/tunnel"
   },

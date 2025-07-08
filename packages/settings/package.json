@@ -7,7 +7,7 @@
   "types": "src/index.ts",
   "type": "module",
   "scripts": {
-    "build": "bun build ./src/index.ts --outfile ./dist/index.ts",
+    "bbuild": "bun build ./src/index.ts --outfile ./dist/index.ts",
     "test": "bun test",
     "clean": "rm -rf dist",
     "dev": "tsc --watch"

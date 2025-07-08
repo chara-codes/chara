@@ -17,7 +17,7 @@
   },
   "scripts": {
     "dev": "bun --watch src/server.ts",
-    "build": "bun build ./src/server.ts --minify --outfile ./dist/server --target=bun --compile",
+    "bbuild": "bun build ./src/server.ts --minify --outfile ./dist/server --target=bun --compile",
     "start": "./dist/server",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
