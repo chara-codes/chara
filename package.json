@@ -22,6 +22,7 @@
     "validate:changeset": "node scripts/validate-changeset.js"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.1",
     "@types/bun": "^1.2.15",
     "@types/http-proxy": "^1.17.16"
   },
