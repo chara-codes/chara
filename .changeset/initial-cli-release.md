@@ -9,7 +9,7 @@ This is the first release of the Chara CLI package, providing AI-powered develop
 Features include:
 - Development environment setup and configuration
 - Integration with Model Context Protocol (MCP) for AI context management
-- Project syncing between local and remote environments
+- Project syncing between local environments
 - Configuration management via `.chara.json` files
 - Seamless integration with web services via built-in server management
 
