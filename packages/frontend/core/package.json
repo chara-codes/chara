@@ -10,7 +10,7 @@
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "lint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-    "test": "vitest run"
+    "ttest": "vitest run"
   },
   "dependencies": {
     "date-fns": "^4.1.0",

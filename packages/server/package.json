@@ -9,8 +9,7 @@
     "@types/bun": "latest",
     "@types/chokidar": "^2.1.7",
     "@types/node": "^22.16.0",
-    "drizzle-kit": "^0.31.4",
-    "vitest": "^3.2.4"
+    "drizzle-kit": "^0.31.4"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
@@ -22,7 +21,7 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "test": "vitest run"
+    "ttest": "bun test"
   },
   "dependencies": {
     "@chara/logger": "workspace:*",
