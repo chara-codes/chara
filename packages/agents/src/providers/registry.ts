@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import type { LanguageModelV1 } from "ai";
 import { ModelFetcher } from "./model-fetcher";
 import { ProviderConfigs } from "./provider-configs";
@@ -194,7 +194,7 @@ export class ProvidersRegistry {
    */
   public async getModel(
     providerName: string,
-    modelName: string,
+    modelName: string
   ): Promise<LanguageModelV1> {
     const provider = await this.getProvider(providerName);
     if (!provider || !provider.isAvailable) {
@@ -222,13 +222,13 @@ export class ProvidersRegistry {
 
     if (!provider.fetchModels) {
       throw new Error(
-        `Provider ${providerName} does not support model fetching`,
+        `Provider ${providerName} does not support model fetching`
       );
     }
 
     return ModelFetcher.fetchModelsForProvider(
       providerName,
-      provider.fetchModels,
+      provider.fetchModels
     );
   }
 
@@ -239,7 +239,7 @@ export class ProvidersRegistry {
   public async fetchAllModels(): Promise<Record<string, ModelInfo[]>> {
     const results: Record<string, ModelInfo[]> = {};
     const availableProviders = (await this.getAvailableProviders()).filter(
-      (p) => p.fetchModels,
+      (p) => p.fetchModels
     );
     const fetchPromises = availableProviders.map(async (provider) => {
       const providerName = provider.name.toLowerCase();

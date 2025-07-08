@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { generateText, streamText, type LanguageModelV1 } from "ai";
 import { getModel, hasProvider } from "../src/providers";
 
@@ -9,7 +9,7 @@ async function demonstrateOpenRouterUsage() {
   // Note: "openrouter" is the correct provider name
   if (!hasProvider("openrouter")) {
     logger.error(
-      "OpenRouter provider is not available. Please check your OPEN_ROUTER_API_KEY environment variable.",
+      "OpenRouter provider is not available. Please check your OPEN_ROUTER_API_KEY environment variable."
     );
     process.exit(1);
   }
@@ -77,7 +77,7 @@ async function demonstrateOpenRouterUsage() {
     // Cast model to proper type
     const model = getModel(
       "openrouter",
-      "anthropic/claude-3.5-sonnet",
+      "anthropic/claude-3.5-sonnet"
     ) as LanguageModelV1;
 
     const { textStream } = await streamText({
@@ -93,7 +93,7 @@ async function demonstrateOpenRouterUsage() {
     }
 
     logger.info(
-      `\n✅ Streaming completed. Total length: ${fullResponse.length} characters`,
+      `\n✅ Streaming completed. Total length: ${fullResponse.length} characters`
     );
   } catch (error) {
     logger.error("❌ Streaming test failed:", {
@@ -108,7 +108,7 @@ async function demonstrateOpenRouterUsage() {
     // Cast model to proper type
     const model = getModel(
       "openrouter",
-      "deepseek/deepseek-r1-0528:free",
+      "deepseek/deepseek-r1-0528:free"
     ) as LanguageModelV1;
 
     const result = await generateText({
@@ -131,7 +131,7 @@ async function demonstrateOpenRouterUsage() {
     // Cast model to proper type
     const model = getModel(
       "openrouter",
-      "invalid/model-name",
+      "invalid/model-name"
     ) as LanguageModelV1;
 
     await generateText({
@@ -142,7 +142,7 @@ async function demonstrateOpenRouterUsage() {
   } catch (error) {
     logger.info("✅ Correctly caught error for invalid model:");
     logger.info(
-      `   ${error instanceof Error ? error.message : "Unknown error"}`,
+      `   ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 

@@ -2,7 +2,7 @@
 
 import type React from "react";
 import styled from "styled-components";
-import type { ExecutedCommand } from "@apk/core";
+import type { ExecutedCommand } from "@chara-codes/core";
 
 interface CommandTerminalProps {
   commands: ExecutedCommand[];

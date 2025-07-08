@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { LogLevel, logger } from "@apk/logger";
+import { LogLevel, logger } from "@chara-codes/logger";
 import type { ServerWebSocket } from "bun";
 import { initAgent } from "./agents";
 import {
@@ -36,7 +36,7 @@ let activeRunnerProcessId: string | null = null;
 
 export async function initializeCharaConfig(
   charaConfigFile = ".chara.json",
-  model = "deepseek:::deepseek-chat",
+  model = "deepseek:::deepseek-chat"
 ) {
   if (!(await Bun.file(charaConfigFile).exists())) {
     await initialize();
@@ -116,7 +116,7 @@ function validateServerOptions(options: StartServerOptions): void {
 
   if (options.runner?.cwd && !existsSync(options.runner.cwd)) {
     throw new Error(
-      `Runner working directory does not exist: ${options.runner.cwd}`,
+      `Runner working directory does not exist: ${options.runner.cwd}`
     );
   }
 }
@@ -193,14 +193,14 @@ function createServerConfig(config: {
       open(ws: any) {
         wsClients.add(ws);
         logger.debug(
-          `WebSocket client connected. Total clients: ${wsClients.size}`,
+          `WebSocket client connected. Total clients: ${wsClients.size}`
         );
       },
 
       close(ws: any) {
         wsClients.delete(ws);
         logger.debug(
-          `WebSocket client disconnected. Total clients: ${wsClients.size}`,
+          `WebSocket client disconnected. Total clients: ${wsClients.size}`
         );
       },
 
@@ -220,7 +220,7 @@ function createServerConfig(config: {
  * @returns Promise that resolves to a ServerInstance with control methods
  */
 export async function startServer(
-  options: StartServerOptions = {},
+  options: StartServerOptions = {}
 ): Promise<ServerInstance> {
   // initialize providers
   await initialize();
@@ -297,12 +297,14 @@ export async function startServer(
         const mcpTools = mcpWrapper.getToolsSync();
         const mcpCount = Object.keys(mcpTools).length;
         logger.debug(
-          `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${localCount + mcpCount} total`,
+          `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${
+            localCount + mcpCount
+          } total`
         );
       } catch (error: any) {
         logger.warning(
           "⚠️ MCP initialization failed, continuing with local tools only:",
-          error.message,
+          error.message
         );
       }
     } else {
@@ -313,7 +315,7 @@ export async function startServer(
 
       // Show initial tool status
       logger.debug(
-        `📦 Starting with ${localCount} local tools (MCP loading in background)`,
+        `📦 Starting with ${localCount} local tools (MCP loading in background)`
       );
 
       // Log when MCP is fully ready (don't wait for it)
@@ -323,13 +325,15 @@ export async function startServer(
           const mcpTools = mcpWrapper.getToolsSync();
           const mcpCount = Object.keys(mcpTools).length;
           logger.debug(
-            `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${localCount + mcpCount} total`,
+            `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${
+              localCount + mcpCount
+            } total`
           );
         })
         .catch((error: any) => {
           logger.warning(
             "⚠️ MCP initialization failed, continuing with local tools only:",
-            error.message,
+            error.message
           );
         });
     }
@@ -358,7 +362,7 @@ export async function startServer(
 
   if (websocket.enabled) {
     logger.debug(
-      `🔌 WebSocket server ready at ws://localhost:${server.port}${websocket.endpoint}`,
+      `🔌 WebSocket server ready at ws://localhost:${server.port}${websocket.endpoint}`
     );
   }
 
@@ -368,7 +372,9 @@ export async function startServer(
 
   if (mcp.enabled) {
     logger.debug(
-      `🔧 MCP service ${mcp.initializeSync ? "initialized" : "initializing in background"}`,
+      `🔧 MCP service ${
+        mcp.initializeSync ? "initialized" : "initializing in background"
+      }`
     );
   }
 

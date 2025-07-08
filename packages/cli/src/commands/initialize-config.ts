@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import type { CommandModule } from "yargs";
 import type { InitializeConfigActionOptions } from "../actions";
 import { ActionFactory } from "../actions";
@@ -13,7 +13,8 @@ export const initializeConfigCommand: CommandModule<
   InitializeConfigCommandArgs
 > = {
   command: "initialize-config",
-  describe: "Initialize Chara configuration with default model from global config",
+  describe:
+    "Initialize Chara configuration with default model from global config",
   builder: (yargs) =>
     yargs
       .option("config-file", {
@@ -30,10 +31,13 @@ export const initializeConfigCommand: CommandModule<
       }),
   handler: async (argv) => {
     try {
-      await ActionFactory.execute<InitializeConfigActionOptions>("initialize-config", {
-        configFile: argv.configFile,
-        verbose: argv.verbose,
-      });
+      await ActionFactory.execute<InitializeConfigActionOptions>(
+        "initialize-config",
+        {
+          configFile: argv.configFile,
+          verbose: argv.verbose,
+        }
+      );
     } catch (error) {
       logger.error("Failed to initialize configuration:");
       logger.error((error as Error).message);

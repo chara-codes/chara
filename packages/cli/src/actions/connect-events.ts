@@ -1,17 +1,17 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import {
   createTRPCProxyClient,
   createWSClient,
   wsLink,
   loggerLink,
 } from "@trpc/client";
-import type { AppRouter } from "@apk/server";
+import type { AppRouter } from "@chara-codes/server";
 import { applyInstructions } from "../instructions/apply-instructions";
 import superjson from "superjson";
 import type { ConnectEventsActionOptions } from "./types";
 
 export async function connectEventsAction(
-  options: ConnectEventsActionOptions = {},
+  options: ConnectEventsActionOptions = {}
 ): Promise<void> {
   if (options.verbose) {
     logger.debug("Connecting to server events via WebSocket...");
@@ -73,7 +73,7 @@ export async function connectEventsAction(
     logger.error("Failed to connect to server events:");
     logger.error((error as Error).message);
     throw new Error(
-      `Failed to connect to server events: ${(error as Error).message}`,
+      `Failed to connect to server events: ${(error as Error).message}`
     );
   }
 }

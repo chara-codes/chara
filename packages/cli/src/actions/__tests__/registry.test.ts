@@ -21,7 +21,7 @@ import {
   mock,
   spyOn,
 } from "bun:test";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 
 // Mock the logger first
 const mockLogger = {
@@ -32,7 +32,7 @@ const mockLogger = {
   setLevel: mock(() => {}),
 };
 
-mock.module("@apk/logger", () => ({
+mock.module("@chara-codes/logger", () => ({
   logger: mockLogger,
 }));
 
@@ -131,7 +131,7 @@ describe("Action Registry", () => {
 
       expect(initAction?.name).toBe("init");
       expect(initAction?.description).toBe(
-        "Initialize Chara configuration with AI provider settings",
+        "Initialize Chara configuration with AI provider settings"
       );
       expect(initAction?.execute).toBeDefined();
     });
@@ -171,7 +171,7 @@ describe("Action Registry", () => {
         ActionFactory.execute<InitActionOptions>("init", {
           force: true,
           verbose: false,
-        }),
+        })
       ).resolves.toBeUndefined();
 
       expect(mockInitAction).toHaveBeenCalledTimes(1);
@@ -186,7 +186,7 @@ describe("Action Registry", () => {
         ActionFactory.execute<ResetActionOptions>("reset", {
           confirm: true,
           verbose: false,
-        }),
+        })
       ).resolves.toBeUndefined();
 
       expect(mockResetAction).toHaveBeenCalledTimes(1);
@@ -201,7 +201,7 @@ describe("Action Registry", () => {
         ActionFactory.execute<ShowActionOptions>("show", {
           format: "table",
           verbose: false,
-        }),
+        })
       ).resolves.toBeUndefined();
 
       expect(mockShowAction).toHaveBeenCalledTimes(1);
@@ -219,7 +219,7 @@ describe("Action Registry", () => {
       // Should log debug information due to withLogging enhancer
       expect(mockLogger.debug).toHaveBeenCalledWith("Starting action: init");
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        expect.stringMatching(/Action "init" completed in \d+ms/),
+        expect.stringMatching(/Action "init" completed in \d+ms/)
       );
     });
 
@@ -227,12 +227,12 @@ describe("Action Registry", () => {
       await expect(
         ActionFactory.execute<InitActionOptions>("init", {
           shouldFail: true,
-        }),
+        })
       ).rejects.toThrow("Init action failed");
 
       // Should log error due to withErrorHandling enhancer
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Action failed: Init action failed",
+        "Action failed: Init action failed"
       );
     });
   });
@@ -242,11 +242,11 @@ describe("Action Registry", () => {
       await expect(
         ActionFactory.execute<ResetActionOptions>("reset", {
           shouldFail: true,
-        }),
+        })
       ).rejects.toThrow("Reset action failed");
 
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Action failed: Reset action failed",
+        "Action failed: Reset action failed"
       );
     });
 
@@ -257,7 +257,7 @@ describe("Action Registry", () => {
 
       expect(mockLogger.debug).toHaveBeenCalledWith("Starting action: show");
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        expect.stringMatching(/Action "show" completed in \d+ms/),
+        expect.stringMatching(/Action "show" completed in \d+ms/)
       );
     });
 
@@ -268,7 +268,7 @@ describe("Action Registry", () => {
 
       // Should not log start/completion messages in non-verbose mode
       expect(mockLogger.debug).not.toHaveBeenCalledWith(
-        "Starting action: show",
+        "Starting action: show"
       );
     });
 
@@ -278,7 +278,7 @@ describe("Action Registry", () => {
         ActionFactory.execute<InitActionOptions>("init", {
           shouldFail: true,
           verbose: true,
-        }),
+        })
       ).rejects.toThrow("Init action failed");
 
       // Should log start due to withLogging
@@ -286,12 +286,12 @@ describe("Action Registry", () => {
 
       // Should log failure due to withLogging
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        expect.stringMatching(/Action "init" failed after \d+ms/),
+        expect.stringMatching(/Action "init" failed after \d+ms/)
       );
 
       // Should log error due to withErrorHandling
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Action failed: Init action failed",
+        "Action failed: Init action failed"
       );
     });
   });
@@ -404,7 +404,7 @@ describe("Action Registry", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Action failed with unknown error:",
-        { code: 500, message: "Custom error object" },
+        { code: 500, message: "Custom error object" }
       );
     });
 
@@ -414,12 +414,12 @@ describe("Action Registry", () => {
       });
 
       await expect(ActionFactory.execute("reset")).rejects.toBe(
-        "String error message",
+        "String error message"
       );
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Action failed with unknown error:",
-        "String error message",
+        "String error message"
       );
     });
 
@@ -432,7 +432,7 @@ describe("Action Registry", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Action failed with unknown error:",
-        null,
+        null
       );
     });
 
@@ -447,7 +447,7 @@ describe("Action Registry", () => {
 
       expect(endTime - startTime).toBeGreaterThanOrEqual(100);
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        expect.stringMatching(/Action "init" completed in \d+ms/),
+        expect.stringMatching(/Action "init" completed in \d+ms/)
       );
     });
   });
@@ -547,20 +547,20 @@ describe("Action Registry", () => {
       const actionMap = new Map(actions.map((action) => [action.name, action]));
 
       expect(actionMap.get("init")?.description).toBe(
-        "Initialize Chara configuration with AI provider settings",
+        "Initialize Chara configuration with AI provider settings"
       );
       expect(actionMap.get("reset")?.description).toBe(
-        "Reset/clear all configuration",
+        "Reset/clear all configuration"
       );
       expect(actionMap.get("show")?.description).toBe(
-        "Show current configuration",
+        "Show current configuration"
       );
     });
 
     test("should have all required actions registered", () => {
       const requiredActions = ["init", "reset", "show"];
       const registeredActions = ActionFactory.getAll().map(
-        (action) => action.name,
+        (action) => action.name
       );
 
       for (const requiredAction of requiredActions) {

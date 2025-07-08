@@ -18,7 +18,7 @@ import {
   useNavigateToTerminal, // Import the terminal navigation hook
   useCurrentScreen,
   Screen,
-} from "@apk/core";
+} from "@chara-codes/core";
 import type { Theme } from "@/theme";
 // Define Theme interface locally to avoid dependency issues
 

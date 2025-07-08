@@ -1,5 +1,5 @@
 import { fetchAllModels } from "../providers";
-import { getModelsWhitelist, type ModelConfig } from "@apk/settings";
+import { getModelsWhitelist, type ModelConfig } from "@chara-codes/settings";
 
 export const modelsController = {
   async getModels(req: Request) {
@@ -17,7 +17,7 @@ export const modelsController = {
         // Fallback to legacy whitelist if settings unavailable
         console.warn(
           "Failed to load models whitelist from settings, using legacy whitelist:",
-          error,
+          error
         );
         whitelistIds = new Set();
       }
@@ -45,7 +45,7 @@ export const modelsController = {
           .map((model) => {
             // Find whitelist model for enhanced metadata
             const whitelistModel = whitelistedModels.find(
-              (w) => w.id === model.id,
+              (w) => w.id === model.id
             );
 
             return {
@@ -62,7 +62,7 @@ export const modelsController = {
                   approved: whitelistModel.approved,
                 }),
             };
-          }),
+          })
       );
 
       return Response.json(
@@ -74,7 +74,7 @@ export const modelsController = {
               "GET, POST, PUT, DELETE, PATCH, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type",
           },
-        },
+        }
       );
     } catch (error) {
       return Response.json(
@@ -82,7 +82,7 @@ export const modelsController = {
           error: "Failed to fetch models",
           message: error instanceof Error ? error.message : "Unknown error",
         },
-        { status: 500 },
+        { status: 500 }
       );
     }
   },

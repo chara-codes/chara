@@ -1,4 +1,4 @@
-# @chara/settings
+# @chara-codes/settings
 
 A comprehensive utility package for managing different types of settings in the Chara CLI ecosystem, including global configuration and environment management.
 
@@ -14,7 +14,7 @@ A comprehensive utility package for managing different types of settings in the 
 ## Installation
 
 ```bash
-bun install @chara/settings
+bun install @chara-codes/settings
 ```
 
 ## Usage
@@ -24,7 +24,7 @@ bun install @chara/settings
 The `env` utility provides a consistent interface for accessing environment variables and system information:
 
 ```typescript
-import { env } from "@chara/settings";
+import { env } from "@chara-codes/settings";
 
 const environment = env();
 console.log(environment.homeDir);   // User's home directory (cross-platform)
@@ -43,7 +43,7 @@ import {
   removeGlobalConfig,
   getPathToGlobalConfig,
   getVarFromEnvOrGlobalConfig
-} from "@chara/settings";
+} from "@chara-codes/settings";
 
 // Check if config exists
 const configExists = await existsGlobalConfig();
@@ -100,7 +100,7 @@ import {
   resetModelsWhitelist,
   DEFAULT_MODELS_WHITELIST,
   ModelConfig
-} from "@chara/settings";
+} from "@chara-codes/settings";
 
 // Get current models whitelist (default + custom)
 const models = await getModelsWhitelist();
@@ -253,7 +253,7 @@ This package is built with TypeScript and provides full type definitions. All fu
 
 ### Version 0.1.0 - Models Whitelist Management
 
-This release adds comprehensive AI models whitelist management functionality to the @chara/settings package:
+This release adds comprehensive AI models whitelist management functionality to the @chara-codes/settings package:
 
 #### New Features
 - **Default Models Whitelist**: Curated list of 35+ high-quality AI models from major providers

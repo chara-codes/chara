@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import type {
   ModelInfo,
   OpenAIModelsResponse,
@@ -14,7 +14,7 @@ import type {
   DeepSeekModelsResponse,
   DeepSeekModel,
 } from "./types";
-import { getVarFromEnvOrGlobalConfig } from "@apk/settings";
+import { getVarFromEnvOrGlobalConfig } from "@chara-codes/settings";
 
 /**
  * Utilities for fetching models from different providers
@@ -28,12 +28,12 @@ export namespace ModelFetcher {
    */
   function withTimeout<T>(
     fetchPromise: Promise<T>,
-    timeoutMs: number = 3000,
+    timeoutMs: number = 3000
   ): Promise<T> {
     return Promise.race([
       fetchPromise,
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Request timeout")), timeoutMs),
+        setTimeout(() => reject(new Error("Request timeout")), timeoutMs)
       ),
     ]);
   }
@@ -50,7 +50,7 @@ export namespace ModelFetcher {
     error: unknown,
     provider: string,
     url: string,
-    additionalSuggestion?: string,
+    additionalSuggestion?: string
   ): ModelInfo[] {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
@@ -69,7 +69,7 @@ export namespace ModelFetcher {
         url,
         error: errorMessage,
         ...(isTimeout && { suggestion }),
-      },
+      }
     );
     return [];
   }
@@ -83,15 +83,17 @@ export namespace ModelFetcher {
       const response = await withTimeout(
         fetch("https://api.openai.com/v1/models", {
           headers: {
-            Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("OPENAI_API_KEY")}`,
+            Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig(
+              "OPENAI_API_KEY"
+            )}`,
             "Content-Type": "application/json",
           },
-        }),
+        })
       );
 
       if (!response.ok) {
         throw new Error(
-          `OpenAI API error: ${response.status} ${response.statusText}`,
+          `OpenAI API error: ${response.status} ${response.statusText}`
         );
       }
 
@@ -106,7 +108,7 @@ export namespace ModelFetcher {
       return handleFetchError(
         error,
         "OpenAI",
-        "https://api.openai.com/v1/models",
+        "https://api.openai.com/v1/models"
       );
     }
   }
@@ -120,15 +122,17 @@ export namespace ModelFetcher {
       const response = await withTimeout(
         fetch("https://openrouter.ai/api/v1/models", {
           headers: {
-            Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("OPEN_ROUTER_API_KEY")}`,
+            Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig(
+              "OPEN_ROUTER_API_KEY"
+            )}`,
             "Content-Type": "application/json",
           },
-        }),
+        })
       );
 
       if (!response.ok) {
         throw new Error(
-          `OpenRouter API error: ${response.status} ${response.statusText}`,
+          `OpenRouter API error: ${response.status} ${response.statusText}`
         );
       }
 
@@ -144,7 +148,7 @@ export namespace ModelFetcher {
       return handleFetchError(
         error,
         "OpenRouter",
-        "https://openrouter.ai/api/v1/models",
+        "https://openrouter.ai/api/v1/models"
       );
     }
   }
@@ -155,7 +159,7 @@ export namespace ModelFetcher {
    * @returns Array of Ollama models or fallback models if API fails
    */
   export async function fetchOllamaModels(
-    baseUrl = "http://localhost:11434",
+    baseUrl = "http://localhost:11434"
   ): Promise<ModelInfo[]> {
     try {
       const response = await withTimeout(
@@ -163,12 +167,12 @@ export namespace ModelFetcher {
           headers: {
             "Content-Type": "application/json",
           },
-        }),
+        })
       );
 
       if (!response.ok) {
         throw new Error(
-          `Ollama API error: ${response.status} ${response.statusText}`,
+          `Ollama API error: ${response.status} ${response.statusText}`
         );
       }
 
@@ -183,7 +187,7 @@ export namespace ModelFetcher {
         error,
         "Ollama",
         `${baseUrl}/api/tags`,
-        "Ensure Ollama server is running",
+        "Ensure Ollama server is running"
       );
     }
   }
@@ -194,7 +198,7 @@ export namespace ModelFetcher {
    * @returns Array of LMStudio models or fallback models if API fails
    */
   export async function fetchLMStudioModels(
-    baseUrl = "http://localhost:1234/v1",
+    baseUrl = "http://localhost:1234/v1"
   ): Promise<ModelInfo[]> {
     try {
       const response = await withTimeout(
@@ -202,12 +206,12 @@ export namespace ModelFetcher {
           headers: {
             "Content-Type": "application/json",
           },
-        }),
+        })
       );
 
       if (!response.ok) {
         throw new Error(
-          `LMStudio API error: ${response.status} ${response.statusText}`,
+          `LMStudio API error: ${response.status} ${response.statusText}`
         );
       }
 
@@ -225,7 +229,7 @@ export namespace ModelFetcher {
         error,
         "LMStudio",
         `${baseUrl}/models`,
-        "Ensure LMStudio server is running",
+        "Ensure LMStudio server is running"
       );
     }
   }
@@ -244,12 +248,12 @@ export namespace ModelFetcher {
             "Api-Key": `${await getVarFromEnvOrGlobalConfig("DIAL_API_KEY")}`,
             "Content-Type": "application/json",
           },
-        }),
+        })
       );
 
       if (!response.ok) {
         throw new Error(
-          `DIAL API error: ${response.status} ${response.statusText}`,
+          `DIAL API error: ${response.status} ${response.statusText}`
         );
       }
 
@@ -274,16 +278,18 @@ export namespace ModelFetcher {
       const response = await withTimeout(
         fetch("https://api.anthropic.com/v1/models", {
           headers: {
-            "x-api-key": `${await getVarFromEnvOrGlobalConfig("ANTHROPIC_API_KEY")}`,
+            "x-api-key": `${await getVarFromEnvOrGlobalConfig(
+              "ANTHROPIC_API_KEY"
+            )}`,
             "Content-Type": "application/json",
             "anthropic-version": "2023-06-01",
           },
-        }),
+        })
       );
 
       if (!response.ok) {
         throw new Error(
-          `Anthropic API error: ${response.status} ${response.statusText}`,
+          `Anthropic API error: ${response.status} ${response.statusText}`
         );
       }
 
@@ -297,7 +303,7 @@ export namespace ModelFetcher {
       return handleFetchError(
         error,
         "Anthropic",
-        "https://api.anthropic.com/v1/models",
+        "https://api.anthropic.com/v1/models"
       );
     }
   }
@@ -311,15 +317,17 @@ export namespace ModelFetcher {
       const response = await withTimeout(
         fetch("https://api.deepseek.com/v1/models", {
           headers: {
-            Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig("DEEPSEEK_API_KEY")}`,
+            Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig(
+              "DEEPSEEK_API_KEY"
+            )}`,
             "Content-Type": "application/json",
           },
-        }),
+        })
       );
 
       if (!response.ok) {
         throw new Error(
-          `DeepSeek API error: ${response.status} ${response.statusText}`,
+          `DeepSeek API error: ${response.status} ${response.statusText}`
         );
       }
 
@@ -338,7 +346,7 @@ export namespace ModelFetcher {
       return handleFetchError(
         error,
         "DeepSeek",
-        "https://api.deepseek.com/v1/models",
+        "https://api.deepseek.com/v1/models"
       );
     }
   }
@@ -351,26 +359,28 @@ export namespace ModelFetcher {
     try {
       const response = await withTimeout(
         fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models?key=${await getVarFromEnvOrGlobalConfig("GOOGLE_GENERATIVE_AI_API_KEY")}`,
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${await getVarFromEnvOrGlobalConfig(
+            "GOOGLE_GENERATIVE_AI_API_KEY"
+          )}`,
           {
             headers: {
               "Content-Type": "application/json",
             },
             method: "GET",
-          },
-        ),
+          }
+        )
       );
 
       if (!response.ok) {
         throw new Error(
-          `Google API error: ${response.status} ${response.statusText}`,
+          `Google API error: ${response.status} ${response.statusText}`
         );
       }
 
       const data = (await response.json()) as GoogleModelsResponse;
       return data.models
         .filter((model: GoogleModel) =>
-          model.supportedGenerationMethods?.includes("generateContent"),
+          model.supportedGenerationMethods?.includes("generateContent")
         )
         .map((model: GoogleModel) => ({
           id: model.name,
@@ -382,7 +392,9 @@ export namespace ModelFetcher {
       return handleFetchError(
         error,
         "Google",
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${await getVarFromEnvOrGlobalConfig("GOOGLE_GENERATIVE_AI_API_KEY")}`,
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${await getVarFromEnvOrGlobalConfig(
+          "GOOGLE_GENERATIVE_AI_API_KEY"
+        )}`
       );
     }
   }
@@ -395,7 +407,7 @@ export namespace ModelFetcher {
    */
   export async function fetchModelsForProvider(
     providerName: string,
-    fetchFunction: () => Promise<ModelInfo[]>,
+    fetchFunction: () => Promise<ModelInfo[]>
   ): Promise<ModelInfo[]> {
     try {
       return await fetchFunction();
@@ -404,7 +416,9 @@ export namespace ModelFetcher {
         error: error instanceof Error ? error.message : "Unknown error",
       });
       throw new Error(
-        `Failed to fetch models for ${providerName}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to fetch models for ${providerName}: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
       );
     }
   }

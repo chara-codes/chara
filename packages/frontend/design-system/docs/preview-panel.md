@@ -10,7 +10,7 @@ The `PreviewPanel` organism provides a unified interface for displaying differen
 
 ```tsx
 import React, { useState } from 'react';
-import { PreviewPanel, PreviewType } from '@chara/design-system';
+import { PreviewPanel, PreviewType } from '@chara-codes/design-system';
 
 const MyComponent = () => {
   const [activePreviewType, setActivePreviewType] = useState<PreviewType>(
@@ -91,12 +91,12 @@ If migrating from the old inline preview implementation:
 1. Replace inline `renderPreviewContent()` logic with `<PreviewPanel />`
 2. Replace separate `<PreviewToolbar />` usage with the integrated toolbar
 3. Remove custom styled components that are now included in the organism
-4. Update imports to use `PreviewPanel` from `@chara/design-system`
+4. Update imports to use `PreviewPanel` from `@chara-codes/design-system`
 
 ## Dependencies
 
 - React
 - styled-components
-- @chara/design-system theme system
+- @chara-codes/design-system theme system
 - PreviewToolbar molecule
 - Various icon components

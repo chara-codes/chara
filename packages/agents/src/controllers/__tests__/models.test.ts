@@ -1,7 +1,7 @@
 /**
  * Unit tests for models controller with settings integration
  *
- * Tests the integration between the models controller and the @apk/settings
+ * Tests the integration between the models controller and the @chara-codes/settings
  * whitelist functionality, ensuring that:
  * - Models are properly filtered using the dynamic whitelist
  * - Enhanced fields from whitelist are included in responses
@@ -193,7 +193,7 @@ describe("Models Controller Error Handling", () => {
     expect(corsHeaders["Access-Control-Allow-Origin"]).toBe("*");
     expect(corsHeaders["Access-Control-Allow-Methods"]).toContain("GET");
     expect(corsHeaders["Access-Control-Allow-Headers"]).toContain(
-      "Content-Type",
+      "Content-Type"
     );
   });
 });

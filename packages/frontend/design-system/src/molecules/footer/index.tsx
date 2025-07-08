@@ -22,7 +22,7 @@ import {
   ModelOptionContent,
 } from "./styles";
 import { getModelSourceType } from "./utils";
-import { useChatStore, useModelsStore } from "@apk/core";
+import { useChatStore, useModelsStore } from "@chara-codes/core";
 
 /**
  * Footer component with mode selector and model selector
@@ -55,22 +55,19 @@ const Footer: React.FC = () => {
   const otherModels = models.filter((model) => !model.recommended);
 
   // Group other models by provider
-  const groupedOtherModels = otherModels.reduce(
-    (acc, model) => {
-      if (!acc[model.provider]) {
-        acc[model.provider] = [];
-      }
-      acc[model.provider].push(model);
-      return acc;
-    },
-    {} as Record<string, typeof models>,
-  );
+  const groupedOtherModels = otherModels.reduce((acc, model) => {
+    if (!acc[model.provider]) {
+      acc[model.provider] = [];
+    }
+    acc[model.provider].push(model);
+    return acc;
+  }, {} as Record<string, typeof models>);
 
   // Filter recommended models based on search query (no provider grouping)
   const filteredRecommendedModels = recommendedModels.filter(
     (model) =>
       model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      model.provider.toLowerCase().includes(searchQuery.toLowerCase()),
+      model.provider.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Filter other models based on search query
@@ -80,7 +77,7 @@ const Footer: React.FC = () => {
       models: providerModels.filter(
         (model) =>
           model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          provider.toLowerCase().includes(searchQuery.toLowerCase()),
+          provider.toLowerCase().includes(searchQuery.toLowerCase())
       ),
     }))
     .filter((provider) => provider.models.length > 0);
@@ -172,7 +169,7 @@ const Footer: React.FC = () => {
                             <span>
                               <SourceBadge
                                 $sourceType={getModelSourceType(
-                                  modelOption.provider,
+                                  modelOption.provider
                                 )}
                               >
                                 {modelOption.provider}
@@ -201,7 +198,7 @@ const Footer: React.FC = () => {
                           <span>
                             <SourceBadge
                               $sourceType={getModelSourceType(
-                                modelOption.provider,
+                                modelOption.provider
                               )}
                             >
                               {modelOption.provider}

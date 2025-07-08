@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import styled from "styled-components";
 import ViewNavigation from "../molecules/view-navigation";
 import ChatHistory from "./chat-history";
-import type { Chat } from "@apk/core";
+import type { Chat } from "@chara-codes/core";
 
 const HistoryContainer = styled.div`
   display: flex;
@@ -43,7 +43,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({
     (chatId: string) => {
       onSelectChat(chatId);
     },
-    [onSelectChat],
+    [onSelectChat]
   );
 
   // Filter chats based on search query
@@ -56,8 +56,8 @@ const HistoryView: React.FC<HistoryViewProps> = ({
             chat.messages?.some((m) =>
               typeof m.content === "string"
                 ? m.content.toLowerCase().includes(searchQuery.toLowerCase())
-                : false,
-            ),
+                : false
+            )
         );
 
   return (

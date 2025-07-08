@@ -20,11 +20,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@apk/design-system": path.resolve(
+      "@chara-codes/design-system": path.resolve(
         __dirname,
-        "../frontend/design-system/src",
+        "../frontend/design-system/src"
       ),
-      "@apk/core": path.resolve(__dirname, "../frontend/core/src"),
+      "@chara-codes/core": path.resolve(__dirname, "../frontend/core/src"),
       // Add alias for design-system internal paths
       "@/theme": path.resolve(__dirname, "../frontend/design-system/src/theme"),
     },

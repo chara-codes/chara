@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { bold, cyan, green } from "picocolors";
 import type { CommandModule } from "yargs";
 import type { StartAgentsActionOptions } from "../actions";
@@ -100,7 +100,7 @@ export const startAgentsCommand: CommandModule<
         `${bold(green("✅ Server started successfully!"))}
 
 The Chara agents server is now running on port ${result.port}.${featuresText}
-Press Ctrl+C to stop the server.`,
+Press Ctrl+C to stop the server.`
       );
 
       // Keep the process running

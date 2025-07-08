@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import type { CommandModule } from "yargs";
 import type {
   DefaultModelActionOptions,
@@ -97,7 +97,7 @@ export const initCommand: CommandModule<
             port: 3031,
             serverUrl: `http://localhost:${result.port}`,
             verbose: argv.verbose,
-          },
+          }
         );
       } finally {
         // Clean up server

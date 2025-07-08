@@ -3,7 +3,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import styled from "styled-components";
-import type { FileDiff as FileDiffType } from "@apk/core";
+import type { FileDiff as FileDiffType } from "@chara-codes/core";
 import { CloseIcon } from "../atoms/icons/close-icon";
 import { ArrowLeftIcon } from "../atoms/icons/arrow-left-icon";
 import { UndoIcon, FileIcon } from "../atoms";

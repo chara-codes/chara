@@ -1,5 +1,5 @@
 import { generateText, streamText } from "ai";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import {
   providersRegistry,
   getModel,
@@ -24,14 +24,14 @@ async function demonstrateProvidersRegistry() {
 
   if (availableProviders.length === 0) {
     logger.error(
-      "No providers available. Please check your environment variables.",
+      "No providers available. Please check your environment variables."
     );
     return;
   }
 
   // 2. Provider information
   logger.info(
-    "🤖 Providers ready for use - specify model names when calling getModel()",
+    "🤖 Providers ready for use - specify model names when calling getModel()"
   );
 
   // 3. Check provider status
@@ -130,14 +130,14 @@ async function demonstrateProvidersRegistry() {
           providerName === "openai"
             ? "gpt-4o-mini"
             : providerName === "anthropic"
-              ? "claude-3-5-haiku-20241022"
-              : providerName === "google"
-                ? "gemini-1.5-flash"
-                : providerName === "mistral"
-                  ? "mistral-small-latest"
-                  : providerName === "groq"
-                    ? "llama-3.1-8b-instant"
-                    : "default-model";
+            ? "claude-3-5-haiku-20241022"
+            : providerName === "google"
+            ? "gemini-1.5-flash"
+            : providerName === "mistral"
+            ? "mistral-small-latest"
+            : providerName === "groq"
+            ? "llama-3.1-8b-instant"
+            : "default-model";
         const model = getModel(providerName, modelName);
 
         logger.info(`Using ${firstProvider.name} for streaming...`);
@@ -250,7 +250,7 @@ async function demonstrateModelFetching() {
     const gptModels = Object.entries(allModels).flatMap(([provider, models]) =>
       models
         .filter((m) => m.id.toLowerCase().includes("gpt"))
-        .map((m) => ({ provider, ...m })),
+        .map((m) => ({ provider, ...m }))
     );
 
     if (gptModels.length > 0) {
@@ -264,7 +264,7 @@ async function demonstrateModelFetching() {
       ([provider, models]) =>
         models
           .filter((m) => m.id.toLowerCase().includes("claude"))
-          .map((m) => ({ provider, ...m })),
+          .map((m) => ({ provider, ...m }))
     );
 
     if (claudeModels.length > 0) {
@@ -278,7 +278,7 @@ async function demonstrateModelFetching() {
       ([provider, models]) =>
         models
           .filter((m) => m.id.toLowerCase().includes("llama"))
-          .map((m) => ({ provider, ...m })),
+          .map((m) => ({ provider, ...m }))
     );
 
     if (llamaModels.length > 0) {
@@ -318,12 +318,12 @@ async function compareProviders() {
         providerName === "openai"
           ? "gpt-4o-mini"
           : providerName === "anthropic"
-            ? "claude-3-5-haiku-20241022"
-            : providerName === "google"
-              ? "gemini-1.5-flash"
-              : providerName === "mistral"
-                ? "mistral-small-latest"
-                : "default-model";
+          ? "claude-3-5-haiku-20241022"
+          : providerName === "google"
+          ? "gemini-1.5-flash"
+          : providerName === "mistral"
+          ? "mistral-small-latest"
+          : "default-model";
       const model = getModel(providerName, modelName);
 
       logger.info(`Testing ${provider.name}:`);
@@ -368,12 +368,12 @@ async function dynamicProviderSelection() {
           selectedProvider === "openai"
             ? "gpt-4o-mini"
             : selectedProvider === "anthropic"
-              ? "claude-3-5-haiku-20241022"
-              : selectedProvider === "mistral"
-                ? "mistral-small-latest"
-                : selectedProvider === "groq"
-                  ? "llama-3.1-8b-instant"
-                  : "default-model";
+            ? "claude-3-5-haiku-20241022"
+            : selectedProvider === "mistral"
+            ? "mistral-small-latest"
+            : selectedProvider === "groq"
+            ? "llama-3.1-8b-instant"
+            : "default-model";
         const model = getModel(selectedProvider, modelName);
         const result = await generateText({
           // biome-ignore lint/suspicious/noExplicitAny: <explanation>

@@ -127,7 +127,7 @@ const mockInitAction = mock(async (options?: any) => {
 
 ### Module Mocking
 Uses Bun's `mock.module()` to mock dependencies:
-- `@chara/logger`
+- `@chara-codes/logger`
 - Individual action modules
 - External dependencies
 

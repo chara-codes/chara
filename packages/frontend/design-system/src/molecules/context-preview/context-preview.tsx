@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import styled from "styled-components";
-import type { ContextItem } from "@apk/core";
+import type { ContextItem } from "@chara-codes/core";
 import type { Theme } from "../../theme/theme";
 
 export interface ContextPreviewProps {

@@ -50,7 +50,7 @@ interface StartServerOptions {
 ### Basic Usage (Default Configuration)
 
 ```typescript
-import { startServer } from '@chara/agents';
+import { startServer } from '@chara-codes/agents';
 
 // Start server with all default settings
 const serverInstance = await startServer();
@@ -62,7 +62,7 @@ await serverInstance.stop();
 ### Custom Configuration
 
 ```typescript
-import { startServer, LogLevel } from '@chara/agents';
+import { startServer, LogLevel } from '@chara-codes/agents';
 
 const serverInstance = await startServer({
   port: 8080,
@@ -86,7 +86,7 @@ const serverInstance = await startServer({
 ### Minimal Configuration (API-only server)
 
 ```typescript
-import { startServer } from '@chara/agents';
+import { startServer } from '@chara-codes/agents';
 
 // Start server with only API endpoints, no WebSocket or runner
 const serverInstance = await startServer({
@@ -99,7 +99,7 @@ const serverInstance = await startServer({
 ### Development Server with Custom Runner
 
 ```typescript
-import { startServer } from '@chara/agents';
+import { startServer } from '@chara-codes/agents';
 
 const serverInstance = await startServer({
   runner: {

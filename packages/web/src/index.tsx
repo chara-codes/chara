@@ -5,13 +5,13 @@ import {
   type Theme,
   theme,
   PreviewPanel,
-} from "@apk/design-system";
+} from "@chara-codes/design-system";
 import {
   UIStoreProvider,
   TrpcProvider,
   TechStacksProvider,
   Toaster,
-} from "@apk/core";
+} from "@chara-codes/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const WorkspaceContainer = styled.div`
@@ -79,10 +79,7 @@ export const CharaWeb = () => {
   // Calculate default width (30% of viewport with constraints)
   const defaultWidth = Math.max(
     280,
-    Math.min(
-      600,
-      typeof window !== "undefined" ? window.innerWidth * 0.3 : 320,
-    ),
+    Math.min(600, typeof window !== "undefined" ? window.innerWidth * 0.3 : 320)
   );
 
   // State for chat panel width
@@ -90,7 +87,7 @@ export const CharaWeb = () => {
 
   // State for active preview type
   const [activePreviewType, setActivePreviewType] = useState<PreviewType>(
-    PreviewType.APP,
+    PreviewType.APP
   );
 
   // State to track if we're currently resizing
@@ -110,7 +107,7 @@ export const CharaWeb = () => {
       };
       document.body.style.cursor = "col-resize";
     },
-    [chatWidth],
+    [chatWidth]
   );
 
   // Handle mouse move during resize
@@ -121,7 +118,7 @@ export const CharaWeb = () => {
       const deltaX = e.clientX - resizeInfo.current.startX;
       const newWidth = Math.max(
         280,
-        Math.min(600, resizeInfo.current.startWidth + deltaX),
+        Math.min(600, resizeInfo.current.startWidth + deltaX)
       );
       setChatWidth(newWidth);
     };

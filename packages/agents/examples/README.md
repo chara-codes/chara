@@ -232,7 +232,7 @@ To create your own examples:
    ```
 3. Use the logger for consistent output:
    ```typescript
-   import { logger } from '@chara/logger';
+   import { logger } from '@chara-codes/logger';
    ```
 4. Always specify model names when calling getModel():
    ```typescript

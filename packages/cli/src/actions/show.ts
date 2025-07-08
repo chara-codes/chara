@@ -1,7 +1,7 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { intro, outro } from "../utils/prompts";
 import { bold, cyan, green } from "picocolors";
-import { existsGlobalConfig, readGlobalConfig } from "@apk/settings";
+import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
 import {
   getConfiguredProviders,
   maskSensitiveValue,
@@ -10,7 +10,7 @@ import { PROVIDER_CONFIGS } from "../config/provider-configs";
 import type { ShowActionOptions } from "./types";
 
 export async function showAction(
-  options: ShowActionOptions = {},
+  options: ShowActionOptions = {}
 ): Promise<void> {
   if (options.verbose) {
     logger.setLevel("debug");
@@ -20,7 +20,7 @@ export async function showAction(
   const configExists = await existsGlobalConfig();
   if (!configExists) {
     logger.info(
-      "No configuration found. Run 'chara init' to set up your providers.",
+      "No configuration found. Run 'chara init' to set up your providers."
     );
     return;
   }

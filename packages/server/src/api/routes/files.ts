@@ -6,7 +6,7 @@ import { z } from "zod";
 import { ee } from "../../utils/event-emitter";
 import { resolveProjectPath } from "../../utils/file-utils";
 import { publicProcedure, router } from "../trpc";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 
 interface FileSystemEntry {
   name: string;

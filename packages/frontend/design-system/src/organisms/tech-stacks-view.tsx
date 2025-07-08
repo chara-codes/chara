@@ -24,8 +24,8 @@ import {
   TechStackDetail,
   useDeleteTechStackMutation,
   useDuplicateTechStackMutation,
-} from "@apk/core";
-import { useTechStacks } from "@apk/core";
+} from "@chara-codes/core";
+import { useTechStacks } from "@chara-codes/core";
 import Tooltip from "../atoms/tooltip";
 import { CopyIcon } from "lucide-react";
 import { ConfirmDialog } from "../molecules";
@@ -96,17 +96,13 @@ const TechStackCard = styled.div<{ $isNew?: boolean }>`
   border-radius: 8px;
   background-color: white;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   cursor: pointer;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow:
-      0 4px 6px rgba(0, 0, 0, 0.05),
-      0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
   ${(props) =>
@@ -271,17 +267,17 @@ const TechStacksView: React.FC = () => {
       e.stopPropagation(); // Prevent card click (which would navigate to detail view)
       navigateToEditTechStack(techStack.id);
     },
-    [navigateToEditTechStack],
+    [navigateToEditTechStack]
   );
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [stackToDelete, setStackToDelete] = useState<TechStackDetail | null>(
-    null,
+    null
   );
 
   const handleDeleteTechStack = (
     e: React.MouseEvent,
-    stack: TechStackDetail,
+    stack: TechStackDetail
   ) => {
     e.stopPropagation();
     setStackToDelete(stack);
@@ -296,7 +292,7 @@ const TechStacksView: React.FC = () => {
 
   const handleDuplicateTechStack = (
     e: React.MouseEvent,
-    stack: TechStackDetail,
+    stack: TechStackDetail
   ) => {
     e.stopPropagation();
     duplicateStack(stack.id);
@@ -313,7 +309,7 @@ const TechStacksView: React.FC = () => {
       (stack) =>
         stack.name.toLowerCase().includes(query) ||
         stack.description.toLowerCase().includes(query) ||
-        stack.category.toLowerCase().includes(query),
+        stack.category.toLowerCase().includes(query)
     );
   }, [searchQuery, techStacks]);
 
@@ -331,13 +327,10 @@ const TechStacksView: React.FC = () => {
     // Sort categories alphabetically
     return Object.keys(grouped)
       .sort()
-      .reduce(
-        (acc, category) => {
-          acc[category] = grouped[category];
-          return acc;
-        },
-        {} as Record<string, TechStackDetail[]>,
-      );
+      .reduce((acc, category) => {
+        acc[category] = grouped[category];
+        return acc;
+      }, {} as Record<string, TechStackDetail[]>);
   }, [filteredTechStacks]);
 
   // Create the Add Tech Stack button element

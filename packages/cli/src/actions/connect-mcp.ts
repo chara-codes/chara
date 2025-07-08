@@ -1,10 +1,10 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { prepareClients } from "../mcp/client";
 import type { ConnectMcpActionOptions } from "./types";
 import type { ActiveClient, MCPServer } from "../types";
 
 export async function connectMcpAction(
-  options: ConnectMcpActionOptions = {},
+  options: ConnectMcpActionOptions = {}
 ): Promise<ActiveClient[]> {
   if (options.verbose) {
     logger.debug("Connecting to MCP servers...");
@@ -17,7 +17,9 @@ export async function connectMcpAction(
     if (options.mcpServers && Object.keys(options.mcpServers).length > 0) {
       if (options.verbose) {
         logger.debug(
-          `Found ${Object.keys(options.mcpServers).length} MCP servers to connect to`,
+          `Found ${
+            Object.keys(options.mcpServers).length
+          } MCP servers to connect to`
         );
       }
 
@@ -40,7 +42,7 @@ export async function connectMcpAction(
     logger.error("Failed to connect to MCP servers:");
     logger.error((error as Error).message);
     throw new Error(
-      `Failed to connect to MCP servers: ${(error as Error).message}`,
+      `Failed to connect to MCP servers: ${(error as Error).message}`
     );
   }
 }

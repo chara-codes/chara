@@ -47,12 +47,12 @@ The action follows this priority order for model selection:
 
 ### Integration Points
 
-#### With Global Configuration (`@chara/settings`)
+#### With Global Configuration (`@chara-codes/settings`)
 - `existsGlobalConfig()`: Check if global config exists
 - `readGlobalConfig()`: Read the global configuration
 - Extracts `defaultModel` field from config
 
-#### With Agents Package (`@chara/agents`)
+#### With Agents Package (`@chara-codes/agents`)
 - `initialize()`: Initialize AI providers
 - `initializeCharaConfig()`: Create Chara configuration with specified model
 
@@ -208,9 +208,9 @@ chara dev
 
 ```json
 {
-  "@chara/agents": "workspace:*",
-  "@chara/logger": "workspace:*", 
-  "@chara/settings": "workspace:*"
+  "@chara-codes/agents": "workspace:*",
+  "@chara-codes/logger": "workspace:*",
+  "@chara-codes/settings": "workspace:*"
 }
 ```
 
@@ -225,7 +225,7 @@ chara dev
 ### For Users
 
 1. **Consistency**: Projects automatically use preferred model
-2. **Convenience**: No need to remember or specify model repeatedly  
+2. **Convenience**: No need to remember or specify model repeatedly
 3. **Flexibility**: Can still override with custom config files
 4. **Visibility**: Clear feedback about which model is being used
 

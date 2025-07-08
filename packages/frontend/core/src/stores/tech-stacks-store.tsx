@@ -5,7 +5,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { ReactNode, useEffect } from "react";
 import { trpc } from "../services";
-import type { StackDTO } from "@apk/server";
+import type { StackDTO } from "@chara-codes/server";
 import { toast } from "../components";
 import { Screen, useRoutingStore } from "./routing-store";
 
@@ -53,7 +53,7 @@ export const useTechStacksStore = create<TechStacksState>()(
       updateTechStack: (techStack: TechStackDetail) => {
         set((state) => ({
           techStacks: state.techStacks.map((stack) =>
-            stack.id === techStack.id ? techStack : stack,
+            stack.id === techStack.id ? techStack : stack
           ),
         }));
       },
@@ -72,8 +72,8 @@ export const useTechStacksStore = create<TechStacksState>()(
     }),
     {
       name: "tech-stacks-store",
-    },
-  ),
+    }
+  )
 );
 
 // Selector hooks for common use cases
@@ -108,7 +108,7 @@ export function useTechStacksData() {
       enabled: currentScreen === Screen.TECH_STACKS,
       select: (rows) => rows,
       initialData: [],
-    },
+    }
   );
 
   useEffect(() => {

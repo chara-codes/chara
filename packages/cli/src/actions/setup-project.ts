@@ -1,9 +1,9 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { resolve } from "path";
 import type { SetupProjectActionOptions } from "./types";
 
 export async function setupProjectAction(
-  options: SetupProjectActionOptions = {},
+  options: SetupProjectActionOptions = {}
 ): Promise<string> {
   // Resolve the project directory path
   const projectDir = resolve(options.projectDir || process.cwd());
@@ -26,7 +26,9 @@ export async function setupProjectAction(
     logger.error(`Failed to change to directory: ${projectDir}`);
     logger.error((error as Error).message);
     throw new Error(
-      `Failed to change to directory: ${projectDir}: ${(error as Error).message}`,
+      `Failed to change to directory: ${projectDir}: ${
+        (error as Error).message
+      }`
     );
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { formatFileSize, type ContextItem } from "@apk/core";
+import { formatFileSize, type ContextItem } from "@chara-codes/core";
 import type React from "react";
 import styled from "styled-components";
 import { ContextPreview } from "../context-preview";

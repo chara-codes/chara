@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { type CoreMessage, streamText } from "ai";
 import { providersRegistry } from "../providers";
 
@@ -10,7 +10,7 @@ export const beautifyAgent = async (
     model: string;
     messages: CoreMessage[];
   },
-  options: { headers?: Record<string, string> } = {},
+  options: { headers?: Record<string, string> } = {}
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");

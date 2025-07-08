@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../trpc";
 import { ee } from "../../utils/event-emitter";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 
 // Define the schema for action results
 const actionStatusSchema = z.enum(["success", "failure", "skipped"]);

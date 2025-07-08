@@ -22,7 +22,7 @@ const mockLogger = {
   setLevel: mock(() => {}),
 };
 
-mock.module("@apk/logger", () => ({
+mock.module("@chara-codes/logger", () => ({
   logger: mockLogger,
 }));
 
@@ -63,7 +63,7 @@ beforeEach(() => {
         return Promise.resolve();
       }
       return Promise.resolve();
-    },
+    }
   );
 
   mockStartAgentsAction.mockImplementation((options: any) => {
@@ -107,7 +107,7 @@ describe("Default Model Command", () => {
           return Promise.resolve();
         }
         return Promise.resolve();
-      },
+      }
     );
 
     mockStartAgentsAction.mockImplementation((options: any) => {
@@ -143,7 +143,7 @@ describe("Default Model Command", () => {
 
     test("should have correct description", () => {
       expect(defaultModelCommand.describe).toBe(
-        "Set default AI model for Chara Codes",
+        "Set default AI model for Chara Codes"
       );
     });
 
@@ -295,7 +295,7 @@ describe("Default Model Command", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Command failed:",
-        "Action execution failed",
+        "Action execution failed"
       );
       expect(mockProcessExit).toHaveBeenCalledWith(1);
       expect(mockStopAgentsAction).toHaveBeenCalledWith({
@@ -308,7 +308,7 @@ describe("Default Model Command", () => {
     test("should handle non-Error objects", async () => {
       const testError = "String error";
       mockActionFactory.execute.mockImplementation(() =>
-        Promise.reject(testError),
+        Promise.reject(testError)
       );
 
       const argv = {
@@ -327,7 +327,7 @@ describe("Default Model Command", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Command failed:",
-        "String error",
+        "String error"
       );
       expect(mockProcessExit).toHaveBeenCalledWith(1);
     });
@@ -454,8 +454,8 @@ describe("Default Model Command", () => {
       mockActionFactory.execute.mockImplementation(
         () =>
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout")), 100),
-          ),
+            setTimeout(() => reject(new Error("Timeout")), 100)
+          )
       );
 
       const argv = {
@@ -474,7 +474,7 @@ describe("Default Model Command", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Command failed:",
-        "Timeout",
+        "Timeout"
       );
     });
 
@@ -499,7 +499,7 @@ describe("Default Model Command", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Command failed:",
-        "startAgentsAction not available",
+        "startAgentsAction not available"
       );
       // When start-agents fails, server is undefined, so stop-agents is not called
       expect(mockStopAgentsAction).not.toHaveBeenCalled();

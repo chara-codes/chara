@@ -3,7 +3,7 @@
 import type React from "react";
 import styled from "styled-components";
 import { ContextItem as ContextItemComponent } from "../molecules/context-item";
-import type { ContextItem } from "@apk/core";
+import type { ContextItem } from "@chara-codes/core";
 
 interface ContextPanelProps {
   contextItems: ContextItem[];

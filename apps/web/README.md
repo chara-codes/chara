@@ -93,7 +93,7 @@ The interface can be resized by dragging the divider between the chat and previe
 
 This web package is designed to work with the following packages in the Chara workspace:
 
-- `@chara/server` - Backend server that powers the AI interactions
+- `@chara-codes/server` - Backend server that powers the AI interactions
 
 ## License
 

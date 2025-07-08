@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import EventEmitter from "eventemitter3";
 import type { TunnelClientOptions, RouteOptions, HttpRequestMessage, TunnelMessage, RedirectConfig } from "./types/client.types";
 import { WebSocketHandler } from "./client/websocket-handler";

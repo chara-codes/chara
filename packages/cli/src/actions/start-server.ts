@@ -1,8 +1,8 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { intro, spinner } from "../utils/prompts";
 import { bold, cyan } from "picocolors";
-import { existsGlobalConfig, readGlobalConfig } from "@apk/settings";
-import { startServer } from "@apk/server";
+import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
+import { startServer } from "@chara-codes/server";
 import type { StartServerActionOptions } from "./types";
 
 /**
@@ -29,7 +29,7 @@ import type { StartServerActionOptions } from "./types";
  * ```
  */
 export async function startServerAction(
-  options: StartServerActionOptions = {},
+  options: StartServerActionOptions = {}
 ): Promise<{ server: any; port: number }> {
   if (options.verbose) {
     logger.setLevel("debug");

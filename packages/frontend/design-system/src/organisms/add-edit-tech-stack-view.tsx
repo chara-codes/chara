@@ -20,7 +20,7 @@ import {
   useCreateTechStack,
   useGetTechStackById,
   useUpdateTechStack,
-} from "@apk/core";
+} from "@chara-codes/core";
 import {
   InputBase,
   TextAreaBase,
@@ -257,7 +257,7 @@ const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
 
   // JSON validation errors for MCP servers
   const [mcpJsonErrors, setMcpJsonErrors] = useState<Record<number, string>>(
-    {},
+    {}
   );
 
   // Initialize form with tech stack data in edit mode
@@ -287,7 +287,7 @@ const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
     (
       e: React.ChangeEvent<
         HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >,
+      >
     ) => {
       const { name, value } = e.target;
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -301,7 +301,7 @@ const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
         });
       }
     },
-    [errors],
+    [errors]
   );
 
   // Handle checkbox change
@@ -310,7 +310,7 @@ const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
       const { name, checked } = e.target;
       setFormData((prev) => ({ ...prev, [name]: checked }));
     },
-    [],
+    []
   );
 
   // Handle icon selection
@@ -334,7 +334,7 @@ const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
         return { ...prev, documentationLinks: links };
       });
     },
-    [],
+    []
   );
 
   // Add new documentation link
@@ -366,7 +366,7 @@ const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
         return { ...prev, mcpServers: servers };
       });
     },
-    [],
+    []
   );
 
   // Handle MCP server configuration change
@@ -398,7 +398,7 @@ const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
         }));
       }
     },
-    [mcpJsonErrors],
+    [mcpJsonErrors]
   );
 
   // Add new MCP server
@@ -430,7 +430,7 @@ const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
         });
       }
     },
-    [mcpJsonErrors],
+    [mcpJsonErrors]
   );
 
   // Validate form
@@ -476,10 +476,10 @@ const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
           icon: (formData.icon as TechStackDetail["icon"]) || iconOptions[0].id,
           isNew: formData.isNew || false,
           documentationLinks: (formData.documentationLinks || []).filter(
-            (link) => link.name || link.url,
+            (link) => link.name || link.url
           ),
           mcpServers: (formData.mcpServers || []).filter(
-            (server) => server.name,
+            (server) => server.name
           ),
         };
 
@@ -496,10 +496,10 @@ const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
           icon: formData.icon || iconOptions[0].id,
           isNew: formData.isNew || false,
           documentationLinks: (formData.documentationLinks || []).filter(
-            (link) => link.name || link.url,
+            (link) => link.name || link.url
           ),
           mcpServers: (formData.mcpServers || []).filter(
-            (server) => server.name,
+            (server) => server.name
           ),
         };
 
@@ -684,7 +684,7 @@ const AddEditTechStackView: React.FC<AddEditTechStackViewProps> = ({
                         handleDocLinkChange(
                           index,
                           "description",
-                          e.target.value,
+                          e.target.value
                         )
                       }
                       placeholder="Brief description of this resource"

@@ -5,7 +5,7 @@ import {
   findExistingChat,
   getHistoryAndPersist,
 } from "../../repos/chatRepo.ts";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 
 export const chatRouter = router({
   getHistory: publicProcedure
@@ -15,7 +15,7 @@ export const chatRouter = router({
         chatId: z.number().optional(),
         lastMessageId: z.string().nullable().optional(),
         limit: z.number().optional(),
-      }),
+      })
     )
     .query(async ({ input }) => {
       try {

@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import type { InitializationError, ProviderConfig } from "./types";
 
 /**
@@ -15,11 +15,11 @@ export abstract class BaseProviderInitializer {
    */
   protected validateApiKey(
     apiKey: string | undefined,
-    providerName: string,
+    providerName: string
   ): boolean {
     if (!apiKey || apiKey.trim() === "") {
       logger.debug(
-        `${providerName} API key not found or empty - skipping initialization`,
+        `${providerName} API key not found or empty - skipping initialization`
       );
       return false;
     }
@@ -35,7 +35,7 @@ export abstract class BaseProviderInitializer {
   protected logProviderStatus(
     provider: string,
     status: "success" | "failed",
-    error?: string,
+    error?: string
   ): void {
     if (status === "success") {
       logger.debug(`${provider} provider initialized successfully`);
@@ -56,7 +56,7 @@ export abstract class BaseProviderInitializer {
    */
   protected safeInitialize(
     providerName: string,
-    initFn: () => ProviderConfig,
+    initFn: () => ProviderConfig
   ): ProviderConfig | null {
     try {
       const config = initFn();
@@ -66,7 +66,7 @@ export abstract class BaseProviderInitializer {
       this.logProviderStatus(
         providerName,
         "failed",
-        error instanceof Error ? error.message : "Unknown error",
+        error instanceof Error ? error.message : "Unknown error"
       );
       return null;
     }

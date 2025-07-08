@@ -135,7 +135,7 @@ The Init Agent generates a `.chara.json` file with the following structure:
 
 ### Basic Usage
 ```typescript
-import { initAgent } from '@chara/agents';
+import { initAgent } from '@chara-codes/agents';
 
 const result = await initAgent({
   model: "openai:::gpt-4o-mini",
@@ -162,7 +162,7 @@ bun run init-agent models
 ### Integration with CLI
 ```typescript
 // In a CLI tool
-import { initAgent } from '@chara/agents';
+import { initAgent } from '@chara-codes/agents';
 
 async function initializeProject(projectPath: string) {
   const result = await initAgent({

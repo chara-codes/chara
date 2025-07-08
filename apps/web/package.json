@@ -1,5 +1,5 @@
 {
-  "name": "@chara/web-playground",
+  "name": "@chara-codes/web-playground",
   "version": "0.1.0",
   "scripts": {
     "dev": "next dev --turbopack",
@@ -8,7 +8,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@chara/server": "workspace:*",
+    "@chara-codes/server": "workspace:*",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",

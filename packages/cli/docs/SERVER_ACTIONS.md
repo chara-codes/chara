@@ -1,6 +1,6 @@
 # Server Actions Documentation
 
-This document describes the server actions available in the Chara CLI for starting and stopping the Chara server directly using the `@chara/server` package.
+This document describes the server actions available in the Chara CLI for starting and stopping the Chara server directly using the `@chara-codes/server` package.
 
 ## Overview
 
@@ -38,7 +38,7 @@ Promise<{ server: ServerManager; port: number }>
 #### Example
 
 ```typescript
-import { startServerAction } from '@chara/cli/actions';
+import { startServerAction } from '@chara-codes/cli/actions';
 
 // Start server with default options
 const { server, port } = await startServerAction({
@@ -79,7 +79,7 @@ Promise<void>
 #### Example
 
 ```typescript
-import { stopServerAction } from '@chara/cli/actions';
+import { stopServerAction } from '@chara-codes/cli/actions';
 
 // Graceful stop
 await stopServerAction({
@@ -100,7 +100,7 @@ await stopServerAction({
 ### Basic Server Lifecycle
 
 ```typescript
-import { startServerAction, stopServerAction } from '@chara/cli/actions';
+import { startServerAction, stopServerAction } from '@chara-codes/cli/actions';
 
 // Start the server
 const { server, port } = await startServerAction({
@@ -126,7 +126,7 @@ console.log('Server stopped');
 ### Error Handling
 
 ```typescript
-import { startServerAction, stopServerAction } from '@chara/cli/actions';
+import { startServerAction, stopServerAction } from '@chara-codes/cli/actions';
 
 try {
   const { server, port } = await startServerAction({
@@ -155,7 +155,7 @@ try {
 ### Using with Action Factory
 
 ```typescript
-import { ActionFactory } from '@chara/cli/actions';
+import { ActionFactory } from '@chara-codes/cli/actions';
 
 // Server actions are automatically registered when the registry module is imported
 // Use via factory
@@ -283,7 +283,7 @@ await startServerAction({
 
 | Feature | Server Actions | Agent Actions |
 |---------|----------------|---------------|
-| **Package** | `@chara/server` | `@chara/agents` |
+| **Package** | `@chara-codes/server` | `@chara-codes/agents` |
 | **Purpose** | Core server functionality | Agent-specific features |
 | **Default Port** | 3030 | 3031 |
 | **Registration** | Separate registry | Main registry |

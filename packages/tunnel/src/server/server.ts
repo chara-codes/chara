@@ -1,7 +1,11 @@
 import type { Server as BunServer } from "bun";
 import type { ServerWebSocket } from "bun";
-import { logger } from "@apk/logger";
-import type { ClientData, ClientMap, ServerConfig } from "../types/server.types";
+import { logger } from "@chara-codes/logger";
+import type {
+  ClientData,
+  ClientMap,
+  ServerConfig,
+} from "../types/server.types";
 import { handleHttpRequest } from "./handlers/http-handler";
 import { handleConnection } from "./handlers/connection-handler";
 import { handleOpen, handleMessage, handleClose } from "./handlers";
@@ -33,16 +37,16 @@ export class TunnelServer {
     logger.debug(`Root domain: ${domain}`);
     logger.debug(`Control domain: ${controlDomain}`);
     logger.debug(
-      `Server configuration: ${JSON.stringify(this.config, null, 2)}`,
+      `Server configuration: ${JSON.stringify(this.config, null, 2)}`
     );
 
     if (this.config.replacements && this.config.replacements.length > 0) {
       logger.debug(
-        `Text replacements configured: ${this.config.replacements.length} patterns`,
+        `Text replacements configured: ${this.config.replacements.length} patterns`
       );
       this.config.replacements.forEach((replacement, index) => {
         logger.debug(
-          `  ${index + 1}: ${replacement.pattern} → ${replacement.replacement}`,
+          `  ${index + 1}: ${replacement.pattern} → ${replacement.replacement}`
         );
       });
     }

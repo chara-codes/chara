@@ -129,7 +129,7 @@ All agents have access to the complete tool suite:
 ```typescript
 import { streamText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
-import { logger } from "@chara/logger";
+import { logger } from "@chara-codes/logger";
 import { tools } from "../tools";
 import { myPrompt } from "../prompts/my-prompt";
 

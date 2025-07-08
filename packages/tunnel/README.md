@@ -14,13 +14,13 @@ Chara Tunnel is a lightweight, easy-to-use tunneling service that exposes your l
 
 ```bash
 # Install globally
-bun add -g @chara/tunnel
+bun add -g @chara-codes/tunnel
 
 # Or use with bunx
-bunx @chara/tunnel [command]
+bunx @chara-codes/tunnel [command]
 
 # Or install locally
-bun add @chara/tunnel
+bun add @chara-codes/tunnel
 ```
 
 ## Usage
@@ -126,7 +126,7 @@ tunnel server --configFile config.json
 ## Programmatic Usage
 
 ```javascript
-import { TunnelClient, startServer } from '@chara/tunnel';
+import { TunnelClient, startServer } from '@chara-codes/tunnel';
 
 // Start a client
 const client = new TunnelClient({

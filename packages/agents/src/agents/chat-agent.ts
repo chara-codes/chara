@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { type CoreMessage, streamText } from "ai";
 import { mcpWrapper } from "../mcp/mcp-client";
 import { providersRegistry } from "../providers";
@@ -30,7 +30,7 @@ export const cleanMessages = (messages: CoreMessage[]): CoreMessage[] => {
       // Remove toolCall tags using regex
       const cleanedContent = message.content.replace(
         /\[toolCall:[^\]]+\]/g,
-        "",
+        ""
       );
       return {
         ...message,
@@ -60,7 +60,7 @@ export const chatAgent = async (
     mode: "write" | "ask";
     workingDir: string;
   },
-  options: { headers?: Record<string, string> } = {},
+  options: { headers?: Record<string, string> } = {}
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");
@@ -75,7 +75,7 @@ export const chatAgent = async (
   const mcpCount = Object.keys(mcpTools).length;
   const total = Object.keys(allTools).length;
   logger.debug(
-    `🔧 Using ${total} tools: ${localCount} local + ${mcpCount} MCP`,
+    `🔧 Using ${total} tools: ${localCount} local + ${mcpCount} MCP`
   );
 
   // Clean messages before sending to AI model to remove any toolCall tags

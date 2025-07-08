@@ -3,8 +3,8 @@
 import type React from "react";
 import { useState } from "react";
 import styled from "styled-components";
-import type { ContextItem as ContextItemType } from "@apk/core";
-import { formatFileSize } from "@apk/core";
+import type { ContextItem as ContextItemType } from "@chara-codes/core";
+import { formatFileSize } from "@chara-codes/core";
 import { ContextItemTooltip } from "../context-tooltip";
 import {
   FileIcon,

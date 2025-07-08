@@ -1,6 +1,6 @@
 import colors from "picocolors";
 import spinners from "cli-spinners";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 
 export interface StreamChunk {
   type: string;
@@ -30,7 +30,7 @@ const activeSpinners: Map<string, NodeJS.Timeout> = new Map();
  */
 export function logStreamChunk(
   chunk: StreamChunk,
-  options: LoggerOptions = {},
+  options: LoggerOptions = {}
 ): void {
   const opts = {
     showTimestamps: false,
@@ -68,7 +68,7 @@ export function logStreamChunk(
       default:
         if (!opts.compactMode) {
           console.log(
-            colors.gray(`${getPrefix(opts)}Unknown chunk type: ${chunk.type}`),
+            colors.gray(`${getPrefix(opts)}Unknown chunk type: ${chunk.type}`)
           );
         }
     }
@@ -82,7 +82,7 @@ export function logStreamChunk(
  */
 export function logStreamBuffer(
   buffer: string,
-  options: LoggerOptions = {},
+  options: LoggerOptions = {}
 ): void {
   const lines = buffer.split("\n").filter((line) => line.trim());
 
@@ -155,8 +155,10 @@ function handleStepStart(chunk: StreamChunk, opts: LoggerOptions): void {
           const preview = lastMessage.content.slice(0, 100);
           console.log(
             colors.dim(
-              `${opts.indent}💭 ${preview}${lastMessage.content.length > 100 ? "..." : ""}`,
-            ),
+              `${opts.indent}💭 ${preview}${
+                lastMessage.content.length > 100 ? "..." : ""
+              }`
+            )
           );
         }
       }
@@ -190,8 +192,8 @@ function handleStepFinish(chunk: StreamChunk, opts: LoggerOptions): void {
     const { promptTokens, completionTokens, totalTokens } = chunk.usage;
     console.log(
       colors.dim(
-        `${opts.indent}📊 Tokens: ${totalTokens} (${promptTokens} + ${completionTokens})`,
-      ),
+        `${opts.indent}📊 Tokens: ${totalTokens} (${promptTokens} + ${completionTokens})`
+      )
     );
   }
 
@@ -208,8 +210,10 @@ function handleToolCallStart(chunk: StreamChunk, opts: LoggerOptions): void {
   } else {
     console.log(
       colors.yellow(
-        `${opts.indent}${toolIcon} ${colors.bold(toolName)} ${colors.dim("(streaming...)")}`,
-      ),
+        `${opts.indent}${toolIcon} ${colors.bold(toolName)} ${colors.dim(
+          "(streaming...)"
+        )}`
+      )
     );
   }
 
@@ -235,7 +239,7 @@ function handleToolCall(chunk: StreamChunk, opts: LoggerOptions): void {
   if (!toolCallBuffer.has(chunk.toolCallId)) {
     // Complete tool call without streaming
     console.log(
-      colors.yellow(`${opts.indent}${toolIcon} ${colors.bold(toolName)}`),
+      colors.yellow(`${opts.indent}${toolIcon} ${colors.bold(toolName)}`)
     );
 
     if (opts.showToolDetails && chunk.args) {
@@ -258,8 +262,10 @@ function handleToolResult(chunk: StreamChunk, opts: LoggerOptions): void {
   // Show completed tool call with result
   console.log(
     colors.green(
-      `${opts.indent}${toolIcon} ${colors.bold(toolName)} ${colors.dim(`✓ (${duration}ms)`)}`,
-    ),
+      `${opts.indent}${toolIcon} ${colors.bold(toolName)} ${colors.dim(
+        `✓ (${duration}ms)`
+      )}`
+    )
   );
 
   if (opts.showToolDetails) {
@@ -305,26 +311,34 @@ function logToolArgs(toolName: string, args: any, opts: LoggerOptions): void {
     if (toolName === "read-file" && parsedArgs.path) {
       console.log(
         colors.dim(
-          `${opts.indent}${opts.indent}📄 Reading: ${colors.white(parsedArgs.path)}`,
-        ),
+          `${opts.indent}${opts.indent}📄 Reading: ${colors.white(
+            parsedArgs.path
+          )}`
+        )
       );
     } else if (toolName === "write-file" && parsedArgs.path) {
       console.log(
         colors.dim(
-          `${opts.indent}${opts.indent}✏️  Writing: ${colors.white(parsedArgs.path)}`,
-        ),
+          `${opts.indent}${opts.indent}✏️  Writing: ${colors.white(
+            parsedArgs.path
+          )}`
+        )
       );
     } else if (toolName === "list-directory" && parsedArgs.path) {
       console.log(
         colors.dim(
-          `${opts.indent}${opts.indent}📁 Listing: ${colors.white(parsedArgs.path)}`,
-        ),
+          `${opts.indent}${opts.indent}📁 Listing: ${colors.white(
+            parsedArgs.path
+          )}`
+        )
       );
     } else if (toolName === "grep" && parsedArgs.pattern) {
       console.log(
         colors.dim(
-          `${opts.indent}${opts.indent}🔍 Searching: ${colors.white(parsedArgs.pattern)}`,
-        ),
+          `${opts.indent}${opts.indent}🔍 Searching: ${colors.white(
+            parsedArgs.pattern
+          )}`
+        )
       );
     } else if (!opts.compactMode) {
       // Show truncated args for other tools
@@ -332,7 +346,7 @@ function logToolArgs(toolName: string, args: any, opts: LoggerOptions): void {
       const truncated =
         argsStr.length > 100 ? `${argsStr.slice(0, 100)}...` : argsStr;
       console.log(
-        colors.dim(`${opts.indent}${opts.indent}⚙️  Args: ${truncated}`),
+        colors.dim(`${opts.indent}${opts.indent}⚙️  Args: ${truncated}`)
       );
     }
   } catch {
@@ -344,7 +358,7 @@ function logToolResult(
   toolName: string,
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   result: any,
-  opts: LoggerOptions,
+  opts: LoggerOptions
 ): void {
   if (typeof result === "string") {
     const lines = result.split("\n").length;
@@ -353,22 +367,24 @@ function logToolResult(
     if (toolName === "read-file") {
       console.log(
         colors.dim(
-          `${opts.indent}${opts.indent}📋 Content: ${lines} lines, ${chars} chars`,
-        ),
+          `${opts.indent}${opts.indent}📋 Content: ${lines} lines, ${chars} chars`
+        )
       );
     } else if (toolName === "write-file") {
       console.log(
-        colors.dim(`${opts.indent}${opts.indent}💾 Saved successfully`),
+        colors.dim(`${opts.indent}${opts.indent}💾 Saved successfully`)
       );
     } else if (result.length > 200) {
       console.log(
-        colors.dim(`${opts.indent}${opts.indent}📤 Result: ${chars} chars`),
+        colors.dim(`${opts.indent}${opts.indent}📤 Result: ${chars} chars`)
       );
     } else if (!opts.compactMode) {
       console.log(
         colors.dim(
-          `${opts.indent}${opts.indent}📤 ${result.slice(0, 100)}${result.length > 100 ? "..." : ""}`,
-        ),
+          `${opts.indent}${opts.indent}📤 ${result.slice(0, 100)}${
+            result.length > 100 ? "..." : ""
+          }`
+        )
       );
     }
   } else if (result && typeof result === "object") {
@@ -410,7 +426,7 @@ function getPrefix(opts: LoggerOptions): string {
 function startSpinner(
   toolCallId: string,
   toolName: string,
-  opts: LoggerOptions,
+  opts: LoggerOptions
 ): void {
   const toolIcon = getToolIcon(toolName);
   const spinnerFrames = spinners[opts.spinnerStyle || "dots"].frames;
@@ -419,19 +435,18 @@ function startSpinner(
   // Clear any existing spinner for this tool call
   stopSpinner(toolCallId);
 
-  const interval = setInterval(
-    () => {
-      const frame = spinnerFrames[frameIndex % spinnerFrames.length];
-      const line = `${opts.indent}${colors.cyan(frame)} ${colors.bold(toolName)} ${colors.dim("(working...)")}`;
+  const interval = setInterval(() => {
+    const frame = spinnerFrames[frameIndex % spinnerFrames.length];
+    const line = `${opts.indent}${colors.cyan(frame)} ${colors.bold(
+      toolName
+    )} ${colors.dim("(working...)")}`;
 
-      // Clear the line and write the spinner
-      process.stdout.write("\r\x1b[K"); // Clear current line
-      process.stdout.write(line);
+    // Clear the line and write the spinner
+    process.stdout.write("\r\x1b[K"); // Clear current line
+    process.stdout.write(line);
 
-      frameIndex++;
-    },
-    spinners[opts.spinnerStyle || "dots"].interval,
-  );
+    frameIndex++;
+  }, spinners[opts.spinnerStyle || "dots"].interval);
 
   activeSpinners.set(toolCallId, interval);
 }
@@ -559,7 +574,7 @@ export const presets = {
  */
 export function logWithPreset(
   bufferOrChunk: string | StreamChunk,
-  preset: keyof typeof presets = "detailed",
+  preset: keyof typeof presets = "detailed"
 ): void {
   const options = presets[preset];
 

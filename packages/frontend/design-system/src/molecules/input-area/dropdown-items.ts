@@ -1,12 +1,12 @@
-import type { DropdownItem, InputContextItem } from "@apk/core";
-import type { RunnerProcess } from "@apk/core";
+import type { DropdownItem, InputContextItem } from "@chara-codes/core";
+import type { RunnerProcess } from "@chara-codes/core";
 
 // Function to create dropdown items
 export const createDropdownItems = (
   startElementSelection: () => void,
   triggerFileUpload: () => void,
   onAddContext: (item: InputContextItem) => void,
-  runnerProcesses?: Record<string, RunnerProcess>,
+  runnerProcesses?: Record<string, RunnerProcess>
 ): DropdownItem[] => {
   return [
     // File items
@@ -74,7 +74,7 @@ export const createDropdownItems = (
 // Helper function to create terminal items from runner processes
 const createTerminalItems = (
   processes: Record<string, RunnerProcess>,
-  onAddContext: (item: InputContextItem) => void,
+  onAddContext: (item: InputContextItem) => void
 ): DropdownItem[] => {
   const terminalItems: DropdownItem[] = [];
 

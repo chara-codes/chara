@@ -1,5 +1,5 @@
 import type { ServerWebSocket } from "bun";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { handleHttpResponseStart } from "./response-start-handler.js";
 import { handleHttpData } from "./data-handler.js";
 import { handleHttpResponseEnd } from "./response-end-handler.js";
@@ -18,7 +18,7 @@ export function handleMessage(
   ws: ServerWebSocket<ClientData>,
   message: string | Uint8Array,
   clients: ClientMap,
-  config: ServerConfig,
+  config: ServerConfig
 ): void {
   try {
     // Parse the message as JSON
@@ -55,7 +55,7 @@ export function handleMessage(
           JSON.stringify({
             type: "error",
             message: `Unknown message type: ${data.type}`,
-          }),
+          })
         );
     }
   } catch (e) {
@@ -65,7 +65,7 @@ export function handleMessage(
       JSON.stringify({
         type: "error",
         message: "Invalid message format",
-      }),
+      })
     );
   }
 }

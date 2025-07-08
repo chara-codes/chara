@@ -23,7 +23,7 @@ const mockLogger = {
   setLevel: mock(() => {}),
 };
 
-mock.module("@apk/logger", () => ({
+mock.module("@chara-codes/logger", () => ({
   logger: mockLogger,
 }));
 
@@ -100,7 +100,7 @@ describe("Init Command", () => {
           return Promise.resolve();
         }
         return Promise.resolve();
-      },
+      }
     );
 
     mockStartAgentsAction.mockImplementation((options: any) => {
@@ -135,7 +135,7 @@ describe("Init Command", () => {
 
     test("should have correct description", () => {
       expect(initCommand.describe).toBe(
-        "Initialize Chara configuration with AI provider settings",
+        "Initialize Chara configuration with AI provider settings"
       );
     });
 
@@ -233,7 +233,7 @@ describe("Init Command", () => {
             port: 3031,
             serverUrl: "http://localhost:3031",
             verbose: false,
-          },
+          }
         );
 
         // Check stop-agents action
@@ -303,7 +303,7 @@ describe("Init Command", () => {
         // Should not execute init or default-model actions
         expect(mockActionFactory.execute).not.toHaveBeenCalledWith(
           "init",
-          expect.any(Object),
+          expect.any(Object)
         );
       });
 
@@ -347,7 +347,7 @@ describe("Init Command", () => {
         // Should not execute init or default-model actions
         expect(mockActionFactory.execute).not.toHaveBeenCalledWith(
           "init",
-          expect.any(Object),
+          expect.any(Object)
         );
       });
 
@@ -398,7 +398,7 @@ describe("Init Command", () => {
 
         expect(mockLogger.error).toHaveBeenCalledWith(
           "Command failed:",
-          "Init failed",
+          "Init failed"
         );
         expect(mockProcessExit).toHaveBeenCalledWith(1);
       });
@@ -434,7 +434,7 @@ describe("Init Command", () => {
 
         expect(mockLogger.error).toHaveBeenCalledWith(
           "Command failed:",
-          "Server start failed",
+          "Server start failed"
         );
       });
 
@@ -486,7 +486,7 @@ describe("Init Command", () => {
 
         expect(mockLogger.error).toHaveBeenCalledWith(
           "Command failed:",
-          "Default model failed",
+          "Default model failed"
         );
       });
 
@@ -517,7 +517,7 @@ describe("Init Command", () => {
 
         expect(mockLogger.error).toHaveBeenCalledWith(
           "Command failed:",
-          "String error",
+          "String error"
         );
       });
     });
@@ -626,7 +626,7 @@ describe("Init Command", () => {
             port: 3031,
             serverUrl: "http://localhost:3031",
             verbose: true,
-          },
+          }
         );
         expect(mockStopAgentsAction).toHaveBeenCalledWith({
           server: { stop: expect.any(Function) },
@@ -660,7 +660,7 @@ describe("Init Command", () => {
         // Should not execute show
         expect(mockActionFactory.execute).not.toHaveBeenCalledWith(
           "show",
-          expect.any(Object),
+          expect.any(Object)
         );
       });
     });

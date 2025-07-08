@@ -24,7 +24,7 @@ const mockLogger = {
   setLevel: mock(() => {}),
 };
 
-mock.module("@apk/logger", () => ({
+mock.module("@chara-codes/logger", () => ({
   logger: mockLogger,
 }));
 
@@ -48,10 +48,10 @@ const mockReadGlobalConfig = mock(() =>
   Promise.resolve({
     env: { OPENAI_API_KEY: "test-key" },
     defaultModel: "openai:::gpt-4",
-  }),
+  })
 );
 
-mock.module("@apk/settings", () => ({
+mock.module("@chara-codes/settings", () => ({
   existsGlobalConfig: mockExistsGlobalConfig,
   readGlobalConfig: mockReadGlobalConfig,
 }));
@@ -59,10 +59,10 @@ mock.module("@apk/settings", () => ({
 // Mock the agents package
 const mockInitialize = mock(() => Promise.resolve());
 const mockInitializeCharaConfig = mock(() =>
-  Promise.resolve({ dev: "npx serve ." }),
+  Promise.resolve({ dev: "npx serve ." })
 );
 
-mock.module("@apk/agents", () => ({
+mock.module("@chara-codes/agents", () => ({
   initialize: mockInitialize,
   initializeCharaConfig: mockInitializeCharaConfig,
 }));
@@ -134,7 +134,7 @@ describe("Initialize Config Action", () => {
       expect(mockInitializeCharaConfig).toHaveBeenCalledTimes(1);
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         ".chara.json",
-        "openai:::gpt-4",
+        "openai:::gpt-4"
       );
 
       // Verify action completed successfully
@@ -149,7 +149,7 @@ describe("Initialize Config Action", () => {
 
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         "custom.chara.json",
-        "openai:::gpt-4",
+        "openai:::gpt-4"
       );
     });
 
@@ -177,7 +177,7 @@ describe("Initialize Config Action", () => {
       // Should use default fallback model
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         ".chara.json",
-        "deepseek:::deepseek-chat",
+        "deepseek:::deepseek-chat"
       );
     });
 
@@ -197,7 +197,7 @@ describe("Initialize Config Action", () => {
       // Should use default fallback model
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         ".chara.json",
-        "deepseek:::deepseek-chat",
+        "deepseek:::deepseek-chat"
       );
     });
 
@@ -213,7 +213,7 @@ describe("Initialize Config Action", () => {
 
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         ".chara.json",
-        "anthropic:::claude-3-5-sonnet",
+        "anthropic:::claude-3-5-sonnet"
       );
     });
   });
@@ -228,32 +228,32 @@ describe("Initialize Config Action", () => {
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Error reading global configuration:",
-        expect.any(Error),
+        expect.any(Error)
       );
 
       // Should still proceed with fallback model
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         ".chara.json",
-        "deepseek:::deepseek-chat",
+        "deepseek:::deepseek-chat"
       );
     });
 
     test("should handle provider initialization errors", async () => {
       mockInitialize.mockRejectedValue(
-        new Error("Provider initialization failed"),
+        new Error("Provider initialization failed")
       );
 
       await expect(
         initializeConfigAction({
           verbose: true,
-        }),
+        })
       ).rejects.toThrow(
-        "Failed to initialize providers: Provider initialization failed",
+        "Failed to initialize providers: Provider initialization failed"
       );
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Error initializing providers:",
-        expect.any(Error),
+        expect.any(Error)
       );
 
       // Should not proceed to initialize chara config
@@ -262,20 +262,20 @@ describe("Initialize Config Action", () => {
 
     test("should handle chara config initialization errors", async () => {
       mockInitializeCharaConfig.mockRejectedValue(
-        new Error("Chara config initialization failed"),
+        new Error("Chara config initialization failed")
       );
 
       await expect(
         initializeConfigAction({
           verbose: true,
-        }),
+        })
       ).rejects.toThrow(
-        "Failed to initialize Chara configuration: Chara config initialization failed",
+        "Failed to initialize Chara configuration: Chara config initialization failed"
       );
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Error initializing configuration:",
-        expect.any(Error),
+        expect.any(Error)
       );
     });
 
@@ -285,7 +285,7 @@ describe("Initialize Config Action", () => {
       await expect(
         initializeConfigAction({
           verbose: true,
-        }),
+        })
       ).rejects.toThrow("Failed to initialize Chara configuration:");
     });
   });
@@ -297,7 +297,7 @@ describe("Initialize Config Action", () => {
       await expect(
         initializeConfigAction({
           verbose: false,
-        }),
+        })
       ).resolves.toBeUndefined();
     });
 
@@ -307,7 +307,7 @@ describe("Initialize Config Action", () => {
       await expect(
         initializeConfigAction({
           verbose: false,
-        }),
+        })
       ).resolves.toBeUndefined();
     });
   });
@@ -323,19 +323,19 @@ describe("Initialize Config Action", () => {
 
       // Should log detailed steps
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        "Global configuration found, reading default model...",
+        "Global configuration found, reading default model..."
       );
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        "Selected model from global config: openai:::gpt-4",
+        "Selected model from global config: openai:::gpt-4"
       );
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        "Providers initialization completed",
+        "Providers initialization completed"
       );
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        "Initializing config file: .chara.json",
+        "Initializing config file: .chara.json"
       );
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        "Using model: openai:::gpt-4",
+        "Using model: openai:::gpt-4"
       );
     });
 
@@ -347,7 +347,7 @@ describe("Initialize Config Action", () => {
       });
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        "Global configuration does not exist",
+        "Global configuration does not exist"
       );
     });
   });
@@ -358,7 +358,7 @@ describe("Initialize Config Action", () => {
 
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         ".chara.json",
-        "openai:::gpt-4",
+        "openai:::gpt-4"
       );
     });
 
@@ -392,7 +392,7 @@ describe("Initialize Config Action", () => {
 
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         ".chara.json",
-        "priority:::model",
+        "priority:::model"
       );
     });
 
@@ -409,7 +409,7 @@ describe("Initialize Config Action", () => {
       // Empty string should be treated as no defaultModel
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         ".chara.json",
-        "deepseek:::deepseek-chat",
+        "deepseek:::deepseek-chat"
       );
     });
 
@@ -426,7 +426,7 @@ describe("Initialize Config Action", () => {
       // Null should be treated as no defaultModel
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         ".chara.json",
-        "deepseek:::deepseek-chat",
+        "deepseek:::deepseek-chat"
       );
     });
   });
@@ -436,12 +436,12 @@ describe("Initialize Config Action", () => {
       await expect(
         initializeConfigAction({
           configFile: "test.json",
-        }),
+        })
       ).resolves.toBeUndefined();
 
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         "test.json",
-        "openai:::gpt-4",
+        "openai:::gpt-4"
       );
     });
 
@@ -450,7 +450,7 @@ describe("Initialize Config Action", () => {
 
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         ".chara.json",
-        "openai:::gpt-4",
+        "openai:::gpt-4"
       );
     });
   });
@@ -469,7 +469,7 @@ describe("Initialize Config Action", () => {
       // Should handle gracefully and use fallback
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         ".chara.json",
-        "deepseek:::deepseek-chat",
+        "deepseek:::deepseek-chat"
       );
     });
 
@@ -483,7 +483,7 @@ describe("Initialize Config Action", () => {
 
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         longPath,
-        "openai:::gpt-4",
+        "openai:::gpt-4"
       );
     });
 
@@ -496,7 +496,7 @@ describe("Initialize Config Action", () => {
 
       expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
         specialPath,
-        "openai:::gpt-4",
+        "openai:::gpt-4"
       );
     });
   });

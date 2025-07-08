@@ -1,9 +1,9 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { bold, cyan, green, yellow } from "picocolors";
 import type { CommandModule } from "yargs";
 import { ActionFactory } from "../actions";
 import { intro, outro } from "../utils/prompts";
-import { existsGlobalConfig, readGlobalConfig } from "@apk/settings";
+import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -59,7 +59,9 @@ export const devCommand: CommandModule<
       const globalConfigExists = await existsGlobalConfig();
       if (!globalConfigExists) {
         logger.info(
-          `${yellow("⚠️")} No global configuration found. Running initialization...`,
+          `${yellow(
+            "⚠️"
+          )} No global configuration found. Running initialization...`
         );
         await ActionFactory.execute("init", {
           verbose: argv.verbose,
@@ -72,7 +74,9 @@ export const devCommand: CommandModule<
         globalConfig = await readGlobalConfig();
         if (!globalConfig.defaultModel) {
           logger.info(
-            `${yellow("⚠️")} No default model found in global configuration. Setting up default model...`,
+            `${yellow(
+              "⚠️"
+            )} No default model found in global configuration. Setting up default model...`
           );
 
           // We need to start a temporary server to get available models
@@ -107,7 +111,9 @@ export const devCommand: CommandModule<
       const localConfigPath = join(projectDir || process.cwd(), ".chara.json");
       if (!existsSync(localConfigPath)) {
         logger.info(
-          `${yellow("⚠️")} No local configuration found. Initializing project configuration...`,
+          `${yellow(
+            "⚠️"
+          )} No local configuration found. Initializing project configuration...`
         );
         await ActionFactory.execute("initialize-config", {
           verbose: argv.verbose,
@@ -128,7 +134,7 @@ export const devCommand: CommandModule<
         logger.debug(`MCP servers available: ${hasMcpServers ? "Yes" : "No"}`);
         if (hasMcpServers) {
           logger.debug(
-            `MCP servers: ${Object.keys(config.mcpServers).join(", ")}`,
+            `MCP servers: ${Object.keys(config.mcpServers).join(", ")}`
           );
         }
       }
@@ -188,49 +194,61 @@ export const devCommand: CommandModule<
       // Print server information
       console.log(`\n${bold("🖥️  Running Servers:")}`);
       console.log(
-        `  • Main Server: ${cyan(`http://localhost:${serverResult.port}`)}`,
+        `  • Main Server: ${cyan(`http://localhost:${serverResult.port}`)}`
       );
       console.log(
-        `  • Agents Server: ${cyan(`http://localhost:${agentsResult.port}`)}`,
+        `  • Agents Server: ${cyan(`http://localhost:${agentsResult.port}`)}`
       );
 
       if (hasMcpServers) {
         console.log(
-          `  • WebSocket Events: ${cyan(`ws://localhost:${serverResult.port}/events`)}`,
+          `  • WebSocket Events: ${cyan(
+            `ws://localhost:${serverResult.port}/events`
+          )}`
         );
       }
 
       if (argv.verbose) {
         console.log(`\n${bold("🔧 Server Configuration:")}`);
         console.log(
-          `  • API endpoint: ${bold(`http://localhost:${serverResult.port}/trpc`)}`,
+          `  • API endpoint: ${bold(
+            `http://localhost:${serverResult.port}/trpc`
+          )}`
         );
         console.log(
-          `  • MCP enabled: ${hasMcpServers ? green("Yes") : yellow("No")}`,
+          `  • MCP enabled: ${hasMcpServers ? green("Yes") : yellow("No")}`
         );
         console.log(
-          `  • WebSocket enabled: ${hasMcpServers ? green("Yes") : yellow("No")}`,
+          `  • WebSocket enabled: ${
+            hasMcpServers ? green("Yes") : yellow("No")
+          }`
         );
         console.log(`  • Runner enabled: ${green("Yes")}`);
 
         if (hasMcpServers) {
           console.log(
-            `  • WebSocket endpoint: ${bold(`ws://localhost:${serverResult.port}/events`)}`,
+            `  • WebSocket endpoint: ${bold(
+              `ws://localhost:${serverResult.port}/events`
+            )}`
           );
         }
       }
 
       console.log(`\n${bold("📊 Connected Services:")}`);
       console.log(
-        `  • MCP servers: ${hasMcpServers ? green(clientsList.length.toString()) : yellow("0")}`,
+        `  • MCP servers: ${
+          hasMcpServers ? green(clientsList.length.toString()) : yellow("0")
+        }`
       );
       console.log(
-        `  • Project directory: ${cyan(projectDir || process.cwd())}`,
+        `  • Project directory: ${cyan(projectDir || process.cwd())}`
       );
 
       if (hasMcpServers && clientsList.length > 0) {
         console.log(
-          `  • Active MCP clients: ${clientsList.map((client: any) => cyan(client.name || "Unknown")).join(", ")}`,
+          `  • Active MCP clients: ${clientsList
+            .map((client: any) => cyan(client.name || "Unknown"))
+            .join(", ")}`
         );
       }
 
@@ -242,14 +260,18 @@ export const devCommand: CommandModule<
 ${bold("Available endpoints:")}
 • Main API: ${cyan(`http://localhost:${serverResult.port}/trpc`)}
 • Agents API: ${cyan(`http://localhost:${agentsResult.port}`)}
-${hasMcpServers ? `• WebSocket: ${cyan(`ws://localhost:${serverResult.port}/events`)}` : ""}
+${
+  hasMcpServers
+    ? `• WebSocket: ${cyan(`ws://localhost:${serverResult.port}/events`)}`
+    : ""
+}
 
 ${bold("Features enabled:")}
 • Code execution: ${green("✓")}
 • MCP support: ${hasMcpServers ? green("✓") : yellow("✗")}
 • WebSocket events: ${hasMcpServers ? green("✓") : yellow("✗")}
 
-Ready to receive instructions and execute code changes!`,
+Ready to receive instructions and execute code changes!`
       );
 
       // Keep the process running

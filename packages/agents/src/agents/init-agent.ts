@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { streamText } from "ai";
 import { initPrompt } from "../prompts/init";
 import { providersRegistry } from "../providers";
@@ -12,7 +12,7 @@ export const initAgent = async (
     model: string;
     workingDir?: string;
   },
-  options: { headers?: Record<string, string> } = {},
+  options: { headers?: Record<string, string> } = {}
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");

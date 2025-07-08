@@ -9,7 +9,7 @@ import RecentHistory from "./recent-history";
 import InputArea from "../molecules/input-area";
 import Footer from "../molecules/footer/index";
 import ConversationSuggestions from "../molecules/conversation-suggestions";
-import { useChatStore } from "@apk/core";
+import { useChatStore } from "@chara-codes/core";
 import { CharaLogo } from "../atoms/chara-logo";
 
 const ChatContent = styled.div`
@@ -91,35 +91,35 @@ const ConversationView: React.FC = () => {
     (content: string) => {
       chatStore.sendMessage(content);
     },
-    [chatStore],
+    [chatStore]
   );
 
   const handleSelectSuggestion = useCallback(
     (suggestion: string) => {
       chatStore.sendMessage(suggestion);
     },
-    [chatStore],
+    [chatStore]
   );
 
   const handleSelectChat = useCallback(
     (chatId: string) => {
       chatStore.setActiveChat(chatId);
     },
-    [chatStore],
+    [chatStore]
   );
 
   const handleRemoveContextItem = useCallback(
     (itemId: string) => {
       chatStore.removeContextItem(itemId);
     },
-    [chatStore],
+    [chatStore]
   );
 
   const handleAddContextItem = useCallback(
     (item: { name: string; type: string; data?: unknown }) => {
       chatStore.addContextItem(item);
     },
-    [chatStore],
+    [chatStore]
   );
 
   const handleStopResponse = useCallback(() => {
@@ -130,7 +130,7 @@ const ConversationView: React.FC = () => {
     (messageId: string) => {
       chatStore.deleteMessage(messageId);
     },
-    [chatStore],
+    [chatStore]
   );
 
   return (

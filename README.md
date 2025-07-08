@@ -36,18 +36,18 @@ In Greek, the word 'chara' (χαρά) means 'joy' or 'happiness'. Chara Codes ai
 
 The project is organized as a monorepo with the following packages:
 
-- `@chara/web` - Next.js frontend application
+- `@chara-codes/web` - Next.js frontend application
   - Split interface for chat and preview
   - Real-time code editing and preview
   - Responsive UI built with Tailwind and shadcn/ui
 
-- `@chara/server` - Backend server application
+- `@chara-codes/server` - Backend server application
   - tRPC API with WebSocket support
   - Multiple AI provider integrations
   - SQLite/LibSQL database with Drizzle ORM
   - Streaming response support
 
-- `@chara/cli` - Command-line interface
+- `@chara-codes/cli` - Command-line interface
   - AI-powered development assistant
   - Project setup and configuration
   - MCP server integration
@@ -132,9 +132,9 @@ Chara uses a modern stack with:
 ```mermaid
 graph TD
     subgraph "Chara Codes"
-        Web["@chara/web"]
-        CLI["@chara/cli"]
-        Server["@chara/server"]
+        Web["@chara-codes/web"]
+        CLI["@chara-codes/cli"]
+        Server["@chara-codes/server"]
     end
 
     LLMs["LLMs API<br/>(OpenAI, Ollama, Anthropic, Deepseek, etc)"]
@@ -206,7 +206,7 @@ Chara uses [Auto](https://github.com/intuit/auto) for automated release manageme
 When creating a PR, add one of these labels to determine the release type:
 
 - `💥 Breaking Change` - Major version bump
-- `🚀 Feature` - Minor version bump  
+- `🚀 Feature` - Minor version bump
 - `🐛 Bug Fix` - Patch version bump
 - `📚 Documentation` - Patch version bump
 - `🏠 Internal` - Patch version bump
@@ -260,7 +260,7 @@ For detailed information, see [Release Management Guide](./docs/RELEASES.md) and
  - [Awesome MCP 2](https://github.com/appcypher/awesome-mcp-servers)
  - [MCP SDK](https://github.com/modelcontextprotocol/typescript-sdk)
 
-### Backend (@chara/server)
+### Backend (@chara-codes/server)
 - [tRPC.io](https://trpc.io/)
 - [Drizzle ORM](https://orm.drizzle.team/)
 - [libsql](https://github.com/tursodatabase/libsql)
@@ -272,7 +272,7 @@ For detailed information, see [Release Management Guide](./docs/RELEASES.md) and
 - [Streaming with tRPC](https://trpc.io/docs/server/streaming)
 - [Ollama Integration](https://github.com/ollama/ollama)
 
-### Automation Testing (@chara/automation)
+### Automation Testing (@chara-codes/automation)
  - [Playwright](https://playwright.dev/)
  - [AI SDK](https://ai-sdk.dev/)
  - [Visual Testing](https://playwright.dev/docs/test-snapshots)
@@ -280,7 +280,7 @@ For detailed information, see [Release Management Guide](./docs/RELEASES.md) and
  - [React Markdown](https://remarkjs.github.io/react-markdown/)
  - [lucide-react](https://lucide.dev/guide/packages/lucide-react)
 
-### CLI (@chara/cli)
+### CLI (@chara-codes/cli)
  - [yargs](https://yargs.js.org/)
  - [picocolors](https://github.com/alexeyraspopov/picocolors)
  - [Isomorphic git](https://isomorphic-git.org/)

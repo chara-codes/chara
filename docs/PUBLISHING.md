@@ -126,7 +126,7 @@ If you need to publish manually:
 
 The CLI package is configured for publishing with:
 
-- **Name**: `chara` (not `@chara/cli`)
+- **Name**: `chara` (not `@chara-codes/cli`)
 - **Binary**: `./dist/chara`
 - **Public access**: Available to everyone
 - **Files included**: Only `dist/chara`, `README.md`, and `LICENSE`
@@ -171,7 +171,7 @@ To test the publishing workflow locally:
 ### Common Issues
 
 1. **"Package not found" errors**:
-   - Ensure package name is `chara` (not `@chara/cli`)
+   - Ensure package name is `chara` (not `@chara-codes/cli`)
    - Check NPM_TOKEN has correct permissions
 
 2. **Build failures**:

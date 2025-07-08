@@ -1,5 +1,5 @@
 {
-  "name": "@chara/core",
+  "name": "@chara-codes/core",
   "version": "0.1.0",
   "private": true,
   "main": "./dist/index.js",

@@ -1,4 +1,4 @@
-# @chara/logger
+# @chara-codes/logger
 
 A flexible and customizable logging utility for Chara applications.
 
@@ -13,7 +13,7 @@ A flexible and customizable logging utility for Chara applications.
 ## Installation
 
 ```bash
-npm install @chara/logger
+npm install @chara-codes/logger
 ```
 
 ## Features
@@ -29,7 +29,7 @@ npm install @chara/logger
 ## Basic Usage
 
 ```typescript
-import { logger } from '@chara/logger';
+import { logger } from '@chara-codes/logger';
 
 // Use the default logger
 logger.info('Application started');
@@ -50,7 +50,7 @@ logger.setLevel('DEBUG'); // Only DEBUG and above will be logged
 The logger includes powerful variable dumping capabilities for inspecting complex data structures with rich formatting:
 
 ```typescript
-import { logger, dump, dumpToConsole } from '@chara/logger';
+import { logger, dump, dumpToConsole } from '@chara-codes/logger';
 
 // Basic dump - outputs with INFO level
 const user = {
@@ -115,7 +115,7 @@ logger.dump(data, "Custom", {
 ## Creating a Custom Logger
 
 ```typescript
-import { Logger, LogLevel } from '@chara/logger';
+import { Logger, LogLevel } from '@chara-codes/logger';
 
 // Create a custom logger
 const customLogger = new Logger({
@@ -130,7 +130,7 @@ customLogger.debug('This will NOT be logged'); // DEBUG level not enabled
 ## Custom Transports
 
 ```typescript
-import { Logger, LogLevel, TransportType } from '@chara/logger';
+import { Logger, LogLevel, TransportType } from '@chara-codes/logger';
 
 // Create a custom transport
 const fileTransport: TransportType = (level, message, metadata) => {

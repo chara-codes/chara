@@ -1,5 +1,5 @@
-import { logger } from "@apk/logger";
-import type { AppRouter } from "@apk/server";
+import { logger } from "@chara-codes/logger";
+import type { AppRouter } from "@chara-codes/server";
 import {
   CompatibilityCallToolResultSchema,
   GetPromptResultSchema,
@@ -66,7 +66,7 @@ class MCPClient {
 
   public listTools = async (
     command: string,
-    params: string,
+    params: string
   ): Promise<Tool[]> => {
     const allTools: Tool[] = [];
     for (const client of this.clientsList) {
@@ -76,7 +76,7 @@ class MCPClient {
             method: command,
             params: JSON.parse(params),
           },
-          ListToolsResultSchema,
+          ListToolsResultSchema
         );
 
         if (result.tools) {
@@ -110,7 +110,7 @@ class MCPClient {
           method: command,
           params: JSON.parse(params),
         },
-        CompatibilityCallToolResultSchema,
+        CompatibilityCallToolResultSchema
       );
     } catch (error) {
       logger.error(`Error calling tool through ${name}:`, error);
@@ -129,7 +129,7 @@ class MCPClient {
             method: command,
             params: JSON.parse(params),
           },
-          ListPromptsResultSchema,
+          ListPromptsResultSchema
         );
 
         if (result.prompts) {
@@ -166,7 +166,7 @@ class MCPClient {
           method: command,
           params: JSON.parse(params),
         },
-        GetPromptResultSchema,
+        GetPromptResultSchema
       );
 
       logger.success("Prompt result:", response);
@@ -189,7 +189,7 @@ class MCPClient {
             method: command,
             params: JSON.parse(params),
           },
-          ListResourcesResultSchema,
+          ListResourcesResultSchema
         );
 
         if (result.resources) {
@@ -223,7 +223,7 @@ class MCPClient {
           method: command,
           params: JSON.parse(params),
         },
-        ReadResourceResultSchema,
+        ReadResourceResultSchema
       );
     } catch (error) {
       logger.error(`Error reading resource from ${uri}:`, error);
@@ -241,7 +241,7 @@ class MCPClient {
             method: command,
             params: JSON.parse(params),
           },
-          ListResourceTemplatesResultSchema,
+          ListResourceTemplatesResultSchema
         );
 
         if (result.resourceTemplates) {
@@ -252,14 +252,14 @@ class MCPClient {
               description: template.description
                 ? `[${client.name}] ${template.description}`
                 : undefined,
-            }),
+            })
           );
           allTemplates.push(...templatesWithSource);
         }
       } catch (error) {
         logger.error(
           `Error fetching resource templates from ${client.name}:`,
-          error,
+          error
         );
       }
     }
@@ -283,7 +283,7 @@ export const initMCPClient = async (): Promise<void> => {
           case "tools/list": {
             const allTools: Tool[] = await clients.listTools(
               instruction.command,
-              instruction.params,
+              instruction.params
             );
             response = JSON.stringify(allTools);
             break;
@@ -292,7 +292,7 @@ export const initMCPClient = async (): Promise<void> => {
           case "tools/call": {
             const toolRes = await clients.getTool(
               instruction.command,
-              instruction.params,
+              instruction.params
             );
             response = JSON.stringify(toolRes);
             break;
@@ -301,7 +301,7 @@ export const initMCPClient = async (): Promise<void> => {
           case "prompts/list": {
             const allPrompts = await clients.listPrompts(
               instruction.command,
-              instruction.params,
+              instruction.params
             );
             response = JSON.stringify(allPrompts);
             break;
@@ -310,7 +310,7 @@ export const initMCPClient = async (): Promise<void> => {
           case "prompts/get": {
             const promptRes = await clients.getPrompt(
               instruction.command,
-              instruction.params,
+              instruction.params
             );
             response = JSON.stringify(promptRes);
             break;
@@ -319,7 +319,7 @@ export const initMCPClient = async (): Promise<void> => {
           case "resources/list": {
             const allResources = await clients.listResources(
               instruction.command,
-              instruction.params,
+              instruction.params
             );
             response = JSON.stringify(allResources);
             break;
@@ -328,7 +328,7 @@ export const initMCPClient = async (): Promise<void> => {
           case "resources/read": {
             const resourceObj = await clients.getResource(
               instruction.command,
-              instruction.params,
+              instruction.params
             );
             response = JSON.stringify(resourceObj);
             break;
@@ -337,7 +337,7 @@ export const initMCPClient = async (): Promise<void> => {
           case "resources/templates/list": {
             const allTemplates = await clients.listTemplates(
               instruction.command,
-              instruction.params,
+              instruction.params
             );
             response = JSON.stringify(allTemplates);
             break;
@@ -357,6 +357,6 @@ export const initMCPClient = async (): Promise<void> => {
       onStarted() {
         logger.event("MCP proxy WS client started succesfully");
       },
-    },
+    }
   );
 };

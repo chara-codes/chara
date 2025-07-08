@@ -2,11 +2,11 @@
 
 ## Overview
 
-This document summarizes the successful integration of the `@chara/settings` models whitelist functionality with the models controller in `@chara/agents`. The integration provides dynamic model management, enhanced metadata, and improved filtering capabilities while maintaining backward compatibility.
+This document summarizes the successful integration of the `@chara-codes/settings` models whitelist functionality with the models controller in `@chara-codes/agents`. The integration provides dynamic model management, enhanced metadata, and improved filtering capabilities while maintaining backward compatibility.
 
 ## Changes Made
 
-### 1. Enhanced @chara/settings Package
+### 1. Enhanced @chara-codes/settings Package
 
 #### New Models Whitelist Functionality
 - **Default Whitelist**: 36+ curated high-quality AI models from major providers
@@ -168,7 +168,7 @@ const googleModels = await fetch('/models?provider=google');
 
 ### Custom Model Management
 ```typescript
-import { addCustomModel } from '@chara/settings';
+import { addCustomModel } from '@chara-codes/settings';
 
 // Add a custom model
 await addCustomModel({
@@ -248,7 +248,7 @@ This foundation enables scalable, maintainable, and user-friendly AI model manag
 
 ### Modified Files
 - `chara/packages/agents/src/controllers/models.ts` - Enhanced with whitelist integration
-- `chara/packages/agents/package.json` - Added @chara/settings dependency
+- `chara/packages/agents/package.json` - Added @chara-codes/settings dependency
 
 ### Added Files
 - `chara/packages/settings/src/models.ts` - Core whitelist functionality

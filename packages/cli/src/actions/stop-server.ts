@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { spinner } from "../utils/prompts";
 import type { StopServerActionOptions } from "./types";
 
@@ -41,7 +41,7 @@ function stopServer(server: any | null | undefined): void {
  * ```
  */
 export async function stopServerAction(
-  options: StopServerActionOptions = {},
+  options: StopServerActionOptions = {}
 ): Promise<void> {
   if (options.verbose) {
     logger.setLevel("debug");

@@ -1,5 +1,5 @@
 import type { ServerWebSocket } from "bun";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import type { ClientData, ServerConfig } from "../../types/server.types";
 import { isTextResponse } from "../../utils/content-type";
 import { getCompressionType } from "../compression";
@@ -17,14 +17,14 @@ import { processStream } from "../streams";
 export function handleHttpResponseEnd(
   ws: ServerWebSocket<ClientData>,
   data: any,
-  config: ServerConfig,
+  config: ServerConfig
 ): void {
   const requestId = data.id;
   const pendingRequest = ws.data.requests?.get(requestId);
 
   if (!pendingRequest) {
     logger.warning(
-      `Received response end for unknown request ID: ${requestId}`,
+      `Received response end for unknown request ID: ${requestId}`
     );
     return;
   }
@@ -72,7 +72,7 @@ export function handleHttpResponseEnd(
       resolver,
       requestId,
       shouldApplyReplacements ? config : undefined,
-      compressionType,
+      compressionType
     );
   } else {
     // No stream available - create response directly from body if present
@@ -81,7 +81,7 @@ export function handleHttpResponseEnd(
       new Response(body, {
         status,
         headers: responseHeaders,
-      }),
+      })
     );
   }
 

@@ -6,7 +6,7 @@ import {
   httpBatchStreamLink,
   createWSClient,
 } from "@trpc/react-query";
-import type { AppRouter } from "@apk/server";
+import type { AppRouter } from "@chara-codes/server";
 import superjson from "superjson";
 
 export const trpc = createTRPCReact<AppRouter>();

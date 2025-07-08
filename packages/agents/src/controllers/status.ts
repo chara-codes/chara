@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { mcpWrapper } from "../mcp/mcp-client";
 import { tools as localTools } from "../tools";
 

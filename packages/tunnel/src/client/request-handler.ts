@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { EventEmitter } from "eventemitter3";
 import { URL } from "url";
 import type {
@@ -25,7 +25,7 @@ export class RequestHandler extends EventEmitter {
    */
   constructor(
     options: TunnelClientOptions,
-    websocketHandler: WebSocketHandler,
+    websocketHandler: WebSocketHandler
   ) {
     super();
     this.options = options;
@@ -62,12 +62,16 @@ export class RequestHandler extends EventEmitter {
           path,
           headers,
           body,
-          routeMatch.params,
+          routeMatch.params
         );
       } else {
         logger.debug(`Forwarding request: ${method} ${path}`);
         logger.debug(
-          `Request details: ID=${requestId}, Headers=${JSON.stringify(headers, null, 2)}`,
+          `Request details: ID=${requestId}, Headers=${JSON.stringify(
+            headers,
+            null,
+            2
+          )}`
         );
         logger.debug(`Request body size: ${body ? body.length : 0} bytes`);
 
@@ -76,7 +80,7 @@ export class RequestHandler extends EventEmitter {
           url,
           method,
           headers,
-          body,
+          body
         );
 
         await this.streamResponseToTunnel(requestId, response);
@@ -93,7 +97,7 @@ export class RequestHandler extends EventEmitter {
     url: string,
     method: string,
     headers: Record<string, string>,
-    body: string | null,
+    body: string | null
   ): Promise<Response> {
     // Filter out problematic headers
     const filteredHeaders: Record<string, string> = { ...headers };
@@ -109,10 +113,14 @@ export class RequestHandler extends EventEmitter {
     });
 
     logger.debug(
-      `Received response from local server with status: ${response.status}`,
+      `Received response from local server with status: ${response.status}`
     );
     logger.debug(
-      `Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`,
+      `Response headers: ${JSON.stringify(
+        Object.fromEntries(response.headers.entries()),
+        null,
+        2
+      )}`
     );
 
     return response;
@@ -123,7 +131,7 @@ export class RequestHandler extends EventEmitter {
    */
   private async streamResponseToTunnel(
     requestId: string,
-    response: Response,
+    response: Response
   ): Promise<void> {
     if (!this.websocketHandler.isWebSocketOpen()) {
       logger.error("WebSocket connection is not open");
@@ -177,12 +185,12 @@ export class RequestHandler extends EventEmitter {
     path: string,
     headers: Record<string, string>,
     requestBody: string | null,
-    params: Record<string, string> = {},
+    params: Record<string, string> = {}
   ): Promise<void> {
     if (!route.redirect) {
       return this.handleRequestError(
         requestId,
-        new Error("Redirect configuration is missing"),
+        new Error("Redirect configuration is missing")
       );
     }
 
@@ -233,7 +241,7 @@ export class RequestHandler extends EventEmitter {
       });
 
       logger.debug(
-        `Redirect headers: ${JSON.stringify(mergedHeaders, null, 2)}`,
+        `Redirect headers: ${JSON.stringify(mergedHeaders, null, 2)}`
       );
 
       // Make the request to the redirect URL
@@ -244,7 +252,7 @@ export class RequestHandler extends EventEmitter {
       });
 
       logger.debug(
-        `Received response from redirected request with status: ${response.status}`,
+        `Received response from redirected request with status: ${response.status}`
       );
 
       // Stream the response back through the tunnel
@@ -260,7 +268,7 @@ export class RequestHandler extends EventEmitter {
    */
   private async streamResponseBody(
     requestId: string,
-    body: ReadableStream<Uint8Array>,
+    body: ReadableStream<Uint8Array>
   ): Promise<void> {
     const reader = body.getReader();
     logger.debug(`Starting to stream response body for request ${requestId}`);
@@ -281,7 +289,7 @@ export class RequestHandler extends EventEmitter {
         // Convert Uint8Array to Binary string for safe JSON transport
         const chunk = Buffer.from(value).toString("binary");
         logger.debug(
-          `Streaming chunk: ${value.length} bytes for request ${requestId}`,
+          `Streaming chunk: ${value.length} bytes for request ${requestId}`
         );
 
         this.websocketHandler.sendMessage({
@@ -308,7 +316,7 @@ export class RequestHandler extends EventEmitter {
     path: string,
     headers: Record<string, string>,
     requestBody: string | null,
-    params: Record<string, string> = {},
+    params: Record<string, string> = {}
   ): Promise<void> {
     // Check if this is a redirect route
     if (route.redirect) {
@@ -319,7 +327,7 @@ export class RequestHandler extends EventEmitter {
         path,
         headers,
         requestBody,
-        params,
+        params
       );
     }
 
@@ -328,7 +336,7 @@ export class RequestHandler extends EventEmitter {
       logger.error(`Route is missing both handler and redirect configuration`);
       return this.handleRequestError(
         requestId,
-        new Error("Route configuration error: missing handler"),
+        new Error("Route configuration error: missing handler")
       );
     }
 
@@ -449,7 +457,7 @@ export class RequestHandler extends EventEmitter {
   private handleRequestError(requestId: string, error: unknown): void {
     logger.error(`Error handling request: ${error}`);
     logger.debug(
-      `Error details: ${error instanceof Error ? error.stack : String(error)}`,
+      `Error details: ${error instanceof Error ? error.stack : String(error)}`
     );
 
     this.emit("error", error);
@@ -466,7 +474,7 @@ export class RequestHandler extends EventEmitter {
 
       // Send error message as data
       const errorData = Buffer.from(
-        "Bad Gateway: Could not connect to local server",
+        "Bad Gateway: Could not connect to local server"
       ).toString("binary");
 
       this.websocketHandler.sendMessage({

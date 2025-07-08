@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { streamText, type CoreMessage } from "ai";
 import { getModel, hasProvider, fetchModels } from "../src/providers";
 
@@ -11,7 +11,7 @@ async function dialWithToolsExample() {
   // Check if DIAL provider is available
   if (!hasProvider("dial")) {
     logger.error(
-      "DIAL provider is not available. Please check your DIAL_API_KEY and DIAL_API_BASE_URL environment variables.",
+      "DIAL provider is not available. Please check your DIAL_API_KEY and DIAL_API_BASE_URL environment variables."
     );
     process.exit(1);
   }
@@ -37,10 +37,9 @@ async function dialWithToolsExample() {
     ];
 
     // Find first available preferred model
-    const availableModel = dialModels.find((m) =>
-      preferredModels.includes(m.id)
-    ) || dialModels[0];
-    
+    const availableModel =
+      dialModels.find((m) => preferredModels.includes(m.id)) || dialModels[0];
+
     if (!availableModel) {
       logger.error("Could not find a suitable model to use. Exiting.");
       process.exit(1);
@@ -69,7 +68,11 @@ async function runSimpleExample(modelId: string) {
   logger.info("💬 Example 1: Simple Prompt");
 
   const messages: CoreMessage[] = [
-    { role: "user", content: "What's the capital of Japan, and what are three interesting facts about it?" },
+    {
+      role: "user",
+      content:
+        "What's the capital of Japan, and what are three interesting facts about it?",
+    },
   ];
 
   const model = getModel("dial", modelId);
@@ -85,7 +88,7 @@ async function runSimpleExample(modelId: string) {
   for await (const chunk of result.textStream) {
     process.stdout.write(chunk);
   }
-  
+
   logger.info("\n✅ Simple example completed");
 }
 
@@ -98,11 +101,15 @@ async function runSystemPromptExample(modelId: string) {
   const messages: CoreMessage[] = [
     {
       role: "system",
-      content: 
+      content:
         "You are a helpful math tutor who explains concepts step by step. " +
-        "Always format mathematical expressions clearly and provide visual explanations when possible."
+        "Always format mathematical expressions clearly and provide visual explanations when possible.",
     },
-    { role: "user", content: "Can you explain how to solve the quadratic equation 2x² - 5x + 2 = 0?" }
+    {
+      role: "user",
+      content:
+        "Can you explain how to solve the quadratic equation 2x² - 5x + 2 = 0?",
+    },
   ];
 
   const model = getModel("dial", modelId);
@@ -118,7 +125,7 @@ async function runSystemPromptExample(modelId: string) {
   for await (const chunk of result.textStream) {
     process.stdout.write(chunk);
   }
-  
+
   logger.info("\n✅ System prompt example completed");
 }
 
@@ -131,12 +138,14 @@ async function runJsonExample(modelId: string) {
   const messages: CoreMessage[] = [
     {
       role: "system",
-      content: "You are a helpful assistant that always responds in JSON format."
+      content:
+        "You are a helpful assistant that always responds in JSON format.",
     },
-    { 
-      role: "user", 
-      content: "Please provide a list of 3 popular programming languages and their main use cases. Return as a JSON array." 
-    }
+    {
+      role: "user",
+      content:
+        "Please provide a list of 3 popular programming languages and their main use cases. Return as a JSON array.",
+    },
   ];
 
   const model = getModel("dial", modelId);
@@ -152,7 +161,7 @@ async function runJsonExample(modelId: string) {
   for await (const chunk of result.textStream) {
     process.stdout.write(chunk);
   }
-  
+
   logger.info("\n✅ JSON example completed");
 }
 
@@ -161,4 +170,9 @@ if (import.meta.main) {
   dialWithToolsExample().catch(console.error);
 }
 
-export { dialWithToolsExample, runSimpleExample, runSystemPromptExample, runJsonExample };
+export {
+  dialWithToolsExample,
+  runSimpleExample,
+  runSystemPromptExample,
+  runJsonExample,
+};

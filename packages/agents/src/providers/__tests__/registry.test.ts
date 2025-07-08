@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { ProvidersRegistry } from "../registry";
 
 // Mock the global config module to prevent file system errors
-mock.module("@apk/settings", () => ({
+mock.module("@chara-codes/settings", () => ({
   readGlobalConfig: mock(() => Promise.resolve({})),
   writeGlobalConfig: mock(() => Promise.resolve()),
   getModelsWhitelist: mock(() => ({})),
@@ -26,7 +26,7 @@ describe("ProvidersRegistry", () => {
   test("should not initialize providers automatically", async () => {
     // Registry should not be initialized by default
     await expect(registry.getAvailableProviders()).rejects.toThrow(
-      "Providers not initialized. Call initialize() first.",
+      "Providers not initialized. Call initialize() first."
     );
   });
 
@@ -98,35 +98,35 @@ describe("ProvidersRegistry", () => {
   test("should throw error when accessing uninitialized registry methods", async () => {
     // All these methods should throw before initialization
     await expect(registry.getProvider("openai")).rejects.toThrow(
-      "Providers not initialized. Call initialize() first.",
+      "Providers not initialized. Call initialize() first."
     );
 
     await expect(registry.getAvailableProviders()).rejects.toThrow(
-      "Providers not initialized. Call initialize() first.",
+      "Providers not initialized. Call initialize() first."
     );
 
     await expect(registry.getProviderNames()).rejects.toThrow(
-      "Providers not initialized. Call initialize() first.",
+      "Providers not initialized. Call initialize() first."
     );
 
     await expect(registry.hasProvider("openai")).rejects.toThrow(
-      "Providers not initialized. Call initialize() first.",
+      "Providers not initialized. Call initialize() first."
     );
 
     await expect(registry.getModel("openai", "gpt-4")).rejects.toThrow(
-      "Providers not initialized. Call initialize() first.",
+      "Providers not initialized. Call initialize() first."
     );
 
     await expect(registry.fetchModels("openai")).rejects.toThrow(
-      "Providers not initialized. Call initialize() first.",
+      "Providers not initialized. Call initialize() first."
     );
 
     await expect(registry.fetchAllModels()).rejects.toThrow(
-      "Providers not initialized. Call initialize() first.",
+      "Providers not initialized. Call initialize() first."
     );
 
     await expect(registry.getProviderStatus()).rejects.toThrow(
-      "Providers not initialized. Call initialize() first.",
+      "Providers not initialized. Call initialize() first."
     );
   });
 
@@ -160,7 +160,7 @@ describe("ProvidersRegistry", () => {
     } else {
       // Should throw if provider not available
       await expect(registry.getModel("openai", "gpt-4")).rejects.toThrow(
-        "Provider openai is not available",
+        "Provider openai is not available"
       );
     }
   });
@@ -171,7 +171,7 @@ describe("ProvidersRegistry", () => {
 
     // Should throw if model name is missing
     await expect(registry.getModel("openai", "")).rejects.toThrow(
-      "Model name is required for provider openai",
+      "Model name is required for provider openai"
     );
   });
 
@@ -180,7 +180,7 @@ describe("ProvidersRegistry", () => {
 
     // Should throw if provider doesn't exist
     await expect(
-      registry.getModel("non-existent", "some-model"),
+      registry.getModel("non-existent", "some-model")
     ).rejects.toThrow("Provider non-existent is not available");
   });
 

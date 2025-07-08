@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { generateText, streamText, type CoreMessage } from "ai";
 import { getModel, hasProvider, fetchModels } from "../src/providers";
 
@@ -11,7 +11,7 @@ async function demonstrateDIAL() {
   // Check if DIAL provider is available
   if (!hasProvider("dial")) {
     logger.error(
-      "DIAL provider is not available. Please check your DIAL_API_KEY and DIAL_API_BASE_URL environment variables.",
+      "DIAL provider is not available. Please check your DIAL_API_KEY and DIAL_API_BASE_URL environment variables."
     );
     process.exit(1);
   }
@@ -129,7 +129,7 @@ async function demonstrateDIAL() {
     if (dialModels.some((m) => m.id.includes("with-thinking"))) {
       logger.info("🧠 Testing model with thinking/reasoning capabilities:");
       const thinkingModelId = dialModels.find((m) =>
-        m.id.includes("with-thinking"),
+        m.id.includes("with-thinking")
       )?.id;
 
       if (thinkingModelId) {

@@ -4,7 +4,11 @@ import React, { useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { theme } from "../theme/theme";
 import { ChatIcon } from "../atoms/icons";
-import { useRunnerConnect, useRunnerConnection, useUIStore } from "@apk/core";
+import {
+  useRunnerConnect,
+  useRunnerConnection,
+  useUIStore,
+} from "@chara-codes/core";
 import ResizeHandle from "../atoms/resize-handle";
 import { ChatInterface } from "../templates";
 
@@ -20,8 +24,7 @@ const Backdrop = styled.div<{ isOpen: boolean }>`
   justify-content: flex-end;
   visibility: ${({ isOpen }) => (isOpen ? "visible" : "hidden")};
   opacity: ${({ isOpen }) => (isOpen ? 1 : 0)};
-  transition:
-    visibility 0s ${({ isOpen }) => (isOpen ? "0s" : "0.3s")},
+  transition: visibility 0s ${({ isOpen }) => (isOpen ? "0s" : "0.3s")},
     opacity 0.3s linear;
 
   @media (min-width: 769px) {
@@ -101,9 +104,7 @@ const ToggleButton = styled.button<{
   cursor: pointer;
   z-index: 998;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  transition:
-    transform 0.2s ease,
-    background-color 0.2s ease,
+  transition: transform 0.2s ease, background-color 0.2s ease,
     box-shadow 0.2s ease;
 
   ${({ $showFeedback }) =>
@@ -141,13 +142,10 @@ const ShortcutTooltip = styled.div<{ isVisible: boolean }>`
   font-size: 12px;
   opacity: ${({ isVisible }) => (isVisible ? 1 : 0)};
   transform: translateY(${({ isVisible }) => (isVisible ? 0 : "10px")});
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
   pointer-events: none;
   z-index: 1000;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 
   &::after {
@@ -233,7 +231,7 @@ export const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
         setIsResizing(false);
       }, 100) as unknown as number;
     },
-    [setChatOverlayWidth],
+    [setChatOverlayWidth]
   );
 
   useEffect(() => {
@@ -259,7 +257,7 @@ export const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
       }
       const toggleShortcut = keyboardShortcuts.find(
         (shortcut) =>
-          shortcut.action === "toggleChatOverlay" && shortcut.enabled,
+          shortcut.action === "toggleChatOverlay" && shortcut.enabled
       );
       if (!toggleShortcut) return;
       if (event.key === toggleShortcut.key) {
@@ -275,7 +273,7 @@ export const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
 
   const handleMouseEnter = () => {
     const toggleShortcut = keyboardShortcuts.find(
-      (shortcut) => shortcut.action === "toggleChatOverlay" && shortcut.enabled,
+      (shortcut) => shortcut.action === "toggleChatOverlay" && shortcut.enabled
     );
     if (toggleShortcut) {
       setShowTooltip(true);
@@ -288,7 +286,7 @@ export const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
 
   const getShortcutKey = () => {
     const toggleShortcut = keyboardShortcuts.find(
-      (shortcut) => shortcut.action === "toggleChatOverlay" && shortcut.enabled,
+      (shortcut) => shortcut.action === "toggleChatOverlay" && shortcut.enabled
     );
     return toggleShortcut ? toggleShortcut.key : "±";
   };

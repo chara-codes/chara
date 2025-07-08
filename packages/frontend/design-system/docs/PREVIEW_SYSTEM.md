@@ -24,7 +24,7 @@ PreviewPanel (Organism)
 
 ```tsx
 import React, { useState } from 'react';
-import { PreviewPanel, PreviewType } from '@chara/design-system';
+import { PreviewPanel, PreviewType } from '@chara-codes/design-system';
 
 const MyComponent = () => {
   const [activePreviewType, setActivePreviewType] = useState<PreviewType>(
@@ -47,7 +47,7 @@ const MyComponent = () => {
 Displays application preview with placeholder content.
 
 ```tsx
-import { AppPreview } from '@chara/design-system';
+import { AppPreview } from '@chara-codes/design-system';
 
 <AppPreview 
   placeholder="Custom placeholder text"
@@ -64,7 +64,7 @@ import { AppPreview } from '@chara/design-system';
 Displays code with syntax highlighting in a monospace container.
 
 ```tsx
-import { CodePreview } from '@chara/design-system';
+import { CodePreview } from '@chara-codes/design-system';
 
 <CodePreview 
   code={myCodeString}
@@ -83,7 +83,7 @@ import { CodePreview } from '@chara/design-system';
 Displays test results with pass/fail indicators and summary.
 
 ```tsx
-import { TestsPreview } from '@chara/design-system';
+import { TestsPreview } from '@chara-codes/design-system';
 
 const testResults = [
   {
@@ -125,7 +125,7 @@ interface TestResult {
 Displays project statistics in a responsive grid layout.
 
 ```tsx
-import { StatisticsPreview } from '@chara/design-system';
+import { StatisticsPreview } from '@chara-codes/design-system';
 
 const stats = [
   {
@@ -168,7 +168,7 @@ interface StatData {
 Displays documentation sections with code examples.
 
 ```tsx
-import { DocumentationPreview } from '@chara/design-system';
+import { DocumentationPreview } from '@chara-codes/design-system';
 
 const docSections = [
   {
@@ -207,7 +207,7 @@ interface DocSection {
 Displays deployment environments with status indicators.
 
 ```tsx
-import { DeploymentPreview } from '@chara/design-system';
+import { DeploymentPreview } from '@chara-codes/design-system';
 
 const environments = [
   {

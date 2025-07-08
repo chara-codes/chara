@@ -6,7 +6,7 @@ This document summarizes the complete publishing setup for the Chara CLI package
 
 ### 1. Package Configuration
 - **Updated `packages/cli/package.json`**:
-  - Changed package name from `@chara/cli` to `chara`
+  - Changed package name from `@chara-codes/cli` to `chara`
   - Removed `private: true` to allow publishing
   - Added proper `publishConfig` with public access
   - Added comprehensive metadata (description, keywords, repository, etc.)

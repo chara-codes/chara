@@ -3,7 +3,7 @@
 import React from "react";
 import styled from "styled-components";
 import MessageBubble from "../molecules/message-bubble";
-import type { Message } from "@apk/core";
+import type { Message } from "@chara-codes/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollDownIcon } from "../atoms/icons";
 

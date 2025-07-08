@@ -1,12 +1,12 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { intro, outro, spinner } from "../utils/prompts";
 import { bold, cyan, green } from "picocolors";
-import { existsGlobalConfig, readGlobalConfig } from "@apk/settings";
-import { initializeCharaConfig, initialize } from "@apk/agents";
+import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
+import { initializeCharaConfig, initialize } from "@chara-codes/agents";
 import type { InitializeConfigActionOptions } from "./types";
 
 export async function initializeConfigAction(
-  options: InitializeConfigActionOptions = {},
+  options: InitializeConfigActionOptions = {}
 ): Promise<void> {
   if (options.verbose) {
     logger.setLevel("debug");
@@ -75,7 +75,7 @@ export async function initializeConfigAction(
     s.stop("Failed to initialize providers");
     logger.error("Error initializing providers:", error);
     throw new Error(
-      `Failed to initialize providers: ${(error as Error).message}`,
+      `Failed to initialize providers: ${(error as Error).message}`
     );
   }
 
@@ -109,13 +109,13 @@ ${bold("Next steps:")}
 • Run ${cyan("chara dev")} to start development
 • Modify ${cyan(charaConfigFile)} to customize your setup
 
-${bold("Need help?")} Run ${cyan("chara --help")} for more options`,
+${bold("Need help?")} Run ${cyan("chara --help")} for more options`
     );
   } catch (error) {
     s.stop("Failed to initialize Chara configuration");
     logger.error("Error initializing configuration:", error);
     throw new Error(
-      `Failed to initialize Chara configuration: ${(error as Error).message}`,
+      `Failed to initialize Chara configuration: ${(error as Error).message}`
     );
   }
 }

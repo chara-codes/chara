@@ -16,12 +16,12 @@ The global configuration file is stored at `~/.chararc` (in your home directory)
 
 ## Setting Up Global Configuration
 
-### Using the @chara/settings Package
+### Using the @chara-codes/settings Package
 
 You can programmatically manage the global configuration:
 
 ```typescript
-import { writeGlobalConfig, readGlobalConfig, updateGlobalConfig } from '@chara/settings';
+import { writeGlobalConfig, readGlobalConfig, updateGlobalConfig } from '@chara-codes/settings';
 
 // Create initial configuration
 await writeGlobalConfig({
@@ -151,7 +151,7 @@ If a provider is still unavailable after configuration:
 Enable debug logging to see which configuration source is being used:
 
 ```typescript
-import { logger } from '@chara/logger';
+import { logger } from '@chara-codes/logger';
 
 // This will show "Using global config for {provider} {setting}" messages
 logger.setLevel('debug');
@@ -160,7 +160,7 @@ logger.setLevel('debug');
 ## Example Usage
 
 ```typescript
-import { providersRegistry } from '@chara/agents';
+import { providersRegistry } from '@chara-codes/agents';
 
 // This will now work even if environment variables are not set,
 // as long as the global config contains the necessary API keys

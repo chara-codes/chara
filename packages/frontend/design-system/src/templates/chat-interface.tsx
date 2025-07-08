@@ -14,30 +14,21 @@ import {
   useChatStore,
   useRunnerConnect,
   useRunnerConnection,
-} from "@apk/core";
-import { useModelsStore } from "@apk/core";
+} from "@chara-codes/core";
+import { useModelsStore } from "@chara-codes/core";
 import {
   useRoutingStore,
   Screen,
   useNavigateToConversation,
-} from "@apk/core";
+} from "@chara-codes/core";
 import type { Theme } from "@/theme";
-import type { ButtonConfig } from "@apk/core";
+import type { ButtonConfig } from "@chara-codes/core";
 
 const Container = styled.div`
   all: revert;
   * {
-    font-family:
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      Oxygen,
-      Ubuntu,
-      Cantarell,
-      "Open Sans",
-      "Helvetica Neue",
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
       sans-serif;
     box-sizing: border-box;
   }
@@ -111,7 +102,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   // Get store initialization functions
   const initializeChatStore = useChatStore((state) => state.initializeStore);
   const initializeModelsStore = useModelsStore(
-    (state) => state.initializeStore,
+    (state) => state.initializeStore
   );
 
   const { isConnected, isConnecting } = useRunnerConnection();
@@ -146,7 +137,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       chatStore.setActiveChat(chatId);
       navigateToConversation();
     },
-    [chatStore, navigateToConversation],
+    [chatStore, navigateToConversation]
   );
 
   const handleNewChat = useCallback(() => {

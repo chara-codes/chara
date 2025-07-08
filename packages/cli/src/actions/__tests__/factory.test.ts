@@ -32,7 +32,7 @@ const mockLogger = {
   setLevel: mock(() => {}),
 };
 
-mock.module("@apk/logger", () => ({
+mock.module("@chara-codes/logger", () => ({
   logger: mockLogger,
 }));
 
@@ -53,7 +53,7 @@ const testAction: ActionFunction<TestActionOptions> = async (options = {}) => {
 };
 
 const asyncTestAction: ActionFunction<TestActionOptions> = async (
-  options = {},
+  options = {}
 ) => {
   await new Promise((resolve) => setTimeout(resolve, 10));
   if (options.testValue === "async") {
@@ -63,7 +63,7 @@ const asyncTestAction: ActionFunction<TestActionOptions> = async (
 };
 
 const validationTestAction: ActionFunction<TestActionOptions> = async (
-  options = {},
+  options = {}
 ) => {
   if (!options.testValue) {
     throw new Error("testValue is required");
@@ -134,7 +134,7 @@ describe("Action Factory", () => {
       const action2 = createAction(
         "duplicate",
         "Second version",
-        asyncTestAction,
+        asyncTestAction
       );
 
       ActionFactory.register(action1);
@@ -152,7 +152,7 @@ describe("Action Factory", () => {
       ActionFactory.register(action);
 
       await expect(
-        ActionFactory.execute("test-exec", { verbose: true }),
+        ActionFactory.execute("test-exec", { verbose: true })
       ).resolves.toBeUndefined();
     });
 
@@ -160,12 +160,12 @@ describe("Action Factory", () => {
       const action = createAction(
         "test-no-opts",
         "Test no options",
-        testAction,
+        testAction
       );
       ActionFactory.register(action);
 
       await expect(
-        ActionFactory.execute("test-no-opts"),
+        ActionFactory.execute("test-no-opts")
       ).resolves.toBeUndefined();
     });
 
@@ -174,13 +174,13 @@ describe("Action Factory", () => {
       ActionFactory.register(action);
 
       await expect(
-        ActionFactory.execute("test-async", { testValue: "async" }),
+        ActionFactory.execute("test-async", { testValue: "async" })
       ).resolves.toBeUndefined();
     });
 
     test("should throw error for non-existent action", async () => {
       await expect(ActionFactory.execute("non-existent")).rejects.toThrow(
-        'Action "non-existent" not found',
+        'Action "non-existent" not found'
       );
     });
 
@@ -189,7 +189,7 @@ describe("Action Factory", () => {
       ActionFactory.register(action);
 
       await expect(
-        ActionFactory.execute("test-error", { shouldFail: true }),
+        ActionFactory.execute("test-error", { shouldFail: true })
       ).rejects.toThrow("Test action failed");
     });
 
@@ -200,13 +200,13 @@ describe("Action Factory", () => {
       await ActionFactory.execute("test-verbose", { verbose: true });
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        "Executing action: test-verbose",
+        "Executing action: test-verbose"
       );
       expect(mockLogger.debug).toHaveBeenCalledWith("Options:", {
         verbose: true,
       });
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Action "test-verbose" completed successfully',
+        'Action "test-verbose" completed successfully'
       );
     });
 
@@ -214,7 +214,7 @@ describe("Action Factory", () => {
       const action = createAction(
         "test-fail-verbose",
         "Test fail verbose",
-        testAction,
+        testAction
       );
       ActionFactory.register(action);
 
@@ -222,15 +222,15 @@ describe("Action Factory", () => {
         ActionFactory.execute("test-fail-verbose", {
           shouldFail: true,
           verbose: true,
-        }),
+        })
       ).rejects.toThrow();
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        "Executing action: test-fail-verbose",
+        "Executing action: test-fail-verbose"
       );
       expect(mockLogger.debug).toHaveBeenCalledWith(
         'Action "test-fail-verbose" failed:',
-        expect.any(Error),
+        expect.any(Error)
       );
     });
   });
@@ -240,7 +240,7 @@ describe("Action Factory", () => {
       const action = createAction(
         "helper-test",
         "Helper test description",
-        testAction,
+        testAction
       );
 
       expect(action.name).toBe("helper-test");
@@ -269,7 +269,7 @@ describe("Action Factory", () => {
 
         await expect(enhancedAction()).rejects.toThrow("Original error");
         expect(mockLogger.error).toHaveBeenCalledWith(
-          "Action failed: Original error",
+          "Action failed: Original error"
         );
       });
 
@@ -283,13 +283,13 @@ describe("Action Factory", () => {
         await expect(enhancedAction()).rejects.toThrow("String error");
         expect(mockLogger.error).toHaveBeenCalledWith(
           "Action failed with unknown error:",
-          "String error",
+          "String error"
         );
       });
 
       test("should pass through successful execution", async () => {
         const successAction: ActionFunction<TestActionOptions> = async (
-          options,
+          options
         ) => {
           return;
         };
@@ -297,7 +297,7 @@ describe("Action Factory", () => {
         const enhancedAction = withErrorHandling(successAction);
 
         await expect(
-          enhancedAction({ testValue: "success" }),
+          enhancedAction({ testValue: "success" })
         ).resolves.toBeUndefined();
         expect(mockLogger.error).not.toHaveBeenCalled();
       });
@@ -306,7 +306,7 @@ describe("Action Factory", () => {
     describe("withLogging", () => {
       test("should log action start and completion", async () => {
         const slowAction: ActionFunction<TestActionOptions> = async (
-          options,
+          options
         ) => {
           await new Promise((resolve) => setTimeout(resolve, 50));
           return;
@@ -317,16 +317,16 @@ describe("Action Factory", () => {
         await enhancedAction({ verbose: true });
 
         expect(mockLogger.debug).toHaveBeenCalledWith(
-          "Starting action: slow-action",
+          "Starting action: slow-action"
         );
         expect(mockLogger.debug).toHaveBeenCalledWith(
-          expect.stringMatching(/Action "slow-action" completed in \d+ms/),
+          expect.stringMatching(/Action "slow-action" completed in \d+ms/)
         );
       });
 
       test("should log action failure with timing", async () => {
         const failingAction: ActionFunction<TestActionOptions> = async (
-          options,
+          options
         ) => {
           await new Promise((resolve) => setTimeout(resolve, 20));
           throw new Error("Action failed");
@@ -335,14 +335,14 @@ describe("Action Factory", () => {
         const enhancedAction = withLogging(failingAction, "failing-action");
 
         await expect(enhancedAction({ verbose: true })).rejects.toThrow(
-          "Action failed",
+          "Action failed"
         );
 
         expect(mockLogger.debug).toHaveBeenCalledWith(
-          "Starting action: failing-action",
+          "Starting action: failing-action"
         );
         expect(mockLogger.debug).toHaveBeenCalledWith(
-          expect.stringMatching(/Action "failing-action" failed after \d+ms/),
+          expect.stringMatching(/Action "failing-action" failed after \d+ms/)
         );
       });
 
@@ -371,10 +371,10 @@ describe("Action Factory", () => {
         const enhancedAction = withValidation(testAction, validator);
 
         await expect(enhancedAction()).rejects.toThrow(
-          "Action validation failed: testValue is required",
+          "Action validation failed: testValue is required"
         );
         await expect(
-          enhancedAction({ testValue: "valid" }),
+          enhancedAction({ testValue: "valid" })
         ).resolves.toBeUndefined();
       });
 
@@ -386,10 +386,10 @@ describe("Action Factory", () => {
         const enhancedAction = withValidation(testAction, validator);
 
         await expect(enhancedAction({ testValue: "invalid" })).rejects.toThrow(
-          "Action validation failed",
+          "Action validation failed"
         );
         await expect(
-          enhancedAction({ testValue: "valid" }),
+          enhancedAction({ testValue: "valid" })
         ).resolves.toBeUndefined();
       });
 
@@ -399,7 +399,7 @@ describe("Action Factory", () => {
         const enhancedAction = withValidation(testAction, validator);
 
         await expect(
-          enhancedAction({ testValue: "any" }),
+          enhancedAction({ testValue: "any" })
         ).resolves.toBeUndefined();
       });
     });
@@ -414,22 +414,22 @@ describe("Action Factory", () => {
       const enhancedAction = compose<TestActionOptions>(
         withErrorHandling,
         (fn) => withLogging(fn, "composed-action"),
-        (fn) => withValidation(fn, validator),
+        (fn) => withValidation(fn, validator)
       )(testAction);
 
       // Should pass validation and execute successfully
       await expect(
-        enhancedAction({ testValue: "valid", verbose: true }),
+        enhancedAction({ testValue: "valid", verbose: true })
       ).resolves.toBeUndefined();
 
       // Should log due to withLogging
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        "Starting action: composed-action",
+        "Starting action: composed-action"
       );
 
       // Should fail validation
       await expect(enhancedAction({ testValue: "invalid" })).rejects.toThrow(
-        "Action validation failed",
+        "Action validation failed"
       );
     });
 
@@ -458,7 +458,7 @@ describe("Action Factory", () => {
 
       const enhancedAction = compose<TestActionOptions>(
         enhancer1,
-        enhancer2,
+        enhancer2
       )(trackingAction);
 
       await enhancedAction();
@@ -476,7 +476,7 @@ describe("Action Factory", () => {
       const enhancedAction = compose<TestActionOptions>()(testAction);
 
       await expect(
-        enhancedAction({ testValue: "test" }),
+        enhancedAction({ testValue: "test" })
       ).resolves.toBeUndefined();
     });
   });
@@ -484,7 +484,7 @@ describe("Action Factory", () => {
   describe("Context Creation", () => {
     test("should create context with correct default values", async () => {
       const contextTestAction: ActionFunction<TestActionOptions> = async (
-        options,
+        options
       ) => {
         // We can't directly test context creation since it's private,
         // but we can test the behavior it enables
@@ -494,12 +494,12 @@ describe("Action Factory", () => {
       const action = createAction(
         "context-test",
         "Context test",
-        contextTestAction,
+        contextTestAction
       );
       ActionFactory.register(action);
 
       await expect(
-        ActionFactory.execute("context-test"),
+        ActionFactory.execute("context-test")
       ).resolves.toBeUndefined();
     });
 
@@ -507,14 +507,14 @@ describe("Action Factory", () => {
       const action = createAction(
         "verbose-context",
         "Verbose context",
-        testAction,
+        testAction
       );
       ActionFactory.register(action);
 
       await ActionFactory.execute("verbose-context", { verbose: true });
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        "Executing action: verbose-context",
+        "Executing action: verbose-context"
       );
     });
 
@@ -531,12 +531,12 @@ describe("Action Factory", () => {
       const action = createAction(
         "force-context",
         "Force context",
-        forceTestAction,
+        forceTestAction
       );
       ActionFactory.register(action);
 
       await expect(
-        ActionFactory.execute("force-context", { force: true }),
+        ActionFactory.execute("force-context", { force: true })
       ).resolves.toBeUndefined();
     });
   });
@@ -544,7 +544,7 @@ describe("Action Factory", () => {
   describe("Integration Tests", () => {
     test("should handle complete action lifecycle", async () => {
       const complexAction: ActionFunction<TestActionOptions> = async (
-        options,
+        options
       ) => {
         if (options?.verbose) {
           console.log("Complex action running");
@@ -565,13 +565,13 @@ describe("Action Factory", () => {
       const enhancedAction = compose<TestActionOptions>(
         withErrorHandling,
         (fn) => withLogging(fn, "complex-action"),
-        (fn) => withValidation(fn, validator),
+        (fn) => withValidation(fn, validator)
       )(complexAction);
 
       const action = createAction(
         "complex-lifecycle",
         "Complex lifecycle test",
-        enhancedAction,
+        enhancedAction
       );
       ActionFactory.register(action);
 
@@ -580,14 +580,14 @@ describe("Action Factory", () => {
         ActionFactory.execute("complex-lifecycle", {
           testValue: "valid",
           verbose: true,
-        }),
+        })
       ).resolves.toBeUndefined();
 
       // Test validation failure
       await expect(
         ActionFactory.execute("complex-lifecycle", {
           testValue: "invalid",
-        }),
+        })
       ).rejects.toThrow("Action validation failed");
 
       // Test action failure
@@ -595,7 +595,7 @@ describe("Action Factory", () => {
         ActionFactory.execute("complex-lifecycle", {
           testValue: "valid",
           shouldFail: true,
-        }),
+        })
       ).rejects.toThrow("Complex action failed");
     });
 
@@ -629,7 +629,7 @@ describe("Action Factory", () => {
   describe("Error Handling Edge Cases", () => {
     test("should handle null/undefined options gracefully", async () => {
       const nullSafeAction: ActionFunction<TestActionOptions> = async (
-        options,
+        options
       ) => {
         return;
       };
@@ -638,7 +638,7 @@ describe("Action Factory", () => {
       ActionFactory.register(action);
 
       await expect(
-        ActionFactory.execute("null-safe", undefined),
+        ActionFactory.execute("null-safe", undefined)
       ).resolves.toBeUndefined();
     });
 
@@ -650,7 +650,7 @@ describe("Action Factory", () => {
       const action = createAction(
         "weird-throw",
         "Weird throw",
-        weirdThrowAction,
+        weirdThrowAction
       );
       ActionFactory.register(action);
 
@@ -669,7 +669,7 @@ describe("Action Factory", () => {
       ActionFactory.register(action);
 
       await expect(ActionFactory.execute("sync-throw")).rejects.toThrow(
-        "Sync error",
+        "Sync error"
       );
     });
   });

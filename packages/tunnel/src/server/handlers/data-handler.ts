@@ -1,11 +1,11 @@
 import type { ServerWebSocket } from "bun";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import type { ClientData } from "../../types/server.types";
 
 /**
  * Handles HTTP data chunks sent from the client over WebSocket
  * Adds the data to the appropriate stream for the pending request
- * 
+ *
  * @param ws The WebSocket connection
  * @param data The parsed message data containing the chunk data
  */
@@ -26,13 +26,14 @@ export function handleHttpData(
 
   try {
     // Convert data from binary/base64 format to Uint8Array
-    const chunk = typeof data.data === "string"
-      ? new Uint8Array(Buffer.from(data.data, "binary"))
-      : new Uint8Array(data.data);
+    const chunk =
+      typeof data.data === "string"
+        ? new Uint8Array(Buffer.from(data.data, "binary"))
+        : new Uint8Array(data.data);
 
     // Add the chunk to the stream
     pendingRequest.streamController.enqueue(chunk);
-    
+
     logger.debug(
       `Added ${chunk.length} bytes to stream for request ${requestId}`
     );

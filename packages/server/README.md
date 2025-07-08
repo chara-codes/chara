@@ -1,4 +1,4 @@
-# @chara/server
+# @chara-codes/server
 
 A modular, configurable backend server for the Chara AI chat application, providing AI-powered chat, code generation, and document management capabilities through a modern tRPC API with a simple function-based configuration approach.
 
@@ -79,7 +79,7 @@ LOGGING_HEADERS=false
 Configure the server by passing options to the `startServer()` function:
 
 ```typescript
-import { startServer } from '@chara/server';
+import { startServer } from '@chara-codes/server';
 
 const { manager, appRouter } = await startServer({
   server: {
@@ -218,7 +218,7 @@ SERVER_PORT=4000 MCP_ENABLED=false bun run start-server.ts
 ### Custom Server Setup
 
 ```typescript
-import { startServer } from '@chara/server';
+import { startServer } from '@chara-codes/server';
 
 // Basic usage with default configuration
 const { manager, appRouter } = await startServer();
@@ -445,7 +445,7 @@ The server is structured into the following main components:
 
 ```typescript
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '@chara/server';
+import type { AppRouter } from '@chara-codes/server';
 
 const client = createTRPCProxyClient<AppRouter>({
   links: [

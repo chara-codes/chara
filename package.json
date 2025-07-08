@@ -3,7 +3,7 @@
   "private": "true",
   "module": "index.ts",
   "type": "module",
-  "packageManager": "bun@1.2.6",
+  "packageManager": "bun@1.2.18",
   "workspaces": [
     "packages/*",
     "packages/frontend/*"
@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "clean": "rm -rf node_modules packages/*/node_modules bun.lock packages/*/bun.lock",
+    "clean": "rm -rf node_modules packages/*/node_modules packages/*/*/node_modules bun.lock packages/*/bun.lock",
     "test": "turbo run test",
     "release": "node scripts/auto-release.js shipit",
     "release:alpha": "node scripts/auto-release.js canary",

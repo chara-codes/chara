@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { initTRPC } from "@trpc/server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { type Server, serve } from "bun";
@@ -129,7 +129,7 @@ const defaultOptions: InternalServerOptions = {
 
 function mergeOptions(
   defaults: InternalServerOptions,
-  overrides: ServerOptions = {},
+  overrides: ServerOptions = {}
 ): InternalServerOptions {
   return {
     server: {
@@ -217,7 +217,7 @@ class ServerManager {
   }
 
   private async handleMainServerRequest(
-    request: Request,
+    request: Request
   ): Promise<Response | undefined> {
     const url = new URL(request.url);
 
@@ -290,7 +290,7 @@ class ServerManager {
 
     response.headers.append(
       "Access-Control-Allow-Origin",
-      this.options.server.cors.origin,
+      this.options.server.cors.origin
     );
     return response;
   }
@@ -303,7 +303,7 @@ class ServerManager {
       logger.info("Received GET request to SSE endpoint");
 
       const transport = new BunSSEServerTransport(
-        this.options.mcp.messagesEndpoint,
+        this.options.mcp.messagesEndpoint
       );
       const sessionId = transport.sessionId;
       this.mcpTransports[sessionId] = transport;
@@ -366,15 +366,19 @@ class ServerManager {
       });
 
       logger.server(
-        `MCP Server ready at: http://localhost:${this.mcpServer.port}/`,
+        `MCP Server ready at: http://localhost:${this.mcpServer.port}/`
       );
       logger.success("MCP Server handler initialized");
       logger.info("Available MCP endpoints:");
       logger.info(
-        `- SSE: ${cyan(`http://localhost:${this.mcpServer.port}${this.options.mcp.sseEndpoint}`)}`,
+        `- SSE: ${cyan(
+          `http://localhost:${this.mcpServer.port}${this.options.mcp.sseEndpoint}`
+        )}`
       );
       logger.info(
-        `- Messages: ${cyan(`http://localhost:${this.mcpServer.port}${this.options.mcp.messagesEndpoint}`)}`,
+        `- Messages: ${cyan(
+          `http://localhost:${this.mcpServer.port}${this.options.mcp.messagesEndpoint}`
+        )}`
       );
     } catch (error) {
       logger.error("Failed to initialize MCP server:", error);
@@ -443,7 +447,7 @@ class ServerManager {
 
       // Log server information
       logger.server(
-        `Main Server ready at: http://localhost:${this.mainServer.port}/`,
+        `Main Server ready at: http://localhost:${this.mainServer.port}/`
       );
 
       if (this.options.websocket.enabled) {
@@ -452,12 +456,16 @@ class ServerManager {
 
       logger.info("Available endpoints:");
       logger.server(
-        `- HTTP: ${cyan(`http://localhost:${this.mainServer.port}${this.options.trpc.endpoint}`)}`,
+        `- HTTP: ${cyan(
+          `http://localhost:${this.mainServer.port}${this.options.trpc.endpoint}`
+        )}`
       );
 
       if (this.options.websocket.enabled) {
         logger.server(
-          `- WebSocket: ${cyan(`ws://localhost:${this.mainServer.port}${this.options.websocket.endpoint}`)}`,
+          `- WebSocket: ${cyan(
+            `ws://localhost:${this.mainServer.port}${this.options.websocket.endpoint}`
+          )}`
         );
       }
     } catch (error) {

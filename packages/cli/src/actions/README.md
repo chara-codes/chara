@@ -426,7 +426,7 @@ The CLI includes dedicated server actions for managing the Chara server:
 - **start-server**: Start the server with configurable options
 - **stop-server**: Stop the server and cleanup resources
 
-These actions work directly with `@chara/server` and are registered in the main registry. See [Server Actions Documentation](./SERVER_ACTIONS.md) for complete usage information.
+These actions work directly with `@chara-codes/server` and are registered in the main registry. See [Server Actions Documentation](./SERVER_ACTIONS.md) for complete usage information.
 
 ### Key Features
 

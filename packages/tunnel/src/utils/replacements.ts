@@ -1,5 +1,5 @@
 import type { TextReplacement } from "../types/server.types";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 
 /**
  * Applies a series of text replacements to a string
@@ -9,7 +9,7 @@ import { logger } from "@apk/logger";
  */
 export function applyReplacements(
   content: string,
-  replacements: TextReplacement[],
+  replacements: TextReplacement[]
 ): string {
   if (!replacements || replacements.length === 0) return content;
 

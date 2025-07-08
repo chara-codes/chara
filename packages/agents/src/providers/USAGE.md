@@ -5,7 +5,7 @@ This guide demonstrates how to use the providers module with the unified initial
 ## Quick Start
 
 ```typescript
-import { initialize, getModel } from '@chara/agents';
+import { initialize, getModel } from '@chara-codes/agents';
 
 // Step 1: Initialize (required before any provider usage)
 await initialize();
@@ -28,7 +28,7 @@ const claudeModel = await getModel('anthropic', 'claude-3-5-sonnet-20241022');
 Before using any providers, you must explicitly initialize them:
 
 ```typescript
-import { initialize, getModel, hasProvider } from '@chara/agents';
+import { initialize, getModel, hasProvider } from '@chara-codes/agents';
 
 // Initialize providers first (required!)
 await initialize();
@@ -40,7 +40,7 @@ const model = await getModel('openai', 'gpt-4o');
 ### 2. Check Available Providers
 
 ```typescript
-import { initialize, getAvailableProviders, hasProvider } from '@chara/agents';
+import { initialize, getAvailableProviders, hasProvider } from '@chara-codes/agents';
 
 await initialize();
 
@@ -57,7 +57,7 @@ if (await hasProvider('openai')) {
 ### 3. Fetch Available Models
 
 ```typescript
-import { initialize, fetchModels, fetchAllModels } from '@chara/agents';
+import { initialize, fetchModels, fetchAllModels } from '@chara-codes/agents';
 
 await initialize();
 
@@ -83,7 +83,7 @@ Call `initialize()` again when:
 ### How to Reinitialize
 
 ```typescript
-import { initialize, getAvailableProviders } from '@chara/agents';
+import { initialize, getAvailableProviders } from '@chara-codes/agents';
 
 // Initial setup
 await initialize();
@@ -109,7 +109,7 @@ import {
   getModel, 
   getAvailableProviders,
   hasProvider 
-} from '@chara/agents';
+} from '@chara-codes/agents';
 
 async function exampleUsage() {
   try {
@@ -158,7 +158,7 @@ exampleUsage();
 ### Uninitialized Access
 
 ```typescript
-import { getModel } from '@chara/agents';
+import { getModel } from '@chara-codes/agents';
 
 try {
   // This will throw an error!
@@ -172,7 +172,7 @@ try {
 ### Provider Not Available
 
 ```typescript
-import { initialize, getModel } from '@chara/agents';
+import { initialize, getModel } from '@chara-codes/agents';
 
 await initialize();
 
@@ -188,7 +188,7 @@ try {
 ### Safe Provider Access
 
 ```typescript
-import { initialize, hasProvider, getModel } from '@chara/agents';
+import { initialize, hasProvider, getModel } from '@chara-codes/agents';
 
 await initialize();
 
@@ -206,7 +206,7 @@ if (await hasProvider('openai')) {
 For advanced use cases, you can access the registry directly:
 
 ```typescript
-import { providersRegistry } from '@chara/agents';
+import { providersRegistry } from '@chara-codes/agents';
 
 // Initialize
 await providersRegistry.initialize();
@@ -230,7 +230,7 @@ await providersRegistry.initialize();
 When using with the Chara server, providers are automatically initialized:
 
 ```typescript
-import { startServer } from '@chara/agents';
+import { startServer } from '@chara-codes/agents';
 
 // Server automatically initializes providers
 const server = await startServer({

@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { isCancel, text } from "./prompts";
 import { green, yellow } from "picocolors";
 import type { ProviderConfig } from "../config/provider-configs";
@@ -7,7 +7,7 @@ import { PROVIDER_CONFIGS } from "../config/provider-configs";
 export async function promptForProviderConfig(
   _providerKey: string,
   config: ProviderConfig,
-  existingConfig: Record<string, string> = {},
+  existingConfig: Record<string, string> = {}
 ): Promise<Record<string, string> | null> {
   const envConfig: Record<string, string> = {};
 
@@ -19,14 +19,14 @@ export async function promptForProviderConfig(
     // Show help URL if available
     if (config.helpUrl) {
       logger.info(
-        `${yellow("ℹ")} Get your ${config.name} API key: ${config.helpUrl}`,
+        `${yellow("ℹ")} Get your ${config.name} API key: ${config.helpUrl}`
       );
     }
 
     // Show if using environment variable
     if (envValue && !existingConfig[config.envKey]) {
       logger.info(
-        `${green("✓")} Found ${config.envKey} in environment variables`,
+        `${green("✓")} Found ${config.envKey} in environment variables`
       );
     }
 
@@ -59,7 +59,7 @@ export async function promptForProviderConfig(
     // Show if using environment variable
     if (envValue && !existingConfig[config.envKey]) {
       logger.info(
-        `${green("✓")} Found ${config.envKey} in environment variables`,
+        `${green("✓")} Found ${config.envKey} in environment variables`
       );
     }
 
@@ -131,7 +131,7 @@ export async function promptForProviderConfig(
 
 export async function validateProviderConfig(
   providerKey: string,
-  envConfig: Record<string, string>,
+  envConfig: Record<string, string>
 ): Promise<boolean> {
   const config = PROVIDER_CONFIGS[providerKey];
 
@@ -191,7 +191,7 @@ export async function validateProviderConfig(
 }
 
 export function getConfiguredProviders(
-  envConfig: Record<string, string>,
+  envConfig: Record<string, string>
 ): string[] {
   return Object.keys(PROVIDER_CONFIGS).filter((providerKey) => {
     const config = PROVIDER_CONFIGS[providerKey];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useUIStore } from "@apk/core";
+import { useUIStore } from "@chara-codes/core";
 
 /**
  * Information about a component detected from a DOM element
@@ -78,12 +78,12 @@ export const useElementSelector = (
     name: string;
     type: string;
     data?: unknown;
-  }) => void,
+  }) => void
 ): UseElementSelectorReturn => {
   // State for tracking element selection
   const [isSelectingElement, setIsSelectingElement] = useState<boolean>(false);
   const [selectedElement, setSelectedElement] = useState<HTMLElement | null>(
-    null,
+    null
   );
   const [showCommentModal, setShowCommentModal] = useState<boolean>(false);
   const [elementComment, setElementComment] = useState<string>("");
@@ -161,7 +161,7 @@ export const useElementSelector = (
 
       return componentInfo;
     },
-    [],
+    []
   );
 
   /**
@@ -173,7 +173,7 @@ export const useElementSelector = (
         key.startsWith("__reactFiber$") ||
         key.startsWith("__reactInternalInstance$") ||
         key.startsWith("__reactProps$") ||
-        key.startsWith("_reactInternals"),
+        key.startsWith("_reactInternals")
     );
   };
 
@@ -183,7 +183,7 @@ export const useElementSelector = (
   const extractComponentInfoFromReactFiber = (
     element: HTMLElement,
     reactKey: string,
-    componentInfo: ComponentInfo,
+    componentInfo: ComponentInfo
   ): void => {
     // @ts-expect-error - accessing dynamic properties
     const fiberNode = element[reactKey];
@@ -256,7 +256,7 @@ export const useElementSelector = (
    */
   const extractComponentInfoFromDataAttributes = (
     element: HTMLElement,
-    componentInfo: ComponentInfo,
+    componentInfo: ComponentInfo
   ): void => {
     const dataComponent = element.getAttribute("data-component");
     const dataTestId = element.getAttribute("data-testid");
@@ -288,7 +288,7 @@ export const useElementSelector = (
    */
   const extractComponentInfoFromClassNames = (
     element: HTMLElement,
-    componentInfo: ComponentInfo,
+    componentInfo: ComponentInfo
   ): void => {
     const classNames = element.className.split(" ");
 
@@ -306,13 +306,17 @@ export const useElementSelector = (
         if (componentInfo.componentName === "Unknown") {
           componentInfo.componentName = moduleMatch[1];
         }
-        componentInfo.componentPath = `components/${moduleMatch[1].toLowerCase()}/${moduleMatch[1]}.tsx`;
+        componentInfo.componentPath = `components/${moduleMatch[1].toLowerCase()}/${
+          moduleMatch[1]
+        }.tsx`;
         break;
       } else if (materialMatch && materialMatch[1]) {
         if (componentInfo.componentName === "Unknown") {
           componentInfo.componentName = materialMatch[1];
         }
-        componentInfo.componentPath = `components/${materialMatch[1].toLowerCase()}/${materialMatch[1]}.tsx`;
+        componentInfo.componentPath = `components/${materialMatch[1].toLowerCase()}/${
+          materialMatch[1]
+        }.tsx`;
         break;
       } else if (
         styledMatch &&
@@ -326,7 +330,9 @@ export const useElementSelector = (
           componentInfo.componentName =
             componentInfo.componentName.charAt(0).toUpperCase() +
             componentInfo.componentName.slice(1);
-          componentInfo.componentPath = `components/${componentInfo.componentName.toLowerCase()}/${componentInfo.componentName}.tsx`;
+          componentInfo.componentPath = `components/${componentInfo.componentName.toLowerCase()}/${
+            componentInfo.componentName
+          }.tsx`;
         }
       }
     }
@@ -337,11 +343,11 @@ export const useElementSelector = (
    */
   const extractComponentInfoFromId = (
     element: HTMLElement,
-    componentInfo: ComponentInfo,
+    componentInfo: ComponentInfo
   ): void => {
     // Check for PascalCase or camelCase IDs that might indicate component names
     const idMatch = element.id.match(
-      /([A-Z][a-zA-Z0-9]+)(Container|Wrapper|Component|Root|Inner)?$/,
+      /([A-Z][a-zA-Z0-9]+)(Container|Wrapper|Component|Root|Inner)?$/
     );
     if (idMatch) {
       componentInfo.componentName = idMatch[1];
@@ -353,7 +359,7 @@ export const useElementSelector = (
    */
   const extractComponentInfoFromParents = (
     element: HTMLElement,
-    componentInfo: ComponentInfo,
+    componentInfo: ComponentInfo
   ): void => {
     // Check for common component patterns in parent elements
     let parent = element.parentElement;
@@ -378,7 +384,7 @@ export const useElementSelector = (
       // Check for data attributes in parent
       const parentDataComponent = parent.getAttribute("data-component");
       const parentDataComponentName = parent.getAttribute(
-        "data-component-name",
+        "data-component-name"
       );
 
       if (parentDataComponentName) {
@@ -424,7 +430,7 @@ export const useElementSelector = (
     if (cleanupRef.current.handleMouseMove) {
       document.removeEventListener(
         "mousemove",
-        cleanupRef.current.handleMouseMove,
+        cleanupRef.current.handleMouseMove
       );
     }
   }, []);
@@ -458,7 +464,7 @@ export const useElementSelector = (
     // Show the chat panel and trigger again
     const chatPanel = document.getElementById("chat-overlay-panel");
     const chatTrigger = document.querySelector(
-      '[aria-label="Open chat panel"], [aria-label="Close chat panel"]',
+      '[aria-label="Open chat panel"], [aria-label="Close chat panel"]'
     );
 
     if (chatPanel) (chatPanel as HTMLElement).style.display = "";
@@ -469,7 +475,7 @@ export const useElementSelector = (
 
     // Remove the style element
     const styleElement = document.querySelector(
-      "style[data-element-selection]",
+      "style[data-element-selection]"
     );
     if (styleElement && styleElement.parentNode) {
       styleElement.parentNode.removeChild(styleElement);
@@ -484,19 +490,19 @@ export const useElementSelector = (
         document.removeEventListener(
           "click",
           cleanupRef.current.handleElementClick,
-          true,
+          true
         );
       }
       if (cleanupRef.current.handleKeyDownEscape) {
         document.removeEventListener(
           "keydown",
-          cleanupRef.current.handleKeyDownEscape,
+          cleanupRef.current.handleKeyDownEscape
         );
       }
       if (cleanupRef.current.handleMouseMove) {
         document.removeEventListener(
           "mousemove",
-          cleanupRef.current.handleMouseMove,
+          cleanupRef.current.handleMouseMove
         );
       }
       cleanupRef.current = {};
@@ -693,7 +699,9 @@ export const useElementSelector = (
         cursor: crosshair !important;
         outline: 6px solid ${config.primaryColor} !important;
         outline-offset: 3px !important;
-        box-shadow: 0 0 0 3px ${config.borderColor}, 0 0 15px 5px rgba(37, 99, 235, 0.8) !important;
+        box-shadow: 0 0 0 3px ${
+          config.borderColor
+        }, 0 0 15px 5px rgba(37, 99, 235, 0.8) !important;
         background-color: ${config.backgroundColor} !important;
         position: relative !important;
         z-index: ${config.zIndexBase + 4} !important;
@@ -755,7 +763,7 @@ export const useElementSelector = (
       // Get the element directly under the cursor
       const element = document.elementFromPoint(
         e.clientX,
-        e.clientY,
+        e.clientY
       ) as HTMLElement;
 
       if (!element) return;
@@ -798,7 +806,7 @@ export const useElementSelector = (
     console.log("DEBUG: Element selection mode initialized");
     console.log(
       "DEBUG: Event listeners attached:",
-      cleanupRef.current ? Object.keys(cleanupRef.current) : "None",
+      cleanupRef.current ? Object.keys(cleanupRef.current) : "None"
     );
   };
 
@@ -845,7 +853,7 @@ export const useElementSelector = (
    */
   const createModalElements = (
     element: HTMLElement,
-    componentInfo: ComponentInfo,
+    componentInfo: ComponentInfo
   ) => {
     const config = uiConfigRef.current;
 
@@ -1141,7 +1149,7 @@ export const useElementSelector = (
         e.preventDefault();
         // Find and click the confirm button
         const confirmButton = document.querySelector(
-          "#element-comment-modal button:last-child",
+          "#element-comment-modal button:last-child"
         ) as HTMLElement;
         if (confirmButton) {
           confirmButton.click();
@@ -1229,7 +1237,7 @@ export const useElementSelector = (
     backdrop: HTMLDivElement,
     confirmButton: HTMLButtonElement,
     element: HTMLElement,
-    componentInfo: ComponentInfo,
+    componentInfo: ComponentInfo
   ) => {
     // Add click event to backdrop to close modal
     backdrop.addEventListener("click", (e) => {
@@ -1309,7 +1317,7 @@ export const useElementSelector = (
         document.removeEventListener(
           "click",
           cleanupRef.current.handleElementClick,
-          true,
+          true
         );
       }
 
@@ -1319,7 +1327,7 @@ export const useElementSelector = (
       // Create modal elements
       const { backdrop, confirmButton } = createModalElements(
         element,
-        componentInfo,
+        componentInfo
       );
 
       // Add event listeners
@@ -1328,7 +1336,7 @@ export const useElementSelector = (
       return confirmButton;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cleanupElementSelectionUI, detectComponentInfo],
+    [cleanupElementSelectionUI, detectComponentInfo]
   );
 
   // Clean up element selection if component unmounts while selecting

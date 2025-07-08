@@ -1,8 +1,8 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import type { SetupLoggingActionOptions } from "./types";
 
 export async function setupLoggingAction(
-  options: SetupLoggingActionOptions = {},
+  options: SetupLoggingActionOptions = {}
 ): Promise<void> {
   // Set log level based on flags
   if (options.trace) {

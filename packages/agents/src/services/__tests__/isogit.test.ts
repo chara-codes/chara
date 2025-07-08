@@ -5,10 +5,10 @@ import { join } from "node:path";
 import { stat } from "node:fs/promises";
 import fs from "node:fs";
 import git from "isomorphic-git";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 
 // Mock logger to avoid noise in tests
-mock.module("@apk/logger", () => ({
+mock.module("@chara-codes/logger", () => ({
   logger: {
     debug: mock(() => {}),
     info: mock(() => {}),
@@ -36,7 +36,7 @@ describe("IsoGitService", () => {
 
       expect(result.status).toBe("success");
       expect(result.message).toContain(
-        "Successfully initialized git repository",
+        "Successfully initialized git repository"
       );
       expect(result.path).toBe(join(testFS.getPath(), ".chara", "history"));
 
@@ -97,7 +97,7 @@ describe("IsoGitService", () => {
     test("should handle errors gracefully", async () => {
       // Try to initialize in a path that can't be created
       await expect(
-        service.initializeRepository("/root/cannot-create-this-path"),
+        service.initializeRepository("/root/cannot-create-this-path")
       ).rejects.toThrow("Failed to initialize git repository");
     });
 
@@ -113,7 +113,7 @@ describe("IsoGitService", () => {
   describe("isRepositoryInitialized", () => {
     test("should return false when repository is not initialized", async () => {
       const isInitialized = await service.isRepositoryInitialized(
-        testFS.getPath(),
+        testFS.getPath()
       );
       expect(isInitialized).toBe(false);
     });
@@ -121,7 +121,7 @@ describe("IsoGitService", () => {
     test("should return true when repository is initialized", async () => {
       await service.initializeRepository(testFS.getPath());
       const isInitialized = await service.isRepositoryInitialized(
-        testFS.getPath(),
+        testFS.getPath()
       );
       expect(isInitialized).toBe(true);
     });
@@ -136,7 +136,7 @@ describe("IsoGitService", () => {
     test("should throw error when git is not initialized", async () => {
       const uninitializedService = new IsoGitService();
       await expect(
-        uninitializedService.saveToHistory(testFS.getPath("uninitialized")),
+        uninitializedService.saveToHistory(testFS.getPath("uninitialized"))
       ).rejects.toThrow("Git repository not initialized");
     });
 
@@ -169,7 +169,7 @@ describe("IsoGitService", () => {
       const customMessage = "Custom commit message";
       const result = await service.saveToHistory(
         testFS.getPath(),
-        customMessage,
+        customMessage
       );
 
       expect(result.status).toBe("success");
@@ -320,14 +320,14 @@ describe("IsoGitService", () => {
       await testFS.createFile("file1.txt", "Version 1");
       const result1 = await service.saveToHistory(
         testFS.getPath(),
-        "First commit",
+        "First commit"
       );
 
       // Second commit
       await testFS.createFile("file2.txt", "Version 2");
       const result2 = await service.saveToHistory(
         testFS.getPath(),
-        "Second commit",
+        "Second commit"
       );
 
       expect(result1.status).toBe("success");
@@ -355,7 +355,7 @@ describe("IsoGitService", () => {
 
       // At least one should succeed
       const successCount = [result1, result2].filter(
-        (r) => r.status === "fulfilled",
+        (r) => r.status === "fulfilled"
       ).length;
       expect(successCount).toBeGreaterThan(0);
     });
@@ -367,7 +367,7 @@ describe("IsoGitService", () => {
 
       expect(result.status).toBe("success");
       expect(result.commitMessage).toMatch(
-        /^Save changes - \d{4}-\d{2}-\d{2}T/,
+        /^Save changes - \d{4}-\d{2}-\d{2}T/
       );
     });
 
@@ -392,7 +392,7 @@ describe("IsoGitService", () => {
       const invalidPath = "/root/cannot-access";
 
       await expect(service.initializeRepository(invalidPath)).rejects.toThrow(
-        "Failed to initialize git repository",
+        "Failed to initialize git repository"
       );
     });
 
@@ -402,7 +402,7 @@ describe("IsoGitService", () => {
       await testFS.createFile(".chara/history/invalid", "not a git repo");
 
       await expect(service.saveToHistory(testFS.getPath())).rejects.toThrow(
-        "Git repository not initialized",
+        "Git repository not initialized"
       );
     });
   });
@@ -414,7 +414,7 @@ describe("IsoGitService", () => {
 
       const result = await service.saveToHistory(
         testFS.getPath(),
-        "Integration test commit",
+        "Integration test commit"
       );
 
       expect(result.status).toBe("success");

@@ -1,7 +1,11 @@
 import type { ServerWebSocket } from "bun";
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { allocateSubdomain } from "../../utils/subdomain";
-import type { ClientData, ClientMap, ServerConfig } from "../../types/server.types";
+import type {
+  ClientData,
+  ClientMap,
+  ServerConfig,
+} from "../../types/server.types";
 
 /**
  * Handles a new WebSocket connection, assigning a subdomain to the client
@@ -12,7 +16,7 @@ import type { ClientData, ClientMap, ServerConfig } from "../../types/server.typ
 export function handleOpen(
   ws: ServerWebSocket<ClientData>,
   clients: ClientMap,
-  config: ServerConfig,
+  config: ServerConfig
 ): void {
   logger.debug(`New WebSocket connection opened: ${ws.remoteAddress}`);
 
@@ -33,9 +37,11 @@ export function handleOpen(
     desiredSubdomain,
     clients
   );
-  
+
   logger.debug(
-    `Allocated subdomain: ${subdomain}, requested: ${desiredSubdomain || "none"}, used requested: ${usedRequestedSubdomain}`,
+    `Allocated subdomain: ${subdomain}, requested: ${
+      desiredSubdomain || "none"
+    }, used requested: ${usedRequestedSubdomain}`
   );
 
   // Create the full domain name and store it in the client data
@@ -51,7 +57,7 @@ export function handleOpen(
       type: "subdomain_assigned",
       subdomain: fullDomain,
       requested: usedRequestedSubdomain,
-    }),
+    })
   );
 
   logger.info(`Assigned subdomain ${fullDomain} to client`);
@@ -64,7 +70,7 @@ export function handleOpen(
  */
 export function handleClose(
   ws: ServerWebSocket<ClientData>,
-  clients: ClientMap,
+  clients: ClientMap
 ): void {
   logger.debug(`WebSocket connection closing: ${ws.remoteAddress}`);
 
@@ -76,13 +82,15 @@ export function handleClose(
   // Handle pending requests if any
   if (ws.data?.requests?.size) {
     logger.debug(
-      `Client has ${ws.data.requests.size} pending requests to clean up`,
+      `Client has ${ws.data.requests.size} pending requests to clean up`
     );
-    
+
     // Resolve all pending requests with a client disconnected message
     for (const [requestId, pendingRequest] of ws.data.requests.entries()) {
-      logger.debug(`Resolving pending request ${requestId} due to client disconnect`);
-      
+      logger.debug(
+        `Resolving pending request ${requestId} due to client disconnect`
+      );
+
       // Close the stream controller if it exists
       if (pendingRequest.streamController) {
         try {
@@ -105,6 +113,6 @@ export function handleClose(
     clients.delete(subdomain);
     logger.info(`Removed subdomain ${subdomain}.${domain}`);
   }
-  
+
   logger.info("WebSocket connection closed");
 }

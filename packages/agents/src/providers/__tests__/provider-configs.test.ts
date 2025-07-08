@@ -2,12 +2,12 @@ import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { ProviderConfigs } from "../provider-configs";
 
 // Mock the global config module to prevent file system errors
-mock.module("@apk/settings", () => ({
+mock.module("@chara-codes/settings", () => ({
   readGlobalConfig: mock(() => Promise.resolve({})),
   writeGlobalConfig: mock(() => Promise.resolve()),
   getModelsWhitelist: mock(() => ({})),
 }));
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 
 describe("ProviderConfigs", () => {
   let providerConfigs: ProviderConfigs;
@@ -42,7 +42,7 @@ describe("ProviderConfigs", () => {
     // Test with non-existent provider registry entry
     // @ts-ignore - Accessing private method for testing
     const result = await providerConfigs.initializeProvider(
-      "non-existent-provider",
+      "non-existent-provider"
     );
     expect(result).toBeNull();
   });
@@ -61,10 +61,10 @@ describe("ProviderConfigs", () => {
 
     // Check that provider count increased
     expect(providerConfigs.getRegisteredProviderKeys().length).toBe(
-      initialCount + 1,
+      initialCount + 1
     );
     expect(providerConfigs.getRegisteredProviderKeys()).toContain(
-      "custom-provider",
+      "custom-provider"
     );
 
     // Try to get the provider (should be null as no env vars are set)
@@ -160,13 +160,13 @@ describe("ProviderConfigs", () => {
     // @ts-ignore - Testing invalid input
     providerConfigs.registerProvider(null, {});
     expect(providerConfigs.getRegisteredProviderKeys().length).toBe(
-      initialKeys,
+      initialKeys
     );
 
     // @ts-ignore - Testing missing createProviderFn
     providerConfigs.registerProvider("invalid", { name: "Invalid" });
     expect(providerConfigs.getRegisteredProviderKeys().length).toBe(
-      initialKeys,
+      initialKeys
     );
   });
 });

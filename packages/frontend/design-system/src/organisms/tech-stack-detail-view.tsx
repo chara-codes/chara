@@ -13,7 +13,7 @@ import {
 } from "../atoms/icons";
 import Button from "../atoms/button";
 import type { Theme } from "@/theme";
-import { TechStackDetail } from "@apk/core";
+import { TechStackDetail } from "@chara-codes/core";
 
 const iconComponents = {
   code: CodeIcon,
@@ -203,9 +203,8 @@ const ServerContent = styled.div`
 `;
 
 const JsonConfig = styled.pre`
-  font-family:
-    "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New",
-    monospace;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+    "Courier New", monospace;
   font-size: 13px;
   background-color: #1e293b;
   color: #e2e8f0;
@@ -266,8 +265,15 @@ const TechStackDetailView: React.FC<TechStackDetailViewProps> = ({
         <HeaderContent>
           <HeaderTitle>
             {(() => {
-              const IconComponent = iconComponents[techStack.icon as keyof typeof iconComponents];
-              return IconComponent ? <IconComponent width={18} height={18} style={{ marginRight: "8px" }} /> : null;
+              const IconComponent =
+                iconComponents[techStack.icon as keyof typeof iconComponents];
+              return IconComponent ? (
+                <IconComponent
+                  width={18}
+                  height={18}
+                  style={{ marginRight: "8px" }}
+                />
+              ) : null;
             })()}
             {techStack.name}
             {techStack.version && (
@@ -341,7 +347,7 @@ const TechStackDetailView: React.FC<TechStackDetailViewProps> = ({
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                         dangerouslySetInnerHTML={{
                           __html: highlightJson(
-                            JSON.stringify(server.configuration, null, 2),
+                            JSON.stringify(server.configuration, null, 2)
                           ),
                         }}
                       />

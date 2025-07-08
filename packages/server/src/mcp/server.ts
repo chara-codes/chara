@@ -1,4 +1,4 @@
-import { logger } from "@apk/logger";
+import { logger } from "@chara-codes/logger";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import {
   CallToolRequestSchema,
@@ -23,7 +23,7 @@ global.EventSource = eventsource.EventSource;
 export async function handleClientRequest(
   clientId: string,
   command: string,
-  params: string,
+  params: string
 ): Promise<string> {
   const emit = trpcMCPCalls.clients[clientId];
 
@@ -62,7 +62,7 @@ export const createServer = async () => {
         resources: { subscribe: true },
         tools: {},
       },
-    },
+    }
   );
 
   // List of tools
@@ -75,7 +75,7 @@ export const createServer = async () => {
       const response = await handleClientRequest(
         CLIENT_ID,
         "tools/list",
-        params,
+        params
       );
       allTools = JSON.parse(response);
     } catch (error) {
@@ -100,7 +100,7 @@ export const createServer = async () => {
       const response = await handleClientRequest(
         CLIENT_ID,
         "tools/call",
-        params,
+        params
       );
       toolCall = JSON.parse(response);
     } catch (error) {
@@ -123,7 +123,7 @@ export const createServer = async () => {
       const response = await handleClientRequest(
         CLIENT_ID,
         "prompts/list",
-        params,
+        params
       );
       allPrompts = JSON.parse(response);
     } catch (error) {
@@ -152,7 +152,7 @@ export const createServer = async () => {
       const response = await handleClientRequest(
         CLIENT_ID,
         "prompts/get",
-        params,
+        params
       );
       promptCall = JSON.parse(response);
       logger.success("Prompt result:", response);
@@ -175,7 +175,7 @@ export const createServer = async () => {
       const response = await handleClientRequest(
         CLIENT_ID,
         "resources/list",
-        params,
+        params
       );
       allResources = JSON.parse(response);
     } catch (error) {
@@ -199,7 +199,7 @@ export const createServer = async () => {
       const response = await handleClientRequest(
         CLIENT_ID,
         "resources/read",
-        params,
+        params
       );
       return JSON.parse(response);
     } catch (error) {
@@ -223,7 +223,7 @@ export const createServer = async () => {
         const response = await handleClientRequest(
           CLIENT_ID,
           "resources/templates/list",
-          params,
+          params
         );
         allTemplates = JSON.parse(response);
       } catch (error) {
@@ -234,7 +234,7 @@ export const createServer = async () => {
         resourceTemplates: allTemplates,
         nextCursor: request.params?.cursor,
       };
-    },
+    }
   );
 
   return server;

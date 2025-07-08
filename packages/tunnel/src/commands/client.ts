@@ -1,5 +1,5 @@
 import type { CommandModule } from "yargs";
-import { logger, LogLevel } from "@apk/logger";
+import { logger, LogLevel } from "@chara-codes/logger";
 import { TunnelClient } from "../client";
 import type {
   RouteReply,

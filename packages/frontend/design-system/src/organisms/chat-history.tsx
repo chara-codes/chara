@@ -4,7 +4,7 @@ import type React from "react";
 import { useState } from "react";
 import styled from "styled-components";
 import { format, isValid } from "date-fns"; // Added isValid import
-import type { Chat } from "@apk/core";
+import type { Chat } from "@chara-codes/core";
 import { TrashIcon } from "../atoms/icons";
 
 interface ChatHistoryProps {
@@ -308,7 +308,7 @@ const getChatPreview = (chat: Chat) => {
     } else if (Array.isArray(lastMessage.content)) {
       // Extract only the first text part (main message content)
       const firstTextPart = lastMessage.content.find(
-        (part) => part.type === "text" && part.text,
+        (part) => part.type === "text" && part.text
       );
       contentText = firstTextPart?.text || "";
     }
@@ -334,7 +334,7 @@ const getChatTitle = (chat: Chat) => {
       } else if (Array.isArray(firstUserMessage.content)) {
         // Extract only the first text part (main message content)
         const firstTextPart = firstUserMessage.content.find(
-          (part) => part.type === "text" && part.text,
+          (part) => part.type === "text" && part.text
         );
         contentText = firstTextPart?.text || "";
       }
@@ -354,7 +354,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
   onDeleteChat,
 }) => {
   const [pendingDeleteChatId, setPendingDeleteChatId] = useState<string | null>(
-    null,
+    null
   );
 
   // Use chats directly since we no longer filter

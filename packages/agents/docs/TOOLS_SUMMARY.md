@@ -1,6 +1,6 @@
 # Tools Summary
 
-This document provides a comprehensive overview of the filesystem tools implemented for the `@chara/agents` package, along with their comprehensive test suite.
+This document provides a comprehensive overview of the filesystem tools implemented for the `@chara-codes/agents` package, along with their comprehensive test suite.
 
 ## Overview
 
@@ -144,7 +144,7 @@ bun run test:coverage
 
 ### Basic File Operations
 ```typescript
-import { tools } from "@chara/agents";
+import { tools } from "@chara-codes/agents";
 
 // Read a file
 const content = await tools["read-file"].execute({ path: "./config.json" });
