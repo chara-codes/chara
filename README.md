@@ -47,6 +47,13 @@ The project is organized as a monorepo with the following packages:
   - SQLite/LibSQL database with Drizzle ORM
   - Streaming response support
 
+- `@chara/cli` - Command-line interface
+  - AI-powered development assistant
+  - Project setup and configuration
+  - MCP server integration
+  - Local development server management
+  - Published to npm as `chara`
+
 - `./automation` - Testing framework
   - End-to-end testing with Playwright
   - AI-assisted test generation and validation
@@ -65,6 +72,10 @@ bun install
 
 # Start development servers
 bun dev
+
+# Or install the CLI globally
+npm install -g chara
+chara dev
 ```
 
 ## Docker Usage
@@ -152,6 +163,39 @@ Each package can be configured independently:
 - **CLI**: `.chara.json` for project-specific configuration
 
 See individual package READMEs for detailed configuration options.
+
+## CLI Publishing
+
+The Chara CLI is automatically published to npm when changes are made to the `packages/cli` directory:
+
+### Installation
+
+```bash
+# Install stable version
+npm install -g chara
+
+# Install alpha version (from playground branch)
+npm install -g chara@alpha
+```
+
+### Publishing Process
+
+- **Main branch**: Stable releases published with `latest` tag
+- **Playground branch**: Alpha releases with timestamped versions and `alpha` tag
+- **Automated**: GitHub Actions handle building and publishing
+- **Manual**: Workflow can be triggered manually from Actions tab
+
+### Version Management
+
+```bash
+# Bump version before merging to main
+cd packages/cli
+bun run version:patch   # or minor, major
+bun run version:set 1.2.3
+bun run version:current
+```
+
+For detailed setup instructions, see [CLI Publishing Guide](./.github/PUBLISHING.md).
 
 ## Release Management
 

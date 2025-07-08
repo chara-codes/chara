@@ -18,7 +18,12 @@
     "d": "bun ./src/index.ts",
     "start": "./dist/chara",
     "test": "bun test",
-    "prepack": "bun run build"
+    "prepack": "bun run build",
+    "version:patch": "node scripts/bump-version.js patch",
+    "version:minor": "node scripts/bump-version.js minor",
+    "version:major": "node scripts/bump-version.js major",
+    "version:set": "node scripts/bump-version.js set",
+    "version:current": "node scripts/bump-version.js current"
   },
   "type": "module",
   "keywords": [

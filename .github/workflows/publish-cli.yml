@@ -1,0 +1,112 @@
+name: Publish CLI to npm
+
+on:
+  push:
+    branches:
+      - main
+      - playground
+    paths:
+      - "packages/cli/**"
+      - "package.json"
+      - "bun.lock"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build CLI and dependencies
+        run: |
+          # Use turbo to build CLI and all its dependencies
+          bunx turbo build --filter=chara
+
+      - name: Test CLI build
+        run: |
+          cd packages/cli
+          # Verify the binary was created
+          if [ ! -f "./dist/chara" ]; then
+            echo "Error: CLI binary not found at ./dist/chara"
+            exit 1
+          fi
+          # Test that the binary is executable
+          chmod +x ./dist/chara
+          # Test basic functionality
+          ./dist/chara --help
+
+      - name: Determine version and tag
+        id: version
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/playground" ]; then
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup NPM auth
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Publish to npm (alpha)
+        if: github.ref == 'refs/heads/playground'
+        run: |
+          cd packages/cli
+          # Get current version from package.json
+          current_version=$(node -p "require('./package.json').version")
+          # Create alpha version with timestamp
+          alpha_version="${current_version}-alpha.$(date +%s)"
+          echo "Publishing alpha version: $alpha_version"
+          # Update package.json with alpha version
+          npm version $alpha_version --no-git-tag-version
+          # Verify package contents before publishing
+          npm pack --dry-run
+          # Publish to npm
+          npm publish --tag alpha
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to npm (latest)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd packages/cli
+          # Get current version for logging
+          current_version=$(node -p "require('./package.json').version")
+          echo "Publishing stable version: $current_version"
+          # Verify package contents before publishing
+          npm pack --dry-run
+          # Publish to npm
+          npm publish --tag latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Get package version
+        if: github.ref == 'refs/heads/main'
+        id: get_version
+        run: |
+          cd packages/cli
+          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: cli-v${{ steps.get_version.outputs.version }}
+          release_name: CLI v${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false

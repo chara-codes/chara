@@ -1,5 +1,8 @@
 # Chara CLI
 
+[![npm version](https://badge.fury.io/js/chara.svg)](https://badge.fury.io/js/chara)
+[![npm downloads](https://img.shields.io/npm/dm/chara.svg)](https://www.npmjs.com/package/chara)
+
 A command-line interface tool for Chara Codes that facilitates AI-powered development workflow management.
 
 ## Features
@@ -12,22 +15,37 @@ A command-line interface tool for Chara Codes that facilitates AI-powered develo
 
 ## Installation
 
-### Global Installation
+### Stable Release (Latest)
 
 ```bash
+# Install globally
 npm install -g chara
 # or
 bun install -g chara
-```
 
-### Local Installation
-
-```bash
-# In your project
+# Install locally in your project
 npm install --save-dev chara
 # or
 bun add -d chara
 ```
+
+### Alpha Release (Playground)
+
+For testing the latest features from the playground branch:
+
+```bash
+# Install globally
+npm install -g chara@alpha
+# or
+bun install -g chara@alpha
+
+# Install locally in your project
+npm install --save-dev chara@alpha
+# or
+bun add -d chara@alpha
+```
+
+> **Note**: Alpha releases are automatically published from the `playground` branch and may contain experimental features. Use stable releases for production environments.
 
 ## Basic Usage
 
