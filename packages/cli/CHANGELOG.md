@@ -1,5 +1,11 @@
 # chara
 
+## 0.1.3
+
+### Patch Changes
+
+- 8cd1b6a: use bun sqlite, not libsql
+
 ## 0.1.2
 
 ### Patch Changes
