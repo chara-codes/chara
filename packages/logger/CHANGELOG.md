@@ -1,5 +1,11 @@
 # @chara-codes/logger
 
+## 0.1.2
+
+### Patch Changes
+
+- 07b62df: republish packages
+
 ## 0.1.1
 
 ### Patch Changes
