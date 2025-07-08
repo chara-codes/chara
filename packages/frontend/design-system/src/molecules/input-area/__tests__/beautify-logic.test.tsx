@@ -1,48 +1,50 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, mock, beforeEach, spyOn } from "bun:test";
 
 // Mock the beautify function and stream service
-const mockBeautifyPrompt = vi.fn();
-const mockBeautifyPromptStream = vi.fn();
-const mockProcessChatStream = vi.fn();
+const mockBeautifyPrompt = mock(() => {});
+const mockBeautifyPromptStream = mock(() => {});
+const mockProcessChatStream = mock(() => {});
 
 // Mock stream service
-vi.mock("../../../../services/stream-service", () => ({
+mock.module("../../../../services/stream-service", () => ({
   processChatStream: mockProcessChatStream,
 }));
 
 // Mock store hooks
-vi.mock("../../../../store/chat-store", () => ({
-  useChatStore: vi.fn((selector) => 
-    selector({ 
+mock.module("../../../../store/chat-store", () => ({
+  useChatStore: mock((selector) =>
+    selector({
       beautifyPrompt: mockBeautifyPrompt,
       beautifyPromptStream: mockBeautifyPromptStream,
       messages: [],
-      model: "gpt-4"
-    })
+      model: "gpt-4",
+    }),
   ),
 }));
 
-vi.mock("../../../../store/ui-store", () => ({
-  useUIStore: vi.fn((selector) =>
+mock.module("../../../../store/ui-store", () => ({
+  useUIStore: mock((selector) =>
     selector({
       inputButtonConfig: [
         { id: "add-context", enabled: true, tooltip: "Add context" },
         { id: "select-element", enabled: true, tooltip: "Select element" },
         { id: "upload-file", enabled: true, tooltip: "Upload file" },
       ],
-    })
+    }),
   ),
 }));
 
-vi.mock("../../../../hooks/use-element-selector", () => ({
-  useElementSelector: vi.fn(() => ({
-    startElementSelection: vi.fn(),
+mock.module("../../../../hooks/use-element-selector", () => ({
+  useElementSelector: mock(() => ({
+    startElementSelection: mock(() => {}),
   })),
 }));
 
 describe("Beautify Logic Tests", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockBeautifyPrompt.mockClear();
+    mockBeautifyPromptStream.mockClear();
+    mockProcessChatStream.mockClear();
   });
 
   describe("beautifyPrompt integration", () => {
@@ -59,46 +61,52 @@ describe("Beautify Logic Tests", () => {
 
     it("should call beautifyPromptStream with correct callbacks", () => {
       const testMessage = "test message for beautification";
-      const onTextDelta = vi.fn();
-      const onComplete = vi.fn();
-      const onError = vi.fn();
-      
-      mockBeautifyPromptStream.mockImplementation((message, onDelta, onComp, onErr) => {
-        // Simulate streaming
-        onDelta("Test ");
-        onDelta("message ");
-        onDelta("for beautification.");
-        onComp("Test message for beautification.");
-      });
+      const onTextDelta = mock(() => {});
+      const onComplete = mock(() => {});
+      const onError = mock(() => {});
+
+      mockBeautifyPromptStream.mockImplementation(
+        (message, onDelta, onComp, onErr) => {
+          // Simulate streaming
+          onDelta("Test ");
+          onDelta("message ");
+          onDelta("for beautification.");
+          onComp("Test message for beautification.");
+        },
+      );
 
       mockBeautifyPromptStream(testMessage, onTextDelta, onComplete, onError);
 
       expect(mockBeautifyPromptStream).toHaveBeenCalledWith(
-        testMessage, 
-        onTextDelta, 
-        onComplete, 
-        onError
+        testMessage,
+        onTextDelta,
+        onComplete,
+        onError,
       );
       expect(onTextDelta).toHaveBeenCalledTimes(3);
       expect(onTextDelta).toHaveBeenCalledWith("Test ");
       expect(onTextDelta).toHaveBeenCalledWith("message ");
       expect(onTextDelta).toHaveBeenCalledWith("for beautification.");
-      expect(onComplete).toHaveBeenCalledWith("Test message for beautification.");
+      expect(onComplete).toHaveBeenCalledWith(
+        "Test message for beautification.",
+      );
     });
 
     it("should use stream service for beautification", async () => {
       const testMessage = "test message for beautification";
       const beautifiedResult = "Test message for beautification.";
-      
+
       // Mock stream service to simulate text deltas
-      mockProcessChatStream.mockImplementation(async (apiUrl, payload, callbacks) => {
-        callbacks.onTextDelta("Test message ");
-        callbacks.onTextDelta("for beautification.");
-        if (callbacks.onCompletion) {
-          callbacks.onCompletion({ finishReason: "stop" });
-        }
-      });
-      
+      mockProcessChatStream.mockImplementation(
+        async (apiUrl, payload, callbacks) => {
+          callbacks.onTextDelta("Test message ");
+          callbacks.onTextDelta("for beautification.");
+          if (callbacks.onCompletion) {
+            callbacks.onCompletion({ finishReason: "stop" });
+          }
+        },
+      );
+
       mockBeautifyPrompt.mockImplementation(async (message) => {
         // This would use the actual implementation that calls stream service
         return beautifiedResult;
@@ -111,22 +119,26 @@ describe("Beautify Logic Tests", () => {
 
     it("should handle stream service payload correctly", async () => {
       const testMessage = "test message";
-      
-      mockProcessChatStream.mockImplementation(async (apiUrl, payload, callbacks) => {
-        // Verify payload structure
-        expect(payload.messages).toBeDefined();
-        expect(payload.model).toBeDefined();
-        expect(payload.messages[payload.messages.length - 1].content).toContain(testMessage);
-        
-        callbacks.onTextDelta("Beautified text");
-      });
+
+      mockProcessChatStream.mockImplementation(
+        async (apiUrl, payload, callbacks) => {
+          // Verify payload structure
+          expect(payload.messages).toBeDefined();
+          expect(payload.model).toBeDefined();
+          expect(
+            payload.messages[payload.messages.length - 1].content,
+          ).toContain(testMessage);
+
+          callbacks.onTextDelta("Beautified text");
+        },
+      );
 
       mockBeautifyPrompt.mockImplementation(async () => {
         return "Beautified text";
       });
 
       await mockBeautifyPrompt(testMessage);
-      
+
       // Verify stream service would be called
       expect(mockProcessChatStream).not.toHaveBeenCalled(); // Since we're mocking the higher level function
     });
@@ -137,20 +149,22 @@ describe("Beautify Logic Tests", () => {
       mockBeautifyPrompt.mockRejectedValue(error);
 
       await expect(mockBeautifyPrompt(testMessage)).rejects.toThrow(
-        "Beautify API failed"
+        "Beautify API failed",
       );
     });
 
     it("should handle streaming beautify errors gracefully", () => {
       const testMessage = "test message";
-      const onTextDelta = vi.fn();
-      const onComplete = vi.fn();
-      const onError = vi.fn();
+      const onTextDelta = mock(() => {});
+      const onComplete = mock(() => {});
+      const onError = mock(() => {});
       const error = new Error("Stream failed");
-      
-      mockBeautifyPromptStream.mockImplementation((message, onDelta, onComp, onErr) => {
-        onErr(error);
-      });
+
+      mockBeautifyPromptStream.mockImplementation(
+        (message, onDelta, onComp, onErr) => {
+          onErr(error);
+        },
+      );
 
       mockBeautifyPromptStream(testMessage, onTextDelta, onComplete, onError);
 
@@ -171,13 +185,15 @@ describe("Beautify Logic Tests", () => {
 
     it("should handle empty strings in streaming mode", () => {
       const emptyMessage = "";
-      const onTextDelta = vi.fn();
-      const onComplete = vi.fn();
-      const onError = vi.fn();
-      
-      mockBeautifyPromptStream.mockImplementation((message, onDelta, onComp, onErr) => {
-        onComp(message); // Return original empty message
-      });
+      const onTextDelta = mock(() => {});
+      const onComplete = mock(() => {});
+      const onError = mock(() => {});
+
+      mockBeautifyPromptStream.mockImplementation(
+        (message, onDelta, onComp, onErr) => {
+          onComp(message); // Return original empty message
+        },
+      );
 
       mockBeautifyPromptStream(emptyMessage, onTextDelta, onComplete, onError);
 
@@ -191,7 +207,9 @@ describe("Beautify Logic Tests", () => {
         "this is a very long message that should trigger the beautify functionality when the user types more than ten characters";
       const beautifiedLongMessage =
         "This is a very long message that should trigger the beautify functionality when the user types more than ten characters.";
-      mockBeautifyPrompt.mockResolvedValue(beautifiedLongMessage);
+      mockBeautifyPrompt.mockImplementation(() =>
+        Promise.resolve(beautifiedLongMessage),
+      );
 
       const result = await mockBeautifyPrompt(longMessage);
 
@@ -243,7 +261,7 @@ describe("Beautify Logic Tests", () => {
 
     const beautifyAction = (
       state: BeautifyState,
-      beautifiedText: string
+      beautifiedText: string,
     ): BeautifyState => ({
       ...state,
       originalText: state.message,
@@ -295,7 +313,7 @@ describe("Beautify Logic Tests", () => {
 
     it("should handle loading states", () => {
       const state = createInitialState();
-      
+
       // Start loading
       const loadingState = { ...state, isLoading: true };
       expect(loadingState.isLoading).toBe(true);
@@ -309,7 +327,7 @@ describe("Beautify Logic Tests", () => {
   describe("error handling logic", () => {
     const handleBeautifyError = (
       originalMessage: string,
-      error: Error
+      error: Error,
     ): { message: string; error: string } => {
       console.error("Failed to beautify text:", error);
       return {
@@ -329,13 +347,16 @@ describe("Beautify Logic Tests", () => {
     });
 
     it("should log errors appropriately", () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = spyOn(console, "error");
       const originalText = "test message";
       const error = new Error("Network error");
 
       handleBeautifyError(originalText, error);
 
-      expect(consoleSpy).toHaveBeenCalledWith("Failed to beautify text:", error);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Failed to beautify text:",
+        error,
+      );
       consoleSpy.mockRestore();
     });
   });
@@ -344,7 +365,7 @@ describe("Beautify Logic Tests", () => {
     it("should handle stream text deltas correctly", async () => {
       const testMessage = "test message";
       let accumulatedText = "";
-      
+
       const simulateStreamCallback = (delta: string) => {
         accumulatedText += delta;
       };
@@ -372,7 +393,7 @@ describe("Beautify Logic Tests", () => {
 
     it("should handle stream completion", async () => {
       let isCompleted = false;
-      
+
       const simulateStreamCompletion = () => {
         isCompleted = true;
       };
@@ -384,7 +405,7 @@ describe("Beautify Logic Tests", () => {
 
     it("should handle stream timeout", async () => {
       const timeoutDuration = 100; // ms
-      
+
       const simulateTimeout = () => {
         return new Promise((_, reject) => {
           setTimeout(() => {
@@ -400,7 +421,7 @@ describe("Beautify Logic Tests", () => {
       const currentPrompt = "improve this text";
       const recentMessages = [
         { role: "user", content: "Hello" },
-        { role: "assistant", content: "Hi there!" }
+        { role: "assistant", content: "Hi there!" },
       ];
       const model = "gpt-4";
 
@@ -410,7 +431,7 @@ describe("Beautify Logic Tests", () => {
           {
             role: "user",
             content: `Please improve and beautify the following text while preserving its meaning and intent. Return only the improved text without any additional explanation:\n\n${currentPrompt}`,
-          }
+          },
         ],
         model: model,
       };
@@ -424,7 +445,7 @@ describe("Beautify Logic Tests", () => {
 
   describe("async beautify workflow", () => {
     const simulateBeautifyWorkflow = async (
-      message: string
+      message: string,
     ): Promise<{ success: boolean; result: string; error?: string }> => {
       try {
         if (!message.trim()) {
@@ -443,7 +464,7 @@ describe("Beautify Logic Tests", () => {
     };
 
     const simulateStreamingBeautifyWorkflow = (
-      message: string
+      message: string,
     ): Promise<{ success: boolean; result: string; error?: string }> => {
       return new Promise((resolve) => {
         if (!message.trim()) {
@@ -452,7 +473,7 @@ describe("Beautify Logic Tests", () => {
         }
 
         let streamedText = "";
-        
+
         mockBeautifyPromptStream(
           message,
           (delta: string) => {
@@ -467,7 +488,7 @@ describe("Beautify Logic Tests", () => {
               result: message,
               error: error.message,
             });
-          }
+          },
         );
       });
     };
@@ -506,7 +527,9 @@ describe("Beautify Logic Tests", () => {
     });
 
     it("should handle stream service timeout scenarios", async () => {
-      mockBeautifyPrompt.mockRejectedValue(new Error("Beautify request timed out"));
+      mockBeautifyPrompt.mockRejectedValue(
+        new Error("Beautify request timed out"),
+      );
 
       const result = await simulateBeautifyWorkflow("test message");
 
@@ -517,14 +540,16 @@ describe("Beautify Logic Tests", () => {
     it("should complete successful streaming beautify workflow", async () => {
       const originalMessage = "test message for beautification";
       const beautifiedMessage = "Test message for beautification.";
-      
-      mockBeautifyPromptStream.mockImplementation((message, onDelta, onComplete, onError) => {
-        // Simulate streaming
-        onDelta("Test ");
-        onDelta("message ");
-        onDelta("for beautification.");
-        onComplete(beautifiedMessage);
-      });
+
+      mockBeautifyPromptStream.mockImplementation(
+        (message, onDelta, onComplete, onError) => {
+          // Simulate streaming
+          onDelta("Test ");
+          onDelta("message ");
+          onDelta("for beautification.");
+          onComplete(beautifiedMessage);
+        },
+      );
 
       const result = await simulateStreamingBeautifyWorkflow(originalMessage);
 
@@ -536,10 +561,12 @@ describe("Beautify Logic Tests", () => {
     it("should handle failed streaming beautify workflow", async () => {
       const originalMessage = "test message";
       const error = new Error("Stream API failed");
-      
-      mockBeautifyPromptStream.mockImplementation((message, onDelta, onComplete, onError) => {
-        onError(error);
-      });
+
+      mockBeautifyPromptStream.mockImplementation(
+        (message, onDelta, onComplete, onError) => {
+          onError(error);
+        },
+      );
 
       const result = await simulateStreamingBeautifyWorkflow(originalMessage);
 
@@ -563,58 +590,53 @@ describe("Beautify Logic Tests", () => {
     const simulateStreamingDisplay = (message: string, chunks: string[]) => {
       let displayedText = "";
       const updates: string[] = [];
-      
+
       // Simulate clearing the input first
       displayedText = "";
       updates.push(displayedText);
-      
+
       // Simulate streaming chunks
-      chunks.forEach(chunk => {
+      chunks.forEach((chunk) => {
         displayedText += chunk;
         updates.push(displayedText);
       });
-      
+
       return updates;
     };
 
     it("should show progressive text building during stream", () => {
       const originalMessage = "hello world";
       const chunks = ["Hello ", "beautiful ", "world!"];
-      
+
       const updates = simulateStreamingDisplay(originalMessage, chunks);
-      
+
       expect(updates).toEqual([
         "", // Initial clear
         "Hello ", // First chunk
         "Hello beautiful ", // Second chunk
-        "Hello beautiful world!" // Final result
+        "Hello beautiful world!", // Final result
       ]);
     });
 
     it("should handle single character streaming", () => {
       const originalMessage = "hi";
       const chunks = ["H", "e", "l", "l", "o"];
-      
+
       const updates = simulateStreamingDisplay(originalMessage, chunks);
-      
-      expect(updates).toEqual([
-        "",
-        "H",
-        "He", 
-        "Hel",
-        "Hell",
-        "Hello"
-      ]);
+
+      expect(updates).toEqual(["", "H", "He", "Hel", "Hell", "Hello"]);
     });
 
     it("should handle word-by-word streaming", () => {
       const originalMessage = "make this better";
       const chunks = ["Please ", "make ", "this ", "text ", "much ", "better."];
-      
+
       const updates = simulateStreamingDisplay(originalMessage, chunks);
-      
+
       expect(updates[0]).toBe(""); // Starts empty
-      expect(updates[updates.length - 1]).toBe("Please make this text much better.");
+      expect(updates[updates.length - 1]).toBe(
+        "Please make this text much better.",
+      );
       expect(updates.length).toBe(7); // Initial + 6 chunks
     });
 
@@ -632,7 +654,7 @@ describe("Beautify Logic Tests", () => {
       };
 
       startBeautify();
-      
+
       expect(mockStreamState.isBeautifyLoading).toBe(true);
       expect(mockStreamState.message).toBe("");
     });
@@ -640,9 +662,9 @@ describe("Beautify Logic Tests", () => {
     it("should handle streaming with punctuation and formatting", () => {
       const originalMessage = "fix this text please";
       const chunks = ["Please ", "fix ", "this ", "text, ", "thank ", "you!"];
-      
+
       const updates = simulateStreamingDisplay(originalMessage, chunks);
-      
+
       const finalText = updates[updates.length - 1];
       expect(finalText).toBe("Please fix this text, thank you!");
       expect(finalText.includes(",")).toBe(true);
@@ -651,15 +673,18 @@ describe("Beautify Logic Tests", () => {
 
     it("should maintain text area auto-resize during streaming", () => {
       const simulateHeightAdjustment = (text: string) => {
-        const lines = text.split('\n').length;
+        const lines = text.split("\n").length;
         const baseHeight = 24;
         const lineHeight = 24;
         const maxHeight = 150;
-        
-        const calculatedHeight = Math.min(baseHeight + (lines - 1) * lineHeight, maxHeight);
+
+        const calculatedHeight = Math.min(
+          baseHeight + (lines - 1) * lineHeight,
+          maxHeight,
+        );
         return {
           height: calculatedHeight,
-          overflow: calculatedHeight >= maxHeight ? 'auto' : 'hidden'
+          overflow: calculatedHeight >= maxHeight ? "auto" : "hidden",
         };
       };
 
@@ -670,18 +695,34 @@ describe("Beautify Logic Tests", () => {
       expect(simulateHeightAdjustment(shortText).height).toBe(24);
       expect(simulateHeightAdjustment(mediumText).height).toBe(72);
       expect(simulateHeightAdjustment(longText).height).toBe(150);
-      expect(simulateHeightAdjustment(longText).overflow).toBe('auto');
+      expect(simulateHeightAdjustment(longText).overflow).toBe("auto");
     });
   });
 
   describe("user experience during streaming", () => {
     it("should provide clear visual feedback states", () => {
       const uiStates = {
-        idle: { isLoading: false, isBeautifyLoading: false, message: "original text" },
+        idle: {
+          isLoading: false,
+          isBeautifyLoading: false,
+          message: "original text",
+        },
         starting: { isLoading: false, isBeautifyLoading: true, message: "" },
-        streaming: { isLoading: false, isBeautifyLoading: true, message: "partial text" },
-        completed: { isLoading: false, isBeautifyLoading: false, message: "beautified text" },
-        error: { isLoading: false, isBeautifyLoading: false, message: "original text" }
+        streaming: {
+          isLoading: false,
+          isBeautifyLoading: true,
+          message: "partial text",
+        },
+        completed: {
+          isLoading: false,
+          isBeautifyLoading: false,
+          message: "beautified text",
+        },
+        error: {
+          isLoading: false,
+          isBeautifyLoading: false,
+          message: "original text",
+        },
       };
 
       // Verify distinct states
@@ -695,15 +736,20 @@ describe("Beautify Logic Tests", () => {
 
     it("should handle user interactions during streaming", () => {
       const interactionStates = {
-        canSend: (isBeautifyLoading: boolean, message: string) => !isBeautifyLoading && message.trim().length > 0,
-        canBeautify: (isBeautifyLoading: boolean, message: string) => !isBeautifyLoading && message.length > 10,
-        canUndo: (isBeautified: boolean, isBeautifyLoading: boolean) => isBeautified && !isBeautifyLoading,
-        canAddContext: (isBeautifyLoading: boolean) => !isBeautifyLoading
+        canSend: (isBeautifyLoading: boolean, message: string) =>
+          !isBeautifyLoading && message.trim().length > 0,
+        canBeautify: (isBeautifyLoading: boolean, message: string) =>
+          !isBeautifyLoading && message.length > 10,
+        canUndo: (isBeautified: boolean, isBeautifyLoading: boolean) =>
+          isBeautified && !isBeautifyLoading,
+        canAddContext: (isBeautifyLoading: boolean) => !isBeautifyLoading,
       };
 
       // During streaming
       expect(interactionStates.canSend(true, "some text")).toBe(false);
-      expect(interactionStates.canBeautify(true, "some longer text")).toBe(false);
+      expect(interactionStates.canBeautify(true, "some longer text")).toBe(
+        false,
+      );
       expect(interactionStates.canUndo(false, true)).toBe(false);
       expect(interactionStates.canAddContext(true)).toBe(false);
 
@@ -716,17 +762,24 @@ describe("Beautify Logic Tests", () => {
     it("should handle streaming interruption scenarios", () => {
       const handleStreamInterruption = (reason: string) => {
         const responses = {
-          "timeout": { shouldRevert: true, errorMessage: "Request timed out" },
-          "network": { shouldRevert: true, errorMessage: "Network error" },
-          "abort": { shouldRevert: true, errorMessage: "Request was cancelled" },
-          "server": { shouldRevert: true, errorMessage: "Server error" }
+          timeout: { shouldRevert: true, errorMessage: "Request timed out" },
+          network: { shouldRevert: true, errorMessage: "Network error" },
+          abort: { shouldRevert: true, errorMessage: "Request was cancelled" },
+          server: { shouldRevert: true, errorMessage: "Server error" },
         };
-        
-        return responses[reason as keyof typeof responses] || { shouldRevert: true, errorMessage: "Unknown error" };
+
+        return (
+          responses[reason as keyof typeof responses] || {
+            shouldRevert: true,
+            errorMessage: "Unknown error",
+          }
+        );
       };
 
       expect(handleStreamInterruption("timeout").shouldRevert).toBe(true);
-      expect(handleStreamInterruption("network").errorMessage).toBe("Network error");
+      expect(handleStreamInterruption("network").errorMessage).toBe(
+        "Network error",
+      );
       expect(handleStreamInterruption("abort").shouldRevert).toBe(true);
     });
   });
@@ -734,92 +787,92 @@ describe("Beautify Logic Tests", () => {
   describe("textarea auto-resize logic", () => {
     // Mock textarea element with height calculation
     const createMockTextarea = (scrollHeight: number) => ({
-      style: { height: '24px', overflowY: 'hidden' },
+      style: { height: "24px", overflowY: "hidden" },
       scrollHeight,
     });
 
     const adjustTextareaHeight = (textarea: any, maxHeight: number = 150) => {
-      textarea.style.height = 'auto';
+      textarea.style.height = "auto";
       const scrollHeight = textarea.scrollHeight;
       textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
-      textarea.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
+      textarea.style.overflowY = scrollHeight > maxHeight ? "auto" : "hidden";
       return {
         height: Math.min(scrollHeight, maxHeight),
-        overflow: scrollHeight > maxHeight ? 'auto' : 'hidden',
+        overflow: scrollHeight > maxHeight ? "auto" : "hidden",
       };
     };
 
     it("should set correct height for short text", () => {
       const mockTextarea = createMockTextarea(24);
-      
+
       const result = adjustTextareaHeight(mockTextarea);
-      
+
       expect(result.height).toBe(24);
-      expect(result.overflow).toBe('hidden');
-      expect(mockTextarea.style.height).toBe('24px');
+      expect(result.overflow).toBe("hidden");
+      expect(mockTextarea.style.height).toBe("24px");
     });
 
     it("should set correct height for medium text", () => {
       const mockTextarea = createMockTextarea(80);
-      
+
       const result = adjustTextareaHeight(mockTextarea);
-      
+
       expect(result.height).toBe(80);
-      expect(result.overflow).toBe('hidden');
-      expect(mockTextarea.style.height).toBe('80px');
+      expect(result.overflow).toBe("hidden");
+      expect(mockTextarea.style.height).toBe("80px");
     });
 
     it("should limit height to max 150px for long text", () => {
       const mockTextarea = createMockTextarea(200);
-      
+
       const result = adjustTextareaHeight(mockTextarea);
-      
+
       expect(result.height).toBe(150);
-      expect(result.overflow).toBe('auto');
-      expect(mockTextarea.style.height).toBe('150px');
-      expect(mockTextarea.style.overflowY).toBe('auto');
+      expect(result.overflow).toBe("auto");
+      expect(mockTextarea.style.height).toBe("150px");
+      expect(mockTextarea.style.overflowY).toBe("auto");
     });
 
     it("should handle exactly max height", () => {
       const mockTextarea = createMockTextarea(150);
-      
+
       const result = adjustTextareaHeight(mockTextarea);
-      
+
       expect(result.height).toBe(150);
-      expect(result.overflow).toBe('hidden');
-      expect(mockTextarea.style.height).toBe('150px');
-      expect(mockTextarea.style.overflowY).toBe('hidden');
+      expect(result.overflow).toBe("hidden");
+      expect(mockTextarea.style.height).toBe("150px");
+      expect(mockTextarea.style.overflowY).toBe("hidden");
     });
 
     it("should reset height to auto before calculation", () => {
       const mockTextarea = createMockTextarea(100);
-      mockTextarea.style.height = '200px'; // Start with different height
-      
+      mockTextarea.style.height = "200px"; // Start with different height
+
       adjustTextareaHeight(mockTextarea);
-      
+
       // Height should be reset to auto first, then set to calculated value
-      expect(mockTextarea.style.height).toBe('100px');
+      expect(mockTextarea.style.height).toBe("100px");
     });
 
     it("should handle very large text content", () => {
       const mockTextarea = createMockTextarea(500);
-      
+
       const result = adjustTextareaHeight(mockTextarea);
-      
+
       expect(result.height).toBe(150);
-      expect(result.overflow).toBe('auto');
-      expect(mockTextarea.style.overflowY).toBe('auto');
+      expect(result.overflow).toBe("auto");
+      expect(mockTextarea.style.overflowY).toBe("auto");
     });
 
     it("should work with custom max height", () => {
       const mockTextarea = createMockTextarea(200);
       const customMaxHeight = 100;
-      
+
       const result = adjustTextareaHeight(mockTextarea, customMaxHeight);
-      
+
       expect(result.height).toBe(100);
-      expect(result.overflow).toBe('auto');
-      expect(mockTextarea.style.height).toBe('100px');
+      expect(result.overflow).toBe("auto");
+      expect(mockTextarea.style.height).toBe("100px");
     });
   });
 });

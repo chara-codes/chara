@@ -12,7 +12,7 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "clean": "rm -rf node_modules packages/*/node_modules bun.lock packages/*/bun.lock",
-    "test": "turbo run test",
+    "test": "bun test ./packages",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish",
