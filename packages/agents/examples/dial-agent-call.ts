@@ -1,5 +1,5 @@
 import { chatAgent } from "../src/agents/chat-agent";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import type { CoreMessage } from "ai";
 import { hasProvider, fetchModels } from "../src/providers";
 

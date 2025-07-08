@@ -20,7 +20,7 @@ import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon
 // Import specialized tool components for enhanced display
 import { TerminalToolBlock } from "../tools";
 import { DiffBlock } from "../tools/diff-block";
-import type { ToolCall } from "@chara/core";
+import type { ToolCall } from "@apk/core";
 
 interface ToolCallComponentProps {
   toolCall: ToolCall;

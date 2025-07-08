@@ -1,9 +1,9 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { bold, cyan, green, yellow } from "picocolors";
 import type { CommandModule } from "yargs";
 import { ActionFactory } from "../actions";
 import { intro, outro } from "../utils/prompts";
-import { existsGlobalConfig, readGlobalConfig } from "@chara/settings";
+import { existsGlobalConfig, readGlobalConfig } from "@apk/settings";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 

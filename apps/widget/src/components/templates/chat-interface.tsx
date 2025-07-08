@@ -242,14 +242,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           {
             id: "log-1",
             type: "input" as const,
-            content: "npm install @chara/core",
+            content: "npm install @apk/core",
             timestamp: new Date(Date.now() - 60000),
           },
           {
             id: "log-2",
             type: "output" as const,
             content:
-              "✓ Installing dependencies...\n✓ @chara/core@1.0.0 installed successfully",
+              "✓ Installing dependencies...\n✓ @apk/core@1.0.0 installed successfully",
             timestamp: new Date(Date.now() - 58000),
           },
           {

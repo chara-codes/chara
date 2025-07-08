@@ -1,5 +1,11 @@
 # chara
 
+## 1.0.0
+
+### Major Changes
+
+- first version of the chara (pre-alpha)
+
 ## 1.1.0
 
 ### Minor Changes

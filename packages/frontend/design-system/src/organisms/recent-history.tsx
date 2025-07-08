@@ -2,8 +2,8 @@
 
 import type React from "react";
 import styled from "styled-components";
-import type { Chat } from "@chara/core";
-import { useNavigateToHistory } from '@chara/core';
+import type { Chat } from "@apk/core";
+import { useNavigateToHistory } from '@apk/core';
 
 interface RecentHistoryProps {
   chats: Chat[];

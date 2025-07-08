@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { ProvidersRegistry } from "../registry";
 
 // Mock the global config module to prevent file system errors
-mock.module("@chara/settings", () => ({
+mock.module("@apk/settings", () => ({
   readGlobalConfig: mock(() => Promise.resolve({})),
   writeGlobalConfig: mock(() => Promise.resolve()),
   getModelsWhitelist: mock(() => ({})),

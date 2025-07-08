@@ -12,7 +12,7 @@ import {
 } from "@/utils/file-system";
 import { useFileChanges } from "@/hooks/use-file-changes";
 import { trpc } from "@/utils";
-import { myLogger } from "@chara/server/src/utils/logger";
+import { myLogger } from "@apk/server/src/utils/logger";
 
 export function CodePreview() {
   const { selectedProject } = useProject();

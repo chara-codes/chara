@@ -1,5 +1,5 @@
 import type { ServerConfig } from "../../types/server.types";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { applyReplacements } from "../../utils/replacements";
 
 /**

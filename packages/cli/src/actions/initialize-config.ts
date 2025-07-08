@@ -1,8 +1,8 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { intro, outro, spinner } from "../utils/prompts";
 import { bold, cyan, green } from "picocolors";
-import { existsGlobalConfig, readGlobalConfig } from "@chara/settings";
-import { initializeCharaConfig, initialize } from "@chara/agents";
+import { existsGlobalConfig, readGlobalConfig } from "@apk/settings";
+import { initializeCharaConfig, initialize } from "@apk/agents";
 import type { InitializeConfigActionOptions } from "./types";
 
 export async function initializeConfigAction(

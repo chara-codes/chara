@@ -1,7 +1,7 @@
 /**
  * Unit tests for models controller with settings integration
  *
- * Tests the integration between the models controller and the @chara/settings
+ * Tests the integration between the models controller and the @apk/settings
  * whitelist functionality, ensuring that:
  * - Models are properly filtered using the dynamic whitelist
  * - Enhanced fields from whitelist are included in responses

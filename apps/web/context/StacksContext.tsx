@@ -1,7 +1,7 @@
 "use client";
 import { TechStack } from "@/types";
 import { matchStack, serverToClient, trpc } from "@/utils";
-import { StackType } from "@chara/server";
+import { StackType } from "@apk/server";
 import {
   createContext,
   FC,

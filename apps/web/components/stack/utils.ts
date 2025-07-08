@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { stackTypes } from "@chara/server";
+import { stackTypes } from "@apk/server";
 import { ReactNode } from "react";
 import { TechStack } from "@/types";
 

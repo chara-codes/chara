@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { generateText, streamText, type LanguageModelV1 } from "ai";
 import { getModel, hasProvider } from "../src/providers";
 

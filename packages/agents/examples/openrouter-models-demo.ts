@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { fetchModels, hasProvider } from "../src/providers";
 
 async function demonstrateOpenRouterModels() {

@@ -1,5 +1,5 @@
 import type { ServerWebSocket } from "bun";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { handleHttpResponseStart } from "./response-start-handler.js";
 import { handleHttpData } from "./data-handler.js";
 import { handleHttpResponseEnd } from "./response-end-handler.js";

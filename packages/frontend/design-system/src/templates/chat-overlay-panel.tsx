@@ -4,7 +4,7 @@ import React, { useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { theme } from "../theme/theme";
 import { ChatIcon } from "../atoms/icons";
-import { useRunnerConnect, useRunnerConnection, useUIStore } from "@chara/core";
+import { useRunnerConnect, useRunnerConnection, useUIStore } from "@apk/core";
 import ResizeHandle from "../atoms/resize-handle";
 import { ChatInterface } from "../templates";
 

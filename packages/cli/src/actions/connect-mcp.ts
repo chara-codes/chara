@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { prepareClients } from "../mcp/client";
 import type { ConnectMcpActionOptions } from "./types";
 import type { ActiveClient, MCPServer } from "../types";

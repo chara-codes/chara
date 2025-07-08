@@ -1,5 +1,5 @@
 import type React from "react";
-import type { ContextItem, ToolCall, ToolResult } from "@chara/core";
+import type { ContextItem, ToolCall, ToolResult } from "@apk/core";
 import { ContextPreview } from "../context-preview";
 
 export const getPreviewContent = (item: ContextItem): React.ReactNode => {

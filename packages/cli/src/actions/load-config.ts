@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { readConfig } from "../config";
 import type { LoadConfigActionOptions } from "./types";
 

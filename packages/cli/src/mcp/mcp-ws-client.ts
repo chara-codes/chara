@@ -1,5 +1,5 @@
-import { logger } from "@chara/logger";
-import type { AppRouter } from "@chara/server";
+import { logger } from "@apk/logger";
+import type { AppRouter } from "@apk/server";
 import {
   CompatibilityCallToolResultSchema,
   GetPromptResultSchema,

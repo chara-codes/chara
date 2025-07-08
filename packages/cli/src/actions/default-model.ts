@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import {
   cancel,
   confirm,
@@ -13,7 +13,7 @@ import {
   existsGlobalConfig,
   readGlobalConfig,
   updateGlobalConfig,
-} from "@chara/settings";
+} from "@apk/settings";
 import type { DefaultModelActionOptions } from "./types";
 
 interface Model {

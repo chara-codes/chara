@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { type CoreMessage, streamText } from "ai";
 import { mcpWrapper } from "../mcp/mcp-client";
 import { providersRegistry } from "../providers";

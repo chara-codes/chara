@@ -1,5 +1,5 @@
 import { generateText, streamText } from "ai";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import {
   providersRegistry,
   getModel,

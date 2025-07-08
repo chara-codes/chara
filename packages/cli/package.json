@@ -44,17 +44,14 @@
   "bugs": {
     "url": "https://github.com/chara-codes/chara/issues"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/yargs": "^17.0.33",
     "vitest": "^3.2.4",
-    "@chara/agents": "workspace:*",
-    "@chara/logger": "workspace:*",
-    "@chara/server": "workspace:*",
-    "@chara/settings": "workspace:*"
+    "@chara-codes/agents": "workspace:*",
+    "@chara-codes/logger": "workspace:*",
+    "@chara-codes/server": "workspace:*",
+    "@chara-codes/settings": "workspace:*"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
@@ -65,5 +62,8 @@
     "picocolors": "^1.1.1",
     "superjson": "^2.2.2",
     "yargs": "^17.7.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

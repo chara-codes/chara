@@ -1,5 +1,5 @@
-import type { DropdownItem, InputContextItem } from "@chara/core";
-import type { RunnerProcess } from "@chara/core";
+import type { DropdownItem, InputContextItem } from "@apk/core";
+import type { RunnerProcess } from "@apk/core";
 
 // Function to create dropdown items
 export const createDropdownItems = (

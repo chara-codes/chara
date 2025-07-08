@@ -1,5 +1,5 @@
 {
-  "name": "@chara/settings",
+  "name": "@chara-codes/settings",
   "version": "0.1.0",
   "description": "Utility to work with different type of settings - project settings, global settings",
   "main": "src/index.ts",
@@ -18,5 +18,8 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

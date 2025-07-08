@@ -13,7 +13,7 @@ import {
 } from "../atoms/icons";
 import Button from "../atoms/button";
 import type { Theme } from "@/theme";
-import { TechStackDetail } from "@chara/core";
+import { TechStackDetail } from "@apk/core";
 
 const iconComponents = {
   code: CodeIcon,

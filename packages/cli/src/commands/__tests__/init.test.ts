@@ -23,7 +23,7 @@ const mockLogger = {
   setLevel: mock(() => {}),
 };
 
-mock.module("@chara/logger", () => ({
+mock.module("@apk/logger", () => ({
   logger: mockLogger,
 }));
 

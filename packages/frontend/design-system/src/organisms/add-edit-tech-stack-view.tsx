@@ -20,7 +20,7 @@ import {
   useCreateTechStack,
   useGetTechStackById,
   useUpdateTechStack,
-} from "@chara/core";
+} from "@apk/core";
 import {
   InputBase,
   TextAreaBase,

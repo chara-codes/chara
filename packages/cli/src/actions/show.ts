@@ -1,7 +1,7 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { intro, outro } from "../utils/prompts";
 import { bold, cyan, green } from "picocolors";
-import { existsGlobalConfig, readGlobalConfig } from "@chara/settings";
+import { existsGlobalConfig, readGlobalConfig } from "@apk/settings";
 import {
   getConfiguredProviders,
   maskSensitiveValue,

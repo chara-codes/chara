@@ -1,5 +1,5 @@
 import type { ServerWebSocket } from "bun";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import type { ClientData, ServerConfig } from "../../types/server.types";
 import { isTextResponse } from "../../utils/content-type";
 import { getCompressionType } from "../compression";

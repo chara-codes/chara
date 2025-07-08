@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { type CoreMessage, createDataStreamResponse } from "ai";
 import { chatAgent } from "../agents/chat-agent";
 import { gitAgent } from "../agents/git-agent";

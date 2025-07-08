@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { streamText } from "ai";
 import { initPrompt } from "../prompts/init";
 import { providersRegistry } from "../providers";

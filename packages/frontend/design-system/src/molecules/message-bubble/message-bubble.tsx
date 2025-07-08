@@ -8,7 +8,7 @@ import rehypeHighlight from "rehype-highlight"; // Import rehype-highlight for s
 import "highlight.js/styles/github.css"; // Import highlight.js CSS theme for syntax highlighting
 import ToolCallComponent from "./tool-call-component";
 
-import type { MessageContent as MessageContentType } from "@chara/core";
+import type { MessageContent as MessageContentType } from "@apk/core";
 
 import type { MessageBubbleProps } from "./types";
 import {
@@ -47,7 +47,7 @@ import { ThinkingIcon } from "../../atoms/icons/thinking-icon";
 import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
 import { CloseIcon } from "../../atoms/icons/close-icon";
 import { getPreviewContent } from "./utils";
-import { cleanThinkingTags } from "@chara/core";
+import { cleanThinkingTags } from "@apk/core";
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
 
 // Helper function to get the main message content (first text part)

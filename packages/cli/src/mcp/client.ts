@@ -3,7 +3,7 @@ import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type { MCPServer, ActiveClient } from '../types/index.ts';
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 
 
 const WAIT_INTERVAL = 2500

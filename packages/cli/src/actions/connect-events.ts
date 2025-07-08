@@ -1,11 +1,11 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import {
   createTRPCProxyClient,
   createWSClient,
   wsLink,
   loggerLink,
 } from "@trpc/client";
-import type { AppRouter } from "@chara/server";
+import type { AppRouter } from "@apk/server";
 import { applyInstructions } from "../instructions/apply-instructions";
 import superjson from "superjson";
 import type { ConnectEventsActionOptions } from "./types";

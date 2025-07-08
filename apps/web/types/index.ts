@@ -1,4 +1,4 @@
-import type { StackType } from "@chara/server";
+import type { StackType } from "@apk/server";
 import type { ReactNode } from "react";
 
 /** Chat message types */

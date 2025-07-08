@@ -1,5 +1,5 @@
 {
-  "name": "@chara/server",
+  "name": "@chara-codes/server",
   "module": "src/index.ts",
   "types": "./src/index.ts",
   "version": "0.1.0",
@@ -24,7 +24,7 @@
     "ttest": "bun test"
   },
   "dependencies": {
-    "@chara/logger": "workspace:*",
+    "@chara-codes/logger": "workspace:*",
     "@libsql/client": "^0.14.0",
     "@modelcontextprotocol/sdk": "^1.15.0",
     "@trpc/client": "^11.4.3",
@@ -40,5 +40,8 @@
     "superjson": "^2.2.2",
     "trpc-bun-adapter": "^1.3.0",
     "zod": "^3.25.75"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

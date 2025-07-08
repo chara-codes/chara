@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import styled from "styled-components";
 import ViewNavigation from "../molecules/view-navigation";
 import ChatHistory from "./chat-history";
-import type { Chat } from "@chara/core";
+import type { Chat } from "@apk/core";
 
 const HistoryContainer = styled.div`
   display: flex;

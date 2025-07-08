@@ -9,7 +9,7 @@ import RecentHistory from "./recent-history";
 import InputArea from "../molecules/input-area";
 import Footer from "../molecules/footer/index";
 import ConversationSuggestions from "../molecules/conversation-suggestions";
-import { useChatStore } from "@chara/core";
+import { useChatStore } from "@apk/core";
 import { CharaLogo } from "../atoms/chara-logo";
 
 const ChatContent = styled.div`

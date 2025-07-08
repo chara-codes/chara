@@ -1,7 +1,7 @@
 import { publicProcedure } from "../trpc";
 import { z } from "zod";
 import { observable } from '@trpc/server/observable';
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 
 
 type EmitFunction = (data: { instructionId: string; command: string, params: string }) => void;

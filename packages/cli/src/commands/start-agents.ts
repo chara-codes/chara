@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { bold, cyan, green } from "picocolors";
 import type { CommandModule } from "yargs";
 import type { StartAgentsActionOptions } from "../actions";

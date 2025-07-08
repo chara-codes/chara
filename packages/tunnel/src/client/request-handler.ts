@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { EventEmitter } from "eventemitter3";
 import { URL } from "url";
 import type {

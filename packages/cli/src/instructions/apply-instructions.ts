@@ -9,9 +9,9 @@ import {
   type InstructionsResult,
   type ActionResult,
 } from "./types";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
-import type { AppRouter } from "@chara/server";
+import type { AppRouter } from "@apk/server";
 import superjson from "superjson";
 
 const execAsync = promisify(exec);

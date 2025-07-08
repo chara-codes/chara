@@ -21,7 +21,7 @@ import {
   mock,
   spyOn,
 } from "bun:test";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 
 // Mock the logger first
 const mockLogger = {
@@ -32,7 +32,7 @@ const mockLogger = {
   setLevel: mock(() => {}),
 };
 
-mock.module("@chara/logger", () => ({
+mock.module("@apk/logger", () => ({
   logger: mockLogger,
 }));
 

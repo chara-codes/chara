@@ -1,4 +1,4 @@
-import type { ContextItem, MessageContent, ToolCall } from "@chara/core";
+import type { ContextItem, MessageContent, ToolCall } from "@apk/core";
 
 export interface MessageBubbleProps {
   id?: string;

@@ -1,5 +1,5 @@
 import { Technology, TechStack } from "@/types";
-import { StackType } from "@chara/server";
+import { StackType } from "@apk/server";
 
 export const serverToClient = (row: {
   id: number;

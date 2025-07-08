@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { LogLevel, logger } from "@chara/logger";
+import { LogLevel, logger } from "@apk/logger";
 import type { ServerWebSocket } from "bun";
 import { initAgent } from "./agents";
 import {

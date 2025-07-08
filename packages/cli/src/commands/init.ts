@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import type { CommandModule } from "yargs";
 import type {
   DefaultModelActionOptions,

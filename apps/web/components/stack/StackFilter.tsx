@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { stackTypes, StackType } from "@chara/server";
+import { stackTypes, StackType } from "@apk/server";
 
 export const StackFilter = () => {
   const { filterType, setFilterType } = useStacks();

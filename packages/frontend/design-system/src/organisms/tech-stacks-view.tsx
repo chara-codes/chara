@@ -24,8 +24,8 @@ import {
   TechStackDetail,
   useDeleteTechStackMutation,
   useDuplicateTechStackMutation,
-} from "@chara/core";
-import { useTechStacks } from "@chara/core";
+} from "@apk/core";
+import { useTechStacks } from "@apk/core";
 import Tooltip from "../atoms/tooltip";
 import { CopyIcon } from "lucide-react";
 import { ConfirmDialog } from "../molecules";

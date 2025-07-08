@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import {
   cancel,
   confirm,
@@ -8,7 +8,7 @@ import {
   spinner,
 } from "../utils/prompts";
 import { bold, cyan, green } from "picocolors";
-import { existsGlobalConfig, updateGlobalConfig } from "@chara/settings";
+import { existsGlobalConfig, updateGlobalConfig } from "@apk/settings";
 import type { ResetActionOptions } from "./types";
 
 export async function resetAction(

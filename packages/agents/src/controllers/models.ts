@@ -1,5 +1,5 @@
 import { fetchAllModels } from "../providers";
-import { getModelsWhitelist, type ModelConfig } from "@chara/settings";
+import { getModelsWhitelist, type ModelConfig } from "@apk/settings";
 
 export const modelsController = {
   async getModels(req: Request) {

@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { initMCPClient } from "../mcp/mcp-ws-client";
 import type { InitMcpClientActionOptions } from "./types";
 

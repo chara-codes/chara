@@ -1,5 +1,5 @@
 {
-  "name": "@chara/logger",
+  "name": "@chara-codes/logger",
   "version": "0.1.0",
   "description": "Logging utility for Chara applications",
   "main": "src/index.ts",
@@ -24,5 +24,8 @@
   },
   "peerDependencies": {
     "typescript": "^5.8.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

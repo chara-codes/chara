@@ -5,10 +5,10 @@ import { join } from "node:path";
 import { stat } from "node:fs/promises";
 import fs from "node:fs";
 import git from "isomorphic-git";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 
 // Mock logger to avoid noise in tests
-mock.module("@chara/logger", () => ({
+mock.module("@apk/logger", () => ({
   logger: {
     debug: mock(() => {}),
     info: mock(() => {}),

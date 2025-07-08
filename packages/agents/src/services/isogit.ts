@@ -2,7 +2,7 @@ import git from "isomorphic-git";
 import fs from "node:fs";
 import { join } from "node:path";
 import { mkdir, readdir } from "node:fs/promises";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 
 export interface GitInitResult {
   status: "success" | "skipped";

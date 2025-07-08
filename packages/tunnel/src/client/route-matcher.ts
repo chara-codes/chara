@@ -1,5 +1,5 @@
 import type { RouteOptions, RouteMatch } from '../types/client.types';
-import { logger } from '@chara/logger';
+import { logger } from '@apk/logger';
 
 /**
  * RouteMatcher provides utilities for matching HTTP request paths against registered route patterns

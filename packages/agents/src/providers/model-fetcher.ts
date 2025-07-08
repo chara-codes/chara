@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import type {
   ModelInfo,
   OpenAIModelsResponse,
@@ -14,7 +14,7 @@ import type {
   DeepSeekModelsResponse,
   DeepSeekModel,
 } from "./types";
-import { getVarFromEnvOrGlobalConfig } from "@chara/settings";
+import { getVarFromEnvOrGlobalConfig } from "@apk/settings";
 
 /**
  * Utilities for fetching models from different providers

@@ -1,9 +1,9 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { intro, spinner } from "../utils/prompts";
 import { bold, cyan } from "picocolors";
-import { existsGlobalConfig, readGlobalConfig } from "@chara/settings";
+import { existsGlobalConfig, readGlobalConfig } from "@apk/settings";
 import type { StartAgentsActionOptions } from "./types";
-import { startServer, type ServerInstance } from "@chara/agents";
+import { startServer, type ServerInstance } from "@apk/agents";
 
 /**
  * Helper function to safely stop the server

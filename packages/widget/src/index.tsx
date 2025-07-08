@@ -1,12 +1,12 @@
 import { ThemeProvider } from "styled-components";
-import { ChatOverlayPanel, theme } from "@chara/design-system";
+import { ChatOverlayPanel, theme } from "@apk/design-system";
 import {
   UIStoreProvider,
   useUIStore,
   TrpcProvider,
   TechStacksProvider,
   Toaster,
-} from "@chara/core";
+} from "@apk/core";
 
 // Configuration interface
 export interface CharaWidgetConfig {

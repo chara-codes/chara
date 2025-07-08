@@ -5,7 +5,7 @@ import { CodePreview } from "./code-preview";
 import { useProject } from "@/contexts/project-context";
 import { trpc } from "@/utils";
 import { useEffect, useState } from "react";
-import { myLogger } from "@chara/server/src/utils/logger";
+import { myLogger } from "@apk/server/src/utils/logger";
 
 interface PreviewPanelProps {
   previewUrl: string;

@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import type { ClientMap, PendingRequest } from "../../types/server.types";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 
 /**
  * Handles incoming HTTP requests by forwarding them to the appropriate client

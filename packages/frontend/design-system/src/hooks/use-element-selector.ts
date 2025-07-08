@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useUIStore } from "@chara/core";
+import { useUIStore } from "@apk/core";
 
 /**
  * Information about a component detected from a DOM element

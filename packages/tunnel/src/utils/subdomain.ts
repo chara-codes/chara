@@ -1,7 +1,7 @@
 import { humanId } from "human-id";
 import type { ServerWebSocket } from "bun";
 import type { ClientData } from "../types/server.types";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 
 /**
  * Generate a unique human-readable subdomain

@@ -10,7 +10,7 @@ const mockLogger = {
   setLevel: mock(() => {}),
 };
 
-mock.module("@chara/logger", () => ({
+mock.module("@apk/logger", () => ({
   logger: mockLogger,
 }));
 
@@ -18,11 +18,11 @@ const mockStartServer = mock();
 const mockExistsGlobalConfig = mock();
 const mockReadGlobalConfig = mock();
 
-mock.module("@chara/agents", () => ({
+mock.module("@apk/agents", () => ({
   startServer: mockStartServer,
 }));
 
-mock.module("@chara/settings", () => ({
+mock.module("@apk/settings", () => ({
   existsGlobalConfig: mockExistsGlobalConfig,
   readGlobalConfig: mockReadGlobalConfig,
 }));

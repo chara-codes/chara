@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { logger } from '@chara/logger';
+import { logger } from '@apk/logger';
 import EventEmitter from 'eventemitter3';
 import type { TunnelClientOptions, TunnelMessage } from '../types/client.types';
 

@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import {
   cancel,
   confirm,
@@ -14,7 +14,7 @@ import {
   getPathToGlobalConfig,
   readGlobalConfig,
   updateGlobalConfig,
-} from "@chara/settings";
+} from "@apk/settings";
 import { PROVIDER_CONFIGS } from "../config/provider-configs";
 import {
   promptForProviderConfig,

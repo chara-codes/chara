@@ -34,7 +34,7 @@ import { Label } from "@/components/ui/label";
 import { TechBuilder } from "@/components/stack/TechBuilder";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { stackTypes } from "@chara/server";
+import { stackTypes } from "@apk/server";
 import {
   StackFormDialogProps,
   FormValues,

@@ -2,12 +2,12 @@ import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { ProviderConfigs } from "../provider-configs";
 
 // Mock the global config module to prevent file system errors
-mock.module("@chara/settings", () => ({
+mock.module("@apk/settings", () => ({
   readGlobalConfig: mock(() => Promise.resolve({})),
   writeGlobalConfig: mock(() => Promise.resolve()),
   getModelsWhitelist: mock(() => ({})),
 }));
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 
 describe("ProviderConfigs", () => {
   let providerConfigs: ProviderConfigs;

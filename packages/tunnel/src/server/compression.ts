@@ -1,6 +1,6 @@
 import * as zlib from "zlib";
 import { Writable } from "stream";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 
 /**
  * Determines the compression type to use based on Content-Encoding header

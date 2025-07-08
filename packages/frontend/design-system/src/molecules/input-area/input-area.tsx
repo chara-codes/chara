@@ -29,8 +29,8 @@ import { useElementSelector } from "../../hooks";
 import { createDropdownItems } from "./dropdown-items";
 import styled from "styled-components";
 import AnimatedButton from "./animated-button";
-import { readFileContent, useRunnerProcesses, useUIStore } from "@chara/core";
-import { type InputAreaProps, useChatStore } from "@chara/core";
+import { readFileContent, useRunnerProcesses, useUIStore } from "@apk/core";
+import { type InputAreaProps, useChatStore } from "@apk/core";
 
 const RoundedIconButton = styled(IconButton)`
   border-radius: 8px;

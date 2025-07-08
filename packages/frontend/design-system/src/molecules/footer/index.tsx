@@ -22,7 +22,7 @@ import {
   ModelOptionContent,
 } from "./styles";
 import { getModelSourceType } from "./utils";
-import { useChatStore, useModelsStore } from "@chara/core";
+import { useChatStore, useModelsStore } from "@apk/core";
 
 /**
  * Footer component with mode selector and model selector

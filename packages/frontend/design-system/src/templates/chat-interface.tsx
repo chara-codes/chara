@@ -14,15 +14,15 @@ import {
   useChatStore,
   useRunnerConnect,
   useRunnerConnection,
-} from "@chara/core";
-import { useModelsStore } from "@chara/core";
+} from "@apk/core";
+import { useModelsStore } from "@apk/core";
 import {
   useRoutingStore,
   Screen,
   useNavigateToConversation,
-} from "@chara/core";
+} from "@apk/core";
 import type { Theme } from "@/theme";
-import type { ButtonConfig } from "@chara/core";
+import type { ButtonConfig } from "@apk/core";
 
 const Container = styled.div`
   all: revert;

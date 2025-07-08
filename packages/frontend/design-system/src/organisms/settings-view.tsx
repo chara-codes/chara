@@ -8,7 +8,7 @@ import {
   useUIStore,
   type KeyboardShortcut,
   UIStoreContext,
-} from '@chara/core';
+} from '@apk/core';
 import { ChevronDownIcon } from "../atoms/icons";
 
 const SettingsContainer = styled.div`

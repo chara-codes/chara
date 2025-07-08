@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { spinner } from "../utils/prompts";
 import type { StopServerActionOptions } from "./types";
 

@@ -5,7 +5,7 @@ import {
   findExistingChat,
   getHistoryAndPersist,
 } from "../../repos/chatRepo.ts";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 
 export const chatRouter = router({
   getHistory: publicProcedure

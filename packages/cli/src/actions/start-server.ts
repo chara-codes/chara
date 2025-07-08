@@ -1,8 +1,8 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { intro, spinner } from "../utils/prompts";
 import { bold, cyan } from "picocolors";
-import { existsGlobalConfig, readGlobalConfig } from "@chara/settings";
-import { startServer } from "@chara/server";
+import { existsGlobalConfig, readGlobalConfig } from "@apk/settings";
+import { startServer } from "@apk/server";
 import type { StartServerActionOptions } from "./types";
 
 /**

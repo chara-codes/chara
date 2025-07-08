@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import type { CommandModule } from "yargs";
 import type { InitializeConfigActionOptions } from "../actions";
 import { ActionFactory } from "../actions";

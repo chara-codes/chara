@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { resolve } from "path";
 import type { SetupProjectActionOptions } from "./types";
 

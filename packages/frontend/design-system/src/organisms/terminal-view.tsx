@@ -11,7 +11,7 @@ import {
   useRunnerClearOutput,
   useRunnerRestart,
   useRunnerGetStatus,
-} from "@chara/core/stores";
+} from "@apk/core/stores";
 import Button from "../atoms/button";
 
 const TerminalContainer = styled.div`

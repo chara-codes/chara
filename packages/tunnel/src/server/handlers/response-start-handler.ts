@@ -1,5 +1,5 @@
 import type { ServerWebSocket } from "bun";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import type { ClientData } from "../../types/server.types";
 
 /**

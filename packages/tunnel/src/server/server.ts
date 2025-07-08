@@ -1,6 +1,6 @@
 import type { Server as BunServer } from "bun";
 import type { ServerWebSocket } from "bun";
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import type { ClientData, ClientMap, ServerConfig } from "../types/server.types";
 import { handleHttpRequest } from "./handlers/http-handler";
 import { handleConnection } from "./handlers/connection-handler";

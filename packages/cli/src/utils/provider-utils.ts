@@ -1,4 +1,4 @@
-import { logger } from "@chara/logger";
+import { logger } from "@apk/logger";
 import { isCancel, text } from "./prompts";
 import { green, yellow } from "picocolors";
 import type { ProviderConfig } from "../config/provider-configs";

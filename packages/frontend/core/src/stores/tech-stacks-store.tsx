@@ -5,7 +5,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { ReactNode, useEffect } from "react";
 import { trpc } from "../services";
-import type { StackDTO } from "@chara/server";
+import type { StackDTO } from "@apk/server";
 import { toast } from "../components";
 import { Screen, useRoutingStore } from "./routing-store";
 

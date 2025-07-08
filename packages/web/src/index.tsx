@@ -5,13 +5,13 @@ import {
   type Theme,
   theme,
   PreviewPanel,
-} from "@chara/design-system";
+} from "@apk/design-system";
 import {
   UIStoreProvider,
   TrpcProvider,
   TechStacksProvider,
   Toaster,
-} from "@chara/core";
+} from "@apk/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const WorkspaceContainer = styled.div`
