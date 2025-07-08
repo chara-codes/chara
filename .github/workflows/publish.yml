@@ -1,0 +1,135 @@
+name: Publish CLI
+
+on:
+  push:
+    branches:
+      - main
+      - playground
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish CLI to NPM
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/playground')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.18
+
+      - name: Setup NPM authentication
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build packages
+        run: bun run build
+
+      - name: Set release type based on branch
+        id: release-type
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/playground" ]]; then
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "snapshot=true" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "snapshot=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release Pull Request or Publish to NPM
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          title: "Release: Version Packages"
+          commit: "ci: version packages"
+          publish: bun run changeset:publish
+          version: bun run changeset:version
+          setupGitUser: true
+          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish alpha version
+        if: github.ref == 'refs/heads/playground'
+        run: |
+          cd packages/cli
+          # Get current version and append alpha suffix
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          ALPHA_VERSION="${CURRENT_VERSION}-alpha.$(git rev-parse --short HEAD)"
+
+          # Update version in package.json for alpha release
+          bun run --silent -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '$ALPHA_VERSION';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+
+          # Build the package
+          bun run build
+
+          # Publish with alpha tag
+          npm publish --tag alpha --access public
+
+          echo "Published alpha version: $ALPHA_VERSION"
+
+      - name: Post release summary
+        if: always()
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Release type: ${{ steps.release-type.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Changesets published: ${{ steps.changesets.outputs.published }}" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ steps.changesets.outputs.published }}" == "true" ]]; then
+            echo "- Published packages: ${{ steps.changesets.outputs.publishedPackages }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  test:
+    name: Test CLI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.6
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run tests
+        run: bun run test
+
+      - name: Build CLI
+        run: |
+          cd packages/cli
+          bun run build
+
+      - name: Test CLI binary
+        run: |
+          cd packages/cli
+          ./dist/chara --help

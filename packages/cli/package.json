@@ -1,18 +1,47 @@
 {
-  "name": "@chara/cli",
+  "name": "chara",
   "version": "1.0.0",
+  "description": "Chara CLI - AI-powered development assistant",
+  "main": "dist/chara",
   "module": "src/index.ts",
   "bin": {
     "chara": "./dist/chara"
   },
+  "files": [
+    "dist/chara",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "bun build ./src/index.ts --outfile ./dist/chara --compile",
     "dev": "bun ./src/index.ts dev --projectDir ./demo-project/",
     "d": "bun ./src/index.ts",
     "start": "./dist/chara",
-    "test": "bun test"
+    "test": "bun test",
+    "prepack": "bun run build"
   },
   "type": "module",
+  "keywords": [
+    "ai",
+    "development",
+    "assistant",
+    "cli",
+    "chara"
+  ],
+  "author": "Chara Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/chara-codes/chara#readme",
+  "bugs": {
+    "url": "https://github.com/chara-codes/chara/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/yargs": "^17.0.33",
@@ -31,6 +60,5 @@
     "picocolors": "^1.1.1",
     "superjson": "^2.2.2",
     "yargs": "^17.7.2"
-  },
-  "private": true
+  }
 }
