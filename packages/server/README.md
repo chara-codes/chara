@@ -6,11 +6,11 @@ A modular, configurable backend server for the Chara AI chat application, provid
 
 - **Simple Function-Based API**: Configure and start server with a single `startServer()` function call
 - **Modular Architecture**: Configurable server components with optional features
-- **tRPC API**: Type-safe API for client-server communication  
+- **tRPC API**: Type-safe API for client-server communication
 - **WebSocket Support**: Real-time communication for chat functionality (optional)
 - **MCP Integration**: Model Context Protocol support for advanced AI interactions (optional)
 - **AI Integration**: Multiple AI provider support (OpenAI, Anthropic, Azure, etc.)
-- **Database Integration**: SQLite/LibSQL database with Drizzle ORM
+- **Database Integration**: SQLite database with Drizzle ORM
 - **Streaming Responses**: Support for streaming AI responses
 - **Typed Events**: Type-safe event emitter system
 - **Advanced Logging**: Structured, colored logging system
@@ -147,7 +147,7 @@ AI_MODEL="wizardcoder"
 
 ## Database Setup
 
-This project uses Drizzle ORM with SQLite/LibSQL. To set up the database:
+This project uses Drizzle ORM with SQLite. To set up the database:
 
 ```bash
 # Generate migrations from schema
@@ -225,7 +225,7 @@ const { manager, appRouter } = await startServer();
 
 // Custom configuration
 const { manager, appRouter } = await startServer({
-  server: { 
+  server: {
     port: 8080,
     cors: {
       origin: "https://yourdomain.com"

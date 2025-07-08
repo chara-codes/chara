@@ -3,7 +3,7 @@ import {
   generateSQLiteDrizzleJson,
   generateSQLiteMigration,
 } from "drizzle-kit/api";
-import { drizzle } from "drizzle-orm/libsql";
+import { drizzle } from "drizzle-orm/bun-sqlite";
 import * as schema from "../db/schema";
 import { Database } from "bun:sqlite";
 
@@ -17,7 +17,7 @@ if (!(await dbFile.exists())) {
   const db = new Database(dbFileName, { create: true });
 
   const [previous, current] = await Promise.all(
-    [{}, schema].map((schemaObject) => generateSQLiteDrizzleJson(schemaObject)),
+    [{}, schema].map((schemaObject) => generateSQLiteDrizzleJson(schemaObject))
   );
 
   const statements = await generateSQLiteMigration(previous, current);
@@ -27,9 +27,6 @@ if (!(await dbFile.exists())) {
 }
 
 export const db = drizzle({
-  connection: {
-    url: String(process.env.DATABASE_URL || "file:.chara/chara.db"),
-    authToken: String(process.env.DATABASE_AUTH_TOKEN),
-  },
+  client: new Database(dbFileName),
   schema,
 });
