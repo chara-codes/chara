@@ -42,67 +42,38 @@ jobs:
       - name: Build packages
         run: bun run build
 
-      - name: Set release type based on branch
-        id: release-type
+      - name: Setup Git user
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/playground" ]]; then
-            echo "tag=alpha" >> $GITHUB_OUTPUT
-            echo "prerelease=true" >> $GITHUB_OUTPUT
-            echo "snapshot=true" >> $GITHUB_OUTPUT
-          else
-            echo "tag=latest" >> $GITHUB_OUTPUT
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-            echo "snapshot=false" >> $GITHUB_OUTPUT
-          fi
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create Release Pull Request or Publish to NPM
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          title: "Release: Version Packages"
-          commit: "ci: version packages"
-          publish: bun run changeset:publish
-          version: bun run changeset:version
-          setupGitUser: true
-          createGithubReleases: true
+      - name: Release (main branch)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd packages/cli
+          npx auto shipit
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish alpha version
+      - name: Release alpha (playground branch)
         if: github.ref == 'refs/heads/playground'
         run: |
           cd packages/cli
-          # Get current version and append alpha suffix
-          CURRENT_VERSION=$(node -p "require('./package.json').version")
-          ALPHA_VERSION="${CURRENT_VERSION}-alpha.$(git rev-parse --short HEAD)"
-
-          # Update version in package.json for alpha release
-          bun run --silent -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            pkg.version = '$ALPHA_VERSION';
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-
-          # Build the package
-          bun run build
-
-          # Publish with alpha tag
-          npm publish --tag alpha --access public
-
-          echo "Published alpha version: $ALPHA_VERSION"
+          npx auto canary --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Post release summary
         if: always()
         run: |
           echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Release type: ${{ steps.release-type.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Changesets published: ${{ steps.changesets.outputs.published }}" >> $GITHUB_STEP_SUMMARY
-
-          if [[ "${{ steps.changesets.outputs.published }}" == "true" ]]; then
-            echo "- Published packages: ${{ steps.changesets.outputs.publishedPackages }}" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.ref }}" == "refs/heads/playground" ]]; then
+            echo "- Release type: canary" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Release type: production" >> $GITHUB_STEP_SUMMARY
           fi
 
   test:

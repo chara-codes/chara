@@ -9,6 +9,7 @@
 - [Getting Started](#getting-started)
 - [Architecture](#architecture)
 - [Configuration](#configuration)
+- [Release Management](#release-management)
 - [Contributing](#contributing)
 - [Documentation](#documentation)
 - [Technical depts](#technical-depts)
@@ -151,6 +152,47 @@ Each package can be configured independently:
 - **CLI**: `.chara.json` for project-specific configuration
 
 See individual package READMEs for detailed configuration options.
+
+## Release Management
+
+Chara uses [Auto](https://github.com/intuit/auto) for automated release management. Releases are triggered by PR labels and happen automatically through GitHub Actions.
+
+### For Contributors
+
+When creating a PR, add one of these labels to determine the release type:
+
+- `💥 Breaking Change` - Major version bump
+- `🚀 Feature` - Minor version bump  
+- `🐛 Bug Fix` - Patch version bump
+- `📚 Documentation` - Patch version bump
+- `🏠 Internal` - Patch version bump
+- `🏃 Performance` - Patch version bump
+- `📦 Dependencies` - Patch version bump
+- `🚫 Skip Release` - Skip this PR from releases
+
+### Release Process
+
+- **Main branch**: Production releases happen automatically when PRs are merged
+- **Playground branch**: Canary releases for testing new features
+- **Feature branches**: Can create canary releases for preview
+
+### Manual Release Commands
+
+```bash
+# Check release status
+bun run release:check
+
+# Setup GitHub labels (run once)
+bun run release:labels
+
+# Create canary release
+bun run release:canary
+
+# Ship production release
+bun run release
+```
+
+For detailed information, see [Release Management Guide](./docs/RELEASES.md) and [Migration Guide](./docs/MIGRATION_TO_AUTO.md).
 
 ## Documentation
 
