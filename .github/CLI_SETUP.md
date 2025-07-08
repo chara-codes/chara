@@ -93,11 +93,12 @@ chara dev
 | Build failed | Check that all workspace dependencies build successfully |
 | Binary not found | Ensure `bun run build` creates `./dist/chara` |
 | Package validation failed | Run `npm pack --dry-run` to check package contents |
+| Dependency resolution error | Workspace dependencies are automatically removed during publish |
 
 ## Key Files to Monitor
 
-- `packages/cli/package.json` - Version and publishing config
-- `packages/cli/dist/chara` - Built binary (created by build process)
+- `packages/cli/package.json` - Version and publishing config (workspace deps in devDependencies)
+- `packages/cli/dist/chara` - Built binary (created by build process, includes all dependencies)
 - `.github/workflows/publish-cli.yml` - Publishing workflow
 - `.github/workflows/test-cli.yml` - PR testing workflow
 
@@ -132,8 +133,20 @@ npm pack --dry-run
 - **Stable**: Every push to `main` branch
 - **Manual**: Can be triggered anytime from Actions
 
+## Dependency Architecture
+
+The CLI uses a special dependency setup for publishing:
+
+- **Development**: Workspace dependencies (`@chara/*`) are in `devDependencies`
+- **Build**: All dependencies are compiled into the binary with `bun build --compile`
+- **Publishing**: Workspace dependencies are automatically removed from package.json
+- **Runtime**: Single binary with no external dependencies
+
+This ensures clean npm publishing without dependency conflicts.
+
 ## Support
 
 - For publishing issues: Check GitHub Actions logs
 - For CLI issues: Test locally with `./dist/chara`
 - For npm issues: Verify package at [npmjs.com/package/chara](https://www.npmjs.com/package/chara)
+- For dependency issues: Remember that workspace deps are compiled into the binary

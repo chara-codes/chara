@@ -33,6 +33,39 @@ jobs:
           # Use turbo to build CLI and all its dependencies
           bunx turbo build --filter=chara
 
+      - name: Prepare package for publishing
+        run: |
+          cd packages/cli
+          # Create a clean package.json for publishing without workspace dependencies
+          node -e "
+            const pkg = require('./package.json');
+            const fs = require('fs');
+
+            // Create a backup
+            fs.writeFileSync('./package.json.backup', JSON.stringify(pkg, null, 2));
+
+            // Remove workspace dependencies from dependencies and devDependencies
+            if (pkg.dependencies) {
+              Object.keys(pkg.dependencies).forEach(key => {
+                if (key.startsWith('@chara/')) {
+                  delete pkg.dependencies[key];
+                }
+              });
+            }
+
+            if (pkg.devDependencies) {
+              Object.keys(pkg.devDependencies).forEach(key => {
+                if (key.startsWith('@chara/')) {
+                  delete pkg.devDependencies[key];
+                }
+              });
+            }
+
+            // Write the cleaned package.json
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log('Package.json cleaned for publishing');
+          "
+
       - name: Test CLI build
         run: |
           cd packages/cli
@@ -110,3 +143,13 @@ jobs:
           release_name: CLI v${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
+
+      - name: Restore package.json
+        if: always()
+        run: |
+          cd packages/cli
+          # Restore the original package.json if backup exists
+          if [ -f "package.json.backup" ]; then
+            mv package.json.backup package.json
+            echo "Package.json restored from backup"
+          fi

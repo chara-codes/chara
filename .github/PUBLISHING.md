@@ -82,8 +82,9 @@ Alpha versions are automatically generated and don't require manual version upda
 ### Common Issues
 
 1. **Authentication Error**: Ensure the `NPM_TOKEN` secret is correctly set
-2. **Build Failure**: Check that all dependencies are properly installed
+2. **Build Failure**: Check that all workspace dependencies build successfully
 3. **Version Conflict**: Make sure you're not trying to publish an existing version
+4. **Dependency Resolution Error**: The workflow automatically removes workspace dependencies from the published package since they're compiled into the binary
 
 ### Logs
 
@@ -96,10 +97,10 @@ Check the GitHub Actions logs for detailed error messages:
 
 The published package includes:
 
-- `dist/chara` - The compiled CLI binary
+- `dist/chara` - The compiled CLI binary (includes all workspace dependencies)
 - `README.md` - Package documentation
 - `LICENSE` - MIT license file
-- `package.json` - Package metadata
+- `package.json` - Package metadata (workspace dependencies removed for publishing)
 
 ## Testing Published Package
 
@@ -116,6 +117,19 @@ npm install -g chara@alpha
 chara --version
 chara --help
 ```
+
+## Dependency Management
+
+The CLI package uses workspace dependencies during development but these are compiled into the binary for publishing:
+
+- **Development**: Workspace dependencies (`@chara/agents`, `@chara/logger`, etc.) are in `devDependencies`
+- **Publishing**: Workspace dependencies are automatically removed from the published package.json
+- **Runtime**: All dependencies are bundled into the compiled binary with `bun build --compile`
+
+This approach ensures:
+- No dependency conflicts during npm publish
+- Single binary distribution with no external dependencies
+- Faster installation for end users
 
 ## Security Considerations
 

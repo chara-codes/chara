@@ -61,6 +61,35 @@ jobs:
       - name: Test package contents
         run: |
           cd packages/cli
+          # Create a clean package.json for testing (remove workspace deps)
+          node -e "
+            const pkg = require('./package.json');
+            const fs = require('fs');
+
+            // Create a backup
+            fs.writeFileSync('./package.json.backup', JSON.stringify(pkg, null, 2));
+
+            // Remove workspace dependencies from dependencies and devDependencies
+            if (pkg.dependencies) {
+              Object.keys(pkg.dependencies).forEach(key => {
+                if (key.startsWith('@chara/')) {
+                  delete pkg.dependencies[key];
+                }
+              });
+            }
+
+            if (pkg.devDependencies) {
+              Object.keys(pkg.devDependencies).forEach(key => {
+                if (key.startsWith('@chara/')) {
+                  delete pkg.devDependencies[key];
+                }
+              });
+            }
+
+            // Write the cleaned package.json
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log('Package.json cleaned for testing');
+          "
           # Test npm pack to ensure all files are included
           npm pack --dry-run
           # Verify package.json is valid
@@ -72,6 +101,11 @@ jobs:
               exit 1
             fi
           done
+          # Restore original package.json
+          if [ -f "package.json.backup" ]; then
+            mv package.json.backup package.json
+            echo "Package.json restored from backup"
+          fi
 
       - name: Validate package.json
         run: |
@@ -92,6 +126,14 @@ jobs:
             if (pkg.bin.chara !== './dist/chara') {
               console.error('Binary path should be \"./dist/chara\"');
               process.exit(1);
+            }
+            // Check that workspace dependencies are in devDependencies, not dependencies
+            if (pkg.dependencies) {
+              const workspaceDeps = Object.keys(pkg.dependencies).filter(key => key.startsWith('@chara/'));
+              if (workspaceDeps.length > 0) {
+                console.error('Workspace dependencies should not be in dependencies:', workspaceDeps);
+                process.exit(1);
+              }
             }
             console.log('Package.json validation passed');
           "
