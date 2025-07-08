@@ -238,8 +238,6 @@ export async function startServer(
   } = options;
 
   logger.setLevel(logLevel);
-  const configFile = Bun.file(charaConfigFile);
-  const charaConfig = await configFile.json();
 
   // Set up WebSocket broadcasting for runner events (only if WebSocket is enabled)
   let broadcastToClients: ((eventName: string, data: any) => void) | undefined;
@@ -269,6 +267,9 @@ export async function startServer(
 
   // Initialize runner service if enabled
   if (runner.enabled) {
+    const configFile = Bun.file(charaConfigFile);
+    const charaConfig = await configFile.json();
+
     appEvents.on("runner:status", (status) => {
       logger.dumpDebug(status);
     });
@@ -418,6 +419,9 @@ export async function startServer(
     },
 
     async restart(services = ["mcp", "runner"]) {
+      const configFile = Bun.file(charaConfigFile);
+      const charaConfig = await configFile.json();
+
       logger.debug("🔄 Restarting services:", services);
 
       if (services.includes("runner") && runner.enabled) {
