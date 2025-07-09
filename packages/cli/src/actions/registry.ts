@@ -20,6 +20,7 @@ import { showAction } from "./show";
 import { startAgentsAction, stopAgentsAction } from "./start-agents";
 import { startServerAction } from "./start-server";
 import { stopServerAction } from "./stop-server";
+import { serveStaticAction, stopStaticAction } from "./serve-static";
 import type {
   ConnectEventsActionOptions,
   ConnectMcpActionOptions,
@@ -37,6 +38,7 @@ import type {
   StartServerActionOptions,
   StopAgentsActionOptions,
   StopServerActionOptions,
+  ServeStaticActionOptions,
 } from "./types";
 
 // Register all actions with the factory
@@ -47,9 +49,9 @@ export function registerActions(): void {
       "init",
       "Initialize Chara configuration with AI provider settings",
       compose<InitActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "init"),
-      )(initAction),
-    ),
+        withLogging(fn, "init")
+      )(initAction)
+    )
   );
 
   // Register reset action
@@ -58,9 +60,9 @@ export function registerActions(): void {
       "reset",
       "Reset/clear all configuration",
       compose<ResetActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "reset"),
-      )(resetAction),
-    ),
+        withLogging(fn, "reset")
+      )(resetAction)
+    )
   );
 
   // Register show action
@@ -69,9 +71,9 @@ export function registerActions(): void {
       "show",
       "Show current configuration",
       compose<ShowActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "show"),
-      )(showAction),
-    ),
+        withLogging(fn, "show")
+      )(showAction)
+    )
   );
 
   // Register default-model action
@@ -80,9 +82,9 @@ export function registerActions(): void {
       "default-model",
       "Set default AI model for Chara Codes",
       compose<DefaultModelActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "default-model"),
-      )(defaultModelAction),
-    ),
+        withLogging(fn, "default-model")
+      )(defaultModelAction)
+    )
   );
 
   // Register start-agents action
@@ -91,9 +93,9 @@ export function registerActions(): void {
       "start-agents",
       "Start Chara agents server",
       compose<StartAgentsActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "start-agents"),
-      )(startAgentsAction),
-    ),
+        withLogging(fn, "start-agents")
+      )(startAgentsAction)
+    )
   );
 
   // Register stop-agents action
@@ -103,9 +105,9 @@ export function registerActions(): void {
       "Stop Chara agents server",
       withLogging(
         withErrorHandling<StopAgentsActionOptions, void>(stopAgentsAction),
-        "stop-agents",
-      ),
-    ),
+        "stop-agents"
+      )
+    )
   );
 
   // Register start-server action
@@ -114,9 +116,9 @@ export function registerActions(): void {
       "start-server",
       "Start Chara server",
       compose<StartServerActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "start-server"),
-      )(startServerAction),
-    ),
+        withLogging(fn, "start-server")
+      )(startServerAction)
+    )
   );
 
   // Register stop-server action
@@ -126,9 +128,9 @@ export function registerActions(): void {
       "Stop Chara server",
       withLogging(
         withErrorHandling<StopServerActionOptions, void>(stopServerAction),
-        "stop-server",
-      ),
-    ),
+        "stop-server"
+      )
+    )
   );
 
   // Register setup-logging action
@@ -137,9 +139,9 @@ export function registerActions(): void {
       "setup-logging",
       "Setup logging configuration",
       compose<SetupLoggingActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "setup-logging"),
-      )(setupLoggingAction),
-    ),
+        withLogging(fn, "setup-logging")
+      )(setupLoggingAction)
+    )
   );
 
   // Register setup-project action
@@ -148,9 +150,9 @@ export function registerActions(): void {
       "setup-project",
       "Setup project directory",
       compose<SetupProjectActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "setup-project"),
-      )(setupProjectAction),
-    ),
+        withLogging(fn, "setup-project")
+      )(setupProjectAction)
+    )
   );
 
   // Register load-config action
@@ -159,9 +161,9 @@ export function registerActions(): void {
       "load-config",
       "Load project configuration",
       compose<LoadConfigActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "load-config"),
-      )(loadConfigAction),
-    ),
+        withLogging(fn, "load-config")
+      )(loadConfigAction)
+    )
   );
 
   // Register connect-mcp action
@@ -170,9 +172,9 @@ export function registerActions(): void {
       "connect-mcp",
       "Connect to MCP servers",
       compose<ConnectMcpActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "connect-mcp"),
-      )(connectMcpAction),
-    ),
+        withLogging(fn, "connect-mcp")
+      )(connectMcpAction)
+    )
   );
 
   // Register connect-events action
@@ -181,9 +183,9 @@ export function registerActions(): void {
       "connect-events",
       "Connect to server events",
       compose<ConnectEventsActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "connect-events"),
-      )(connectEventsAction),
-    ),
+        withLogging(fn, "connect-events")
+      )(connectEventsAction)
+    )
   );
 
   // Register init-api action
@@ -192,9 +194,9 @@ export function registerActions(): void {
       "init-api",
       "Initialize API client",
       compose<InitApiActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "init-api"),
-      )(initApiAction),
-    ),
+        withLogging(fn, "init-api")
+      )(initApiAction)
+    )
   );
 
   // Register init-mcp-client action
@@ -203,9 +205,9 @@ export function registerActions(): void {
       "init-mcp-client",
       "Initialize MCP client",
       compose<InitMcpClientActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "init-mcp-client"),
-      )(initMcpClientAction),
-    ),
+        withLogging(fn, "init-mcp-client")
+      )(initMcpClientAction)
+    )
   );
 
   // Register initialize-config action
@@ -214,9 +216,20 @@ export function registerActions(): void {
       "initialize-config",
       "Initialize Chara configuration with default model from global config",
       compose<InitializeConfigActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "initialize-config"),
-      )(initializeConfigAction),
-    ),
+        withLogging(fn, "initialize-config")
+      )(initializeConfigAction)
+    )
+  );
+
+  // Register serve-static action
+  ActionFactory.register(
+    createAction(
+      "serve-static",
+      "Serve static HTML, CSS, and JavaScript files",
+      compose<ServeStaticActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "serve-static")
+      )(serveStaticAction)
+    )
   );
 }
 

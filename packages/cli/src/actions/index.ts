@@ -2,6 +2,7 @@ export { defaultModelAction } from "./default-model";
 export { startAgentsAction, stopAgentsAction } from "./start-agents";
 export { startServerAction } from "./start-server";
 export { stopServerAction } from "./stop-server";
+export { serveStaticAction, stopStaticAction } from "./serve-static";
 export { setupLoggingAction } from "./setup-logging";
 export { setupProjectAction } from "./setup-project";
 export { loadConfigAction } from "./load-config";
@@ -42,5 +43,6 @@ export type {
   InitializeConfigActionOptions,
   InitActionOptions,
   ResetActionOptions,
+  ServeStaticActionOptions,
   ShowActionOptions,
 } from "./types";

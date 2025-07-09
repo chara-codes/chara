@@ -231,6 +231,18 @@ Stop the Chara server and cleanup resources.
 - `silent`: Suppress UI output (default: false)
 - `verbose`: Enable verbose output
 
+### `serve-static`
+Serve static HTML, CSS, and JavaScript files.
+
+**Options:**
+- `port`: Port to start server on (default: 3000)
+- `directory`: Directory to serve files from (default: current directory)
+- `index`: Index file to serve for directory requests (default: "index.html")
+- `host`: Host to bind to (default: "localhost")
+- `cors`: Enable CORS headers (default: true)
+- `silent`: Suppress UI output (default: false)
+- `verbose`: Enable verbose output
+
 ### `setup-logging`
 Setup logging configuration based on verbose and trace flags.
 
@@ -392,6 +404,19 @@ The command will:
 3. Present an interactive selection interface
 4. Save the selected model to configuration
 5. Clean up the server
+
+#### `chara serve-static`
+Serve static HTML, CSS, and JavaScript files.
+```bash
+chara serve-static --port 3000 --directory ./dist --verbose
+```
+
+The command will:
+1. Start a static file server on the specified port
+2. Serve files from the specified directory
+3. Support CORS, custom index files, and directory listing
+4. Handle various MIME types automatically
+5. Provide graceful shutdown on Ctrl+C
 
 ### Command Structure
 

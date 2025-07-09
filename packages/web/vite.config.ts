@@ -31,13 +31,6 @@ export default defineConfig({
     },
   },
   build: {
-    cssCodeSplit: false,
-    rollupOptions: {
-      output: {
-        entryFileNames: "main.js",
-        assetFileNames: "main.css",
-      },
-    },
     chunkSizeWarningLimit: 1000,
   },
   test: {

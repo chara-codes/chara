@@ -10,7 +10,7 @@ import { startAgentsCommand } from "./commands/start-agents";
 
 // Read version from package.json
 const packageJson = JSON.parse(
-  readFileSync(resolve(__dirname, "../package.json"), "utf8"),
+  readFileSync(resolve(__dirname, "../package.json"), "utf8")
 );
 
 yargs(hideBin(process.argv))

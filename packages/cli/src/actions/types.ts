@@ -15,7 +15,7 @@ export interface ActionContext {
 
 export type ActionFunction<
   T extends ActionOptions = ActionOptions,
-  R = void,
+  R = void
 > = (options?: T) => Promise<R>;
 
 export interface BaseAction {
@@ -95,4 +95,20 @@ export interface StopServerActionOptions extends ActionOptions {
   server?: any;
   silent?: boolean;
   force?: boolean;
+}
+
+export interface ServeStaticActionOptions extends ActionOptions {
+  port?: number;
+  directory?: string;
+  directories?: Record<string, string | Response>;
+  index?: string;
+  host?: string;
+  cors?: boolean;
+  silent?: boolean;
+  development?:
+    | boolean
+    | {
+        hmr?: boolean;
+        console?: boolean;
+      };
 }
