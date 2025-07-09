@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/core",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

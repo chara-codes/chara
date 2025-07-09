@@ -1,5 +1,14 @@
 # @chara-codes/agents
 
+## 0.1.8
+
+### Patch Changes
+
+- b2b64f7: fix issue with path to web
+- Updated dependencies [b2b64f7]
+  - @chara-codes/settings@0.1.8
+  - @chara-codes/logger@0.1.8
+
 ## 0.1.7
 
 ### Patch Changes

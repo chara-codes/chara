@@ -1,5 +1,11 @@
 # chara
 
+## 0.1.8
+
+### Patch Changes
+
+- b2b64f7: fix issue with path to web
+
 ## 0.1.7
 
 ### Patch Changes
