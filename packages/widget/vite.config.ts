@@ -37,7 +37,7 @@ export default defineConfig({
       },
     },
     cssCodeSplit: false,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2000,
   },
   test: {
     environment: "jsdom",
