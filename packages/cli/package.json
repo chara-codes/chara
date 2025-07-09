@@ -65,6 +65,7 @@
     "@modelcontextprotocol/sdk": "^1.15.0",
     "enquirer": "^2.4.1",
     "picocolors": "^1.1.1",
+    "resolve-package-path": "^4.0.3",
     "superjson": "^2.2.2",
     "yargs": "^17.7.2"
   },

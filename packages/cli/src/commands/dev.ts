@@ -1,11 +1,12 @@
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { logger } from "@chara-codes/logger";
+import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
 import { bold, cyan, green, yellow } from "picocolors";
+import { findUpPackagePath, getRealDirectoryPath } from "resolve-package-path";
 import type { CommandModule } from "yargs";
 import { ActionFactory } from "../actions";
 import { intro, outro } from "../utils/prompts";
-import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
-import { existsSync } from "node:fs";
-import { join, resolve } from "node:path";
 
 interface DevCommandArgs {
   projectDir?: string;
@@ -58,10 +59,8 @@ export const devCommand: CommandModule<
       // Step 3: Check if global config exists, if not run init
       const globalConfigExists = await existsGlobalConfig();
       if (!globalConfigExists) {
-        logger.info(
-          `${yellow(
-            "⚠️"
-          )} No global configuration found. Running initialization...`
+        logger.warning(
+          `No global configuration found. Running initialization...`
         );
         await ActionFactory.execute("init", {
           verbose: argv.verbose,
@@ -73,10 +72,8 @@ export const devCommand: CommandModule<
       try {
         globalConfig = await readGlobalConfig();
         if (!globalConfig.defaultModel) {
-          logger.info(
-            `${yellow(
-              "⚠️"
-            )} No default model found in global configuration. Setting up default model...`
+          logger.warning(
+            `No default model found in global configuration. Setting up default model...`
           );
 
           // We need to start a temporary server to get available models
@@ -110,10 +107,8 @@ export const devCommand: CommandModule<
       // Step 5: Check if local/project config exists
       const localConfigPath = join(projectDir || process.cwd(), ".chara.json");
       if (!existsSync(localConfigPath)) {
-        logger.info(
-          `${yellow(
-            "⚠️"
-          )} No local configuration found. Initializing project configuration...`
+        logger.warning(
+          `No local configuration found. Initializing project configuration...`
         );
         await ActionFactory.execute("initialize-config", {
           verbose: argv.verbose,
@@ -190,19 +185,23 @@ export const devCommand: CommandModule<
 
       // Step 14: Start web applications that should connect to server and agents
 
-      const indexWeb = Bun.file(`${__dirname}/web/index.html`);
-      const indexWidget = Bun.file(__dirname + "/widget/index.html");
+      const pathToRoot = dirname(
+        findUpPackagePath("@chara-codes/cli") as string
+      );
+      const indexWeb = Bun.file(`${pathToRoot}/dist/web/index.html`);
+      const indexWidget = Bun.file(`${pathToRoot}/dist/widget/index.html`);
       const hasWeb = await indexWeb.exists();
       const hasWidget = await indexWidget.exists();
+
       const serveStatic = await ActionFactory.execute("serve-static", {
         verbose: argv.verbose,
         port: 1237,
         directories: {
           "/": hasWeb
-            ? `${__dirname}/web/`
+            ? `${pathToRoot}/dist/web/`
             : resolve(`${__dirname}../../../../web/dist/`),
           "/widget": hasWidget
-            ? `${__dirname}/widget/`
+            ? `${pathToRoot}/dist/widget/`
             : resolve(`${__dirname}../../../../widget/dist/`),
         },
         silent: false,
@@ -220,24 +219,24 @@ export const devCommand: CommandModule<
       }
 
       if (argv.verbose) {
-        console.log(`\n${bold("🔧 Server Configuration:")}`);
-        console.log(
+        logger.info(`\n${bold("🔧 Server Configuration:")}`);
+        logger.info(
           `  • API endpoint: ${bold(
             `http://localhost:${serverResult.port}/trpc`
           )}`
         );
-        console.log(
+        logger.info(
           `  • MCP enabled: ${hasMcpServers ? green("Yes") : yellow("No")}`
         );
-        console.log(
+        logger.info(
           `  • WebSocket enabled: ${
             hasMcpServers ? green("Yes") : yellow("No")
           }`
         );
-        console.log(`  • Runner enabled: ${green("Yes")}`);
+        logger.info(`  • Runner enabled: ${green("Yes")}`);
 
         if (hasMcpServers) {
-          console.log(
+          logger.info(
             `  • WebSocket endpoint: ${bold(
               `ws://localhost:${serverResult.port}/events`
             )}`
@@ -250,7 +249,7 @@ export const devCommand: CommandModule<
       );
 
       if (hasMcpServers && clientsList.length > 0) {
-        console.log(
+        logger.info(
           `  • Active MCP clients: ${clientsList
             .map((client: any) => cyan(client.name || "Unknown"))
             .join(", ")}`
