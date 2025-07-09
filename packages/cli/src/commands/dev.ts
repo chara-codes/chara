@@ -3,7 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { logger } from "@chara-codes/logger";
 import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
 import { bold, cyan, green, yellow } from "picocolors";
-import { findUpPackagePath, getRealDirectoryPath } from "resolve-package-path";
+import { findPackageJSON } from "node:module";
 import type { CommandModule } from "yargs";
 import { ActionFactory } from "../actions";
 import { intro, outro } from "../utils/prompts";
@@ -185,11 +185,9 @@ export const devCommand: CommandModule<
 
       // Step 14: Start web applications that should connect to server and agents
 
-      const pathToRoot = dirname(
-        findUpPackagePath("@chara-codes/cli") as string
-      );
-      const indexWeb = Bun.file(`${pathToRoot}/dist/web/index.html`);
-      const indexWidget = Bun.file(`${pathToRoot}/dist/widget/index.html`);
+      const pathToRoot = dirname(process.execPath);
+      const indexWeb = Bun.file(`${pathToRoot}/web/index.html`);
+      const indexWidget = Bun.file(`${pathToRoot}/widget/index.html`);
       const hasWeb = await indexWeb.exists();
       const hasWidget = await indexWidget.exists();
 
@@ -198,10 +196,10 @@ export const devCommand: CommandModule<
         port: 1237,
         directories: {
           "/": hasWeb
-            ? `${pathToRoot}/dist/web/`
+            ? `${pathToRoot}/web/`
             : resolve(`${__dirname}../../../../web/dist/`),
           "/widget": hasWidget
-            ? `${pathToRoot}/dist/widget/`
+            ? `${pathToRoot}/widget/`
             : resolve(`${__dirname}../../../../widget/dist/`),
         },
         silent: false,
