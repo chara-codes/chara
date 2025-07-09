@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/web",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "main": "src/index.tsx",
   "module": "src/index.tsx",
   "types": "src/index.tsx",

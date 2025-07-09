@@ -1,5 +1,12 @@
 # chara
 
+## 0.1.5
+
+### Patch Changes
+
+- 965e549: improve build process
+- b9e9036: assemble all steps in dev command
+
 ## 0.1.4
 
 ### Patch Changes

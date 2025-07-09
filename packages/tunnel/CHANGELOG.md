@@ -1,5 +1,15 @@
 # @chara-codes/tunnel
 
+## 0.1.5
+
+### Patch Changes
+
+- 965e549: improve build process
+- b9e9036: assemble all steps in dev command
+- Updated dependencies [965e549]
+- Updated dependencies [b9e9036]
+  - @chara-codes/logger@0.1.5
+
 ## 0.1.4
 
 ### Patch Changes
