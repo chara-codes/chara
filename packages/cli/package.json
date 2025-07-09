@@ -9,6 +9,8 @@
   },
   "files": [
     "dist/chara",
+    "dist/web",
+    "dist/widget",
     "README.md",
     "LICENSE"
   ],
@@ -18,7 +20,7 @@
     "d": "bun ./src/index.ts",
     "start": "./dist/chara",
     "test": "bun test",
-    "prepack": "bun run build",
+    "prepack": "./scripts/prebuild.sh",
     "version:patch": "node scripts/bump-version.js patch",
     "version:minor": "node scripts/bump-version.js minor",
     "version:major": "node scripts/bump-version.js major",
@@ -51,7 +53,9 @@
     "@chara-codes/agents": "workspace:*",
     "@chara-codes/logger": "workspace:*",
     "@chara-codes/server": "workspace:*",
-    "@chara-codes/settings": "workspace:*"
+    "@chara-codes/settings": "workspace:*",
+    "@chara-codes/web": "workspace:*",
+    "@chara-codes/widget": "workspace:*"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"

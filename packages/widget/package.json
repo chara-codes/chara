@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --base=/widget/",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "build:check": "bun run typecheck && vite build",
     "lint": "eslint .",
