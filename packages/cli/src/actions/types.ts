@@ -97,6 +97,12 @@ export interface StopServerActionOptions extends ActionOptions {
   force?: boolean;
 }
 
+export interface StopServeStaticActionOptions extends ActionOptions {
+  server?: any;
+  silent?: boolean;
+  verbose?: boolean;
+}
+
 export interface ServeStaticActionOptions extends ActionOptions {
   port?: number;
   directory?: string;

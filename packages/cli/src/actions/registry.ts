@@ -39,6 +39,7 @@ import type {
   StopAgentsActionOptions,
   StopServerActionOptions,
   ServeStaticActionOptions,
+  StopServeStaticActionOptions,
 } from "./types";
 
 // Register all actions with the factory
@@ -229,6 +230,17 @@ export function registerActions(): void {
       compose<ServeStaticActionOptions>(withErrorHandling, (fn) =>
         withLogging(fn, "serve-static")
       )(serveStaticAction)
+    )
+  );
+
+  // Register stop-serve-static action
+  ActionFactory.register(
+    createAction(
+      "stop-serve-static",
+      "Stop Serve static HTML, CSS, and JavaScript files",
+      compose<StopServeStaticActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "stop-serve-static")
+      )(stopStaticAction)
     )
   );
 }

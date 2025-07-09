@@ -5,7 +5,7 @@ import { ActionFactory } from "../actions";
 import { intro, outro } from "../utils/prompts";
 import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 interface DevCommandArgs {
   projectDir?: string;
@@ -188,17 +188,28 @@ export const devCommand: CommandModule<
         silent: false,
       });
 
+      // Step 14: Start web applications that should connect to server and agents
+
+      const indexWeb = Bun.file(`${__dirname}/web/index.html`);
+      const indexWidget = Bun.file(__dirname + "/widget/index.html");
+      const hasWeb = await indexWeb.exists();
+      const hasWidget = await indexWidget.exists();
+      const serveStatic = await ActionFactory.execute("serve-static", {
+        verbose: argv.verbose,
+        port: 1237,
+        directories: {
+          "/": hasWeb
+            ? `${__dirname}/web/`
+            : resolve(`${__dirname}../../../../web/dist/`),
+          "/widget": hasWidget
+            ? `${__dirname}/widget/`
+            : resolve(`${__dirname}../../../../widget/dist/`),
+        },
+        silent: false,
+      });
+
       // Success message
       logger.success("✓ Chara development environment is ready!");
-
-      // Print server information
-      console.log(`\n${bold("🖥️  Running Servers:")}`);
-      console.log(
-        `  • Main Server: ${cyan(`http://localhost:${serverResult.port}`)}`
-      );
-      console.log(
-        `  • Agents Server: ${cyan(`http://localhost:${agentsResult.port}`)}`
-      );
 
       if (hasMcpServers) {
         console.log(
@@ -234,13 +245,7 @@ export const devCommand: CommandModule<
         }
       }
 
-      console.log(`\n${bold("📊 Connected Services:")}`);
-      console.log(
-        `  • MCP servers: ${
-          hasMcpServers ? green(clientsList.length.toString()) : yellow("0")
-        }`
-      );
-      console.log(
+      logger.info(
         `  • Project directory: ${cyan(projectDir || process.cwd())}`
       );
 
@@ -252,28 +257,28 @@ export const devCommand: CommandModule<
         );
       }
 
-      logger.info(`\nPress ${bold("Ctrl+C")} to stop\n`);
-
-      outro(
-        `${bold(green("🎉 Development environment ready!"))}
-
-${bold("Available endpoints:")}
-• Main API: ${cyan(`http://localhost:${serverResult.port}/trpc`)}
-• Agents API: ${cyan(`http://localhost:${agentsResult.port}`)}
-${
-  hasMcpServers
-    ? `• WebSocket: ${cyan(`ws://localhost:${serverResult.port}/events`)}`
-    : ""
-}
-
-${bold("Features enabled:")}
-• Code execution: ${green("✓")}
-• MCP support: ${hasMcpServers ? green("✓") : yellow("✗")}
-• WebSocket events: ${hasMcpServers ? green("✓") : yellow("✗")}
-
-Ready to receive instructions and execute code changes!`
+      // Print server information
+      logger.server(`${bold("🖥️  Running Servers:")}`);
+      logger.server(
+        `  • Main Server: ${cyan(`http://localhost:${serverResult.port}`)}`
+      );
+      logger.server(
+        `  • Agents Server: ${cyan(`http://localhost:${agentsResult.port}`)}`
+      );
+      logger.server(
+        `  • Chara Web : ${cyan(`http://localhost:${serveStatic.port}`)}`
+      );
+      logger.server(
+        `  • Chara Widget: ${cyan(
+          `http://localhost:${serveStatic.port}/widget/`
+        )}`
       );
 
+      outro(
+        `${bold(green("🎉 Development environment ready!"))}. ${cyan(
+          `Press ${bold("Ctrl+C")} to stop`
+        )}`
+      );
       // Keep the process running
       process.on("SIGINT", async () => {
         console.log("\n\n🛑 Shutting down development environment...");
@@ -291,6 +296,12 @@ Ready to receive instructions and execute code changes!`
             silent: true,
           });
 
+          console.log("✓ Serve static stopped successfully");
+          await ActionFactory.execute("stop-serve-static", {
+            verbose: argv.verbose,
+            server: serveStatic.server,
+            silent: true,
+          });
           console.log("✓ Development environment stopped successfully");
         } catch (error) {
           logger.error("Error during shutdown:", error);
