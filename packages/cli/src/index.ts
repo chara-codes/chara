@@ -1,17 +1,11 @@
-import { readFileSync } from "fs";
-import { resolve } from "path";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import * as packageJson from "../package.json";
 import { defaultModelCommand } from "./commands/default-model";
 import { devCommand } from "./commands/dev";
 import { initCommand } from "./commands/init";
 import { initializeConfigCommand } from "./commands/initialize-config";
 import { startAgentsCommand } from "./commands/start-agents";
-
-// Read version from package.json
-const packageJson = JSON.parse(
-  readFileSync(resolve(__dirname, "../package.json"), "utf8")
-);
 
 yargs(hideBin(process.argv))
   .scriptName("chara")

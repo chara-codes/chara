@@ -5,7 +5,8 @@
   "main": "dist/chara",
   "module": "src/index.ts",
   "bin": {
-    "chara": "./dist/chara"
+    "chara": "./dist/chara",
+    "@chara-codes/cli": "./dist/chara"
   },
   "files": [
     "dist/chara",
