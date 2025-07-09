@@ -1,5 +1,11 @@
 # chara
 
+## 0.1.4
+
+### Patch Changes
+
+- assemble the main part of the dev process in chara dev command
+
 ## 0.1.3
 
 ### Patch Changes
