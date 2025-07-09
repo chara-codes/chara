@@ -1,5 +1,14 @@
 # @chara-codes/agents
 
+## 0.1.7
+
+### Patch Changes
+
+- 3ac1840: Add CLI binary and package resolution fixes
+- Updated dependencies [3ac1840]
+  - @chara-codes/settings@0.1.7
+  - @chara-codes/logger@0.1.7
+
 ## 0.1.6
 
 ### Patch Changes
