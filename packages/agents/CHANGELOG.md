@@ -1,5 +1,14 @@
 # @chara-codes/agents
 
+## 0.1.6
+
+### Patch Changes
+
+- b4a9bf2: fix build, remove hardcoded paths
+- Updated dependencies [b4a9bf2]
+  - @chara-codes/settings@0.1.6
+  - @chara-codes/logger@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes

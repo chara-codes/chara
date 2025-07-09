@@ -1,5 +1,14 @@
 # @chara-codes/web
 
+## 0.1.6
+
+### Patch Changes
+
+- b4a9bf2: fix build, remove hardcoded paths
+- Updated dependencies [b4a9bf2]
+  - @chara-codes/design-system@0.1.6
+  - @chara-codes/core@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes

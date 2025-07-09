@@ -1,5 +1,11 @@
 # @chara-codes/core
 
+## 0.1.6
+
+### Patch Changes
+
+- b4a9bf2: fix build, remove hardcoded paths
+
 ## 0.1.5
 
 ### Patch Changes
