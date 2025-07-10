@@ -1,5 +1,11 @@
 # chara
 
+## 0.1.10
+
+### Patch Changes
+
+- e42224c: fix issue with tunnel dependency
+
 ## 0.1.9
 
 ### Patch Changes

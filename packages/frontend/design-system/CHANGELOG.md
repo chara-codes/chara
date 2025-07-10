@@ -1,5 +1,13 @@
 # @chara-codes/design-system
 
+## 0.1.10
+
+### Patch Changes
+
+- e42224c: fix issue with tunnel dependency
+- Updated dependencies [e42224c]
+  - @chara-codes/core@0.1.10
+
 ## 0.1.9
 
 ### Patch Changes

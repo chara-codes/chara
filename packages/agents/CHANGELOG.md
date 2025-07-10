@@ -1,5 +1,14 @@
 # @chara-codes/agents
 
+## 0.1.10
+
+### Patch Changes
+
+- e42224c: fix issue with tunnel dependency
+- Updated dependencies [e42224c]
+  - @chara-codes/settings@0.1.10
+  - @chara-codes/logger@0.1.10
+
 ## 0.1.9
 
 ### Patch Changes
