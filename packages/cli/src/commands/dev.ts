@@ -210,7 +210,7 @@ export const devCommand: CommandModule<
         verbose: argv.verbose,
         port: 1337,
         domain: "localhost",
-        controlDomain: "127.0.0.2",
+        controlDomain: "control.localhost",
         replacements: [
           {
             pattern: "</body>",
@@ -227,7 +227,7 @@ export const devCommand: CommandModule<
           tunnelClient = await ActionFactory.execute("start-tunnel-client", {
             verbose: argv.verbose,
             port: serverInfo.port,
-            remoteHost: "127.0.0.2:1337",
+            remoteHost: "control.localhost:1337",
             subdomain: "chara",
             secure: false,
             silent: true,
