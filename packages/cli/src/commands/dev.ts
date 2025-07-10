@@ -3,7 +3,6 @@ import { dirname, join, resolve } from "node:path";
 import { logger } from "@chara-codes/logger";
 import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
 import { bold, cyan, green, yellow } from "picocolors";
-import { findPackageJSON } from "node:module";
 import type { CommandModule } from "yargs";
 import { ActionFactory } from "../actions";
 import { intro, outro } from "../utils/prompts";
@@ -184,7 +183,6 @@ export const devCommand: CommandModule<
       });
 
       // Step 14: Start web applications that should connect to server and agents
-
       const pathToRoot = dirname(process.execPath);
       const indexWeb = Bun.file(`${pathToRoot}/web/index.html`);
       const indexWidget = Bun.file(`${pathToRoot}/widget/index.html`);
@@ -202,7 +200,16 @@ export const devCommand: CommandModule<
             ? `${pathToRoot}/widget/`
             : resolve(`${__dirname}../../../../widget/dist/`),
         },
-        silent: false,
+        silent: true,
+      });
+
+      // Step 15: Run tunnel server (needed for widget mode)
+      const tunnel = await ActionFactory.execute("start-tunnel-server", {
+        verbose: argv.verbose,
+        port: 1337,
+        domain: "localhost",
+        controlDomain: "127.0.0.2",
+        silent: true,
       });
 
       // Success message
