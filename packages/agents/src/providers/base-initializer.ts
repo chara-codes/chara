@@ -54,12 +54,12 @@ export abstract class BaseProviderInitializer {
    * @param initFn - Function that returns the provider config
    * @returns The provider config or null if initialization failed
    */
-  protected safeInitialize(
+  protected async safeInitialize(
     providerName: string,
-    initFn: () => ProviderConfig
-  ): ProviderConfig | null {
+    initFn: () => Promise<ProviderConfig>
+  ): Promise<ProviderConfig | null> {
     try {
-      const config = initFn();
+      const config = await initFn();
       this.logProviderStatus(providerName, "success");
       return config;
     } catch (error) {

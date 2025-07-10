@@ -17,6 +17,30 @@ export { BaseProviderInitializer } from "./base-initializer";
 export { ModelFetcher } from "./model-fetcher";
 export { ProviderConfigs } from "./provider-configs";
 
+// Export individual provider classes and instances
+export {
+  type BaseProvider,
+  AbstractProvider,
+  OpenAIProvider,
+  openaiProvider,
+  AnthropicProvider,
+  anthropicProvider,
+  GoogleProvider,
+  googleProvider,
+  DeepSeekProvider,
+  deepseekProvider,
+  OpenRouterProvider,
+  openrouterProvider,
+  OllamaProvider,
+  ollamaProvider,
+  LMStudioProvider,
+  lmstudioProvider,
+  DIALProvider,
+  dialProvider,
+  allProviders,
+  providerKeys,
+} from "./providers";
+
 // Create and export a singleton instance
 import { ProvidersRegistry } from "./registry";
 export const providersRegistry = new ProvidersRegistry();

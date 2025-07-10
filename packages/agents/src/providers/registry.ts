@@ -277,7 +277,7 @@ export class ProvidersRegistry {
     const status: { [key: string]: { available: boolean; error?: string } } =
       {};
 
-    for (const [name, config] of this.providers) {
+    for (const [name, config] of Array.from(this.providers.entries())) {
       status[name] = { available: config.isAvailable };
     }
 
