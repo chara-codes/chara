@@ -3,6 +3,10 @@ export { startAgentsAction, stopAgentsAction } from "./start-agents";
 export { startServerAction } from "./start-server";
 export { stopServerAction } from "./stop-server";
 export { serveStaticAction, stopStaticAction } from "./serve-static";
+export {
+  startTunnelServerAction,
+  stopTunnelServerAction,
+} from "./tunnel-server";
 export { setupLoggingAction } from "./setup-logging";
 export { setupProjectAction } from "./setup-project";
 export { loadConfigAction } from "./load-config";
@@ -45,4 +49,7 @@ export type {
   ResetActionOptions,
   ServeStaticActionOptions,
   ShowActionOptions,
+  StartTunnelServerActionOptions,
+  StopTunnelServerActionOptions,
+  TextReplacement,
 } from "./types";

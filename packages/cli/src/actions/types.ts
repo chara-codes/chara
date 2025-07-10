@@ -1,3 +1,5 @@
+import type { TextReplacement } from "@chara-codes/tunnel";
+
 export interface ActionOptions {
   verbose?: boolean;
 }
@@ -117,4 +119,19 @@ export interface ServeStaticActionOptions extends ActionOptions {
         hmr?: boolean;
         console?: boolean;
       };
+}
+
+export interface StartTunnelServerActionOptions extends ActionOptions {
+  port?: number;
+  domain?: string;
+  controlDomain?: string;
+  configFile?: string;
+  replacements?: TextReplacement[];
+  silent?: boolean;
+}
+
+export interface StopTunnelServerActionOptions extends ActionOptions {
+  server?: any;
+  silent?: boolean;
+  force?: boolean;
 }

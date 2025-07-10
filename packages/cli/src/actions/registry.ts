@@ -21,6 +21,10 @@ import { startAgentsAction, stopAgentsAction } from "./start-agents";
 import { startServerAction } from "./start-server";
 import { stopServerAction } from "./stop-server";
 import { serveStaticAction, stopStaticAction } from "./serve-static";
+import {
+  startTunnelServerAction,
+  stopTunnelServerAction,
+} from "./tunnel-server";
 import type {
   ConnectEventsActionOptions,
   ConnectMcpActionOptions,
@@ -40,6 +44,8 @@ import type {
   StopServerActionOptions,
   ServeStaticActionOptions,
   StopServeStaticActionOptions,
+  StartTunnelServerActionOptions,
+  StopTunnelServerActionOptions,
 } from "./types";
 
 // Register all actions with the factory
@@ -241,6 +247,28 @@ export function registerActions(): void {
       compose<StopServeStaticActionOptions>(withErrorHandling, (fn) =>
         withLogging(fn, "stop-serve-static")
       )(stopStaticAction)
+    )
+  );
+
+  // Register start-tunnel-server action
+  ActionFactory.register(
+    createAction(
+      "start-tunnel-server",
+      "Start tunnel server to expose local development servers to the internet",
+      compose<StartTunnelServerActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "start-tunnel-server")
+      )(startTunnelServerAction)
+    )
+  );
+
+  // Register stop-tunnel-server action
+  ActionFactory.register(
+    createAction(
+      "stop-tunnel-server",
+      "Stop tunnel server",
+      compose<StopTunnelServerActionOptions>(withErrorHandling, (fn) =>
+        withLogging(fn, "stop-tunnel-server")
+      )(stopTunnelServerAction)
     )
   );
 }

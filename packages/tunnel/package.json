@@ -1,7 +1,7 @@
 {
   "name": "@chara-codes/tunnel",
   "version": "0.1.8",
-  "module": "index.ts",
+  "module": "./src/index.ts",
   "type": "module",
   "bin": {
     "tunnel": "./dist/tunnel"

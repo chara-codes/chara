@@ -55,6 +55,7 @@
     "@chara-codes/logger": "workspace:*",
     "@chara-codes/server": "workspace:*",
     "@chara-codes/settings": "workspace:*",
+    "@chara-codes/tunnel": "workspace:*",
     "@chara-codes/web": "workspace:*",
     "@chara-codes/widget": "workspace:*"
   },
