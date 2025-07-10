@@ -20,7 +20,7 @@
     },
     "packages/agents": {
       "name": "@chara-codes/agents",
-      "version": "0.1.8",
+      "version": "0.1.11",
       "dependencies": {
         "@ai-sdk/amazon-bedrock": "^2.2.11",
         "@ai-sdk/anthropic": "^1.2.12",
@@ -58,16 +58,16 @@
     },
     "packages/cli": {
       "name": "@chara-codes/cli",
-      "version": "0.1.8",
+      "version": "0.1.11",
       "bin": {
         "chara": "./dist/chara",
         "@chara-codes/cli": "./dist/chara",
       },
       "dependencies": {
-        "@chara-codes/tunnel": "workspace:*",
         "@modelcontextprotocol/sdk": "^1.15.0",
         "enquirer": "^2.4.1",
         "picocolors": "^1.1.1",
+        "ping": "^0.4.4",
         "resolve-package-path": "^4.0.3",
         "superjson": "^2.2.2",
         "yargs": "^17.7.2",
@@ -77,9 +77,11 @@
         "@chara-codes/logger": "workspace:*",
         "@chara-codes/server": "workspace:*",
         "@chara-codes/settings": "workspace:*",
+        "@chara-codes/tunnel": "workspace:*",
         "@chara-codes/web": "workspace:*",
         "@chara-codes/widget": "workspace:*",
         "@types/bun": "latest",
+        "@types/ping": "^0.4.4",
         "@types/yargs": "^17.0.33",
         "vitest": "^3.2.4",
       },
@@ -89,7 +91,7 @@
     },
     "packages/frontend/core": {
       "name": "@chara-codes/core",
-      "version": "0.1.8",
+      "version": "0.1.11",
       "dependencies": {
         "@trpc/react-query": "^11.4.3",
         "date-fns": "^4.1.0",
@@ -106,7 +108,7 @@
     },
     "packages/frontend/design-system": {
       "name": "@chara-codes/design-system",
-      "version": "0.1.8",
+      "version": "0.1.11",
       "dependencies": {
         "@chara-codes/core": "workspace:*",
         "@radix-ui/react-accordion": "^1.2.11",
@@ -158,7 +160,7 @@
     },
     "packages/logger": {
       "name": "@chara-codes/logger",
-      "version": "0.1.8",
+      "version": "0.1.11",
       "dependencies": {
         "picocolors": "^1.1.1",
       },
@@ -171,7 +173,7 @@
     },
     "packages/server": {
       "name": "@chara-codes/server",
-      "version": "0.1.8",
+      "version": "0.1.11",
       "dependencies": {
         "@chara-codes/logger": "workspace:*",
         "@modelcontextprotocol/sdk": "^1.15.0",
@@ -202,7 +204,7 @@
     },
     "packages/settings": {
       "name": "@chara-codes/settings",
-      "version": "0.1.8",
+      "version": "0.1.11",
       "devDependencies": {
         "@types/bun": "latest",
       },
@@ -212,7 +214,7 @@
     },
     "packages/tunnel": {
       "name": "@chara-codes/tunnel",
-      "version": "0.1.8",
+      "version": "0.1.11",
       "bin": {
         "tunnel": "./dist/tunnel",
       },
@@ -232,7 +234,7 @@
     },
     "packages/web": {
       "name": "@chara-codes/web",
-      "version": "0.1.8",
+      "version": "0.1.11",
       "dependencies": {
         "@ai-sdk/react": "^1.2.12",
         "@chara-codes/core": "workspace:*",
@@ -282,7 +284,7 @@
     },
     "packages/widget": {
       "name": "@chara-codes/widget",
-      "version": "0.1.8",
+      "version": "0.1.11",
       "dependencies": {
         "@ai-sdk/react": "^1.2.12",
         "@chara-codes/core": "workspace:*",
@@ -953,6 +955,8 @@
     "@types/node": ["@types/node@22.16.1", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-oaNE4MzsA6uO7HcsjUvqzz19lYIRsV6I1Dc6iOvgwYYDiOeF7/9b2E/PE0UW2ccwpgWPVUedjltYXQXVKFd4EA=="],
 
     "@types/parse-json": ["@types/parse-json@4.0.2", "", {}, "sha512-dISoDXWWQwUquiKsyZ4Ng+HX2KsPL7LyHKHQwgGFEA3IaKac4Obd+h2a/a6waisAoepJlBcx9paWqjA8/HVjCw=="],
+
+    "@types/ping": ["@types/ping@0.4.4", "", {}, "sha512-ifvo6w2f5eJYlXm+HiVx67iJe8WZp87sfa683nlqED5Vnt9Z93onkokNoWqOG21EaE8fMxyKPobE+mkPEyxsdw=="],
 
     "@types/prop-types": ["@types/prop-types@15.7.15", "", {}, "sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw=="],
 
@@ -2153,6 +2157,8 @@
     "picomatch": ["picomatch@4.0.2", "", {}, "sha512-M7BAV6Rlcy5u+m6oPhAPFgJTzAioX/6B0DxyvDlo9l8+T3nLKbrczg2WLUyzd45L8RqfUMyGPzekbMvX2Ldkwg=="],
 
     "pify": ["pify@4.0.1", "", {}, "sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g=="],
+
+    "ping": ["ping@0.4.4", "", {}, "sha512-56ZMC0j7SCsMMLdOoUg12VZCfj/+ZO+yfOSjaNCRrmZZr6GLbN2X/Ui56T15dI8NhiHckaw5X2pvyfAomanwqQ=="],
 
     "pirates": ["pirates@4.0.7", "", {}, "sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA=="],
 

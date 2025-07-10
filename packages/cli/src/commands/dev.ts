@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import ping from "ping";
 import { dirname, join, resolve } from "node:path";
 import { logger } from "@chara-codes/logger";
 import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
@@ -182,8 +183,6 @@ export const devCommand: CommandModule<
         silent: false,
       });
 
-      const { events } = agentsResult.server;
-
       // Step 14: Start web applications that should connect to server and agents
       const pathToRoot = dirname(process.execPath);
       const indexWeb = Bun.file(`${pathToRoot}/web/index.html`);
@@ -205,56 +204,62 @@ export const devCommand: CommandModule<
         silent: true,
       });
 
-      // Step 15: Run tunnel server (needed for widget mode)
-      const tunnel = await ActionFactory.execute("start-tunnel-server", {
-        verbose: argv.verbose,
-        port: 1337,
-        domain: "localhost",
-        controlDomain: "control.localhost",
-        replacements: [
-          {
-            pattern: "</body>",
-            replacement: `<script type="module" src="http://localhost:1237/widget/main.js"></script><chara-codes></chara-codes></body>`,
-          },
-        ],
-        silent: true,
-      });
+      // Step 15: Run widget mode (tunnel server, tunnel client, event listener for the runner)
+      const pingControl = await ping.promise.probe("control.localhost");
+      const pingChara = await ping.promise.probe("chara.localhost");
 
       let tunnelClient: any = null;
-      events.on("runner:status", async ({ proccesId, status, serverInfo }) => {
-        console.log(status);
-        if (status === "active" && tunnel && !tunnelClient) {
-          tunnelClient = await ActionFactory.execute("start-tunnel-client", {
-            verbose: argv.verbose,
-            port: serverInfo.port,
-            remoteHost: "control.localhost:1337",
-            subdomain: "chara",
-            secure: false,
-            silent: true,
-          });
-          logger.server(
-            `Tunnel client started on port http://${tunnelClient.subdomain}:1337`
-          );
-        } else {
-          if (tunnelClient) {
-            await ActionFactory.execute("stop-tunnel-client", {
-              client: tunnelClient,
-              force: true,
-              silent: true,
-            });
+      if (pingChara.alive && pingControl.alive) {
+        const { events } = agentsResult.server;
+        const tunnel = await ActionFactory.execute("start-tunnel-server", {
+          verbose: argv.verbose,
+          port: 1337,
+          domain: "localhost",
+          controlDomain: "control.localhost",
+          replacements: [
+            {
+              pattern: "</body>",
+              replacement: `<script type="module" src="http://localhost:1237/widget/main.js"></script><chara-codes></chara-codes></body>`,
+            },
+          ],
+          silent: true,
+        });
+
+        events.on(
+          "runner:status",
+          async ({ proccesId, status, serverInfo }) => {
+            console.log(status);
+            if (status === "active" && tunnel && !tunnelClient) {
+              tunnelClient = await ActionFactory.execute(
+                "start-tunnel-client",
+                {
+                  verbose: argv.verbose,
+                  port: serverInfo.port,
+                  remoteHost: "control.localhost:1337",
+                  subdomain: "chara",
+                  secure: false,
+                  silent: true,
+                }
+              );
+              logger.server(
+                `Tunnel client started on port http://${tunnelClient.subdomain}:1337`
+              );
+            } else {
+              if (tunnelClient) {
+                await ActionFactory.execute("stop-tunnel-client", {
+                  client: tunnelClient,
+                  force: true,
+                  silent: true,
+                });
+              }
+            }
           }
-        }
-      });
-
-      // Success message
-      logger.success("✓ Chara development environment is ready!");
-
-      if (hasMcpServers) {
-        console.log(
-          `  • WebSocket Events: ${cyan(
-            `ws://localhost:${serverResult.port}/events`
-          )}`
         );
+      } else {
+        logger.warning(
+          `Please add the following line to your ${bold("/etc/host")} file`
+        );
+        console.log(bold("\n127.0.0.1 control.localhost chara.localhost\n"));
       }
 
       if (argv.verbose) {
@@ -267,20 +272,7 @@ export const devCommand: CommandModule<
         logger.info(
           `  • MCP enabled: ${hasMcpServers ? green("Yes") : yellow("No")}`
         );
-        logger.info(
-          `  • WebSocket enabled: ${
-            hasMcpServers ? green("Yes") : yellow("No")
-          }`
-        );
         logger.info(`  • Runner enabled: ${green("Yes")}`);
-
-        if (hasMcpServers) {
-          logger.info(
-            `  • WebSocket endpoint: ${bold(
-              `ws://localhost:${serverResult.port}/events`
-            )}`
-          );
-        }
       }
 
       logger.info(
@@ -298,24 +290,19 @@ export const devCommand: CommandModule<
       // Print server information
       logger.server(`${bold("🖥️  Running Servers:")}`);
       logger.server(
-        `  • Main Server: ${cyan(`http://localhost:${serverResult.port}`)}`
+        `  • Backend Server: ${cyan(`http://localhost:${serverResult.port}`)}`
       );
       logger.server(
         `  • Agents Server: ${cyan(`http://localhost:${agentsResult.port}`)}`
       );
       logger.server(
-        `  • Chara Web : ${cyan(`http://localhost:${serveStatic.port}`)}`
+        `  • Chara Codes Web: ${cyan(`http://localhost:${serveStatic.port}`)}`
       );
       if (tunnelClient) {
         logger.server(
           `Tunnel client started on port http://${tunnelClient.subdomain}:1337`
         );
       }
-      logger.server(
-        `  • Chara Widget: ${cyan(
-          `http://localhost:${serveStatic.port}/widget/`
-        )}`
-      );
 
       outro(
         `${bold(green("🎉 Development environment ready!"))}. ${cyan(
