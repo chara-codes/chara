@@ -1,5 +1,14 @@
 # @chara-codes/agents
 
+## 0.1.9
+
+### Patch Changes
+
+- 3b5a064: add widget functionality to the chara codes
+- Updated dependencies [3b5a064]
+  - @chara-codes/settings@0.1.9
+  - @chara-codes/logger@0.1.9
+
 ## 0.1.8
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @chara-codes/server
 
+## 0.1.9
+
+### Patch Changes
+
+- 3b5a064: add widget functionality to the chara codes
+- Updated dependencies [3b5a064]
+  - @chara-codes/logger@0.1.9
+
 ## 0.1.8
 
 ### Patch Changes
