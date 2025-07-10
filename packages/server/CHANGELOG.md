@@ -1,5 +1,13 @@
 # @chara-codes/server
 
+## 0.1.11
+
+### Patch Changes
+
+- 3072ad5: fix with local subdomain
+- Updated dependencies [3072ad5]
+  - @chara-codes/logger@0.1.11
+
 ## 0.1.10
 
 ### Patch Changes

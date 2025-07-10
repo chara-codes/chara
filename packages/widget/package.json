@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/widget",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "main": "src/index.tsx",
   "module": "src/index.tsx",
   "types": "src/index.tsx",
