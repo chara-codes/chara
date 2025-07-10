@@ -7,6 +7,10 @@ export {
   startTunnelServerAction,
   stopTunnelServerAction,
 } from "./tunnel-server";
+export {
+  startTunnelClientAction,
+  stopTunnelClientAction,
+} from "./tunnel-client";
 export { setupLoggingAction } from "./setup-logging";
 export { setupProjectAction } from "./setup-project";
 export { loadConfigAction } from "./load-config";
@@ -51,5 +55,7 @@ export type {
   ShowActionOptions,
   StartTunnelServerActionOptions,
   StopTunnelServerActionOptions,
+  StartTunnelClientActionOptions,
+  StopTunnelClientActionOptions,
   TextReplacement,
 } from "./types";

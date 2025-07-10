@@ -3,6 +3,9 @@ import { logger } from "@chara-codes/logger";
 import { createTunnelServer } from "./server/index";
 import type { ServerConfig } from "./types/server.types";
 
+// Export types
+export type { ServerConfig, TextReplacement } from "./types/server.types";
+
 /**
  * Starts a tunnel server with the given configuration
  *

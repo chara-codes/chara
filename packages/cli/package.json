@@ -68,7 +68,8 @@
     "picocolors": "^1.1.1",
     "resolve-package-path": "^4.0.3",
     "superjson": "^2.2.2",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.2",
+    "@chara-codes/tunnel": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

@@ -90,10 +90,14 @@ export interface StartServerOptions {
 export interface ServerInstance {
   /** The underlying Bun server */
   server: ReturnType<typeof Bun.serve>;
+  /** Event emitter for server events */
+  events: typeof appEvents;
   /** Stop the server and cleanup resources */
   stop: () => Promise<void>;
   /** Restart specific services */
   restart: (services?: ("mcp" | "runner")[]) => Promise<void>;
+  /** Active runner process */
+  activeRunnerProcessId: string | null;
 }
 
 /**
@@ -390,7 +394,8 @@ export async function startServer(
   // Create server instance with control methods
   const serverInstance: ServerInstance = {
     server,
-
+    events: appEvents,
+    activeRunnerProcessId,
     async stop() {
       logger.debug("🛑 Stopping server...");
 

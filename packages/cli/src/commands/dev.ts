@@ -182,6 +182,8 @@ export const devCommand: CommandModule<
         silent: false,
       });
 
+      const { events } = agentsResult.server;
+
       // Step 14: Start web applications that should connect to server and agents
       const pathToRoot = dirname(process.execPath);
       const indexWeb = Bun.file(`${pathToRoot}/web/index.html`);
@@ -209,7 +211,39 @@ export const devCommand: CommandModule<
         port: 1337,
         domain: "localhost",
         controlDomain: "127.0.0.2",
+        replacements: [
+          {
+            pattern: "</body>",
+            replacement: `<script type="module" src="http://localhost:1237/widget/main.js"></script><chara-codes></chara-codes></body>`,
+          },
+        ],
         silent: true,
+      });
+
+      let tunnelClient: any = null;
+      events.on("runner:status", async ({ proccesId, status, serverInfo }) => {
+        console.log(status);
+        if (status === "active" && tunnel && !tunnelClient) {
+          tunnelClient = await ActionFactory.execute("start-tunnel-client", {
+            verbose: argv.verbose,
+            port: serverInfo.port,
+            remoteHost: "127.0.0.2:1337",
+            subdomain: "chara",
+            secure: false,
+            silent: true,
+          });
+          logger.server(
+            `Tunnel client started on port http://${tunnelClient.subdomain}:1337`
+          );
+        } else {
+          if (tunnelClient) {
+            await ActionFactory.execute("stop-tunnel-client", {
+              client: tunnelClient,
+              force: true,
+              silent: true,
+            });
+          }
+        }
       });
 
       // Success message
@@ -272,6 +306,11 @@ export const devCommand: CommandModule<
       logger.server(
         `  • Chara Web : ${cyan(`http://localhost:${serveStatic.port}`)}`
       );
+      if (tunnelClient) {
+        logger.server(
+          `Tunnel client started on port http://${tunnelClient.subdomain}:1337`
+        );
+      }
       logger.server(
         `  • Chara Widget: ${cyan(
           `http://localhost:${serveStatic.port}/widget/`

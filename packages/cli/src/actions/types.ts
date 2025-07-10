@@ -1,5 +1,7 @@
 import type { TextReplacement } from "@chara-codes/tunnel";
 
+export type { TextReplacement } from "@chara-codes/tunnel";
+
 export interface ActionOptions {
   verbose?: boolean;
 }
@@ -132,6 +134,21 @@ export interface StartTunnelServerActionOptions extends ActionOptions {
 
 export interface StopTunnelServerActionOptions extends ActionOptions {
   server?: any;
+  silent?: boolean;
+  force?: boolean;
+}
+
+export interface StartTunnelClientActionOptions extends ActionOptions {
+  port?: number;
+  host?: string;
+  remoteHost?: string;
+  secure?: boolean;
+  subdomain?: string;
+  silent?: boolean;
+}
+
+export interface StopTunnelClientActionOptions extends ActionOptions {
+  client?: any;
   silent?: boolean;
   force?: boolean;
 }
