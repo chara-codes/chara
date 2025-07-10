@@ -1,5 +1,13 @@
 # @chara-codes/tunnel
 
+## 0.1.12
+
+### Patch Changes
+
+- fd3a2f6: add ping before tunneling, refactor providers
+- Updated dependencies [fd3a2f6]
+  - @chara-codes/logger@0.1.12
+
 ## 0.1.11
 
 ### Patch Changes
