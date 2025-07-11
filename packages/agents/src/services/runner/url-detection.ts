@@ -54,8 +54,8 @@ function extractHostAndPort(url: URL): { host: string; port: number } {
   const port = url.port
     ? parseInt(url.port, 10)
     : url.protocol === "https:"
-      ? 443
-      : 80;
+    ? 443
+    : 80;
 
   return { host, port };
 }
@@ -67,6 +67,8 @@ function detectUrlFromChunk(chunk: string): string | null {
   // Strip ANSI color codes before processing
   const cleanChunk = stripAnsiColors(chunk);
 
+  const detectedUrls: string[] = [];
+
   // First try to find local URLs
   for (const pattern of LOCAL_URL_PATTERNS) {
     const match = cleanChunk.match(pattern);
@@ -77,7 +79,7 @@ function detectUrlFromChunk(chunk: string): string | null {
       // Validate it's a proper URL
       try {
         new URL(detectedUrl);
-        return detectedUrl;
+        detectedUrls.push(detectedUrl);
       } catch {
         // Invalid URL, continue searching
       }
@@ -85,32 +87,64 @@ function detectUrlFromChunk(chunk: string): string | null {
   }
 
   // If no local URL found, try public URLs
-  for (const pattern of PUBLIC_URL_PATTERNS) {
-    const match = cleanChunk.match(pattern);
-    if (match) {
-      let detectedUrl = match[1] || match[0];
-      detectedUrl = cleanupUrl(detectedUrl);
+  if (detectedUrls.length === 0) {
+    for (const pattern of PUBLIC_URL_PATTERNS) {
+      const match = cleanChunk.match(pattern);
+      if (match) {
+        let detectedUrl = match[1] || match[0];
+        detectedUrl = cleanupUrl(detectedUrl);
 
-      // Validate it's a proper URL and ensure it's not a local URL
-      try {
-        const url = new URL(detectedUrl);
-        const isLocal = [
-          "localhost",
-          "127.0.0.1",
-          "0.0.0.0",
-          "::1",
-          "::",
-        ].includes(url.hostname);
-        if (!isLocal) {
-          return detectedUrl;
+        // Validate it's a proper URL and ensure it's not a local URL
+        try {
+          const url = new URL(detectedUrl);
+          const isLocal = [
+            "localhost",
+            "127.0.0.1",
+            "0.0.0.0",
+            "::1",
+            "::",
+          ].includes(url.hostname);
+          if (!isLocal) {
+            detectedUrls.push(detectedUrl);
+          }
+        } catch {
+          // Invalid URL, continue searching
         }
-      } catch {
-        // Invalid URL, continue searching
       }
     }
   }
 
-  return null;
+  // If multiple URLs detected, prioritize ones closer to root (shorter paths)
+  if (detectedUrls.length > 1) {
+    detectedUrls.sort((a, b) => {
+      try {
+        const urlA = new URL(a);
+        const urlB = new URL(b);
+
+        // Compare path lengths (shorter paths are closer to root)
+        const pathLengthA = urlA.pathname.length;
+        const pathLengthB = urlB.pathname.length;
+
+        if (pathLengthA !== pathLengthB) {
+          return pathLengthA - pathLengthB;
+        }
+
+        // If path lengths are equal, prefer URLs with fewer path segments
+        const segmentsA = urlA.pathname
+          .split("/")
+          .filter((s) => s.length > 0).length;
+        const segmentsB = urlB.pathname
+          .split("/")
+          .filter((s) => s.length > 0).length;
+
+        return segmentsA - segmentsB;
+      } catch {
+        return 0;
+      }
+    });
+  }
+
+  return detectedUrls.length > 0 ? detectedUrls[0] : null;
 }
 
 /**
@@ -118,7 +152,7 @@ function detectUrlFromChunk(chunk: string): string | null {
  */
 function updateProcessWithUrl(
   processData: ProcessData,
-  detectedUrl: string,
+  detectedUrl: string
 ): void {
   try {
     const url = new URL(detectedUrl);
@@ -138,7 +172,7 @@ function updateProcessWithUrl(
  */
 function emitUrlDetectionEvents(
   processId: string,
-  processData: ProcessData,
+  processData: ProcessData
 ): void {
   // Emit updated server info
   appEvents.emit("runner:started", {
@@ -179,7 +213,7 @@ function emitUrlDetectionEvents(
  */
 export function setupUrlDetection(
   processId: string,
-  processData: ProcessData,
+  processData: ProcessData
 ): void {
   // Create URL detection handler
   const detectUrl = (chunk: string) => {
