@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../trpc";
-import { getHistoryAndPersist } from "../../repos/chatRepo.ts";
+import { getHistoryAndPersist, getChatList } from "../../repos/chatRepo.ts";
 import { logger } from "@chara-codes/logger";
 
 export const chatRouter = router({
@@ -33,6 +33,32 @@ export const chatRouter = router({
         };
       } catch (err) {
         logger.error(JSON.stringify(err), "getHistory endpoint failed");
+        throw err;
+      }
+    }),
+
+  getChatList: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+        parentId: z.number().nullable().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const result = await getChatList({
+          limit: input.limit,
+          offset: input.offset,
+          parentId: input.parentId,
+        });
+
+        return {
+          chats: result.chats,
+          hasMore: result.hasMore,
+        };
+      } catch (err) {
+        logger.error(JSON.stringify(err), "getChatList endpoint failed");
         throw err;
       }
     }),

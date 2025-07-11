@@ -62,7 +62,7 @@ interface ChatState {
     currentPrompt: string,
     onTextDelta: (delta: string) => void,
     onComplete: (finalText: string) => void,
-    onError: (error: Error) => void,
+    onError: (error: Error) => void
   ) => void;
 }
 
@@ -167,7 +167,11 @@ export const useChatStore = create<ChatState>()(
                 }
                 return {
                   type: "text" as const,
-                  text: `Context: ${item.name}\n${typeof item.data === "string" ? item.data : JSON.stringify(item.data)}`,
+                  text: `Context: ${item.name}\n${
+                    typeof item.data === "string"
+                      ? item.data
+                      : JSON.stringify(item.data)
+                  }`,
                 };
               }),
             ];
@@ -219,7 +223,7 @@ export const useChatStore = create<ChatState>()(
             updates.chats = chats.map((chat) =>
               chat.id === currentActiveChatId
                 ? { ...chat, messages: updatedMessages }
-                : chat,
+                : chat
             );
           }
           set(updates);
@@ -245,7 +249,7 @@ export const useChatStore = create<ChatState>()(
               chats: currentState.chats.map((chat) =>
                 chat.id === finalActiveChatId
                   ? { ...chat, messages: [...chat.messages, initialAiMessage] }
-                  : chat,
+                  : chat
               ),
             };
           });
@@ -279,13 +283,13 @@ export const useChatStore = create<ChatState>()(
           };
 
           const updateAIMessageInStore = (
-            updater: (currentAIMsg: Message) => Partial<Message>,
+            updater: (currentAIMsg: Message) => Partial<Message>
           ) => {
             set((currentState) => {
               const finalActiveChatId = currentState.activeChat;
               const currentMsgs = [...currentState.messages];
               const aiMsgIdx = currentMsgs.findIndex(
-                (m) => m.id === aiMessageId,
+                (m) => m.id === aiMessageId
               );
               if (aiMsgIdx === -1) return {};
 
@@ -300,7 +304,7 @@ export const useChatStore = create<ChatState>()(
                 chats: currentState.chats.map((c) =>
                   c.id === finalActiveChatId
                     ? { ...c, messages: currentMsgs }
-                    : c,
+                    : c
                 ),
               };
             });
@@ -362,7 +366,9 @@ export const useChatStore = create<ChatState>()(
                 },
                 onStreamError: (errorMsg) => {
                   updateAIMessageInStore((msg) => ({
-                    content: `${msg.content || ""}\n\nStream Error: ${errorMsg}`,
+                    content: `${
+                      msg.content || ""
+                    }\n\nStream Error: ${errorMsg}`,
                   }));
                   set({
                     isResponding: false,
@@ -373,7 +379,9 @@ export const useChatStore = create<ChatState>()(
                 onStreamClose: (aborted) => {
                   if (aborted) {
                     updateAIMessageInStore((msg) => ({
-                      content: `${msg.content || ""}\n(Response cancelled by user)`,
+                      content: `${
+                        msg.content || ""
+                      }\n(Response cancelled by user)`,
                     }));
                   }
                   set({ isThinking: false });
@@ -386,17 +394,19 @@ export const useChatStore = create<ChatState>()(
                 },
               },
               newAbortController.signal,
-              mode,
+              mode
             );
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
           } catch (error: any) {
             // Catch errors from processChatStream if it throws directly (should be rare)
             console.error(
               "Chat Store: Error calling processChatStream:",
-              error,
+              error
             );
             updateAIMessageInStore((msg) => ({
-              content: `${msg.content || ""}\n\nError: ${error.message || "Failed to process response."}`,
+              content: `${msg.content || ""}\n\nError: ${
+                error.message || "Failed to process response."
+              }`,
             }));
           } finally {
             // Ensure isResponding and isThinking are set to false and controller is cleared
@@ -453,7 +463,7 @@ export const useChatStore = create<ChatState>()(
         deleteMessage: (messageId) => {
           set((state) => {
             const messageIndex = state.messages.findIndex(
-              (msg) => msg.id === messageId,
+              (msg) => msg.id === messageId
             );
             if (messageIndex === -1) return {};
             const updatedMessages = state.messages.slice(0, messageIndex);
@@ -462,7 +472,7 @@ export const useChatStore = create<ChatState>()(
               chats: state.chats.map((chat) =>
                 chat.id === state.activeChat
                   ? { ...chat, messages: updatedMessages }
-                  : chat,
+                  : chat
               ),
             };
           });
@@ -472,7 +482,7 @@ export const useChatStore = create<ChatState>()(
           currentPrompt,
           onTextDelta,
           onComplete,
-          onError,
+          onError
         ) => {
           const state = get();
           if (!currentPrompt.trim()) {
@@ -543,7 +553,7 @@ export const useChatStore = create<ChatState>()(
               apiUrl,
               payload,
               callbacks,
-              abortController.signal,
+              abortController.signal
             );
 
             // Check for errors after stream completion
@@ -565,8 +575,8 @@ export const useChatStore = create<ChatState>()(
                 new Error(
                   error instanceof Error
                     ? `Failed to beautify text: ${error.message}`
-                    : "Failed to beautify text",
-                ),
+                    : "Failed to beautify text"
+                )
               );
             }
           } finally {
@@ -581,7 +591,7 @@ export const useChatStore = create<ChatState>()(
           model: state.model,
           mode: state.mode,
         }),
-      },
-    ),
-  ),
+      }
+    )
+  )
 );

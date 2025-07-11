@@ -1,12 +1,16 @@
+import type { AppRouter } from "@chara-codes/server";
+import {
+  createTRPCProxyClient,
+  httpBatchLink as vanillaHttpBatchLink,
+} from "@trpc/client";
 import {
   createTRPCReact,
-  wsLink,
-  splitLink,
+  createWSClient,
   httpBatchLink,
   httpBatchStreamLink,
-  createWSClient,
+  splitLink,
+  wsLink,
 } from "@trpc/react-query";
-import type { AppRouter } from "@chara-codes/server";
 import superjson from "superjson";
 
 export const trpc = createTRPCReact<AppRouter>();
@@ -16,8 +20,8 @@ export function createTrpcClient() {
   const trpcUrl = `http://${server}/trpc`;
   const wsUrl = `ws://${server}/events`;
   const wsClient = createWSClient({
-  url: wsUrl, // WebSocket endpoint
-});
+    url: wsUrl, // WebSocket endpoint
+  });
   return trpc.createClient({
     links: [
       // Split link to determine the appropriate transport mechanism
@@ -44,4 +48,28 @@ export function createTrpcClient() {
       }),
     ],
   });
+}
+
+export function createVanillaTrpcClient() {
+  const server = import.meta.env?.VITE_SERVER_URL || "localhost:3030";
+  const trpcUrl = `http://${server}/trpc`;
+
+  return createTRPCProxyClient<AppRouter>({
+    links: [
+      vanillaHttpBatchLink({
+        url: trpcUrl,
+        transformer: superjson,
+      }),
+    ],
+  });
+}
+
+// Create a singleton vanilla client for reuse
+let vanillaClient: ReturnType<typeof createVanillaTrpcClient> | null = null;
+
+export function getVanillaTrpcClient() {
+  if (!vanillaClient) {
+    vanillaClient = createVanillaTrpcClient();
+  }
+  return vanillaClient;
 }

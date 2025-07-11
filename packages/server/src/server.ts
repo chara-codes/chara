@@ -7,6 +7,7 @@ import { parse } from "querystring";
 import superjson from "superjson";
 
 import { type Context, createContext } from "./api/context";
+import { chatRouter } from "./api/routes/chat";
 import { filesRouter } from "./api/routes/files";
 import { instructionsRouter } from "./api/routes/instructions";
 import { linksRouter } from "./api/routes/links";
@@ -21,6 +22,22 @@ import { subscription } from "./api/routes/subscription";
 import { createServer } from "./mcp/server";
 import { BunSSEServerTransport } from "./mcp/transport";
 import { createBunWSHandler } from "./utils/create-bun-ws-handler";
+
+const t = initTRPC.context<Context>().create({
+  transformer: superjson,
+});
+
+const appRouter = t.router({
+  chat: chatRouter,
+  lnks: linksRouter,
+  stacks: stacksRouter,
+  messages: messagesRouter,
+  events: subscription,
+  instructions: instructionsRouter,
+  files: filesRouter,
+  mcpClientsSubscriptions: mcpClientsSubscriptions,
+  mcpResponses: mcpClientsMutations,
+});
 
 export interface ServerOptions {
   /** Main server configuration */
@@ -183,22 +200,7 @@ class ServerManager {
   }
 
   private setupTRPC() {
-    const t = initTRPC.context<Context>().create({
-      transformer: this.options.trpc.transformer,
-    });
-
-    const router = t.router;
-
-    this.appRouter = router({
-      lnks: linksRouter,
-      stacks: stacksRouter,
-      messages: messagesRouter,
-      events: subscription,
-      instructions: instructionsRouter,
-      files: filesRouter,
-      mcpClientsSubscriptions: mcpClientsSubscriptions,
-      mcpResponses: mcpClientsMutations,
-    });
+    this.appRouter = appRouter;
   }
 
   private createWebSocketHandler() {
@@ -483,7 +485,7 @@ class ServerManager {
   }
 }
 
-export type AppRouter = ReturnType<ServerManager["getAppRouter"]>;
+export type AppRouter = typeof appRouter;
 
 /**
  * Start the Chara server with optional configuration

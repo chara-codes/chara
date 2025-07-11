@@ -98,6 +98,64 @@ async function getChatMessages(
   }
 }
 
+/** Get a list of chats with optional pagination. */
+export async function getChatList(options?: {
+  limit?: number;
+  offset?: number;
+  parentId?: number | null;
+}) {
+  const { limit = 20, offset = 0, parentId } = options || {};
+
+  try {
+    let whereCondition = sql`1 = 1`;
+
+    if (parentId !== undefined) {
+      if (parentId === null) {
+        whereCondition = sql`${chats.parentId} IS NULL`;
+      } else {
+        whereCondition = eq(chats.parentId, parentId);
+      }
+    }
+
+    const result = await db
+      .select({
+        id: chats.id,
+        title: chats.title,
+        createdAt: chats.createdAt,
+        updatedAt: chats.updatedAt,
+        parentId: chats.parentId,
+      })
+      .from(chats)
+      .where(whereCondition)
+      .orderBy(sql`${chats.updatedAt} DESC`)
+      .limit(limit + 1)
+      .offset(offset);
+
+    const hasMore = result.length > limit;
+    const chatsResult = hasMore ? result.slice(0, limit) : result;
+
+    return {
+      chats: chatsResult.map((chat) => ({
+        id: chat.id,
+        title: chat.title,
+        createdAt:
+          chat.createdAt instanceof Date
+            ? chat.createdAt.getTime()
+            : chat.createdAt,
+        updatedAt:
+          chat.updatedAt instanceof Date
+            ? chat.updatedAt.getTime()
+            : chat.updatedAt,
+        parentId: chat.parentId,
+      })),
+      hasMore,
+    };
+  } catch (err) {
+    logger.error(JSON.stringify(err), "getChatList failed");
+    throw err;
+  }
+}
+
 /** Get chat history and persist access if needed. */
 export async function getHistoryAndPersist({
   chatId,

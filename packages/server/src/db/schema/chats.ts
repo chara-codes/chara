@@ -1,11 +1,11 @@
+import { sql } from "drizzle-orm";
 import {
+  type AnySQLiteColumn,
+  index,
   int,
   sqliteTable,
   text,
-  index,
-  type AnySQLiteColumn,
 } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
 
 /**
  * Represents chat conversations in the system.

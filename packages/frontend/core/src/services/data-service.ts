@@ -1,9 +1,28 @@
 // Import the mock data at the top of the file
 import { mockChats, mockModels, mockResponse } from "../data";
 import type { Chat, FileNode, Model } from "../types";
+import { getVanillaTrpcClient } from "./trpc";
 
-interface ChatsResponse {
-  chats: Chat[];
+export function convertServerChatToFrontendChat(serverChat: ServerChat): Chat {
+  return {
+    id: serverChat.id.toString(),
+    title: serverChat.title,
+    timestamp: new Date(serverChat.updatedAt).toISOString(),
+    messages: [], // Messages will be loaded separately when needed
+  };
+}
+
+interface ServerChat {
+  id: number;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  parentId: number | null;
+}
+
+interface ChatListResponse {
+  chats: ServerChat[];
+  hasMore: boolean;
 }
 
 interface ModelsResponse {
@@ -16,24 +35,57 @@ interface MockResponseData {
   fileStructure: FileNode;
 }
 
-// Update the fetchChats function to use the imported mock data as a fallback
-export async function fetchChats(): Promise<Chat[]> {
+interface ChatsWithPagination {
+  chats: Chat[];
+  hasMore: boolean;
+}
+
+// Update the fetchChats function to use tRPC getChatList route
+export async function fetchChats(options?: {
+  limit?: number;
+  offset?: number;
+  parentId?: number | null;
+}): Promise<Chat[]> {
   try {
-    console.log("Attempting to fetch chats from: /data/chats.json");
-    const response = await fetch("/data/chats.json");
-
-    if (!response.ok) {
-      console.error(`Failed to fetch chats: Status ${response.status}`);
-      throw new Error(`Failed to fetch chats: ${response.status}`);
-    }
-
-    const data: ChatsResponse = await response.json();
-    console.log("Successfully fetched chats data");
-    return data.chats;
+    const client = getVanillaTrpcClient();
+    const result = await client.chat.getChatList.query({});
+    return result.chats.map((chat: ServerChat) =>
+      convertServerChatToFrontendChat(chat)
+    );
   } catch (error) {
-    console.error("Error fetching chats:", error);
+    console.error("Error fetching chats via tRPC:", error);
     console.log("Using imported mock chats data instead");
     return mockChats;
+  }
+}
+
+// Enhanced fetchChats function that returns pagination info
+export async function fetchChatsWithPagination(options?: {
+  limit?: number;
+  offset?: number;
+  parentId?: number | null;
+}): Promise<ChatsWithPagination> {
+  try {
+    console.log("Attempting to fetch chats with pagination using tRPC");
+    const client = getVanillaTrpcClient();
+    const result = (await (client as any).chat.getChatList.query(
+      options || {}
+    )) as ChatListResponse;
+
+    console.log("Successfully fetched chats data with pagination via tRPC");
+    return {
+      chats: result.chats.map((chat: ServerChat) =>
+        convertServerChatToFrontendChat(chat)
+      ),
+      hasMore: result.hasMore,
+    };
+  } catch (error) {
+    console.error("Error fetching chats with pagination via tRPC:", error);
+    console.log("Using imported mock chats data instead");
+    return {
+      chats: mockChats,
+      hasMore: false,
+    };
   }
 }
 
