@@ -19,14 +19,7 @@ import {
 } from "../services"; // Import the new service
 
 // Fallback data in case fetch fails
-const fallbackChats: Chat[] = [
-  {
-    id: "fallback-1",
-    title: "Fallback Chat (Data Load Failed)",
-    timestamp: new Date().toLocaleString(),
-    messages: [],
-  },
-];
+const fallbackChats: Chat[] = [];
 
 interface ChatState {
   // Chat data

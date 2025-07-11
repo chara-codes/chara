@@ -1,9 +1,9 @@
 "use client";
 
-import type React from "react";
-import styled from "styled-components";
 import type { Chat } from "@chara-codes/core";
 import { useNavigateToHistory } from "@chara-codes/core";
+import type React from "react";
+import styled from "styled-components";
 
 interface RecentHistoryProps {
   chats: Chat[];
@@ -81,6 +81,10 @@ const RecentHistory: React.FC<RecentHistoryProps> = ({
   onSelectChat,
 }) => {
   const navigateToHistory = useNavigateToHistory();
+
+  if (chats.length === 0) {
+    return null;
+  }
 
   return (
     <Container>
