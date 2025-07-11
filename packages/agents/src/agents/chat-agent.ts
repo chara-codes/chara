@@ -92,9 +92,14 @@ export const chatAgent = async (
     }),
     tools: allTools,
     model: aiModel,
+    temperature: 0.5,
     toolCallStreaming: true,
     experimental_continueSteps: true,
     maxSteps: 99,
     messages: cleanedMessages,
+    onFinish: ({ steps, text }) => {
+      logger.dump(steps);
+      logger.dump(text);
+    },
   });
 };
