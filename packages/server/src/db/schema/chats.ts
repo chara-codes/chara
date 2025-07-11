@@ -1,4 +1,3 @@
-import { projects } from "./projects";
 import {
   int,
   sqliteTable,
@@ -33,18 +32,12 @@ export const chats = sqliteTable(
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
 
-    /** Reference to the project this chat belongs to */
-    projectId: int()
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
-
     /** Optional reference to a parent chat, allowing for hierarchical chat organization */
     parentId: int().references((): AnySQLiteColumn => chats.id, {
       onDelete: "cascade",
     }),
   },
   (table) => ({
-    projectIdx: index("idx_chats_project_id").on(table.projectId),
     parentIdx: index("idx_chats_parent_id").on(table.parentId),
-  }),
+  })
 );

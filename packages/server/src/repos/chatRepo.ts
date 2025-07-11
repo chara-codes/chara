@@ -1,64 +1,16 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "../api/db.ts";
-import { chats, messages, projects, stacks } from "../db/schema";
+import { chats, messages, stacks } from "../db/schema";
 import { myLogger as logger } from "../utils/logger";
 
-export const DEFAULT_PROJECT_ID = 1;
-export const DEFAULT_PROJECT_NAME = "new project";
 export const DEFAULT_STACK_ID = "1";
 
-/** Ensure a project exists in the database, or create it if it doesn't. */
-export async function ensureProjectExists({
-  projectId,
-  projectName,
-  stackId,
-}: {
-  projectId: number;
-  projectName: string;
-  stackId: number;
-}): Promise<void> {
-  try {
-    const [existing] = await db
-      .select({ id: projects.id })
-      .from(projects)
-      .where(eq(projects.id, projectId))
-      .limit(1);
-
-    if (existing) return;
-
-    await db
-      .insert(projects)
-      .values({ id: projectId, name: projectName, stackId });
-  } catch (err) {
-    logger.error(JSON.stringify(err), "ensureProjectExists failed");
-    throw err;
-  }
-}
-
-/** Check if a chat exists for the given project. */
-export async function findExistingChat(
-  projectId: number,
-): Promise<number | null> {
-  try {
-    const [existing] = await db
-      .select({ id: chats.id })
-      .from(chats)
-      .where(eq(chats.projectId, projectId))
-      .orderBy(sql`${chats.createdAt} desc`)
-      .limit(1);
-    return existing?.id ?? null;
-  } catch (err) {
-    logger.error(JSON.stringify(err), "findExistingChat failed");
-    throw err;
-  }
-}
-
-/** Create a new chat for the given project. */
-export async function createChat(projectId: number, titleSuggestion: string) {
+/** Create a new chat. */
+export async function createChat(titleSuggestion: string) {
   try {
     const [row] = await db
       .insert(chats)
-      .values({ projectId, title: titleSuggestion })
+      .values({ title: titleSuggestion })
       .returning({ id: chats.id });
     return row.id;
   } catch (err) {
@@ -67,11 +19,8 @@ export async function createChat(projectId: number, titleSuggestion: string) {
   }
 }
 
-/** Create (or reuse) a chat inside the given project. */
-export async function ensureChat(
-  projectId: number,
-  titleSuggestion: string,
-): Promise<number> {
+/** Create a new chat with the given title. */
+export async function ensureChat(titleSuggestion: string): Promise<number> {
   try {
     const defaultStack = {
       id: 1, // Default stack ID
@@ -92,44 +41,11 @@ export async function ensureChat(
       logger.info(`Default stack does not exist. Creating it.`);
       await db.insert(stacks).values(defaultStack).onConflictDoNothing();
     }
-    // Check if the project exists in the `projects` table
-    const [existingProject] = await db
-      .select({ id: projects.id })
-      .from(projects)
-      .where(eq(projects.id, projectId))
-      .limit(1);
 
-    if (!existingProject) {
-      logger.info(`Project with ID ${projectId} does not exist. Creating it.`);
-      try {
-        const [newProject] = await db
-          .insert(projects)
-          .values({ id: projectId, name: `Project ${projectId}`, stackId: 1 })
-          .returning({ id: projects.id });
-
-        if (!newProject) {
-          throw new Error(`Failed to create project with ID ${projectId}`);
-        }
-      } catch (err) {
-        logger.error(JSON.stringify(err), "Failed to create project");
-        throw err;
-      }
-    }
-
-    // Check for an existing chat in the `chats` table
-    const [existingChat] = await db
-      .select({ id: chats.id })
-      .from(chats)
-      .where(eq(chats.projectId, projectId))
-      .orderBy(sql`${chats.createdAt} desc`)
-      .limit(1);
-
-    if (existingChat) return existingChat.id;
-
-    // Create a new chat if one doesn't exist
+    // Create a new chat
     const [newChat] = await db
       .insert(chats)
-      .values({ projectId, title: titleSuggestion })
+      .values({ title: titleSuggestion })
       .returning({ id: chats.id });
 
     return newChat.id;
@@ -141,7 +57,7 @@ export async function ensureChat(
 
 async function getChatMessages(
   chatId: number,
-  options?: { lastMessageId: number | null; limit?: number },
+  options?: { lastMessageId: number | null; limit?: number }
 ) {
   const { lastMessageId, limit = 20 } = options || {};
 

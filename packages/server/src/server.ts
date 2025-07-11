@@ -16,7 +16,7 @@ import {
 } from "./api/routes/mcpservers";
 import { messagesRouter } from "./api/routes/messages";
 import { previewRouter } from "./api/routes/preview";
-import { sessionRouter } from "./api/routes/sessions";
+
 import { stacksRouter } from "./api/routes/stacks";
 import { subscription } from "./api/routes/subscription";
 import { createServer } from "./mcp/server";
@@ -194,7 +194,6 @@ class ServerManager {
       lnks: linksRouter,
       stacks: stacksRouter,
       messages: messagesRouter,
-      sessions: sessionRouter,
       events: subscription,
       instructions: instructionsRouter,
       files: filesRouter,
