@@ -15,7 +15,6 @@ import {
   mcpClientsSubscriptions,
 } from "./api/routes/mcpservers";
 import { messagesRouter } from "./api/routes/messages";
-import { previewRouter } from "./api/routes/preview";
 
 import { stacksRouter } from "./api/routes/stacks";
 import { subscription } from "./api/routes/subscription";
@@ -197,7 +196,6 @@ class ServerManager {
       events: subscription,
       instructions: instructionsRouter,
       files: filesRouter,
-      preview: previewRouter,
       mcpClientsSubscriptions: mcpClientsSubscriptions,
       mcpResponses: mcpClientsMutations,
     });
