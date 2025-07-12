@@ -11,7 +11,7 @@ import type {
   MessageContent,
   ToolCall,
 } from "../types";
-import { fetchChats } from "../services";
+import { fetchChats, createChat } from "../services";
 import {
   processChatStream,
   type StreamRequestPayload,
@@ -193,25 +193,42 @@ export const useChatStore = create<ChatState>()(
 
           let currentActiveChatId = activeChat;
           if (!currentActiveChatId) {
-            const newChatId = `chat-${Date.now()}`;
-            currentActiveChatId = newChatId; // Update currentActiveChatId for this scope
-            updates.activeChat = newChatId;
-            updates.chats = [
-              {
-                id: newChatId,
-                title:
-                  content.slice(0, 30) + (content.length > 30 ? "..." : ""),
-                timestamp: new Date().toLocaleString([], {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-                messages: updatedMessages,
-              },
-              ...chats,
-            ];
+            try {
+              const title =
+                content.slice(0, 30) + (content.length > 30 ? "..." : "");
+              const newChat = await createChat(title);
+              currentActiveChatId = newChat.id;
+              updates.activeChat = newChat.id;
+              updates.chats = [
+                {
+                  ...newChat,
+                  messages: updatedMessages,
+                },
+                ...chats,
+              ];
+            } catch (error) {
+              console.error("Failed to create chat:", error);
+              // Fallback to local chat creation
+              const newChatId = `chat-${Date.now()}`;
+              currentActiveChatId = newChatId;
+              updates.activeChat = newChatId;
+              updates.chats = [
+                {
+                  id: newChatId,
+                  title:
+                    content.slice(0, 30) + (content.length > 30 ? "..." : ""),
+                  timestamp: new Date().toLocaleString([], {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
+                  messages: updatedMessages,
+                },
+                ...chats,
+              ];
+            }
           } else {
             updates.chats = chats.map((chat) =>
               chat.id === currentActiveChatId

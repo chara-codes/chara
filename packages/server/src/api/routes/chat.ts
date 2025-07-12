@@ -1,7 +1,11 @@
-import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
-import { getHistoryAndPersist, getChatList } from "../../repos/chatRepo.ts";
 import { logger } from "@chara-codes/logger";
+import { z } from "zod";
+import {
+  createChat,
+  getChatList,
+  getHistoryAndPersist,
+} from "../../repos/chatRepo.ts";
+import { publicProcedure, router } from "../trpc";
 
 export const chatRouter = router({
   getHistory: publicProcedure
@@ -59,6 +63,23 @@ export const chatRouter = router({
         };
       } catch (err) {
         logger.error(JSON.stringify(err), "getChatList endpoint failed");
+        throw err;
+      }
+    }),
+
+  createChat: publicProcedure
+    .input(
+      z.object({
+        title: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const chat = await createChat(input.title);
+
+        return chat;
+      } catch (err) {
+        logger.error(JSON.stringify(err), "createChat endpoint failed");
         throw err;
       }
     }),

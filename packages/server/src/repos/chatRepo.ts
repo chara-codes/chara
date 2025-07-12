@@ -3,16 +3,18 @@ import { db } from "../api/db.ts";
 import { chats, messages, stacks } from "../db/schema";
 import { myLogger as logger } from "../utils/logger";
 
-export const DEFAULT_STACK_ID = "1";
-
 /** Create a new chat. */
 export async function createChat(titleSuggestion: string) {
   try {
     const [row] = await db
       .insert(chats)
       .values({ title: titleSuggestion })
-      .returning({ id: chats.id });
-    return row.id;
+      .returning({
+        id: chats.id,
+        createdAt: chats.createdAt,
+        title: chats.title,
+      });
+    return row;
   } catch (err) {
     logger.error(JSON.stringify(err), "createChat failed");
     throw err;
