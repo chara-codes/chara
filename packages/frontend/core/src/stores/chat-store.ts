@@ -691,9 +691,7 @@ export const useChatStore = create<ChatState>()(
                 minute: "2-digit",
               }),
               contextItems: msg.context || undefined,
-              toolCalls: msg.toolCalls
-                ? JSON.parse(msg.toolCalls as string)
-                : {},
+              toolCalls: msg.toolCalls ? JSON.parse(msg.toolCalls) : {},
             }));
 
             set({
