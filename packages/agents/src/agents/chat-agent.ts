@@ -97,9 +97,5 @@ export const chatAgent = async (
     experimental_continueSteps: true,
     maxSteps: 99,
     messages: cleanedMessages,
-    onFinish: ({ steps, text }) => {
-      logger.dump(steps);
-      logger.dump(text);
-    },
   });
 };

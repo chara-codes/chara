@@ -484,7 +484,11 @@ if (import.meta.main) {
   let serverInstance: ServerInstance;
 
   try {
-    serverInstance = await startServer();
+    serverInstance = await startServer({
+      mcp: {
+        enabled: false,
+      },
+    });
 
     // Handle graceful shutdown
     process.on("SIGINT", async () => {

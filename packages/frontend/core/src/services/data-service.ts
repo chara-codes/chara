@@ -129,3 +129,42 @@ export async function createChat(title: string): Promise<Chat> {
     throw error;
   }
 }
+
+// Function to save a message to a chat
+export async function saveMessage(
+  chatId: string,
+  content: string,
+  role: "user" | "assistant",
+  context?: any,
+  toolCalls?: any
+): Promise<{
+  id: string;
+  content: string;
+  role: string;
+  timestamp: number;
+  context?: any;
+  toolCalls?: any;
+}> {
+  try {
+    const client = getVanillaTrpcClient();
+    const result = await client.chat.saveMessage.mutate({
+      chatId: parseInt(chatId),
+      content,
+      role,
+      context,
+      toolCalls,
+    });
+
+    return {
+      id: result.id.toString(),
+      content: result.content,
+      role: result.role,
+      timestamp: result.timestamp,
+      context: result.context,
+      toolCalls: result.toolCalls,
+    };
+  } catch (error) {
+    console.error("Error saving message via tRPC:", error);
+    throw error;
+  }
+}

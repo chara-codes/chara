@@ -11,7 +11,7 @@ import type {
   MessageContent,
   ToolCall,
 } from "../types";
-import { fetchChats, createChat } from "../services";
+import { fetchChats, createChat, saveMessage } from "../services";
 import {
   processChatStream,
   type StreamRequestPayload,
@@ -57,6 +57,13 @@ interface ChatState {
     onComplete: (finalText: string) => void,
     onError: (error: Error) => void
   ) => void;
+  saveMessageToChat: (
+    chatId: string,
+    content: string,
+    role: "user" | "assistant",
+    context?: any,
+    toolCalls?: any
+  ) => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -238,7 +245,27 @@ export const useChatStore = create<ChatState>()(
           }
           set(updates);
 
+          // Save user message to database if we have an active chat (only once per send)
+          let userMessageSaved = false;
+          if (currentActiveChatId && !userMessageSaved) {
+            userMessageSaved = true;
+            try {
+              await saveMessage(
+                currentActiveChatId,
+                typeof messageContent === "string"
+                  ? messageContent
+                  : JSON.stringify(messageContent),
+                "user",
+                contextItems.length > 0 ? contextItems : undefined
+              );
+            } catch (error) {
+              console.error("Failed to save user message:", error);
+              // Continue with the flow even if saving fails
+            }
+          }
+
           const aiMessageId = `${Date.now().toString()}-ai`;
+          let assistantMessageSaved = false; // Flag to prevent duplicate saves
           const initialAiMessage: Message = {
             id: aiMessageId,
             content: "",
@@ -397,10 +424,33 @@ export const useChatStore = create<ChatState>()(
                   set({ isThinking: false });
                   // Final state update handled in finally block of sendMessage
                 },
-                onCompletion: (data) => {
+                onCompletion: async (data) => {
                   console.log("Chat Store: Stream completed", data);
                   // Handle completion with usage statistics
                   // data contains: finishReason, usage (promptTokens, completionTokens), isContinued
+
+                  // Save assistant message to database if we have an active chat (only once)
+                  if (currentActiveChatId && !assistantMessageSaved) {
+                    assistantMessageSaved = true; // Set flag to prevent duplicate saves
+                    try {
+                      const currentState = get();
+                      const aiMessage = currentState.messages.find(
+                        (m) => m.id === aiMessageId
+                      );
+                      if (aiMessage) {
+                        await saveMessage(
+                          currentActiveChatId,
+                          aiMessage.content as string,
+                          "assistant",
+                          undefined,
+                          aiMessage.toolCalls
+                        );
+                      }
+                    } catch (error) {
+                      console.error("Failed to save assistant message:", error);
+                      // Continue with the flow even if saving fails
+                    }
+                  }
                 },
               },
               newAbortController.signal,
@@ -591,6 +641,21 @@ export const useChatStore = create<ChatState>()(
             }
           } finally {
             clearTimeout(timeoutId);
+          }
+        },
+
+        saveMessageToChat: async (
+          chatId,
+          content,
+          role,
+          context,
+          toolCalls
+        ) => {
+          try {
+            await saveMessage(chatId, content, role, context, toolCalls);
+          } catch (error) {
+            console.error("Failed to save message to chat:", error);
+            throw error;
           }
         },
       }),

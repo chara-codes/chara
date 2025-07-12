@@ -26,6 +26,9 @@ export const messages = sqliteTable(
     /** Optional JSON object containing additional context for the message (can include list of files, commands, etc) */
     context: text({ mode: "json" }),
 
+    /** Optional JSON object containing additional context for the message (can include list of files, commands, etc) */
+    toolCalls: text({ mode: "json" }),
+
     /** Indicates message sender type: 'user' for user messages or 'assistant' for LLM responses */
     role: text().notNull(),
 
@@ -46,5 +49,5 @@ export const messages = sqliteTable(
   },
   (table) => ({
     chatIdx: index("idx_messages_chat_id").on(table.chatId),
-  }),
+  })
 );

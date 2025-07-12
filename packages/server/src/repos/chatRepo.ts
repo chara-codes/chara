@@ -192,3 +192,57 @@ export async function getHistoryAndPersist({
     throw err;
   }
 }
+
+/** Save a new message to a chat. */
+export async function saveMessage({
+  chatId,
+  content,
+  role,
+  context,
+  toolCalls,
+}: {
+  chatId: number;
+  content: string;
+  role: string;
+  context?: any;
+  toolCalls?: any;
+}) {
+  try {
+    const [message] = await db
+      .insert(messages)
+      .values({
+        chatId,
+        content,
+        role,
+        context: context ? JSON.stringify(context) : null,
+        toolCalls: toolCalls ? JSON.stringify(toolCalls) : null,
+      })
+      .returning({
+        id: messages.id,
+        content: messages.content,
+        role: messages.role,
+        createdAt: messages.createdAt,
+        context: messages.context,
+        toolCalls: messages.toolCalls,
+      });
+
+    return {
+      id: message.id,
+      content: message.content,
+      role: message.role,
+      timestamp:
+        message.createdAt instanceof Date
+          ? message.createdAt.getTime()
+          : message.createdAt,
+      context: message.context
+        ? JSON.parse(message.context as string)
+        : undefined,
+      toolCalls: message.toolCalls
+        ? JSON.parse(message.toolCalls as string)
+        : undefined,
+    };
+  } catch (err) {
+    logger.error(JSON.stringify(err), "saveMessage failed");
+    throw err;
+  }
+}
