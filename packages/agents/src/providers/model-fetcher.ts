@@ -155,11 +155,11 @@ export namespace ModelFetcher {
 
   /**
    * Fetches available models from Ollama API
-   * @param baseUrl - Base URL for Ollama server (default: http://localhost:11434)
+   * @param baseUrl - Base URL for Ollama server (default: http://localhost:11434/api)
    * @returns Array of Ollama models or fallback models if API fails
    */
   export async function fetchOllamaModels(
-    baseUrl = "http://localhost:11434"
+    baseUrl = "http://localhost:11434/api"
   ): Promise<ModelInfo[]> {
     try {
       const response = await withTimeout(
