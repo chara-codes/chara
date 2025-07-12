@@ -163,7 +163,7 @@ export namespace ModelFetcher {
   ): Promise<ModelInfo[]> {
     try {
       const response = await withTimeout(
-        fetch(`${baseUrl}/api/tags`, {
+        fetch(`${baseUrl}/tags`, {
           headers: {
             "Content-Type": "application/json",
           },
@@ -186,7 +186,7 @@ export namespace ModelFetcher {
       return handleFetchError(
         error,
         "Ollama",
-        `${baseUrl}/api/tags`,
+        `${baseUrl}/tags`,
         "Ensure Ollama server is running"
       );
     }
