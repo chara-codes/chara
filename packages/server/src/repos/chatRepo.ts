@@ -140,14 +140,8 @@ export async function getChatList(options?: {
       chats: chatsResult.map((chat) => ({
         id: chat.id,
         title: chat.title,
-        createdAt:
-          chat.createdAt instanceof Date
-            ? chat.createdAt.getTime()
-            : chat.createdAt,
-        updatedAt:
-          chat.updatedAt instanceof Date
-            ? chat.updatedAt.getTime()
-            : chat.updatedAt,
+        createdAt: chat.createdAt,
+        updatedAt: chat.updatedAt,
         parentId: chat.parentId,
       })),
       hasMore,
@@ -174,16 +168,16 @@ export async function getHistoryAndPersist({
       limit,
     });
 
+    console.log(history);
+
     return {
       messages: history.messages.map((msg) => ({
         id: msg.id,
         message: msg.content,
         role: msg.role,
-        timestamp:
-          msg.createdAt instanceof Date
-            ? msg.createdAt.getTime()
-            : msg.createdAt,
+        timestamp: msg.createdAt,
         context: msg.context ?? undefined,
+        toolCalls: msg.toolCalls ?? undefined,
       })),
       hasMore: history.hasMore,
     };

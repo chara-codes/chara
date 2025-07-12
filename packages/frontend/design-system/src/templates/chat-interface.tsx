@@ -133,9 +133,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
   // Memoize handlers to prevent unnecessary re-renders
   const handleSelectChatFromHistory = useCallback(
-    (chatId: string) => {
-      chatStore.setActiveChat(chatId);
-      navigateToConversation();
+    async (chatId: string) => {
+      try {
+        await chatStore.setActiveChat(chatId);
+        navigateToConversation();
+      } catch (error) {
+        console.error("Failed to load chat:", error);
+        // Continue with navigation even if loading fails
+        navigateToConversation();
+      }
     },
     [chatStore, navigateToConversation]
   );

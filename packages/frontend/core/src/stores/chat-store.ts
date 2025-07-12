@@ -11,7 +11,12 @@ import type {
   MessageContent,
   ToolCall,
 } from "../types";
-import { fetchChats, createChat, saveMessage } from "../services";
+import {
+  fetchChats,
+  createChat,
+  saveMessage,
+  fetchChatHistory,
+} from "../services";
 import {
   processChatStream,
   type StreamRequestPayload,
@@ -39,7 +44,7 @@ interface ChatState {
 
   // Actions
   initializeStore: () => Promise<void>;
-  setActiveChat: (chatId: string | null) => void;
+  setActiveChat: (chatId: string | null) => Promise<void>;
   createNewChat: () => void;
   sendMessage: (content: string) => Promise<void>; // Now async
   setIsResponding: (isResponding: boolean) => void;
@@ -64,6 +69,7 @@ interface ChatState {
     context?: any,
     toolCalls?: any
   ) => Promise<void>;
+  loadChatHistory: (chatId: string) => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -102,14 +108,22 @@ export const useChatStore = create<ChatState>()(
           }
         },
 
-        setActiveChat: (chatId) => {
+        setActiveChat: async (chatId) => {
           get().stopResponse(); // Stop any ongoing response when switching chats
-          set({ activeChat: chatId });
+          set({ activeChat: chatId, isLoading: true });
+
           if (chatId) {
-            const chat = get().chats.find((c) => c.id === chatId);
-            set({ messages: chat ? chat.messages : [] });
+            try {
+              // Load chat history from server
+              await get().loadChatHistory(chatId);
+            } catch (error) {
+              console.error("Failed to load chat history:", error);
+              // Fallback to local messages if server fails
+              const chat = get().chats.find((c) => c.id === chatId);
+              set({ messages: chat ? chat.messages : [], isLoading: false });
+            }
           } else {
-            set({ messages: [] });
+            set({ messages: [], isLoading: false });
           }
         },
 
@@ -430,7 +444,11 @@ export const useChatStore = create<ChatState>()(
                   // data contains: finishReason, usage (promptTokens, completionTokens), isContinued
 
                   // Save assistant message to database if we have an active chat (only once)
-                  if (currentActiveChatId && !assistantMessageSaved) {
+                  if (
+                    currentActiveChatId &&
+                    !assistantMessageSaved &&
+                    data.finishReason === "stop"
+                  ) {
                     assistantMessageSaved = true; // Set flag to prevent duplicate saves
                     try {
                       const currentState = get();
@@ -655,6 +673,43 @@ export const useChatStore = create<ChatState>()(
             await saveMessage(chatId, content, role, context, toolCalls);
           } catch (error) {
             console.error("Failed to save message to chat:", error);
+            throw error;
+          }
+        },
+
+        loadChatHistory: async (chatId) => {
+          try {
+            const historyData = await fetchChatHistory(chatId);
+
+            // Convert server history format to frontend Message format
+            const messages: Message[] = historyData.history.map((msg) => ({
+              id: msg.id,
+              content: msg.message,
+              isUser: msg.role === "user",
+              timestamp: new Date(msg.timestamp).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              contextItems: msg.context || undefined,
+              toolCalls: msg.toolCalls
+                ? JSON.parse(msg.toolCalls as string)
+                : {},
+            }));
+
+            set({
+              messages,
+              isLoading: false,
+            });
+
+            // Update the chat in the chats array with loaded messages
+            set((state) => ({
+              chats: state.chats.map((chat) =>
+                chat.id === chatId ? { ...chat, messages } : chat
+              ),
+            }));
+          } catch (error) {
+            console.error("Failed to load chat history:", error);
+            set({ isLoading: false });
             throw error;
           }
         },

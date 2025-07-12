@@ -102,8 +102,13 @@ const ConversationView: React.FC = () => {
   );
 
   const handleSelectChat = useCallback(
-    (chatId: string) => {
-      chatStore.setActiveChat(chatId);
+    async (chatId: string) => {
+      try {
+        await chatStore.setActiveChat(chatId);
+      } catch (error) {
+        console.error("Failed to load chat:", error);
+        // Continue with the UI flow even if loading fails
+      }
     },
     [chatStore]
   );

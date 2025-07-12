@@ -168,3 +168,41 @@ export async function saveMessage(
     throw error;
   }
 }
+
+// Function to fetch chat history
+export async function fetchChatHistory(
+  chatId: string,
+  options?: {
+    lastMessageId?: string | null;
+    limit?: number;
+  }
+): Promise<{
+  chatId: string;
+  history: Array<{
+    id: string;
+    message: string;
+    role: string;
+    timestamp: number;
+    context?: any;
+    toolCalls?: Record<string, any>;
+  }>;
+  hasMore: boolean;
+}> {
+  try {
+    const client = getVanillaTrpcClient();
+    const result = await client.chat.getHistory.query({
+      chatId: parseInt(chatId),
+      lastMessageId: options?.lastMessageId,
+      limit: options?.limit,
+    });
+
+    return {
+      chatId: result.chatId.toString(),
+      history: result.history,
+      hasMore: result.hasMore,
+    };
+  } catch (error) {
+    console.error("Error fetching chat history via tRPC:", error);
+    throw error;
+  }
+}

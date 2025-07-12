@@ -33,12 +33,12 @@ export const messages = sqliteTable(
     role: text().notNull(),
 
     /** Timestamp when this message was created */
-    createdAt: int("created_at", { mode: "timestamp" })
+    createdAt: int("created_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
 
     /** Timestamp when the message was last updated */
-    updatedAt: int("updated_at", { mode: "timestamp" })
+    updatedAt: int("updated_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
 
