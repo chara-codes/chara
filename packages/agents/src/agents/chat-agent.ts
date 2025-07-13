@@ -97,5 +97,10 @@ export const chatAgent = async (
     experimental_continueSteps: true,
     maxSteps: 99,
     messages: cleanedMessages,
+    onFinish: (result) => {
+      logger.dump(result);
+      Bun.write("example.json", JSON.stringify(result, null, 2));
+      logger.info("File example.json saved!");
+    },
   });
 };

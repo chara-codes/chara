@@ -153,7 +153,7 @@ export async function getChatList(options?: {
 }
 
 /** Get chat history and persist access if needed. */
-export async function getHistoryAndPersist({
+export async function getHistory({
   chatId,
   lastMessageId,
   limit,

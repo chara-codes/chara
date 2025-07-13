@@ -13,13 +13,15 @@ const CORS_HEADERS = {
 export const chatController = {
   OPTIONS: () => new Response("", { headers: CORS_HEADERS }),
   POST: async (req: Request) => {
-    const { model, messages } = (await req.json()) as {
+    const data = await req.json();
+    const { model, messages } = data as {
       model: string;
       messages: CoreMessage[];
     };
     const url = new URL(req.url);
     const mode = url.searchParams.get("mode");
 
+    let commit;
     if (mode === "write") {
       const workingDir = process.cwd();
       if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
@@ -30,12 +32,15 @@ export const chatController = {
         model,
         messages,
       });
-
-      isoGitService.saveToHistory(workingDir, commitMessage.toString());
+      commit = await isoGitService.saveToHistory(
+        workingDir,
+        commitMessage.text
+      );
     }
     return createDataStreamResponse({
       headers: { ...CORS_HEADERS, "accept-encoding": "" },
       execute: async (dataStream) => {
+        dataStream.writeMessageAnnotation(commit);
         const result = await chatAgent({
           model,
           messages,

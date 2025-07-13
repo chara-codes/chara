@@ -14,7 +14,8 @@
   "devDependencies": {
     "@ai-sdk/provider": "^1.1.3",
     "@biomejs/biome": "^2.0.6",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@chara-codes/server": "workspace:*"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"

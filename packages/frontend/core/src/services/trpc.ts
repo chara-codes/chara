@@ -3,14 +3,7 @@ import {
   createTRPCProxyClient,
   httpBatchLink as vanillaHttpBatchLink,
 } from "@trpc/client";
-import {
-  createTRPCReact,
-  createWSClient,
-  httpBatchLink,
-  httpBatchStreamLink,
-  splitLink,
-  wsLink,
-} from "@trpc/react-query";
+import { createTRPCReact } from "@trpc/react-query";
 import superjson from "superjson";
 
 export const trpc = createTRPCReact<AppRouter>();

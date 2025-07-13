@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   createChat,
   getChatList,
-  getHistoryAndPersist,
+  getHistory,
   saveMessage,
 } from "../../repos/chatRepo.ts";
 import { publicProcedure, router } from "../trpc";
@@ -25,7 +25,7 @@ export const chatRouter = router({
           ? Number(input.lastMessageId)
           : null;
 
-        const history = await getHistoryAndPersist({
+        const history = await getHistory({
           chatId,
           lastMessageId,
           limit: input.limit,

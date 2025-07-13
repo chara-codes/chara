@@ -21,7 +21,7 @@ export const messages = sqliteTable(
       autoIncrement: true,
     }),
     /** The actual text content of the message */
-    content: text().notNull(),
+    content: text({ mode: "json" }).notNull(),
 
     /** Optional JSON object containing additional context for the message (can include list of files, commands, etc) */
     context: text({ mode: "json" }),
@@ -31,6 +31,9 @@ export const messages = sqliteTable(
 
     /** Indicates message sender type: 'user' for user messages or 'assistant' for LLM responses */
     role: text().notNull(),
+
+    /** Commit sha */
+    commit: text(),
 
     /** Timestamp when this message was created */
     createdAt: int("created_at")
