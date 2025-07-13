@@ -3,6 +3,15 @@
 
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import {
+  createChat,
+  fetchChatHistory,
+  fetchChats,
+  processChatStream,
+  type StreamCallbacks,
+  type StreamRequestPayload,
+  saveMessage,
+} from "../services"; // Import the new service
 import type {
   Chat,
   ChatMode,
@@ -11,17 +20,6 @@ import type {
   MessageContent,
   ToolCall,
 } from "../types";
-import {
-  fetchChats,
-  createChat,
-  saveMessage,
-  fetchChatHistory,
-} from "../services";
-import {
-  processChatStream,
-  type StreamRequestPayload,
-  type StreamCallbacks,
-} from "../services"; // Import the new service
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [];

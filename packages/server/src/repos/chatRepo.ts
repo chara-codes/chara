@@ -168,8 +168,6 @@ export async function getHistoryAndPersist({
       limit,
     });
 
-    console.log(history);
-
     return {
       messages: history.messages.map((msg) => ({
         id: msg.id,
