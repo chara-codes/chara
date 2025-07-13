@@ -1,5 +1,14 @@
 # @chara-codes/web
 
+## 0.1.13
+
+### Patch Changes
+
+- b202a55: add ability to store messages and chats in the database
+- Updated dependencies [b202a55]
+  - @chara-codes/design-system@0.1.13
+  - @chara-codes/core@0.1.13
+
 ## 0.1.12
 
 ### Patch Changes

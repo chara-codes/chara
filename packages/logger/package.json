@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/logger",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Logging utility for Chara applications",
   "main": "src/index.ts",
   "module": "src/index.ts",

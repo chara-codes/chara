@@ -1,5 +1,11 @@
 # @chara-codes/logger
 
+## 0.1.13
+
+### Patch Changes
+
+- b202a55: add ability to store messages and chats in the database
+
 ## 0.1.12
 
 ### Patch Changes
