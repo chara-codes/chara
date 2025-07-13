@@ -680,17 +680,27 @@ export const useChatStore = create<ChatState>()(
             const historyData = await fetchChatHistory(chatId);
 
             // Convert server history format to frontend Message format
-            const messages: Message[] = historyData.history.map((msg) => ({
-              id: msg.id,
-              content: msg.message,
-              isUser: msg.role === "user",
-              timestamp: new Date(msg.timestamp).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              contextItems: msg.context || undefined,
-              toolCalls: msg.toolCalls ? JSON.parse(msg.toolCalls) : {},
-            }));
+            const messages: Message[] = historyData.history.map((msg) => {
+              let message: string | any[];
+              try {
+                message = JSON.parse(msg.message);
+                message = message[0].text;
+              } catch (_e) {
+                message = msg.message;
+              }
+
+              return {
+                id: msg.id,
+                content: message,
+                isUser: msg.role === "user",
+                timestamp: new Date(msg.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+                contextItems: msg.context ? JSON.parse(msg.context) : [],
+                toolCalls: msg.toolCalls ? JSON.parse(msg.toolCalls) : {},
+              };
+            });
 
             set({
               messages,
