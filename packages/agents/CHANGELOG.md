@@ -1,5 +1,14 @@
 # @chara-codes/agents
 
+## 0.1.14
+
+### Patch Changes
+
+- 9822549: fix issue with context items
+- Updated dependencies [9822549]
+  - @chara-codes/settings@0.1.14
+  - @chara-codes/logger@0.1.14
+
 ## 0.1.13
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @chara-codes/server
 
+## 0.1.14
+
+### Patch Changes
+
+- 9822549: fix issue with context items
+- Updated dependencies [9822549]
+  - @chara-codes/logger@0.1.14
+
 ## 0.1.13
 
 ### Patch Changes
