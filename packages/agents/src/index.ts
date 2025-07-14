@@ -6,6 +6,7 @@ import { initAgent } from "./agents";
 import {
   beautifyController,
   chatController,
+  gitController,
   miscController,
   modelsController,
   providersController,
@@ -146,6 +147,7 @@ function createServerConfig(config: {
       "/api/models": modelsController.getModels,
       "/api/providers": providersController.list,
       "/api/beautify": beautifyController,
+      "/api/git/reset": gitController,
 
       // Wildcard route for all routes that start with "/api/" and aren't otherwise matched
       "/api/*": miscController.notFound,

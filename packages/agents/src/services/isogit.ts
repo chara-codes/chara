@@ -77,6 +77,14 @@ export interface GitUncommittedChangesResult {
   changedFiles?: string[];
 }
 
+export interface GitResetToCommitResult {
+  status: "success" | "commit_not_found" | "error";
+  message: string;
+  targetCommitSha?: string;
+  previousHeadSha?: string;
+  commitsRemoved?: number;
+}
+
 export class IsoGitService {
   private getGitDir(workingDir: string): string {
     return join(workingDir, ".chara", "history");
@@ -239,6 +247,7 @@ export class IsoGitService {
     } catch (error) {
       logger.debug("Failed to create initial commit:", error);
       // Don't throw - repository is still initialized successfully
+      return { sha: "", filesCommitted: 0 };
     }
   }
 
@@ -707,6 +716,102 @@ export class IsoGitService {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to check uncommitted changes: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Reset HEAD and current branch to a specific commit, removing all commits after it
+   */
+  async resetToCommit(
+    workingDir: string,
+    targetCommitSha: string
+  ): Promise<GitResetToCommitResult> {
+    const gitDir = this.getGitDir(workingDir);
+
+    try {
+      // First, verify the target commit exists
+      try {
+        await git.readCommit({
+          fs,
+          dir: gitDir,
+          oid: targetCommitSha,
+        });
+      } catch {
+        return {
+          status: "commit_not_found",
+          message: `Target commit ${targetCommitSha} not found`,
+        };
+      }
+
+      // Get current HEAD SHA to track what we're changing from
+      const previousHeadSha = await git.resolveRef({
+        fs,
+        dir: gitDir,
+        ref: "HEAD",
+      });
+
+      // Get current branch name
+      const currentBranch = await git.currentBranch({ fs, dir: gitDir });
+      if (!currentBranch) {
+        return {
+          status: "error",
+          message: "No current branch found",
+        };
+      }
+
+      // Count commits that will be removed
+      let commitsRemoved = 0;
+      try {
+        const commits = await git.log({ fs, dir: gitDir, ref: "HEAD" });
+        for (const commit of commits) {
+          if (commit.oid === targetCommitSha) {
+            break;
+          }
+          commitsRemoved++;
+        }
+      } catch (error) {
+        logger.warning(`Could not count commits to be removed: ${error}`);
+      }
+
+      // Update the current branch to point to the target commit
+      const branchRef = `refs/heads/${currentBranch}`;
+      await git.writeRef({
+        fs,
+        dir: gitDir,
+        ref: branchRef,
+        value: targetCommitSha,
+        force: true,
+      });
+
+      // Update HEAD to point to the target commit
+      await git.writeRef({
+        fs,
+        dir: gitDir,
+        ref: "HEAD",
+        value: branchRef,
+        force: true,
+        symbolic: true,
+      });
+
+      logger.info(
+        `Successfully reset to commit ${targetCommitSha}, removed ${commitsRemoved} commits`
+      );
+
+      return {
+        status: "success",
+        message: `Successfully reset to commit ${targetCommitSha}`,
+        targetCommitSha,
+        previousHeadSha,
+        commitsRemoved,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to reset to commit: ${errorMessage}`);
+      return {
+        status: "error",
+        message: `Failed to reset to commit: ${errorMessage}`,
+      };
     }
   }
 

@@ -486,7 +486,7 @@ describe("IsoGitService", () => {
       expect(commits).toHaveLength(2); // Including initial commit
       expect(commits[0].commit.message.trim()).toBe("Integration test commit");
       expect(commits[0].commit.author.name).toBe("Chara Agent");
-      expect(commits[0].commit.author.email).toBe("agent@chara.dev");
+      expect(commits[0].commit.author.email).toBe("agent@chara-ai.dev");
     });
 
     test("should create proper git objects", async () => {
@@ -535,7 +535,7 @@ describe("IsoGitService", () => {
       expect(result.commit!.oid).toBe(saveResult.commitSha);
       expect(result.commit!.commit.message.trim()).toBe("Test commit");
       expect(result.commit!.commit.author.name).toBe("Chara Agent");
-      expect(result.commit!.commit.author.email).toBe("agent@chara.dev");
+      expect(result.commit!.commit.author.email).toBe("agent@chara-ai.dev");
     });
 
     test("should throw error when repository not initialized", async () => {
@@ -721,6 +721,166 @@ describe("IsoGitService", () => {
       expect(async () => {
         await service.hasUncommittedChanges(testFS.getPath());
       }).toThrow("Git repository not initialized");
+    });
+  });
+
+  describe("resetToCommit", () => {
+    test("should reset to a specific commit successfully", async () => {
+      // Initialize repository and make some commits
+      await service.initializeRepository(testFS.getPath());
+
+      // Make first commit
+      await testFS.createFile("file1.txt", "content1");
+      const result1 = await service.saveToHistory(testFS.getPath());
+      expect(result1.status).toBe("success");
+      const firstCommitSha = result1.commitSha!;
+
+      // Make second commit
+      await testFS.createFile("file2.txt", "content2");
+      const result2 = await service.saveToHistory(testFS.getPath());
+      expect(result2.status).toBe("success");
+
+      // Make third commit
+      await testFS.createFile("file3.txt", "content3");
+      const result3 = await service.saveToHistory(testFS.getPath());
+      expect(result3.status).toBe("success");
+
+      // Reset to first commit
+      const resetResult = await service.resetToCommit(
+        testFS.getPath(),
+        firstCommitSha
+      );
+
+      expect(resetResult.status).toBe("success");
+      expect(resetResult.targetCommitSha).toBe(firstCommitSha);
+      expect(resetResult.commitsRemoved).toBe(2);
+      expect(resetResult.message).toContain("Successfully reset to commit");
+
+      // Verify HEAD now points to the first commit
+      const headResult = await service.getCurrentHeadSha(testFS.getPath());
+      expect(headResult.status).toBe("success");
+      expect(headResult.sha).toBe(firstCommitSha);
+    });
+
+    test("should return commit_not_found for non-existent commit", async () => {
+      await service.initializeRepository(testFS.getPath());
+
+      const fakeCommitSha = "a".repeat(40); // 40-character SHA
+      const result = await service.resetToCommit(
+        testFS.getPath(),
+        fakeCommitSha
+      );
+
+      expect(result.status).toBe("commit_not_found");
+      expect(result.message).toContain("Target commit");
+      expect(result.message).toContain("not found");
+    });
+
+    test("should handle reset to current HEAD commit", async () => {
+      await service.initializeRepository(testFS.getPath());
+
+      // Make a commit
+      await testFS.createFile("file1.txt", "content1");
+      const saveResult = await service.saveToHistory(testFS.getPath());
+      expect(saveResult.status).toBe("success");
+      const commitSha = saveResult.commitSha!;
+
+      // Reset to the same commit (should work but remove 0 commits)
+      const resetResult = await service.resetToCommit(
+        testFS.getPath(),
+        commitSha
+      );
+
+      expect(resetResult.status).toBe("success");
+      expect(resetResult.targetCommitSha).toBe(commitSha);
+      expect(resetResult.commitsRemoved).toBe(0);
+    });
+
+    test("should handle reset in repository with only initial commit", async () => {
+      const initResult = await service.initializeRepository(testFS.getPath());
+      expect(initResult.status).toBe("success");
+
+      // Get the initial commit SHA
+      const headResult = await service.getCurrentHeadSha(testFS.getPath());
+      expect(headResult.status).toBe("success");
+      const initialCommitSha = headResult.sha!;
+
+      // Reset to initial commit
+      const resetResult = await service.resetToCommit(
+        testFS.getPath(),
+        initialCommitSha
+      );
+
+      expect(resetResult.status).toBe("success");
+      expect(resetResult.targetCommitSha).toBe(initialCommitSha);
+      expect(resetResult.commitsRemoved).toBe(0);
+    });
+
+    test("should return commit_not_found when repository not initialized", async () => {
+      const fakeCommitSha = "a".repeat(40);
+      const result = await service.resetToCommit(
+        testFS.getPath(),
+        fakeCommitSha
+      );
+
+      expect(result.status).toBe("commit_not_found");
+      expect(result.message).toContain("Target commit");
+      expect(result.message).toContain("not found");
+    });
+
+    test("should preserve commit history after reset point", async () => {
+      await service.initializeRepository(testFS.getPath());
+
+      // Make multiple commits
+      await testFS.createFile("file1.txt", "content1");
+      const result1 = await service.saveToHistory(testFS.getPath());
+      const firstCommitSha = result1.commitSha!;
+
+      await testFS.createFile("file2.txt", "content2");
+      const result2 = await service.saveToHistory(testFS.getPath());
+      const secondCommitSha = result2.commitSha!;
+
+      await testFS.createFile("file3.txt", "content3");
+      await service.saveToHistory(testFS.getPath());
+
+      // Reset to second commit
+      const resetResult = await service.resetToCommit(
+        testFS.getPath(),
+        secondCommitSha
+      );
+      expect(resetResult.status).toBe("success");
+      expect(resetResult.commitsRemoved).toBe(1);
+
+      // Verify we can still access the first commit
+      const commitResult = await service.getCommitByOid(
+        testFS.getPath(),
+        firstCommitSha
+      );
+      expect(commitResult.status).toBe("success");
+      expect(commitResult.commit).toBeDefined();
+    });
+
+    test("should update previousHeadSha correctly", async () => {
+      await service.initializeRepository(testFS.getPath());
+
+      // Make commits
+      await testFS.createFile("file1.txt", "content1");
+      const result1 = await service.saveToHistory(testFS.getPath());
+      const firstCommitSha = result1.commitSha!;
+
+      await testFS.createFile("file2.txt", "content2");
+      const result2 = await service.saveToHistory(testFS.getPath());
+      const secondCommitSha = result2.commitSha!;
+
+      // Reset to first commit
+      const resetResult = await service.resetToCommit(
+        testFS.getPath(),
+        firstCommitSha
+      );
+
+      expect(resetResult.status).toBe("success");
+      expect(resetResult.previousHeadSha).toBe(secondCommitSha);
+      expect(resetResult.targetCommitSha).toBe(firstCommitSha);
     });
   });
 });
