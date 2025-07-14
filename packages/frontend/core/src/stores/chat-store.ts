@@ -171,6 +171,7 @@ export const useChatStore = create<ChatState>()(
                 if (item.type === "file" && item.data) {
                   if (item.mimeType?.startsWith("image/")) {
                     return {
+                      ...item,
                       type: "image" as const,
                       image: item.data,
                       mimeType: item.mimeType,
@@ -178,6 +179,7 @@ export const useChatStore = create<ChatState>()(
                   }
                 }
                 return {
+                  ...item,
                   type: "text" as const,
                   text: `Context: ${item.name}\n${
                     typeof item.data === "string"
@@ -257,25 +259,6 @@ export const useChatStore = create<ChatState>()(
           }
           set(updates);
 
-          // Save user message to database if we have an active chat (only once per send)
-          let userMessageSaved = false;
-          if (currentActiveChatId && !userMessageSaved) {
-            userMessageSaved = true;
-            try {
-              await saveMessage(
-                currentActiveChatId,
-                typeof messageContent === "string"
-                  ? messageContent
-                  : JSON.stringify(messageContent),
-                "user",
-                contextItems.length > 0 ? contextItems : undefined
-              );
-            } catch (error) {
-              console.error("Failed to save user message:", error);
-              // Continue with the flow even if saving fails
-            }
-          }
-
           const aiMessageId = `${Date.now().toString()}-ai`;
           let assistantMessageSaved = false; // Flag to prevent duplicate saves
           const initialAiMessage: Message = {
@@ -327,6 +310,7 @@ export const useChatStore = create<ChatState>()(
                 : undefined,
             })),
             model: model, // Send selected model
+            chatId: currentActiveChatId,
             // You might need to send contextItems, mode, etc., depending on agent's API
             // context_items: contextItems.map(item => ({ name: item.name, type: item.type, data: item.data })),
           };
@@ -591,6 +575,7 @@ export const useChatStore = create<ChatState>()(
                 },
               ],
               model: state.model,
+              chatId: String(state.activeChat),
             };
 
             let beautifiedText = "";

@@ -1,5 +1,5 @@
 import type { CoreMessage } from "ai";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { cleanMessages } from "../chat-agent";
 
 describe("Chat Agent", () => {
@@ -45,7 +45,7 @@ describe("Chat Agent", () => {
       const cleanedMessages = cleanMessages(messages);
 
       expect(cleanedMessages[0].content).toBe(
-        "Hello, this is a normal message",
+        "Hello, this is a normal message"
       );
     });
 
@@ -88,7 +88,7 @@ describe("Chat Agent", () => {
       const cleanedMessages = cleanMessages(messages);
 
       expect(cleanedMessages[0].content).toBe(
-        "Please  run this command and  check the files",
+        "Please  run this command and  check the files"
       );
     });
 

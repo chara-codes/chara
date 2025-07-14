@@ -23,7 +23,7 @@ export interface StreamCallbacks {
   onToolCallArgsUpdate?: (
     toolCallId: string,
     args: Record<string, unknown>,
-    argsText: string,
+    argsText: string
   ) => void;
   onStructuredData: (data: Partial<Message>) => void;
   onCompletion: (completion: {
@@ -43,6 +43,7 @@ export interface StreamRequestPayload {
   temperature?: number;
   max_tokens?: number;
   user?: { id: string };
+  chatId: string;
 }
 
 export async function processChatStream(
@@ -50,7 +51,7 @@ export async function processChatStream(
   payload: StreamRequestPayload,
   callbacks: StreamCallbacks,
   signal: AbortSignal,
-  mode: ChatMode = "write",
+  mode: ChatMode = "write"
 ): Promise<void> {
   try {
     if (callbacks.onStreamOpen) {
@@ -77,7 +78,9 @@ export async function processChatStream(
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `Agent request failed: ${response.status} ${errorText || response.statusText}`,
+        `Agent request failed: ${response.status} ${
+          errorText || response.statusText
+        }`
       );
     }
 
@@ -129,7 +132,7 @@ export async function processChatStream(
               const processTextWithThinkingTags = (text: string) => {
                 const thinkingTagRegex = new RegExp(
                   THINKING_TAG_REGEX.source,
-                  THINKING_TAG_REGEX.flags,
+                  THINKING_TAG_REGEX.flags
                 );
                 let currentIndex = 0;
                 let match: RegExpExecArray | null;
@@ -145,7 +148,7 @@ export async function processChatStream(
                   if (match.index > currentIndex) {
                     const beforeTag = textToProcess.slice(
                       currentIndex,
-                      match.index,
+                      match.index
                     );
                     if (beforeTag) {
                       if (isThinking) {
@@ -234,7 +237,7 @@ export async function processChatStream(
                   callbacks.onToolCallArgsUpdate(
                     toolCallId,
                     pending.arguments,
-                    pending.argsText,
+                    pending.argsText
                   );
                 }
               }
@@ -245,7 +248,7 @@ export async function processChatStream(
               const { toolCallId, args } = parsedPart.value;
               console.log(
                 "Stream Service: Tool call complete with arguments",
-                parsedPart.value,
+                parsedPart.value
               );
               const pending = pendingToolCalls.get(toolCallId);
               if (pending) {
@@ -324,7 +327,7 @@ export async function processChatStream(
               const errorMessage = parsedPart.value;
               console.error(
                 "Stream Service: Error message received:",
-                errorMessage,
+                errorMessage
               );
 
               let errorHandled = false;
@@ -393,7 +396,7 @@ export async function processChatStream(
             case "start_step": {
               console.log(
                 "Stream Service: Message finalized",
-                parsedPart.value,
+                parsedPart.value
               );
               break;
             }
@@ -402,7 +405,7 @@ export async function processChatStream(
               console.warn(
                 "Stream Service: Unknown stream data type:",
                 (parsedPart as any).type,
-                parsedPart.value,
+                parsedPart.value
               );
           }
         } catch (e) {
@@ -424,7 +427,7 @@ export async function processChatStream(
       callbacks.onStreamError(
         error instanceof Error
           ? error.message
-          : "Unknown stream processing error",
+          : "Unknown stream processing error"
       );
       if (callbacks.onStreamClose) callbacks.onStreamClose(false);
     }

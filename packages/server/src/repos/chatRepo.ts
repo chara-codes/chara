@@ -190,12 +190,14 @@ export async function saveMessage({
   chatId,
   content,
   role,
+  commit,
   context,
   toolCalls,
 }: {
   chatId: number;
   content: string;
   role: string;
+  commit?: string;
   context?: any;
   toolCalls?: any;
 }) {
@@ -205,6 +207,7 @@ export async function saveMessage({
       .values({
         chatId,
         content,
+        commit,
         role,
         context: context ? JSON.stringify(context) : null,
         toolCalls: toolCalls ? JSON.stringify(toolCalls) : null,
@@ -213,6 +216,7 @@ export async function saveMessage({
         id: messages.id,
         content: messages.content,
         role: messages.role,
+        commit: messages.commit,
         createdAt: messages.createdAt,
         context: messages.context,
         toolCalls: messages.toolCalls,
@@ -229,6 +233,7 @@ export async function saveMessage({
       context: message.context
         ? JSON.parse(message.context as string)
         : undefined,
+      commit: message.commit,
       toolCalls: message.toolCalls
         ? JSON.parse(message.toolCalls as string)
         : undefined,

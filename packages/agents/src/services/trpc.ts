@@ -5,5 +5,5 @@ import superjson from "superjson";
 const url = process.env.PUBLIC_SERVER_URL ?? "http://localhost:3030/";
 
 export const trpc = createTRPCProxyClient<AppRouter>({
-  links: [httpBatchStreamLink({ url, transformer: superjson })],
+  links: [httpBatchStreamLink({ url: `${url}trpc`, transformer: superjson })],
 });

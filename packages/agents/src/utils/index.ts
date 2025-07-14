@@ -9,3 +9,5 @@ export {
   type StreamChunk,
   type LoggerOptions,
 } from "./pretty-stream-logger";
+
+export { mapMessages } from "./message-mapper";

@@ -46,15 +46,75 @@ describe("IsoGitService", () => {
       expect(currentBranch).toBe("main");
     });
 
+    test("should add .chara/ to .gitignore file", async () => {
+      const result = await service.initializeRepository(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.gitignoreUpdated).toBe(true);
+
+      // Verify .gitignore contains .chara/
+      const gitignoreContent = await testFS.readFile(".gitignore");
+      expect(gitignoreContent).toContain(".chara/");
+    });
+
+    test("should not update .gitignore if .chara/ already exists", async () => {
+      // Pre-create .gitignore with .chara/ entry
+      await testFS.createFile(".gitignore", "node_modules/\n.chara/\n*.log");
+
+      const result = await service.initializeRepository(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.gitignoreUpdated).toBe(false);
+
+      // Verify .gitignore still contains .chara/ and other entries
+      const gitignoreContent = await testFS.readFile(".gitignore");
+      expect(gitignoreContent).toContain(".chara/");
+      expect(gitignoreContent).toContain("node_modules/");
+      expect(gitignoreContent).toContain("*.log");
+    });
+
+    test("should make initial commit when files exist", async () => {
+      // Create some files before initialization
+      await testFS.createFile("test.txt", "Hello World");
+      await testFS.createFile("package.json", '{"name": "test"}');
+
+      const result = await service.initializeRepository(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.initialCommitSha).toBeDefined();
+      expect(result.filesCommitted).toBeGreaterThan(0);
+      expect(result.message).toContain("with initial commit");
+
+      // Verify commit exists in git history
+      const gitDir = join(testFS.getPath(), ".chara", "history");
+      const commits = await git.log({ fs, dir: gitDir });
+      expect(commits).toHaveLength(1);
+      expect(commits[0].commit.message.trim()).toBe(
+        "Initial commit - Chara history repository initialized"
+      );
+    });
+
+    test("should handle initialization with minimal files", async () => {
+      const result = await service.initializeRepository(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      // Initial commit will be created because .gitignore is created
+      expect(result.initialCommitSha).toBeDefined();
+      expect(result.filesCommitted).toBeGreaterThanOrEqual(1);
+      expect(result.message).toContain("with initial commit");
+    });
+
     test("should skip initialization if git already exists", async () => {
       // First initialization
-      const result1 = await service.initializeRepository(testFS.getPath());
-      expect(result1.status).toBe("success");
+      await service.initializeRepository(testFS.getPath());
 
       // Second initialization should be skipped
-      const result2 = await service.initializeRepository(testFS.getPath());
-      expect(result2.status).toBe("skipped");
-      expect(result2.message).toContain("already initialized");
+      const result = await service.initializeRepository(testFS.getPath());
+
+      expect(result.status).toBe("skipped");
+      expect(result.message).toContain("already initialized");
+      expect(result.gitignoreUpdated).toBeUndefined();
+      expect(result.initialCommitSha).toBeUndefined();
     });
 
     test("should create .chara/history directory if it doesn't exist", async () => {
@@ -144,7 +204,7 @@ describe("IsoGitService", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("no_changes");
-      expect(result.message).toBe("No changes to commit");
+      expect(result.message).toContain("No changes to commit");
       expect(result.filesProcessed).toBe(0);
     });
 
@@ -338,7 +398,7 @@ describe("IsoGitService", () => {
       const gitDir = join(testFS.getPath(), ".chara", "history");
       const commits = await git.log({ fs, dir: gitDir });
 
-      expect(commits).toHaveLength(2);
+      expect(commits).toHaveLength(3); // Including initial commit
       expect(commits[0].commit.message.trim()).toBe("Second commit");
       expect(commits[1].commit.message.trim()).toBe("First commit");
     });
@@ -423,7 +483,7 @@ describe("IsoGitService", () => {
       const gitDir = join(testFS.getPath(), ".chara", "history");
       const commits = await git.log({ fs, dir: gitDir });
 
-      expect(commits).toHaveLength(1);
+      expect(commits).toHaveLength(2); // Including initial commit
       expect(commits[0].commit.message.trim()).toBe("Integration test commit");
       expect(commits[0].commit.author.name).toBe("Chara Agent");
       expect(commits[0].commit.author.email).toBe("agent@chara.dev");
@@ -438,12 +498,229 @@ describe("IsoGitService", () => {
 
       // Verify the file exists in the commit tree
       const commits = await git.log({ fs, dir: gitDir });
-      expect(commits).toHaveLength(1);
+      expect(commits).toHaveLength(2); // Including initial commit
 
       // Read the file content from the working directory to verify it was committed
       const fileContent = await testFS.readFile("git-object.txt");
       expect(fileContent).toBe("Git object test");
       expect(result.files).toContain("git-object.txt");
+    });
+  });
+
+  describe("getLastCommit", () => {
+    test("should return last commit after initialization", async () => {
+      await service.initializeRepository(testFS.getPath());
+
+      const result = await service.getLastCommit(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.commit).toBeDefined();
+      expect(result.commit!.commit.message.trim()).toBe(
+        "Initial commit - Chara history repository initialized"
+      );
+    });
+
+    test("should return the last commit information", async () => {
+      await service.initializeRepository(testFS.getPath());
+      await testFS.createFile("test.txt", "Hello World");
+      const saveResult = await service.saveToHistory(
+        testFS.getPath(),
+        "Test commit"
+      );
+
+      const result = await service.getLastCommit(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.commit).toBeDefined();
+      expect(result.commit!.oid).toBe(saveResult.commitSha);
+      expect(result.commit!.commit.message.trim()).toBe("Test commit");
+      expect(result.commit!.commit.author.name).toBe("Chara Agent");
+      expect(result.commit!.commit.author.email).toBe("agent@chara.dev");
+    });
+
+    test("should throw error when repository not initialized", async () => {
+      expect(async () => {
+        await service.getLastCommit(testFS.getPath());
+      }).toThrow("Git repository not initialized");
+    });
+  });
+
+  describe("getCommitHistory", () => {
+    test("should return commit history", async () => {
+      await service.initializeRepository(testFS.getPath());
+
+      // Create multiple commits
+      await testFS.createFile("file1.txt", "Content 1");
+      await service.saveToHistory(testFS.getPath(), "First commit");
+
+      await testFS.createFile("file2.txt", "Content 2");
+      await service.saveToHistory(testFS.getPath(), "Second commit");
+
+      await testFS.createFile("file3.txt", "Content 3");
+      await service.saveToHistory(testFS.getPath(), "Third commit");
+
+      const result = await service.getCommitHistory(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.commits).toBeDefined();
+      expect(result.commits!.length).toBe(4); // Including initial commit
+      expect(result.totalCount).toBe(4);
+
+      // Check commit order (most recent first)
+      expect(result.commits![0].commit.message.trim()).toBe("Third commit");
+      expect(result.commits![1].commit.message.trim()).toBe("Second commit");
+      expect(result.commits![2].commit.message.trim()).toBe("First commit");
+    });
+
+    test("should respect depth limit", async () => {
+      await service.initializeRepository(testFS.getPath());
+
+      // Create multiple commits
+      await testFS.createFile("file1.txt", "Content 1");
+      await service.saveToHistory(testFS.getPath(), "First commit");
+
+      await testFS.createFile("file2.txt", "Content 2");
+      await service.saveToHistory(testFS.getPath(), "Second commit");
+
+      await testFS.createFile("file3.txt", "Content 3");
+      await service.saveToHistory(testFS.getPath(), "Third commit");
+
+      const result = await service.getCommitHistory(testFS.getPath(), {
+        depth: 2,
+      });
+
+      expect(result.status).toBe("success");
+      expect(result.commits!.length).toBe(2);
+      expect(result.commits![0].commit.message.trim()).toBe("Third commit");
+      expect(result.commits![1].commit.message.trim()).toBe("Second commit");
+    });
+
+    test("should return initial commit in history", async () => {
+      await service.initializeRepository(testFS.getPath());
+
+      const result = await service.getCommitHistory(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.commits).toBeDefined();
+      expect(result.commits!.length).toBe(1);
+      expect(result.commits![0].commit.message.trim()).toBe(
+        "Initial commit - Chara history repository initialized"
+      );
+    });
+  });
+
+  describe("getCommitByOid", () => {
+    test("should return specific commit by OID", async () => {
+      await service.initializeRepository(testFS.getPath());
+      await testFS.createFile("test.txt", "Hello World");
+      const saveResult = await service.saveToHistory(
+        testFS.getPath(),
+        "Test commit"
+      );
+
+      const result = await service.getCommitByOid(
+        testFS.getPath(),
+        saveResult.commitSha!
+      );
+
+      expect(result.status).toBe("success");
+      expect(result.commit).toBeDefined();
+      expect(result.commit!.oid).toBe(saveResult.commitSha);
+      expect(result.commit!.commit.message.trim()).toBe("Test commit");
+    });
+
+    test("should return not_found for non-existent commit", async () => {
+      await service.initializeRepository(testFS.getPath());
+
+      const fakeOid = "1234567890abcdef1234567890abcdef12345678";
+      const result = await service.getCommitByOid(testFS.getPath(), fakeOid);
+
+      expect(result.status).toBe("not_found");
+      expect(result.message).toContain("not found");
+    });
+
+    test("should throw error when repository not initialized", async () => {
+      expect(async () => {
+        await service.getCommitByOid(testFS.getPath(), "abc123");
+      }).toThrow("Git repository not initialized");
+    });
+  });
+
+  describe("getCurrentHeadSha", () => {
+    test("should return HEAD SHA after initialization", async () => {
+      await service.initializeRepository(testFS.getPath());
+
+      const result = await service.getCurrentHeadSha(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.sha).toBeDefined();
+    });
+
+    test("should return HEAD SHA after making a commit", async () => {
+      await service.initializeRepository(testFS.getPath());
+      await testFS.createFile("test.txt", "Hello World");
+      const saveResult = await service.saveToHistory(
+        testFS.getPath(),
+        "Initial commit"
+      );
+
+      const headResult = await service.getCurrentHeadSha(testFS.getPath());
+
+      expect(headResult.status).toBe("success");
+      expect(headResult.sha).toBeDefined();
+      expect(headResult.sha).toBe(saveResult.commitSha);
+    });
+
+    test("should throw error when repository not initialized", async () => {
+      expect(async () => {
+        await service.getCurrentHeadSha(testFS.getPath());
+      }).toThrow("Git repository not initialized");
+    });
+  });
+
+  describe("hasUncommittedChanges", () => {
+    test("should detect uncommitted changes", async () => {
+      await service.initializeRepository(testFS.getPath());
+      await testFS.createFile("test.txt", "Hello World");
+
+      const result = await service.hasUncommittedChanges(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.hasChanges).toBe(true);
+      expect(result.changedFiles).toContain("test.txt");
+    });
+
+    test("should return no changes for clean working directory", async () => {
+      await service.initializeRepository(testFS.getPath());
+      await testFS.createFile("test.txt", "Hello World");
+      await service.saveToHistory(testFS.getPath(), "Initial commit");
+
+      const result = await service.hasUncommittedChanges(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.hasChanges).toBe(false);
+      expect(result.changedFiles).toHaveLength(0);
+    });
+
+    test("should detect file modifications", async () => {
+      await service.initializeRepository(testFS.getPath());
+      await testFS.createFile("test.txt", "Hello World");
+      await service.saveToHistory(testFS.getPath(), "Initial commit");
+
+      // Modify the file
+      await testFS.createFile("test.txt", "Hello Modified World");
+
+      const result = await service.hasUncommittedChanges(testFS.getPath());
+
+      expect(result.status).toBe("success");
+      expect(result.hasChanges).toBe(true);
+      expect(result.changedFiles).toContain("test.txt");
+    });
+
+    test("should throw error when repository not initialized", async () => {
+      expect(async () => {
+        await service.hasUncommittedChanges(testFS.getPath());
+      }).toThrow("Git repository not initialized");
     });
   });
 });

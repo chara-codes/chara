@@ -91,6 +91,7 @@ export const chatRouter = router({
         chatId: z.number(),
         content: z.string(),
         role: z.string(),
+        commit: z.string().optional(),
         context: z.any().optional(),
         toolCalls: z.any().optional(),
       })
@@ -101,6 +102,7 @@ export const chatRouter = router({
           chatId: input.chatId,
           content: input.content,
           role: input.role,
+          commit: input.commit,
           context: input.context,
           toolCalls: input.toolCalls,
         });

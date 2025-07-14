@@ -1,13 +1,16 @@
 import git from "isomorphic-git";
 import fs from "node:fs";
 import { join } from "node:path";
-import { mkdir, readdir } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { logger } from "@chara-codes/logger";
 
 export interface GitInitResult {
   status: "success" | "skipped";
   message: string;
   path: string;
+  gitignoreUpdated?: boolean;
+  initialCommitSha?: string;
+  filesCommitted?: number;
 }
 
 export interface GitSaveResult {
@@ -19,6 +22,61 @@ export interface GitSaveResult {
   files?: string[];
 }
 
+export interface GitCommitInfo {
+  oid: string;
+  commit: {
+    message: string;
+    tree: string;
+    parent: string[];
+    author: {
+      name: string;
+      email: string;
+      timestamp: number;
+      timezoneOffset: number;
+    };
+    committer: {
+      name: string;
+      email: string;
+      timestamp: number;
+      timezoneOffset: number;
+    };
+    gpgsig?: string;
+  };
+  payload: string;
+}
+
+export interface GitLastCommitResult {
+  status: "success" | "no_commits";
+  message: string;
+  commit?: GitCommitInfo;
+}
+
+export interface GitCommitHistoryResult {
+  status: "success" | "no_commits";
+  message: string;
+  commits?: GitCommitInfo[];
+  totalCount?: number;
+}
+
+export interface GitCommitByOidResult {
+  status: "success" | "not_found";
+  message: string;
+  commit?: GitCommitInfo;
+}
+
+export interface GitHeadShaResult {
+  status: "success" | "no_head";
+  message: string;
+  sha?: string;
+}
+
+export interface GitUncommittedChangesResult {
+  status: "success";
+  message: string;
+  hasChanges: boolean;
+  changedFiles?: string[];
+}
+
 export class IsoGitService {
   private getGitDir(workingDir: string): string {
     return join(workingDir, ".chara", "history");
@@ -26,6 +84,7 @@ export class IsoGitService {
 
   /**
    * Initialize git repository in .chara/history directory
+   * Also adds .chara/ to project's .gitignore and makes initial commit
    */
   async initializeRepository(workingDir: string): Promise<GitInitResult> {
     const gitDir = this.getGitDir(workingDir);
@@ -53,17 +112,133 @@ export class IsoGitService {
         defaultBranch: "main",
       });
 
-      await Bun.write(".gitkeep", "");
+      // Add .chara/ to project's .gitignore file
+      const gitignoreUpdated = await this.ensureCharaInGitignore(workingDir);
+
+      // Create initial .gitkeep file in the git directory
+      await Bun.write(join(gitDir, ".gitkeep"), "");
+
+      // Make initial commit
+      let initialCommitSha: string | undefined;
+      let filesCommitted = 0;
+      try {
+        const commitResult = await this.makeInitialCommit(workingDir, gitDir);
+        initialCommitSha = commitResult.sha;
+        filesCommitted = commitResult.filesCommitted;
+      } catch (commitError) {
+        logger.debug(
+          "Initial commit failed (this is normal for empty repositories):",
+          commitError
+        );
+      }
+
+      const message = `Successfully initialized git repository in .chara/history${
+        initialCommitSha ? ` with initial commit (${filesCommitted} files)` : ""
+      }`;
 
       return {
         status: "success",
-        message: "Successfully initialized git repository in .chara/history",
+        message,
         path: gitDir,
+        gitignoreUpdated,
+        initialCommitSha,
+        filesCommitted,
       };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to initialize git repository: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Ensure .chara/ is added to the project's .gitignore file
+   */
+  private async ensureCharaInGitignore(workingDir: string): Promise<boolean> {
+    const gitignorePath = join(workingDir, ".gitignore");
+    const charaEntry = ".chara/";
+
+    try {
+      // Try to read existing .gitignore
+      let gitignoreContent = "";
+      try {
+        gitignoreContent = await readFile(gitignorePath, "utf-8");
+      } catch {
+        // .gitignore doesn't exist, will create it
+      }
+
+      // Check if .chara/ is already in .gitignore
+      const lines = gitignoreContent.split("\n");
+      const hasCharaEntry = lines.some((line) => line.trim() === charaEntry);
+
+      if (!hasCharaEntry) {
+        // Add .chara/ to .gitignore
+        const newContent = gitignoreContent.trim()
+          ? gitignoreContent.trim() + "\n" + charaEntry + "\n"
+          : charaEntry + "\n";
+
+        await writeFile(gitignorePath, newContent, "utf-8");
+        logger.debug("Added .chara/ to .gitignore");
+        return true;
+      } else {
+        logger.debug(".chara/ already exists in .gitignore");
+        return false;
+      }
+    } catch (error) {
+      logger.debug("Failed to update .gitignore:", error);
+      // Don't throw error - this is not critical for git initialization
+      return false;
+    }
+  }
+
+  /**
+   * Make initial commit in the history repository
+   */
+  private async makeInitialCommit(
+    workingDir: string,
+    gitDir: string
+  ): Promise<{ sha: string; filesCommitted: number }> {
+    try {
+      // Get all files that should be committed
+      const allFiles = await this.getAllFiles(workingDir);
+
+      if (allFiles.length === 0) {
+        logger.debug("No files to commit for initial commit");
+        throw new Error("No files to commit");
+      }
+
+      // Add all files to the staging area
+      let filesAdded = 0;
+      for (const filepath of allFiles) {
+        try {
+          await git.add({ fs, dir: workingDir, gitdir: gitDir, filepath });
+          filesAdded++;
+        } catch (addError) {
+          logger.debug(`Failed to add file ${filepath}:`, addError);
+          // Continue with other files
+        }
+      }
+
+      if (filesAdded === 0) {
+        throw new Error("No files could be added to commit");
+      }
+
+      // Create initial commit
+      const sha = await git.commit({
+        fs,
+        dir: gitDir,
+        message: "Initial commit - Chara history repository initialized",
+        author: {
+          name: "Chara Agent",
+          email: "agent@chara-ai.dev",
+        },
+      });
+
+      logger.debug(`Initial commit created with SHA: ${sha}`);
+      return { sha, filesCommitted: filesAdded };
+    } catch (error) {
+      logger.debug("Failed to create initial commit:", error);
+      // Don't throw - repository is still initialized successfully
     }
   }
 
@@ -105,7 +280,7 @@ export class IsoGitService {
   private async hasFileChanges(
     workingDir: string,
     gitDir: string,
-    filepath: string,
+    filepath: string
   ): Promise<boolean> {
     try {
       logger.debug(`Checking file: ${filepath}`);
@@ -139,7 +314,7 @@ export class IsoGitService {
           // File was committed but might have been modified since
           // Check if current content differs from committed content
           logger.debug(
-            `File ${filepath} has 'added' status, checking content...`,
+            `File ${filepath} has 'added' status, checking content...`
           );
           try {
             const oid = await git.resolveRef({
@@ -155,20 +330,20 @@ export class IsoGitService {
             });
 
             const currentContent = await Bun.file(
-              join(workingDir, filepath),
+              join(workingDir, filepath)
             ).text();
             const committedContent = new TextDecoder().decode(blob);
 
             const hasChanges = currentContent !== committedContent;
             logger.debug(
-              `Content comparison for ${filepath}: current="${currentContent}", committed="${committedContent}", different=${hasChanges}`,
+              `Content comparison for ${filepath}: current="${currentContent}", committed="${committedContent}", different=${hasChanges}`
             );
             return hasChanges;
           } catch (error) {
             // File doesn't exist in commit or error reading - no changes
             logger.debug(
               `Error reading committed content for ${filepath}:`,
-              error,
+              error
             );
             return false;
           }
@@ -179,7 +354,7 @@ export class IsoGitService {
       } catch (error) {
         // If status check fails, assume it's a new file that should be added
         logger.debug(
-          `File ${filepath}: status check failed, assuming new file`,
+          `File ${filepath}: status check failed, assuming new file`
         );
         return true;
       }
@@ -194,7 +369,7 @@ export class IsoGitService {
    */
   async saveToHistory(
     workingDir: string,
-    commitMessage?: string,
+    commitMessage?: string
   ): Promise<GitSaveResult> {
     const gitDir = this.getGitDir(workingDir);
 
@@ -204,7 +379,7 @@ export class IsoGitService {
         await git.currentBranch({ fs, dir: gitDir });
       } catch {
         throw new Error(
-          "Git repository not initialized. Please run init-git first.",
+          "Git repository not initialized. Please run init-git first."
         );
       }
 
@@ -222,14 +397,14 @@ export class IsoGitService {
       // Check each file for changes and add only those that need to be committed
       const addedFiles: string[] = [];
       logger.debug(
-        `Processing ${allFiles.length} files: ${allFiles.join(", ")}`,
+        `Processing ${allFiles.length} files: ${allFiles.join(", ")}`
       );
 
       for (const filepath of allFiles) {
         const hasChanges = await this.hasFileChanges(
           workingDir,
           gitDir,
-          filepath,
+          filepath
         );
 
         if (hasChanges) {
@@ -261,7 +436,7 @@ export class IsoGitService {
         message,
         author: {
           name: "Chara Agent",
-          email: "agent@chara.dev",
+          email: "agent@chara-ai.dev",
         },
       });
 
@@ -277,6 +452,261 @@ export class IsoGitService {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to save to history: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get the last commit information
+   */
+  async getLastCommit(workingDir: string): Promise<GitLastCommitResult> {
+    const gitDir = this.getGitDir(workingDir);
+
+    try {
+      // Check if git is initialized
+      try {
+        await git.currentBranch({ fs, dir: gitDir });
+      } catch {
+        throw new Error(
+          "Git repository not initialized. Please run init-git first."
+        );
+      }
+
+      // Get the last commit using git.log with depth 1
+      try {
+        const commits = await git.log({
+          fs,
+          dir: gitDir,
+          depth: 1,
+        });
+
+        if (commits.length === 0) {
+          return {
+            status: "no_commits",
+            message: "No commits found in repository",
+          };
+        }
+
+        const lastCommit = commits[0];
+
+        return {
+          status: "success",
+          message: "Successfully retrieved last commit",
+          commit: lastCommit,
+        };
+      } catch (logError) {
+        // If git.log fails (e.g., no refs/heads/main), it means no commits
+        return {
+          status: "no_commits",
+          message: "No commits found in repository",
+        };
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get last commit: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get commit history with optional depth limit
+   */
+  async getCommitHistory(
+    workingDir: string,
+    options?: { depth?: number; ref?: string }
+  ): Promise<GitCommitHistoryResult> {
+    const gitDir = this.getGitDir(workingDir);
+
+    try {
+      // Check if git is initialized
+      try {
+        await git.currentBranch({ fs, dir: gitDir });
+      } catch {
+        throw new Error(
+          "Git repository not initialized. Please run init-git first."
+        );
+      }
+
+      // Get commits with optional depth and ref
+      try {
+        const commits = await git.log({
+          fs,
+          dir: gitDir,
+          depth: options?.depth,
+          ref: options?.ref,
+        });
+
+        if (commits.length === 0) {
+          return {
+            status: "no_commits",
+            message: "No commits found in repository",
+          };
+        }
+
+        return {
+          status: "success",
+          message: `Successfully retrieved ${commits.length} commits`,
+          commits,
+          totalCount: commits.length,
+        };
+      } catch (logError) {
+        // If git.log fails (e.g., no refs/heads/main), it means no commits
+        return {
+          status: "no_commits",
+          message: "No commits found in repository",
+        };
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get commit history: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get a specific commit by its OID (SHA)
+   */
+  async getCommitByOid(
+    workingDir: string,
+    oid: string
+  ): Promise<GitCommitByOidResult> {
+    const gitDir = this.getGitDir(workingDir);
+
+    try {
+      // Check if git is initialized
+      try {
+        await git.currentBranch({ fs, dir: gitDir });
+      } catch {
+        throw new Error(
+          "Git repository not initialized. Please run init-git first."
+        );
+      }
+
+      // Read the commit object
+      try {
+        const commit = await git.readCommit({
+          fs,
+          dir: gitDir,
+          oid,
+        });
+
+        return {
+          status: "success",
+          message: "Successfully retrieved commit",
+          commit,
+        };
+      } catch (readError) {
+        const errorMessage =
+          readError instanceof Error ? readError.message : String(readError);
+
+        // Check if it's a "not found" error
+        if (
+          errorMessage.includes("object not found") ||
+          errorMessage.includes("not a valid object") ||
+          errorMessage.includes("invalid object id") ||
+          errorMessage.includes("Could not find")
+        ) {
+          return {
+            status: "not_found",
+            message: `Commit with OID ${oid} not found`,
+          };
+        }
+
+        throw readError;
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get commit: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get the current HEAD commit SHA
+   */
+  async getCurrentHeadSha(workingDir: string): Promise<GitHeadShaResult> {
+    const gitDir = this.getGitDir(workingDir);
+
+    try {
+      // Check if git is initialized
+      try {
+        await git.currentBranch({ fs, dir: gitDir });
+      } catch {
+        throw new Error(
+          "Git repository not initialized. Please run init-git first."
+        );
+      }
+
+      try {
+        // Get the current HEAD reference
+        const sha = await git.resolveRef({
+          fs,
+          dir: gitDir,
+          ref: "HEAD",
+        });
+
+        return {
+          status: "success",
+          message: "Successfully retrieved HEAD SHA",
+          sha,
+        };
+      } catch (error) {
+        // Repository exists but has no commits yet
+        return {
+          status: "no_head",
+          message: "Repository has no commits yet",
+        };
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get HEAD SHA: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Check if there are uncommitted changes in the working directory
+   */
+  async hasUncommittedChanges(
+    workingDir: string
+  ): Promise<GitUncommittedChangesResult> {
+    const gitDir = this.getGitDir(workingDir);
+
+    try {
+      // Check if git is initialized
+      try {
+        await git.currentBranch({ fs, dir: gitDir });
+      } catch {
+        throw new Error(
+          "Git repository not initialized. Please run init-git first."
+        );
+      }
+
+      // Get all files and check for changes
+      const allFiles = await this.getAllFiles(workingDir);
+      const changedFiles: string[] = [];
+
+      for (const filepath of allFiles) {
+        const hasChanges = await this.hasFileChanges(
+          workingDir,
+          gitDir,
+          filepath
+        );
+
+        if (hasChanges) {
+          changedFiles.push(filepath);
+        }
+      }
+
+      return {
+        status: "success",
+        message: `Found ${changedFiles.length} changed files`,
+        hasChanges: changedFiles.length > 0,
+        changedFiles,
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to check uncommitted changes: ${errorMessage}`);
     }
   }
 

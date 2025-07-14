@@ -52,7 +52,7 @@ import { cleanThinkingTags } from "@chara-codes/core";
 
 // Helper function to get the main message content (first text part)
 const getMainMessageContent = (
-  content: string | MessageContentType[],
+  content: string | MessageContentType[]
 ): string => {
   if (typeof content === "string") {
     return content;
@@ -70,7 +70,7 @@ const renderMainMessageContent = (
   toolCalls?: Record<
     string,
     { name?: string; status?: string; arguments?: unknown; result?: unknown }
-  >,
+  >
 ) => {
   const mainContent = getMainMessageContent(content);
 
@@ -102,7 +102,7 @@ const renderMainMessageContent = (
               rehypePlugins={[rehypeHighlight]}
             >
               {textPart}
-            </ReactMarkdown>,
+            </ReactMarkdown>
           );
         }
       }
@@ -119,7 +119,7 @@ const renderMainMessageContent = (
             toolCall={toolCall}
             toolCallId={toolCallId}
             toolCallType={toolCallType}
-          />,
+          />
         );
       }
 
@@ -137,7 +137,7 @@ const renderMainMessageContent = (
             rehypePlugins={[rehypeHighlight]}
           >
             {remainingText}
-          </ReactMarkdown>,
+          </ReactMarkdown>
         );
       }
     }
@@ -171,7 +171,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onDeleteMessage,
 }) => {
   const [expandedContextId, setExpandedContextId] = useState<string | null>(
-    null,
+    null
   );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
@@ -256,7 +256,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   }, []);
 
   const getIcon = (type: string) => {
-    const lowerType = type.toLowerCase();
+    const lowerType = type?.toLowerCase();
     switch (lowerType) {
       case "file":
         return <FileIcon />;

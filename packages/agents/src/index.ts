@@ -27,6 +27,8 @@ export { initAgent } from "./agents/init-agent";
 export { providersRegistry, initialize } from "./providers/";
 // Export tools for external use
 export { tools } from "./tools/";
+// Export git service for external use
+export { isoGitService } from "./services/isogit";
 
 // Store connected WebSocket clients
 const wsClients = new Set<ServerWebSocket<unknown>>();
