@@ -54,11 +54,13 @@ export const chatAgent = async (
     messages,
     mode,
     workingDir = process.cwd(),
+    onFinish,
   }: {
     model: string;
     messages: CoreMessage[];
     mode: "write" | "ask";
     workingDir: string;
+    onFinish: (result: any) => {};
   },
   options: { headers?: Record<string, string> } = {}
 ) => {
@@ -98,9 +100,7 @@ export const chatAgent = async (
     maxSteps: 99,
     messages: cleanedMessages,
     onFinish: (result) => {
-      logger.dump(result);
-      Bun.write("example.json", JSON.stringify(result, null, 2));
-      logger.info("File example.json saved!");
+      onFinish(result);
     },
   });
 };

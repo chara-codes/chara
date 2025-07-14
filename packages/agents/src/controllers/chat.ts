@@ -36,26 +36,13 @@ export const chatController = {
       ? lastMessage.content
       : [lastMessage?.content];
 
-    const messageRow = await trpc.chat.saveMessage.mutate({
+    await trpc.chat.saveMessage.mutate({
       content: JSON.stringify([content]),
       context,
       commit: lastCommit.commit?.oid,
       role: "user",
       chatId: Number(chatId),
     });
-
-    console.log(messageRow);
-
-    // if (mode === "write") {
-    //   const commitMessage = await gitAgent({
-    //     model,
-    //     messages,
-    //   });
-    //   commit = await isoGitService.saveToHistory(
-    //     workingDir,
-    //     commitMessage.text
-    //   );
-    // }
     return createDataStreamResponse({
       headers: { ...CORS_HEADERS, "accept-encoding": "" },
       execute: async (dataStream) => {
@@ -64,11 +51,28 @@ export const chatController = {
           messages: mapMessages(messages),
           mode: mode === "write" ? "write" : "ask",
           workingDir: process.cwd(),
+          onFinish: async () => {
+            if (mode === "write") {
+              const commitMessage = await gitAgent({
+                model,
+                messages: mapMessages(messages),
+              });
+              await isoGitService.saveToHistory(workingDir, commitMessage.text);
+            }
+          },
         });
         result.mergeIntoDataStream(dataStream);
       },
       onError: (error) => {
         logger.dump(error);
+        if (mode === "write") {
+          gitAgent({
+            model,
+            messages: mapMessages(messages),
+          }).then((commitMessage) =>
+            isoGitService.saveToHistory(workingDir, commitMessage.text)
+          );
+        }
         // Error messages are masked by default for security reasons.
         // If you want to expose the error message to the client, you can do so here:
         return error instanceof Error ? error.message : String(error);
