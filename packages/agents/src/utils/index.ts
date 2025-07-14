@@ -11,3 +11,13 @@ export {
 } from "./pretty-stream-logger";
 
 export { mapMessages } from "./message-mapper";
+
+export {
+  convertToolCallsToResultMap,
+  type ToolCall,
+  type ToolResult,
+  type Step,
+  type InputData,
+  type ConvertedToolCall,
+  type ToolCallResultMap,
+} from "./tool-call-converter";
