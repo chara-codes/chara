@@ -243,3 +243,33 @@ export async function saveMessage({
     throw err;
   }
 }
+
+/** Delete all messages in a chat after a specific message ID. */
+export async function deleteMessages({
+  chatId,
+  messageId,
+}: {
+  chatId: number;
+  messageId: number;
+}) {
+  try {
+    const result = await db
+      .delete(messages)
+      .where(
+        sql`${messages.chatId} = ${chatId} AND ${messages.id} >= ${messageId}`
+      )
+      .returning({ id: messages.id });
+
+    logger.info(
+      `Deleted ${result.length} messages from chat ${chatId} after message ${messageId}`
+    );
+
+    return {
+      deletedCount: result.length,
+      deletedMessageIds: result.map((msg) => msg.id),
+    };
+  } catch (err) {
+    logger.error(JSON.stringify(err), "deleteMessages failed");
+    throw err;
+  }
+}

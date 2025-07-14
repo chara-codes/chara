@@ -5,6 +5,7 @@ import {
   getChatList,
   getHistory,
   saveMessage,
+  deleteMessages,
 } from "../../repos/chatRepo.ts";
 import { publicProcedure, router } from "../trpc";
 
@@ -110,6 +111,27 @@ export const chatRouter = router({
         return message;
       } catch (err) {
         logger.error(JSON.stringify(err), "saveMessage endpoint failed");
+        throw err;
+      }
+    }),
+
+  deleteMessages: publicProcedure
+    .input(
+      z.object({
+        chatId: z.number(),
+        messageId: z.number(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const result = await deleteMessages({
+          chatId: input.chatId,
+          messageId: input.messageId,
+        });
+
+        return result;
+      } catch (err) {
+        logger.error(JSON.stringify(err), "deleteMessages endpoint failed");
         throw err;
       }
     }),
