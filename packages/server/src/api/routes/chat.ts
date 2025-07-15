@@ -5,6 +5,7 @@ import {
   getChatList,
   getHistory,
   saveMessage,
+  updateMessage,
   deleteMessages,
 } from "../../repos/chatRepo.ts";
 import { publicProcedure, router } from "../trpc";
@@ -111,6 +112,33 @@ export const chatRouter = router({
         return message;
       } catch (err) {
         logger.error(JSON.stringify(err), "saveMessage endpoint failed");
+        throw err;
+      }
+    }),
+
+  updateMessage: publicProcedure
+    .input(
+      z.object({
+        messageId: z.number(),
+        commit: z.string().optional(),
+        content: z.string().optional(),
+        context: z.any().optional(),
+        toolCalls: z.any().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const message = await updateMessage({
+          messageId: input.messageId,
+          commit: input.commit,
+          content: input.content,
+          context: input.context,
+          toolCalls: input.toolCalls,
+        });
+
+        return message;
+      } catch (err) {
+        logger.error(JSON.stringify(err), "updateMessage endpoint failed");
         throw err;
       }
     }),

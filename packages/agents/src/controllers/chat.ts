@@ -16,10 +16,11 @@ export const chatController = {
   OPTIONS: () => new Response("", { headers: CORS_HEADERS }),
   POST: async (req: Request) => {
     const data = await req.json();
-    const { model, messages, chatId } = data as {
+    const { model, messages, userMessageId } = data as {
       model: string;
       messages: CoreMessage[];
       chatId: number;
+      userMessageId?: number;
     };
     const url = new URL(req.url);
     const mode = url.searchParams.get("mode");
@@ -28,21 +29,13 @@ export const chatController = {
     if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
       await isoGitService.initializeRepository(process.cwd());
     }
-    const lastCommit = await isoGitService.getLastCommit(workingDir);
-
-    const lastMessage = messages[messages.length - 1];
-
-    const [content, ...context] = Array.isArray(lastMessage?.content)
-      ? lastMessage.content
-      : [lastMessage?.content];
-
-    await trpc.chat.saveMessage.mutate({
-      content: JSON.stringify([content]),
-      context,
-      commit: lastCommit.commit?.oid,
-      role: "user",
-      chatId: Number(chatId),
-    });
+    const { status, commit } = await isoGitService.getLastCommit(workingDir);
+    if (status === "success" && userMessageId) {
+      await trpc.chat.updateMessage.mutate({
+        messageId: userMessageId,
+        commit: commit?.oid,
+      });
+    }
     return createDataStreamResponse({
       headers: { ...CORS_HEADERS, "accept-encoding": "" },
       execute: async (dataStream) => {

@@ -245,6 +245,77 @@ export async function saveMessage({
   }
 }
 
+/** Update a message with new values. */
+export async function updateMessage({
+  messageId,
+  commit,
+  content,
+  context,
+  toolCalls,
+}: {
+  messageId: number;
+  commit?: string;
+  content?: string;
+  context?: any;
+  toolCalls?: any;
+}) {
+  try {
+    const updateValues: any = {};
+
+    if (commit !== undefined) updateValues.commit = commit;
+    if (content !== undefined) updateValues.content = content;
+    if (context !== undefined)
+      updateValues.context = context ? JSON.stringify(context) : null;
+    if (toolCalls !== undefined)
+      updateValues.toolCalls = toolCalls ? JSON.stringify(toolCalls) : null;
+
+    if (Object.keys(updateValues).length === 0) {
+      throw new Error("No fields to update");
+    }
+
+    updateValues.updatedAt = sql`CURRENT_TIMESTAMP`;
+
+    const [updatedMessage] = await db
+      .update(messages)
+      .set(updateValues)
+      .where(eq(messages.id, messageId))
+      .returning({
+        id: messages.id,
+        content: messages.content,
+        role: messages.role,
+        commit: messages.commit,
+        createdAt: messages.createdAt,
+        updatedAt: messages.updatedAt,
+        context: messages.context,
+        toolCalls: messages.toolCalls,
+      });
+
+    if (!updatedMessage) {
+      throw new Error(`Message with ID ${messageId} not found`);
+    }
+
+    return {
+      id: updatedMessage.id,
+      content: updatedMessage.content,
+      role: updatedMessage.role,
+      timestamp:
+        updatedMessage.createdAt instanceof Date
+          ? updatedMessage.createdAt.getTime()
+          : updatedMessage.createdAt,
+      context: updatedMessage.context
+        ? JSON.parse(updatedMessage.context as string)
+        : undefined,
+      commit: updatedMessage.commit,
+      toolCalls: updatedMessage.toolCalls
+        ? JSON.parse(updatedMessage.toolCalls as string)
+        : undefined,
+    };
+  } catch (err) {
+    logger.error(JSON.stringify(err), "updateMessage failed");
+    throw err;
+  }
+}
+
 /** Delete all messages in a chat after a specific message ID. */
 export async function deleteMessages({
   chatId,

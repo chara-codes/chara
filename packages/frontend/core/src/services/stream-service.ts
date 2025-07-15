@@ -44,6 +44,7 @@ export interface StreamRequestPayload {
   max_tokens?: number;
   user?: { id: string };
   chatId: string;
+  userMessageId?: string;
 }
 
 export async function processChatStream(

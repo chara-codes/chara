@@ -160,41 +160,33 @@ export const useChatStore = create<ChatState>()(
           // No longer need to process fileDiffs since they're removed
 
           // Create message content - automatically include context if available
-          let messageContent: string | MessageContent[];
-
-          if (contextItems.length > 0) {
-            // Create multi-part content with text and context items
-            messageContent = [
-              {
-                type: "text",
-                text: content,
-              },
-              ...contextItems.map((item) => {
-                if (item.type === "file" && item.data) {
-                  if (item.mimeType?.startsWith("image/")) {
-                    return {
-                      ...item,
-                      type: "image" as const,
-                      image: item.data,
-                      mimeType: item.mimeType,
-                    } as any;
-                  }
+          const messageContent: MessageContent[] = [
+            {
+              type: "text",
+              text: content,
+            },
+            ...contextItems.map((item) => {
+              if (item.type === "file" && item.data) {
+                if (item.mimeType?.startsWith("image/")) {
+                  return {
+                    ...item,
+                    type: "image" as const,
+                    image: item.data,
+                    mimeType: item.mimeType,
+                  } as any;
                 }
-                return {
-                  ...item,
-                  type: "text" as const,
-                  text: `Context: ${item.name}\n${
-                    typeof item.data === "string"
-                      ? item.data
-                      : JSON.stringify(item.data)
-                  }`,
-                };
-              }),
-            ];
-          } else {
-            // Use simple string content if not including context
-            messageContent = content;
-          }
+              }
+              return {
+                ...item,
+                type: "text" as const,
+                text: `Context: ${item.name}\n${
+                  typeof item.data === "string"
+                    ? item.data
+                    : JSON.stringify(item.data)
+                }`,
+              };
+            }),
+          ];
 
           const userMessage: Message = {
             id: Date.now().toString(),
@@ -261,6 +253,45 @@ export const useChatStore = create<ChatState>()(
           }
           set(updates);
 
+          // Save user message to database and update ID if successful
+          let savedUserMessageId: string | undefined = undefined;
+          if (currentActiveChatId) {
+            try {
+              const savedMessage = await saveMessage(
+                currentActiveChatId,
+                typeof messageContent === "string"
+                  ? messageContent
+                  : JSON.stringify(messageContent),
+                "user",
+                contextItems.length > 0
+                  ? JSON.stringify(contextItems)
+                  : undefined
+              );
+
+              // Update the user message with the saved ID
+              const updatedMessageId = savedMessage.id;
+              savedUserMessageId = updatedMessageId;
+              set((currentState) => {
+                const updatedMessages = currentState.messages.map((msg) =>
+                  msg.id === userMessage.id
+                    ? { ...msg, id: updatedMessageId }
+                    : msg
+                );
+                return {
+                  messages: updatedMessages,
+                  chats: currentState.chats.map((chat) =>
+                    chat.id === currentActiveChatId
+                      ? { ...chat, messages: updatedMessages }
+                      : chat
+                  ),
+                };
+              });
+            } catch (error) {
+              console.error("Failed to save user message:", error);
+              // Continue with the flow even if saving fails
+            }
+          }
+
           const aiMessageId = `${Date.now().toString()}-ai`;
           let assistantMessageSaved = false; // Flag to prevent duplicate saves
           const initialAiMessage: Message = {
@@ -313,6 +344,7 @@ export const useChatStore = create<ChatState>()(
             })),
             model: model, // Send selected model
             chatId: currentActiveChatId,
+            userMessageId: savedUserMessageId,
             // You might need to send contextItems, mode, etc., depending on agent's API
             // context_items: contextItems.map(item => ({ name: item.name, type: item.type, data: item.data })),
           };
@@ -440,13 +472,32 @@ export const useChatStore = create<ChatState>()(
                         (m) => m.id === aiMessageId
                       );
                       if (aiMessage) {
-                        await saveMessage(
+                        const savedMessage = await saveMessage(
                           currentActiveChatId,
                           aiMessage.content as string,
                           "assistant",
                           undefined,
                           aiMessage.toolCalls
                         );
+
+                        // Update the assistant message with the saved ID
+                        const updatedMessageId = savedMessage.id;
+                        set((currentState) => {
+                          const updatedMessages = currentState.messages.map(
+                            (msg) =>
+                              msg.id === aiMessageId
+                                ? { ...msg, id: updatedMessageId }
+                                : msg
+                          );
+                          return {
+                            messages: updatedMessages,
+                            chats: currentState.chats.map((chat) =>
+                              chat.id === currentActiveChatId
+                                ? { ...chat, messages: updatedMessages }
+                                : chat
+                            ),
+                          };
+                        });
                       }
                     } catch (error) {
                       console.error("Failed to save assistant message:", error);
@@ -685,25 +736,41 @@ export const useChatStore = create<ChatState>()(
 
             // Convert server history format to frontend Message format
             const messages: Message[] = historyData.history.map((msg) => {
-              let message: string | any[];
+              let message: string | MessageContent[];
               try {
-                message = JSON.parse(msg.message);
-                message = message[0].text;
+                const parsed = JSON.parse(msg.message);
+                message = Array.isArray(parsed) ? parsed[0].text : parsed;
               } catch (_e) {
                 message = msg.message;
               }
 
-              return {
+              const messageObj: Message = {
                 id: msg.id,
-                content: message,
+                content: message as string | MessageContent[],
                 isUser: msg.role === "user",
-                timestamp: new Date(msg.timestamp).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-                contextItems: msg.context ? JSON.parse(msg.context) : [],
-                toolCalls: msg.toolCalls ? JSON.parse(msg.toolCalls) : {},
+                timestamp: new Date(msg.timestamp).toLocaleTimeString(
+                  undefined,
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }
+                ),
               };
+
+              if (msg.context) {
+                messageObj.contextItems = JSON.parse(
+                  msg.context
+                ) as ContextItem[];
+              }
+
+              if (msg.toolCalls) {
+                messageObj.toolCalls = JSON.parse(msg.toolCalls) as Record<
+                  string,
+                  ToolCall
+                >;
+              }
+
+              return messageObj;
             });
 
             set({
