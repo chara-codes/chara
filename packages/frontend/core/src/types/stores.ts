@@ -29,6 +29,7 @@ export interface Message {
   thinkingContent?: string; // Store thinking content separately
   isThinking?: boolean; // Track if message is currently in thinking mode
   toolCalls?: Record<string, ToolCall>; // Add tool calls as Record with toolCall.id as key
+  commit?: string; // Git commit hash associated with the message
 }
 
 export interface Chat {

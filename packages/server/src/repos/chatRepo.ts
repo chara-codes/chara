@@ -176,6 +176,7 @@ export async function getHistory({
         timestamp: msg.createdAt,
         context: msg.context ?? undefined,
         toolCalls: msg.toolCalls ?? undefined,
+        commit: msg.commit ?? undefined,
       })),
       hasMore: history.hasMore,
     };
@@ -253,12 +254,19 @@ export async function deleteMessages({
   messageId: number;
 }) {
   try {
+    // First, get the commit from the message just before the one being deleted
+    const [previousMessage] = await db
+      .select({ commit: messages.commit })
+      .from(messages)
+      .where(sql`${messages.id} = ${messageId}`)
+      .limit(1);
+
     const result = await db
       .delete(messages)
       .where(
         sql`${messages.chatId} = ${chatId} AND ${messages.id} >= ${messageId}`
       )
-      .returning({ id: messages.id });
+      .returning({ id: messages.id, commit: messages.commit });
 
     logger.info(
       `Deleted ${result.length} messages from chat ${chatId} after message ${messageId}`
@@ -267,6 +275,7 @@ export async function deleteMessages({
     return {
       deletedCount: result.length,
       deletedMessageIds: result.map((msg) => msg.id),
+      commitToReset: previousMessage?.commit || null,
     };
   } catch (err) {
     logger.error(JSON.stringify(err), "deleteMessages failed");

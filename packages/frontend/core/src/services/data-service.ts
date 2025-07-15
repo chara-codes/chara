@@ -87,7 +87,7 @@ export async function fetchModels(): Promise<{
 }> {
   const agentsUrl = import.meta.env?.VITE_AGENTS_BASE_URL
     ? `${import.meta.env.VITE_AGENTS_BASE_URL}api/models`
-    : "/data/models.json";
+    : "http://localhost:3031/api/models";
   try {
     const response = await fetch(agentsUrl);
     if (!response.ok) {
@@ -169,6 +169,33 @@ export async function saveMessage(
   }
 }
 
+// Function to delete messages from a chat after a specific message ID
+export async function deleteMessages(
+  chatId: string,
+  messageId: string
+): Promise<{
+  deletedCount: number;
+  deletedMessageIds: number[];
+  commitToReset: string | null;
+}> {
+  try {
+    const client = getVanillaTrpcClient();
+    const result = await client.chat.deleteMessages.mutate({
+      chatId: parseInt(chatId),
+      messageId: parseInt(messageId),
+    });
+
+    return {
+      deletedCount: result.deletedCount,
+      deletedMessageIds: result.deletedMessageIds,
+      commitToReset: result.commitToReset,
+    };
+  } catch (error) {
+    console.error("Error deleting messages via tRPC:", error);
+    throw error;
+  }
+}
+
 // Function to fetch chat history
 export async function fetchChatHistory(
   chatId: string,
@@ -185,6 +212,7 @@ export async function fetchChatHistory(
     timestamp: number;
     context?: any;
     toolCalls?: Record<string, any>;
+    commit?: string;
   }>;
   hasMore: boolean;
 }> {
@@ -203,6 +231,41 @@ export async function fetchChatHistory(
     };
   } catch (error) {
     console.error("Error fetching chat history via tRPC:", error);
+    throw error;
+  }
+}
+
+// Function to reset project to a specific commit
+export async function resetToCommit(commit: string): Promise<{
+  success: boolean;
+  message: string;
+  commit: string;
+}> {
+  const agentsUrl = import.meta.env?.VITE_AGENTS_BASE_URL
+    ? `${import.meta.env.VITE_AGENTS_BASE_URL}api/git/reset`
+    : "http://localhost:3031/api/git/reset";
+
+  try {
+    const response = await fetch(agentsUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ commit }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.message || `Failed to reset to commit: ${response.status}`
+      );
+    }
+
+    const result = await response.json();
+    console.log(`Successfully reset to commit: ${commit}`);
+    return result;
+  } catch (error) {
+    console.error("Error resetting to commit:", error);
     throw error;
   }
 }

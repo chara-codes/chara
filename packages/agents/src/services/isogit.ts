@@ -1,5 +1,5 @@
 import git from "isomorphic-git";
-import fs from "node:fs";
+import * as fs from "node:fs";
 import { join } from "node:path";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { logger } from "@chara-codes/logger";
@@ -773,24 +773,100 @@ export class IsoGitService {
         logger.warning(`Could not count commits to be removed: ${error}`);
       }
 
-      // Update the current branch to point to the target commit
+      // Update the current branch to point to the target commit and checkout files
       const branchRef = `refs/heads/${currentBranch}`;
-      await git.writeRef({
-        fs,
-        dir: gitDir,
-        ref: branchRef,
-        value: targetCommitSha,
-        force: true,
-      });
+      await new Promise<void>((resolve, reject) => {
+        // Ensure refs/heads directory exists
+        fs.mkdir(
+          join(gitDir, "refs", "heads"),
+          { recursive: true },
+          (mkdirErr) => {
+            if (mkdirErr) {
+              return reject(mkdirErr);
+            }
 
-      // Update HEAD to point to the target commit
-      await git.writeRef({
-        fs,
-        dir: gitDir,
-        ref: "HEAD",
-        value: branchRef,
-        force: true,
-        symbolic: true,
+            fs.writeFile(join(gitDir, branchRef), targetCommitSha, (err) => {
+              if (err) {
+                return reject(err);
+              }
+
+              // Clear the index (if any)
+              const indexPath = join(gitDir, "index");
+              fs.unlink(indexPath, (unlinkErr) => {
+                // It's okay if index doesn't exist, just continue
+                if (unlinkErr && unlinkErr.code !== "ENOENT") {
+                  logger.warning(
+                    `Could not remove index: ${unlinkErr.message}`
+                  );
+                }
+
+                // Manually restore files from the target commit
+                git
+                  .readCommit({
+                    fs,
+                    dir: gitDir,
+                    oid: targetCommitSha,
+                  })
+                  .then(async (commit) => {
+                    // Get the tree object
+                    const { tree } = commit.commit;
+
+                    // Recursively restore all files from the commit
+                    const restoreFiles = async (
+                      treeOid: string,
+                      basePath = ""
+                    ): Promise<void> => {
+                      const { tree: treeEntries } = await git.readTree({
+                        fs,
+                        dir: gitDir,
+                        oid: treeOid,
+                      });
+
+                      for (const entry of treeEntries) {
+                        const filePath = basePath
+                          ? join(basePath, entry.path)
+                          : entry.path;
+                        const fullPath = join(workingDir, filePath);
+
+                        if (entry.type === "tree") {
+                          // Create directory and recurse
+                          await mkdir(join(workingDir, filePath), {
+                            recursive: true,
+                          });
+                          await restoreFiles(entry.oid, filePath);
+                        } else if (entry.type === "blob") {
+                          // Read blob and write file
+                          const { blob } = await git.readBlob({
+                            fs,
+                            dir: gitDir,
+                            oid: entry.oid,
+                          });
+
+                          // Ensure parent directory exists
+                          const parentDir = join(workingDir, filePath, "..");
+                          await mkdir(parentDir, { recursive: true });
+
+                          // Write file
+                          await writeFile(fullPath, blob);
+                        }
+                      }
+                    };
+
+                    await restoreFiles(tree);
+                  })
+                  .then(() => resolve())
+                  .catch((error) => {
+                    logger.error(`File restoration failed: ${error.message}`);
+                    reject(
+                      new Error(
+                        `Failed to restore files from commit: ${error.message}`
+                      )
+                    );
+                  });
+              });
+            });
+          }
+        );
       });
 
       logger.info(

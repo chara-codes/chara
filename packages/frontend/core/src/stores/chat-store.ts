@@ -5,9 +5,11 @@ import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import {
   createChat,
+  deleteMessages,
   fetchChatHistory,
   fetchChats,
   processChatStream,
+  resetToCommit,
   type StreamCallbacks,
   type StreamRequestPayload,
   saveMessage,
@@ -520,22 +522,39 @@ export const useChatStore = create<ChatState>()(
         clearContextItems: () => set({ contextItems: [] }),
         setMode: (mode) => set({ mode }),
         setModel: (model) => set({ model }),
-        deleteMessage: (messageId) => {
-          set((state) => {
-            const messageIndex = state.messages.findIndex(
-              (msg) => msg.id === messageId
-            );
-            if (messageIndex === -1) return {};
-            const updatedMessages = state.messages.slice(0, messageIndex);
-            return {
-              messages: updatedMessages,
-              chats: state.chats.map((chat) =>
-                chat.id === state.activeChat
-                  ? { ...chat, messages: updatedMessages }
-                  : chat
-              ),
-            };
-          });
+        deleteMessage: async (messageId) => {
+          const state = useChatStore.getState();
+          if (!state.activeChat) return;
+
+          try {
+            // Call the delete service
+            const result = await deleteMessages(state.activeChat, messageId);
+
+            // Update the state optimistically
+            set((state) => {
+              const messageIndex = state.messages.findIndex(
+                (msg) => msg.id === messageId
+              );
+              if (messageIndex === -1) return {};
+              const updatedMessages = state.messages.slice(0, messageIndex);
+              return {
+                messages: updatedMessages,
+                chats: state.chats.map((chat) =>
+                  chat.id === state.activeChat
+                    ? { ...chat, messages: updatedMessages }
+                    : chat
+                ),
+              };
+            });
+
+            // Reset to commit if available from the server response
+            if (result.commitToReset) {
+              await resetToCommit(result.commitToReset);
+            }
+          } catch (error) {
+            console.error("Error deleting message:", error);
+            // Could add error handling here, like showing a toast notification
+          }
         },
 
         beautifyPromptStream: async (
