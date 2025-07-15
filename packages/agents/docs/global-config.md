@@ -34,7 +34,8 @@ await writeGlobalConfig({
     OLLAMA_API_BASE_URL: "http://localhost:11434",
     LMSTUDIO_API_BASE_URL: "http://localhost:1234/v1",
     DIAL_API_KEY: "your-dial-api-key-here",
-    DIAL_API_BASE_URL: "http://localhost:8080"
+    DIAL_API_BASE_URL: "http://localhost:8080",
+    MOONSHOT_API_KEY: "your-moonshot-api-key-here"
   },
   defaultModel: "deepseek:::deepseek-chat",
   debug: true,
@@ -67,7 +68,8 @@ You can also manually create or edit the `~/.chararc` file:
     "OLLAMA_API_BASE_URL": "http://localhost:11434",
     "LMSTUDIO_API_BASE_URL": "http://localhost:1234/v1",
     "DIAL_API_KEY": "your-dial-api-key-here",
-    "DIAL_API_BASE_URL": "http://localhost:8080"
+    "DIAL_API_BASE_URL": "http://localhost:8080",
+    "MOONSHOT_API_KEY": "your-moonshot-api-key-here"
   },
   "defaultModel": "deepseek:::deepseek-chat",
   "debug": true,
@@ -86,6 +88,7 @@ The following environment variables can be stored in the global configuration:
 - `DEEPSEEK_API_KEY`: DeepSeek API key
 - `OPEN_ROUTER_API_KEY`: OpenRouter API key
 - `DIAL_API_KEY`: DIAL API key
+- `MOONSHOT_API_KEY`: Moonshot API key
 
 ### Base URLs
 - `OLLAMA_API_BASE_URL`: Ollama server URL (e.g., `http://localhost:11434`)

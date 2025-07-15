@@ -263,5 +263,6 @@ Supported environment variables for providers:
 - `OLLAMA_API_BASE_URL`: Ollama provider (default: http://localhost:11434)
 - `LMSTUDIO_API_BASE_URL`: LMStudio provider (default: http://localhost:1234/v1)
 - `DIAL_API_KEY` + `DIAL_API_BASE_URL`: DIAL provider
+- `MOONSHOT_API_KEY`: Moonshot provider
 
 Set these environment variables or add them to your global configuration before initializing providers.

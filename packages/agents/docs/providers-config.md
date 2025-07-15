@@ -50,7 +50,7 @@ OPEN_ROUTER_API_KEY=your_openrouter_api_key_here
 ```
 OLLAMA_API_BASE_URL=http://127.0.0.1:11434
 ```
-- **How to setup**: 
+- **How to setup**:
   1. Install [Ollama](https://ollama.ai/)
   2. Run `ollama serve` to start the server
   3. Pull models: `ollama pull llama3.1`, `ollama pull codellama`
@@ -61,18 +61,27 @@ OLLAMA_API_BASE_URL=http://127.0.0.1:11434
 ```
 LMSTUDIO_API_BASE_URL=http://127.0.0.1:1234/v1
 ```
-- **How to setup**: 
+- **How to setup**:
   1. Install [LMStudio](https://lmstudio.ai/)
   2. Load a model and start the local server
   3. Configure the API base URL (default: http://127.0.0.1:1234/v1)
 - **Models**: Any model you've loaded in LMStudio
 - **Cost**: Free (runs locally)
 
+
+### Moonshot
+
+```env
+MOONSHOT_API_KEY=your_moonshot_api_key_here
+```
+
+
 ### DIAL
 ```
 DIAL_API_KEY=your_dial_api_key_here
 DIAL_API_BASE_URL=your_dial_base_url_here
 ```
+
 - **How to get**: Contact your DIAL provider for API credentials
 - **Models**: Depends on your DIAL deployment
 - **Cost**: Varies by deployment
@@ -157,6 +166,7 @@ LMSTUDIO_API_BASE_URL=http://127.0.0.1:1234/v1
 # Optional: Additional providers
 ANTHROPIC_API_KEY=your-anthropic-key-here
 DEEPSEEK_API_KEY=your-deepseek-key-here
+MOONSHOT_API_KEY=your-moonshot-key-here
 OPEN_ROUTER_API_KEY=your-openrouter-key-here
 ```
 

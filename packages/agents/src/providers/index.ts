@@ -37,6 +37,8 @@ export {
   lmstudioProvider,
   DIALProvider,
   dialProvider,
+  MoonshotProvider,
+  moonshotProvider,
   allProviders,
   providerKeys,
 } from "./providers";

@@ -23,7 +23,8 @@ providers/
     ├── openrouter.ts     # OpenRouter provider
     ├── ollama.ts         # Ollama provider
     ├── lmstudio.ts       # LMStudio provider
-    └── dial.ts           # DIAL provider
+    ├── dial.ts           # DIAL provider
+    └── moonshot.ts       # Moonshot provider
 ```
 
 ## Files Overview
@@ -96,6 +97,7 @@ Individual provider implementations:
 - **`ollama.ts`**: Ollama provider implementation
 - **`lmstudio.ts`**: LMStudio provider implementation
 - **`dial.ts`**: DIAL provider implementation
+- **`moonshot.ts`**: Moonshot provider implementation
 - **`index.ts`**: Exports all providers and utilities
 
 Each provider file contains:
@@ -199,6 +201,7 @@ providers/
 │   ├── ollama.ts          # Ollama provider
 │   ├── lmstudio.ts        # LMStudio provider
 │   ├── dial.ts            # DIAL provider
+│   ├── moonshot.ts        # Moonshot provider
 │   └── index.ts           # Provider registry and exports
 ├── examples/               # Custom provider examples
 │   ├── custom-provider.ts # Example custom provider

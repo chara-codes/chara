@@ -339,10 +339,6 @@ export namespace ModelFetcher {
         ownedBy: model.owned_by,
       }));
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      const isTimeout = errorMessage === "Request timeout";
-
       return handleFetchError(
         error,
         "DeepSeek",
@@ -395,6 +391,45 @@ export namespace ModelFetcher {
         `https://generativelanguage.googleapis.com/v1beta/models?key=${await getVarFromEnvOrGlobalConfig(
           "GOOGLE_GENERATIVE_AI_API_KEY"
         )}`
+      );
+    }
+  }
+
+  /**
+   * Fetches available models from Moonshot API
+   * @returns Array of Moonshot models or fallback models if API fails
+   */
+  export async function fetchMoonshotModels(): Promise<ModelInfo[]> {
+    try {
+      const response = await withTimeout(
+        fetch("https://api.moonshot.ai/v1/models", {
+          headers: {
+            Authorization: `Bearer ${await getVarFromEnvOrGlobalConfig(
+              "MOONSHOT_API_KEY"
+            )}`,
+            "Content-Type": "application/json",
+          },
+        })
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Moonshot API error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = (await response.json()) as OpenAIModelsResponse;
+      return data.data.map((model: OpenAIModel) => ({
+        id: model.id,
+        name: model.id,
+        created: model.created,
+        ownedBy: model.owned_by,
+      }));
+    } catch (error) {
+      return handleFetchError(
+        error,
+        "Moonshot",
+        "https://api.moonshot.ai/v1/models"
       );
     }
   }

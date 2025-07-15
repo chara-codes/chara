@@ -10,6 +10,7 @@ import {
   ollamaProvider,
   lmstudioProvider,
   dialProvider,
+  moonshotProvider,
   type BaseProvider,
   AbstractProvider,
 } from "../providers";
@@ -38,7 +39,7 @@ describe("New Provider Structure", () => {
   test("should export all required providers", () => {
     expect(allProviders).toBeDefined();
     expect(providerKeys).toBeDefined();
-    expect(providerKeys.length).toBe(8);
+    expect(providerKeys.length).toBe(9);
 
     // Check that all expected providers are present
     expect(providerKeys).toContain("openai");
@@ -49,6 +50,7 @@ describe("New Provider Structure", () => {
     expect(providerKeys).toContain("ollama");
     expect(providerKeys).toContain("lmstudio");
     expect(providerKeys).toContain("dial");
+    expect(providerKeys).toContain("moonshot");
   });
 
   test("should export individual provider instances", () => {
@@ -60,6 +62,7 @@ describe("New Provider Structure", () => {
     expect(ollamaProvider).toBeDefined();
     expect(lmstudioProvider).toBeDefined();
     expect(dialProvider).toBeDefined();
+    expect(moonshotProvider).toBeDefined();
   });
 
   test("provider instances should have correct properties", () => {
@@ -84,6 +87,11 @@ describe("New Provider Structure", () => {
     expect(dialProvider.requiresApiKey).toBe(true);
     expect(dialProvider.apiKeyEnvVar).toBe("DIAL_API_KEY");
     expect(dialProvider.baseUrlEnvVar).toBe("DIAL_API_BASE_URL");
+
+    expect(moonshotProvider.key).toBe("moonshot");
+    expect(moonshotProvider.name).toBe("Moonshot");
+    expect(moonshotProvider.requiresApiKey).toBe(true);
+    expect(moonshotProvider.apiKeyEnvVar).toBe("MOONSHOT_API_KEY");
   });
 
   test("provider instances should implement BaseProvider interface", () => {
@@ -96,6 +104,7 @@ describe("New Provider Structure", () => {
       ollamaProvider,
       lmstudioProvider,
       dialProvider,
+      moonshotProvider,
     ];
 
     providers.forEach((provider) => {
@@ -120,6 +129,7 @@ describe("New Provider Structure", () => {
     process.env.LMSTUDIO_API_BASE_URL = "http://localhost:1234/v1";
     process.env.DIAL_API_KEY = "test-dial-key";
     process.env.DIAL_API_BASE_URL = "http://localhost:8080";
+    process.env.MOONSHOT_API_KEY = "test-moonshot-key";
 
     // Test providers that require API keys
     expect(await openaiProvider.canInitialize()).toBe(true);
@@ -128,6 +138,7 @@ describe("New Provider Structure", () => {
     expect(await deepseekProvider.canInitialize()).toBe(true);
     expect(await openrouterProvider.canInitialize()).toBe(true);
     expect(await dialProvider.canInitialize()).toBe(true);
+    expect(await moonshotProvider.canInitialize()).toBe(true);
 
     // Test providers that don't require API keys
     expect(await ollamaProvider.canInitialize()).toBe(true);
@@ -143,6 +154,7 @@ describe("New Provider Structure", () => {
     delete process.env.OPEN_ROUTER_API_KEY;
     delete process.env.DIAL_API_KEY;
     delete process.env.DIAL_API_BASE_URL;
+    delete process.env.MOONSHOT_API_KEY;
 
     // Test providers that require API keys
     expect(await openaiProvider.canInitialize()).toBe(false);
@@ -151,6 +163,7 @@ describe("New Provider Structure", () => {
     expect(await deepseekProvider.canInitialize()).toBe(false);
     expect(await openrouterProvider.canInitialize()).toBe(false);
     expect(await dialProvider.canInitialize()).toBe(false);
+    expect(await moonshotProvider.canInitialize()).toBe(false);
 
     // Test providers that don't require API keys but need URLs
     // These should still work with default URLs
@@ -169,6 +182,7 @@ describe("New Provider Structure", () => {
     process.env.LMSTUDIO_API_BASE_URL = "http://localhost:1234/v1";
     process.env.DIAL_API_KEY = "test-dial-key";
     process.env.DIAL_API_BASE_URL = "http://localhost:8080";
+    process.env.MOONSHOT_API_KEY = "test-moonshot-key";
 
     // Test that providers can create factories
     const openaiFactory = await openaiProvider.createProvider();
@@ -179,6 +193,7 @@ describe("New Provider Structure", () => {
     const ollamaFactory = await ollamaProvider.createProvider();
     const lmstudioFactory = await lmstudioProvider.createProvider();
     const dialFactory = await dialProvider.createProvider();
+    const moonshotFactory = await moonshotProvider.createProvider();
 
     expect(typeof openaiFactory).toBe("function");
     expect(typeof anthropicFactory).toBe("function");
@@ -188,6 +203,7 @@ describe("New Provider Structure", () => {
     expect(typeof ollamaFactory).toBe("function");
     expect(typeof lmstudioFactory).toBe("function");
     expect(typeof dialFactory).toBe("function");
+    expect(typeof moonshotFactory).toBe("function");
   });
 
   test("providers should have fetchModels method", async () => {
@@ -200,6 +216,7 @@ describe("New Provider Structure", () => {
       ollamaProvider,
       lmstudioProvider,
       dialProvider,
+      moonshotProvider,
     ];
 
     for (const provider of providers) {
@@ -246,6 +263,7 @@ describe("New Provider Structure", () => {
     expect(allProviders.ollama).toBe(ollamaProvider);
     expect(allProviders.lmstudio).toBe(lmstudioProvider);
     expect(allProviders.dial).toBe(dialProvider);
+    expect(allProviders.moonshot).toBe(moonshotProvider);
   });
 
   test("providerKeys should match allProviders keys", () => {

@@ -345,6 +345,24 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     recommended: false,
     approved: true,
   },
+  {
+    id: "kimi-latest",
+    name: "Kimi Latest",
+    provider: "moonshot",
+    contextSize: 128000,
+    hasTools: true,
+    recommended: false,
+    approved: true,
+  },
+  {
+    id: "kimi-k2-0711-preview",
+    name: "Kimi K2 Preview",
+    provider: "moonshot",
+    contextSize: 128000,
+    hasTools: true,
+    recommended: false,
+    approved: true,
+  },
 ];
 
 interface GlobalConfigWithModels {
@@ -359,7 +377,7 @@ interface GlobalConfigWithModels {
  * Returns default whitelist if no custom config exists
  */
 export const getModelsWhitelist = async (
-  configFile?: string,
+  configFile?: string
 ): Promise<ModelConfig[]> => {
   try {
     if (!(await existsGlobalConfig(configFile))) {
@@ -367,7 +385,7 @@ export const getModelsWhitelist = async (
     }
 
     const config = (await readGlobalConfig(
-      configFile,
+      configFile
     )) as GlobalConfigWithModels;
     const customWhitelist = config.models?.whitelist;
     const customModels = config.models?.customModels || [];
@@ -390,7 +408,7 @@ export const getModelsWhitelist = async (
  */
 export const setModelsWhitelist = async (
   models: ModelConfig[],
-  configFile?: string,
+  configFile?: string
 ): Promise<void> => {
   await updateGlobalConfig(
     {
@@ -398,7 +416,7 @@ export const setModelsWhitelist = async (
         whitelist: models,
       },
     },
-    configFile,
+    configFile
   );
 };
 
@@ -407,7 +425,7 @@ export const setModelsWhitelist = async (
  */
 export const addCustomModel = async (
   model: ModelConfig,
-  configFile?: string,
+  configFile?: string
 ): Promise<void> => {
   const config = (await existsGlobalConfig(configFile))
     ? ((await readGlobalConfig(configFile)) as GlobalConfigWithModels)
@@ -433,7 +451,7 @@ export const addCustomModel = async (
         customModels,
       },
     },
-    configFile,
+    configFile
   );
 };
 
@@ -442,7 +460,7 @@ export const addCustomModel = async (
  */
 export const removeCustomModel = async (
   modelId: string,
-  configFile?: string,
+  configFile?: string
 ): Promise<void> => {
   const config = (await existsGlobalConfig(configFile))
     ? ((await readGlobalConfig(configFile)) as GlobalConfigWithModels)
@@ -458,7 +476,7 @@ export const removeCustomModel = async (
         customModels: filteredModels,
       },
     },
-    configFile,
+    configFile
   );
 };
 
@@ -466,7 +484,7 @@ export const removeCustomModel = async (
  * Get only custom models added by the user
  */
 export const getCustomModels = async (
-  configFile?: string,
+  configFile?: string
 ): Promise<ModelConfig[]> => {
   try {
     if (!(await existsGlobalConfig(configFile))) {
@@ -474,7 +492,7 @@ export const getCustomModels = async (
     }
 
     const config = (await readGlobalConfig(
-      configFile,
+      configFile
     )) as GlobalConfigWithModels;
     return config.models?.customModels || [];
   } catch (error) {
@@ -486,7 +504,7 @@ export const getCustomModels = async (
  * Reset models whitelist to default
  */
 export const resetModelsWhitelist = async (
-  configFile?: string,
+  configFile?: string
 ): Promise<void> => {
   await updateGlobalConfig(
     {
@@ -495,7 +513,7 @@ export const resetModelsWhitelist = async (
         customModels: [], // Also clear custom models
       },
     },
-    configFile,
+    configFile
   );
 };
 
@@ -503,7 +521,7 @@ export const resetModelsWhitelist = async (
  * Get recommended models from the whitelist
  */
 export const getRecommendedModels = async (
-  configFile?: string,
+  configFile?: string
 ): Promise<ModelConfig[]> => {
   const whitelist = await getModelsWhitelist(configFile);
   return whitelist.filter((model) => model.recommended);
@@ -513,7 +531,7 @@ export const getRecommendedModels = async (
  * Get approved models from the whitelist
  */
 export const getApprovedModels = async (
-  configFile?: string,
+  configFile?: string
 ): Promise<ModelConfig[]> => {
   const whitelist = await getModelsWhitelist(configFile);
   return whitelist.filter((model) => model.approved);
@@ -524,7 +542,7 @@ export const getApprovedModels = async (
  */
 export const getModelsByProvider = async (
   provider: string,
-  configFile?: string,
+  configFile?: string
 ): Promise<ModelConfig[]> => {
   const whitelist = await getModelsWhitelist(configFile);
   return whitelist.filter((model) => model.provider === provider);
@@ -534,7 +552,7 @@ export const getModelsByProvider = async (
  * Get models with tool support
  */
 export const getModelsWithTools = async (
-  configFile?: string,
+  configFile?: string
 ): Promise<ModelConfig[]> => {
   const whitelist = await getModelsWhitelist(configFile);
   return whitelist.filter((model) => model.hasTools);
@@ -545,7 +563,7 @@ export const getModelsWithTools = async (
  */
 export const findModelById = async (
   modelId: string,
-  configFile?: string,
+  configFile?: string
 ): Promise<ModelConfig | undefined> => {
   const whitelist = await getModelsWhitelist(configFile);
   return whitelist.find((model) => model.id === modelId);
@@ -556,7 +574,7 @@ export const findModelById = async (
  */
 export const isModelWhitelisted = async (
   modelId: string,
-  configFile?: string,
+  configFile?: string
 ): Promise<boolean> => {
   const model = await findModelById(modelId, configFile);
   return model !== undefined;

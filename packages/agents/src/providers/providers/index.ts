@@ -10,6 +10,7 @@ export { OpenRouterProvider, openrouterProvider } from "./openrouter";
 export { OllamaProvider, ollamaProvider } from "./ollama";
 export { LMStudioProvider, lmstudioProvider } from "./lmstudio";
 export { DIALProvider, dialProvider } from "./dial";
+export { MoonshotProvider, moonshotProvider } from "./moonshot";
 
 // Import provider instances for registry
 import { openaiProvider } from "./openai";
@@ -20,6 +21,7 @@ import { openrouterProvider } from "./openrouter";
 import { ollamaProvider } from "./ollama";
 import { lmstudioProvider } from "./lmstudio";
 import { dialProvider } from "./dial";
+import { moonshotProvider } from "./moonshot";
 
 // Export all provider instances as a registry
 export const allProviders = {
@@ -31,6 +33,7 @@ export const allProviders = {
   ollama: ollamaProvider,
   lmstudio: lmstudioProvider,
   dial: dialProvider,
+  moonshot: moonshotProvider,
 };
 
 // Export provider keys for easy iteration

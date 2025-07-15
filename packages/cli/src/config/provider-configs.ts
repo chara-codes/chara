@@ -68,4 +68,11 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     additionalEnvKeys: ["DIAL_API_BASE_URL"],
     helpUrl: "https://epam-rail.com/dial_api",
   },
+  moonshot: {
+    name: "Moonshot",
+    envKey: "MOONSHOT_API_KEY",
+    description: "Moonshot AI",
+    requiresApiKey: true,
+    helpUrl: "https://platform.moonshot.ai/console/api-keys",
+  },
 };
