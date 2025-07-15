@@ -10,16 +10,16 @@ const CORS_HEADERS = {
 export const gitController = {
   OPTIONS: () => new Response("", { headers: CORS_HEADERS }),
 
-  async resetToCommit(req: Request) {
+  POST: async (req: Request) => {
     try {
-      const { commit } = await req.json() as { commit: string };
+      const { commit } = (await req.json()) as { commit: string };
 
       if (!commit) {
         return Response.json(
           { error: "Commit hash is required" },
           {
             status: 400,
-            headers: CORS_HEADERS
+            headers: CORS_HEADERS,
           }
         );
       }
@@ -32,7 +32,7 @@ export const gitController = {
           { error: "Repository not initialized" },
           {
             status: 400,
-            headers: CORS_HEADERS
+            headers: CORS_HEADERS,
           }
         );
       }
@@ -46,11 +46,10 @@ export const gitController = {
         {
           success: true,
           message: `Reset to commit ${commit}`,
-          commit
+          commit,
         },
         { headers: CORS_HEADERS }
       );
-
     } catch (error) {
       logger.error("Failed to reset to commit:", error);
 
@@ -61,7 +60,7 @@ export const gitController = {
         },
         {
           status: 500,
-          headers: CORS_HEADERS
+          headers: CORS_HEADERS,
         }
       );
     }
