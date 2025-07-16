@@ -140,6 +140,15 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
   },
   // OpenRouter
   {
+    id: "moonshotai/kimi-k2",
+    name: "MoonshotAI: Kimi K2",
+    provider: "openrouter",
+    contextSize: 131000,
+    hasTools: true,
+    recommended: false,
+    approved: true,
+  },
+  {
     id: "anthropic/claude-opus-4",
     name: "Claude Opus 4",
     provider: "openrouter",
@@ -345,6 +354,7 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     recommended: false,
     approved: true,
   },
+  // MoonshotAi
   {
     id: "kimi-latest",
     name: "Kimi Latest",

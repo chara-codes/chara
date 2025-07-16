@@ -9,6 +9,7 @@ import { fileSystem } from "./file-system";
 import { runner } from "./runner";
 import { examination } from "./examination";
 import { mkdir } from "./mkdir";
+import { directory } from "./directory";
 
 // Tools for write mode - all tools available for interactive development
 export const chatToolsWriteMode = {
@@ -16,24 +17,26 @@ export const chatToolsWriteMode = {
   "edit-file": editFile,
   "file-system": fileSystem,
   "move-file": moveFile,
-  mkdir: mkdir,
-  grep: grep,
+  mkdir,
+  directory,
+  grep,
   fetch: fetchTool,
-  terminal: terminal,
-  thinking: thinking,
-  runner: runner,
-  examination: examination,
+  terminal,
+  thinking,
+  runner,
+  examination,
 };
 
 // Tools for ask mode - read-only tools that don't modify the system
 export const chatToolsAskMode = {
   "read-file": readFile,
   "file-system": fileSystem,
-  grep: grep,
+  grep,
   fetch: fetchTool,
-  thinking: thinking,
-  runner: runner,
-  examination: examination,
+  thinking,
+  directory,
+  runner,
+  examination,
 };
 
 // Legacy export for backward compatibility

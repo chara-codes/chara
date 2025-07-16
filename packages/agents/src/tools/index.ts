@@ -6,6 +6,7 @@ import { terminal } from "./terminal";
 import { grep } from "./grep";
 import { thinking } from "./thinking";
 import { fileSystem } from "./file-system";
+import { directory } from "./directory";
 import { mkdir } from "./mkdir";
 import { runner } from "./runner";
 import { examination } from "./examination";
@@ -19,6 +20,7 @@ export { initTools } from "./init-tools";
 // Export individual tools
 export { mkdir };
 export { fileSystem };
+export { directory };
 
 // Modern tool exports with new unified file system tool
 export const modernTools = {
@@ -26,6 +28,7 @@ export const modernTools = {
   "edit-file": editFile,
   "move-file": moveFile,
   "file-system": fileSystem,
+  directory: directory,
   mkdir: mkdir,
   fetch: fetchTool,
   terminal: terminal,
@@ -41,6 +44,7 @@ export const tools = {
   "edit-file": editFile,
   "move-file": moveFile,
   "file-system": fileSystem, // Unified file system tool
+  directory: directory,
   mkdir: mkdir,
   fetch: fetchTool,
   terminal: terminal,

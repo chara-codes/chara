@@ -14,8 +14,9 @@
   "devDependencies": {
     "@ai-sdk/provider": "^1.1.3",
     "@biomejs/biome": "^2.1.1",
+    "@chara-codes/server": "workspace:*",
     "@types/bun": "latest",
-    "@chara-codes/server": "workspace:*"
+    "@types/ignore-walk": "^4.0.3"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
@@ -34,6 +35,7 @@
     "cli-spinners": "^3.2.0",
     "globby": "^14.1.0",
     "ignore": "^7.0.5",
+    "ignore-walk": "^7.0.0",
     "isomorphic-git": "^1.32.1",
     "node-html-markdown": "^1.3.0",
     "ollama-ai-provider": "^1.2.0",

@@ -44,7 +44,17 @@ export class OpenRouterProvider extends AbstractProvider {
       apiKey: apiKey,
     });
 
-    return (modelId: string) => openRouterProvider(modelId);
+    return (modelId: string) => {
+      return openRouterProvider(modelId, {
+        extraBody: modelId.includes("moonshotai")
+          ? {
+              provider: {
+                order: ["moonshotai"],
+              },
+            }
+          : {},
+      });
+    };
   }
 
   /**

@@ -1,29 +1,20 @@
 import { tool } from "ai";
-import z from "zod";
-import { readdir, stat } from "node:fs/promises";
-import { resolve, join } from "node:path";
 import { globby } from "globby";
-import { readFile as fsReadFile } from "node:fs/promises";
+import ignore from "ignore";
 import { existsSync } from "node:fs";
+import { readFile as fsReadFile, readdir, stat } from "node:fs/promises";
 import {
-  platform,
   arch,
-  release,
-  hostname,
   cpus,
-  totalmem,
   freemem,
+  hostname,
+  platform,
+  release,
+  totalmem,
   uptime,
 } from "node:os";
-import ignore from "ignore";
-import { dirname, relative } from "node:path";
-
-interface TreeEntry {
-  name: string;
-  type: "file" | "directory";
-  size?: number;
-  children?: TreeEntry[];
-}
+import { dirname, join, relative, resolve } from "node:path";
+import z from "zod";
 
 interface DirectoryStats {
   totalFiles: number;
@@ -373,14 +364,10 @@ export const fileSystem = tool({
   description: `Comprehensive file system management tool with multiple operations:
 
 **Directory Operations:**
-- **list**: Get a flat listing of files and directories with type indicators
-- **tree**: Get a recursive tree structure as JSON with optional depth limit
-- **current**: Get the current working directory path
 - **stats**: Get detailed statistics about directory contents
 - **find**: Search for files and directories using glob patterns (defaults to '**/*' if no pattern provided)
 
 **File Operations:**
-- **read**: Read the contents of a file
 - **info**: Get detailed metadata about a specific file or directory (size, timestamps, permissions)
 
 **Environment Information:**
@@ -390,8 +377,6 @@ export const fileSystem = tool({
 - Full .gitignore support (reads .gitignore files up the directory tree)
 - Automatic exclusion of .chara, node_modules, .git directories and common build/cache folders
 - Support for hidden files and special characters
-- Configurable depth limits for tree operations
-- File size information where applicable
 - Glob pattern matching for powerful file finding
 - Detailed error handling and validation
 - System and runtime information
@@ -400,9 +385,7 @@ export const fileSystem = tool({
   parameters: z.object({
     action: z
       .string()
-      .describe(
-        "Operation to perform: 'list', 'tree', 'current', 'stats', 'find', 'read', 'info', or 'env'"
-      ),
+      .describe("Operation to perform: 'stats', 'find', 'info', or 'env'"),
 
     path: z
       .string()
@@ -495,16 +478,7 @@ export const fileSystem = tool({
       const workingPath = path || process.cwd();
 
       // Validate action and provide suggestions if invalid
-      const validActions = [
-        "list",
-        "tree",
-        "current",
-        "stats",
-        "find",
-        "info",
-        "env",
-        "read",
-      ];
+      const validActions = ["stats", "find", "info", "env"];
       if (!validActions.includes(action)) {
         const errorResponse = {
           error: true,
@@ -563,30 +537,6 @@ export const fileSystem = tool({
 
       try {
         switch (action) {
-          case "current":
-            return {
-              operation: "current",
-              path: process.cwd(),
-              absolutePath: resolve(process.cwd()),
-            };
-
-          case "list":
-            return await listDirectory(
-              workingPath,
-              includeHidden,
-              includeSize,
-              respectGitignore
-            );
-
-          case "tree":
-            return await getDirectoryTree(
-              workingPath,
-              maxDepth,
-              includeHidden,
-              includeSize,
-              respectGitignore
-            );
-
           case "stats":
             return await getDirectoryStats(
               workingPath,
@@ -619,26 +569,11 @@ export const fileSystem = tool({
               includeProject
             );
 
-          case "read":
-            if (!path) {
-              throw new Error("Path is required for read operation");
-            }
-            return await readFileContents(path);
-
           default:
             return {
               error: true,
               suggestion: getActionSuggestion(action),
-              validActions: [
-                "list",
-                "tree",
-                "current",
-                "stats",
-                "find",
-                "info",
-                "env",
-                "read",
-              ],
+              validActions: ["stats", "find", "info", "env"],
               providedAction: action,
               message:
                 "Invalid action provided. Please use one of the valid actions.",
@@ -764,231 +699,6 @@ export const fileSystem = tool({
   },
 });
 
-async function listDirectory(
-  dirPath: string,
-  includeHidden: boolean,
-  includeSize: boolean,
-  respectGitignore: boolean
-) {
-  try {
-    const entries = await readdir(dirPath, { withFileTypes: true });
-    const gitignoreManager = respectGitignore
-      ? await createGitignoreManager(dirPath)
-      : null;
-
-    const items: Array<{
-      name: string;
-      type: "file" | "directory";
-      size?: number;
-      hidden: boolean;
-      ignored?: boolean;
-    }> = [];
-
-    // Limit entries to prevent overflow
-    const limitedEntries = entries.slice(0, 2000);
-    if (entries.length > 2000) {
-      console.warn(
-        `Directory ${dirPath} has ${entries.length} entries, limiting to 2000`
-      );
-    }
-
-    for (const entry of limitedEntries) {
-      const isHidden = entry.name.startsWith(".");
-      const isAlwaysIgnoredItem = isAlwaysIgnored(entry.name);
-
-      // Always skip certain directories
-      if (isAlwaysIgnoredItem) {
-        continue;
-      }
-
-      // Skip hidden files if not requested
-      if (!includeHidden && isHidden && !isImportantHiddenFile(entry.name)) {
-        continue;
-      }
-
-      // Check gitignore rules
-      const isIgnored =
-        gitignoreManager?.isIgnored(entry.name, dirPath, entry.isDirectory()) ||
-        false;
-      if (respectGitignore && isIgnored) {
-        continue;
-      }
-
-      const item: any = {
-        name: entry.name,
-        type: entry.isDirectory() ? "directory" : "file",
-        hidden: isHidden,
-      };
-
-      if (respectGitignore) {
-        item.ignored = isIgnored;
-      }
-
-      if (includeSize && entry.isFile()) {
-        try {
-          const stats = await stat(resolve(dirPath, entry.name));
-          item.size = stats.size;
-        } catch {
-          // Skip size if can't read stats
-        }
-      }
-
-      items.push(item);
-    }
-
-    const formatted = items
-      .map((item) => {
-        const typeIndicator = item.type === "directory" ? "[DIR]" : "[FILE]";
-        const sizeInfo =
-          item.size !== undefined ? ` (${formatBytes(item.size)})` : "";
-        const hiddenIndicator = item.hidden ? " (hidden)" : "";
-        const ignoredIndicator = item.ignored ? " (ignored)" : "";
-        return `${typeIndicator} ${item.name}${sizeInfo}${hiddenIndicator}${ignoredIndicator}`;
-      })
-      .join("\n");
-
-    const result = {
-      operation: "list",
-      path: dirPath,
-      count: items.length,
-      items,
-      respectGitignore,
-      formatted: formatted || "Directory is empty",
-    };
-
-    // Add warning if we hit the limit
-    if (entries.length > 2000) {
-      result.warning = `Directory contains ${entries.length} entries, showing first 2000. Use 'find' action with patterns for more specific results.`;
-    }
-
-    return result;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to list directory: ${errorMessage}`);
-  }
-}
-
-async function getDirectoryTree(
-  dirPath: string,
-  maxDepth?: number,
-  includeHidden: boolean = false,
-  includeSize: boolean = false,
-  respectGitignore: boolean = true,
-  currentDepth: number = 0
-): Promise<any> {
-  try {
-    const gitignoreManager = respectGitignore
-      ? await createGitignoreManager(dirPath)
-      : null;
-
-    async function buildTree(
-      currentPath: string,
-      depth: number = 0
-    ): Promise<TreeEntry[]> {
-      if (maxDepth !== undefined && depth >= maxDepth) {
-        return [];
-      }
-
-      try {
-        const entries = await readdir(currentPath, { withFileTypes: true });
-        const result: TreeEntry[] = [];
-
-        // Limit the number of entries to prevent overflow
-        const limitedEntries = entries.slice(0, 1000);
-        if (entries.length > 1000) {
-          console.warn(
-            `Directory ${currentPath} has ${entries.length} entries, limiting to 1000`
-          );
-        }
-
-        for (const entry of limitedEntries) {
-          const isHidden = entry.name.startsWith(".");
-          const isAlwaysIgnoredItem = isAlwaysIgnored(entry.name);
-
-          // Always skip certain directories
-          if (isAlwaysIgnoredItem) {
-            continue;
-          }
-
-          // Skip hidden files if not requested
-          if (
-            !includeHidden &&
-            isHidden &&
-            !isImportantHiddenFile(entry.name)
-          ) {
-            continue;
-          }
-
-          // Check gitignore rules
-          const entryPath = resolve(currentPath, entry.name);
-          const relativePath = relative(dirPath, entryPath);
-          const isIgnored =
-            gitignoreManager?.isIgnored(
-              relativePath,
-              dirPath,
-              entry.isDirectory()
-            ) || false;
-
-          if (respectGitignore && isIgnored) {
-            continue;
-          }
-
-          const entryData: TreeEntry = {
-            name: entry.name,
-            type: entry.isDirectory() ? "directory" : "file",
-          };
-
-          if (includeSize && entry.isFile()) {
-            try {
-              const stats = await stat(entryPath);
-              entryData.size = stats.size;
-            } catch {
-              // Skip size if can't read stats
-            }
-          }
-
-          if (entry.isDirectory()) {
-            try {
-              entryData.children = await buildTree(entryPath, depth + 1);
-            } catch {
-              // Skip subdirectory if it can't be read
-              entryData.children = [];
-            }
-          }
-
-          result.push(entryData);
-        }
-
-        return result;
-      } catch (error) {
-        // Return empty array instead of throwing
-        console.warn(
-          `Failed to read directory ${currentPath}: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
-        return [];
-      }
-    }
-
-    const tree = await buildTree(dirPath, currentDepth);
-
-    return {
-      operation: "tree",
-      path: dirPath,
-      maxDepth: maxDepth || "unlimited",
-      includeHidden,
-      includeSize,
-      respectGitignore,
-      tree,
-      formatted: JSON.stringify(tree, null, 2),
-    };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to build directory tree: ${errorMessage}`);
-  }
-}
-
 async function getDirectoryStats(
   dirPath: string,
   includeHidden: boolean,
@@ -1112,32 +822,6 @@ async function getDirectoryStats(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to collect directory statistics: ${errorMessage}`);
-  }
-}
-
-async function readFileContents(filePath: string) {
-  try {
-    const { readFile, stat } = await import("fs/promises");
-    const stats = await stat(filePath);
-
-    if (stats.isDirectory()) {
-      throw new Error(`Path is a directory, not a file: ${filePath}`);
-    }
-
-    const content = await readFile(filePath, "utf-8");
-
-    return {
-      operation: "read",
-      path: filePath,
-      absolutePath: resolve(filePath),
-      size: stats.size,
-      content,
-      encoding: "utf-8",
-      message: `Successfully read file: ${filePath}`,
-    };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to read file: ${errorMessage}`);
   }
 }
 

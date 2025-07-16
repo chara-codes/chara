@@ -39,6 +39,7 @@
   "dependencies": {
     "@changesets/cli": "^2.29.5",
     "http-proxy": "^1.18.1",
+    "pretty-bytes": "^7.0.0",
     "turbo": "^2.5.4"
   }
 }
