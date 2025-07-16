@@ -10,6 +10,7 @@ import { runner } from "./runner";
 import { examination } from "./examination";
 import { mkdir } from "./mkdir";
 import { directory } from "./directory";
+import { find } from "./find";
 
 // Tools for write mode - all tools available for interactive development
 export const chatToolsWriteMode = {
@@ -18,6 +19,7 @@ export const chatToolsWriteMode = {
   "file-system": fileSystem,
   "move-file": moveFile,
   mkdir,
+  find,
   directory,
   grep,
   fetch: fetchTool,
@@ -32,6 +34,7 @@ export const chatToolsAskMode = {
   "read-file": readFile,
   "file-system": fileSystem,
   grep,
+  find,
   fetch: fetchTool,
   thinking,
   directory,

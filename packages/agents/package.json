@@ -33,6 +33,7 @@
     "@trpc/client": "^11.4.3",
     "ai": "^4.3.17",
     "cli-spinners": "^3.2.0",
+    "find-up": "^7.0.0",
     "globby": "^14.1.0",
     "ignore": "^7.0.5",
     "ignore-walk": "^7.0.0",

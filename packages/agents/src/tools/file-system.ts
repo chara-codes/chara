@@ -1,5 +1,4 @@
 import { tool } from "ai";
-import { globby } from "globby";
 import ignore from "ignore";
 import { existsSync } from "node:fs";
 import { readFile as fsReadFile, readdir, stat } from "node:fs/promises";
@@ -22,6 +21,7 @@ interface DirectoryStats {
   totalSize: number;
   hiddenItems: number;
   ignoredItems: number;
+  warning?: string;
 }
 
 interface FileInfo {
@@ -50,6 +50,60 @@ interface CharaConfig {
     languages?: string[];
     projectType?: string;
   };
+}
+
+interface EnvironmentInfo {
+  operation: string;
+  workingDirectory: string;
+  timestamp: string;
+  project?: {
+    hasCharaConfig?: boolean;
+    dev?: string;
+    info?: {
+      name?: string;
+      description?: string;
+      version?: string;
+      frameworks?: string[];
+      tools?: string[];
+      stack?: string[];
+      packageManager?: string;
+      scripts?: Record<string, string>;
+      dependencies?: string[];
+      devDependencies?: string[];
+      languages?: string[];
+      projectType?: string;
+    };
+    message?: string;
+    error?: string;
+    files?: Record<string, boolean>;
+  };
+  system?: {
+    platform: string;
+    architecture: string;
+    release: string;
+    hostname: string;
+    uptime: number;
+    cpu: {
+      model: string;
+      cores: number;
+    };
+    memory: {
+      total: number;
+      free: number;
+      used: number;
+    };
+    nodeVersion: string;
+    environment: string;
+  };
+  runtime?: {
+    isBun: boolean;
+    isNode: boolean;
+    nodeVersion: string | null;
+    processId: number;
+    processTitle: string;
+    execPath: string;
+  };
+  environment?: Record<string, string>;
 }
 
 interface GitignoreManager {
@@ -220,7 +274,7 @@ function getActionSuggestion(invalidAction: string): string {
           bestScore = score;
           bestMatch = validAction;
         }
-      } catch (error) {
+      } catch (_error) {
         // Skip similarity calculation if it fails
         continue;
       }
@@ -247,7 +301,7 @@ function calculateSimilarity(str1: string, str2: string): number {
   try {
     const editDistance = levenshteinDistance(longer, shorter);
     return (longer.length - editDistance) / longer.length;
-  } catch (error) {
+  } catch (_error) {
     // Return 0 similarity if calculation fails
     return 0.0;
   }
@@ -256,92 +310,27 @@ function calculateSimilarity(str1: string, str2: string): number {
 // Levenshtein distance calculation with safety checks
 function levenshteinDistance(str1: string, str2: string): number {
   // Safety checks to prevent array overflow
-  if (str1.length > 1000 || str2.length > 1000) {
+  if (str1.length > 100 || str2.length > 100) {
     return Math.max(str1.length, str2.length);
   }
 
   if (str1.length === 0) return str2.length;
   if (str2.length === 0) return str1.length;
 
-  const matrix = Array(str2.length + 1)
-    .fill(null)
-    .map(() => Array(str1.length + 1).fill(null));
+  // Simple character difference count for small strings
+  let differences = 0;
+  const minLength = Math.min(str1.length, str2.length);
 
-  for (let i = 0; i <= str1.length; i++) {
-    matrix[0][i] = i;
-  }
-
-  for (let j = 0; j <= str2.length; j++) {
-    matrix[j][0] = j;
-  }
-
-  for (let j = 1; j <= str2.length; j++) {
-    for (let i = 1; i <= str1.length; i++) {
-      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
-      matrix[j][i] = Math.min(
-        matrix[j][i - 1] + 1,
-        matrix[j - 1][i] + 1,
-        matrix[j - 1][i - 1] + indicator
-      );
+  for (let i = 0; i < minLength; i++) {
+    if (str1[i] !== str2[i]) {
+      differences++;
     }
   }
 
-  return matrix[str2.length][str1.length];
-}
+  // Add length difference
+  differences += Math.abs(str1.length - str2.length);
 
-// Helper function to preprocess patterns to prevent overflow
-function preprocessPattern(pattern: string): string {
-  // Handle empty or whitespace patterns
-  if (!pattern || pattern.trim() === "") {
-    return "**/*";
-  }
-
-  // Handle bare wildcard patterns
-  if (pattern === "*" || pattern === "**") {
-    return "**/*";
-  }
-
-  // Handle question mark only patterns
-  if (pattern === "?" || pattern === "??") {
-    return "**/*";
-  }
-
-  // Handle patterns like *tic*toe* which can cause overflow
-  if (
-    pattern.includes("*") &&
-    !pattern.includes("|") &&
-    !pattern.startsWith("**")
-  ) {
-    const segments = pattern.split("*").filter((s) => s.length > 0);
-
-    // If no segments (like bare "*" or "**"), convert to safe recursive pattern
-    if (segments.length === 0) {
-      return "**/*";
-    }
-
-    // For simple patterns like *tic*, convert to recursive search
-    if (segments.length === 1) {
-      return `**/*${segments[0]}*`;
-    }
-
-    // If we have multiple segments with wildcards, convert to safer alternatives
-    if (segments.length > 1 && segments.length <= 3) {
-      // For moderate complexity, keep the original pattern but make it recursive
-      return `**/${pattern}`;
-    }
-
-    // For very complex patterns, use brace expansion
-    if (segments.length > 3 && segments.length <= 5) {
-      return `**/*{${segments.join(",")}}*`;
-    }
-
-    // For extremely complex patterns, just use the first segment
-    if (segments.length > 5) {
-      return `**/*${segments[0]}*`;
-    }
-  }
-
-  return pattern;
+  return differences;
 }
 
 export const fileSystem = tool({
@@ -349,7 +338,6 @@ export const fileSystem = tool({
 
 **Directory Operations:**
 - **stats**: Get detailed statistics about directory contents
-- **find**: Search for files and directories using glob patterns (defaults to '**/*' if no pattern provided)
 
 **File Operations:**
 - **info**: Get detailed metadata about a specific file or directory (size, timestamps, permissions)
@@ -361,7 +349,6 @@ export const fileSystem = tool({
 - Full .gitignore support (reads .gitignore files up the directory tree)
 - Automatic exclusion of .chara, node_modules, .git directories and common build/cache folders
 - Support for hidden files and special characters
-- Glob pattern matching for powerful file finding
 - Detailed error handling and validation
 - System and runtime information
 - Project configuration analysis`,
@@ -369,7 +356,7 @@ export const fileSystem = tool({
   parameters: z.object({
     action: z
       .string()
-      .describe("Operation to perform: 'stats', 'find', 'info', or 'env'"),
+      .describe("Operation to perform: 'stats', 'info', or 'env'"),
 
     path: z
       .string()
@@ -390,23 +377,6 @@ export const fileSystem = tool({
       .boolean()
       .default(false)
       .describe("Include hidden files and directories (starting with .)"),
-
-    includeSize: z
-      .boolean()
-      .default(false)
-      .describe("Include file sizes in tree and list operations"),
-
-    pattern: z
-      .string()
-      .optional()
-      .describe(
-        "Glob pattern for find operation (e.g., '**/*.js', '*.txt'). Defaults to '**/*' if not specified."
-      ),
-
-    excludePatterns: z
-      .array(z.string())
-      .default([])
-      .describe("Additional glob patterns to exclude from results"),
 
     respectGitignore: z
       .boolean()
@@ -448,9 +418,6 @@ export const fileSystem = tool({
     path,
     maxDepth,
     includeHidden = false,
-    includeSize = false,
-    pattern,
-    excludePatterns = [],
     respectGitignore = true,
     workingDir,
     includeSystem = true,
@@ -462,7 +429,7 @@ export const fileSystem = tool({
       const workingPath = path || process.cwd();
 
       // Validate action and provide suggestions if invalid
-      const validActions = ["stats", "find", "info", "env"];
+      const validActions = ["stats", "info", "env"];
       if (!validActions.includes(action)) {
         const errorResponse = {
           error: true,
@@ -495,30 +462,6 @@ export const fileSystem = tool({
         }
       }
 
-      // Pre-validate patterns for find operations to avoid preprocessing issues
-      if (action === "find" && pattern) {
-        const wildcardCount = (pattern.match(/\*/g) || []).length;
-        const segments = pattern.split("*").filter((s) => s.length > 0);
-
-        // Allow simple patterns like *tic* or **/*tic* (up to 6 wildcards, 4 segments)
-        if (wildcardCount <= 6 && segments.length <= 4) {
-          // Pattern is safe, continue
-        } else if (wildcardCount > 15 || segments.length > 8) {
-          const errorResponse = {
-            error: true,
-            suggestion: `Pattern "${pattern}" is too complex (${wildcardCount} wildcards, ${segments.length} segments). Try "**/*${segments[0]}*" or use separate searches.`,
-            message: "Pattern too complex",
-            providedPattern: pattern,
-            simplifiedSuggestion: `**/*${segments[0]}*`,
-          };
-          if (returnErrorObjects) {
-            return errorResponse;
-          } else {
-            throw new Error(`Pattern too complex: ${pattern}`);
-          }
-        }
-      }
-
       try {
         switch (action) {
           case "stats":
@@ -527,18 +470,6 @@ export const fileSystem = tool({
               includeHidden,
               respectGitignore
             );
-
-          case "find": {
-            // Provide a default pattern if none is specified
-            const searchPattern = pattern || "**/*";
-            return await findInDirectory(
-              workingPath,
-              searchPattern,
-              excludePatterns,
-              includeHidden,
-              respectGitignore
-            );
-          }
 
           case "info":
             if (!path) {
@@ -557,7 +488,7 @@ export const fileSystem = tool({
             return {
               error: true,
               suggestion: getActionSuggestion(action),
-              validActions: ["stats", "find", "info", "env"],
+              validActions: ["stats", "info", "env"],
               providedAction: action,
               message:
                 "Invalid action provided. Please use one of the valid actions.",
@@ -622,7 +553,7 @@ export const fileSystem = tool({
           message: `System resource limits exceeded during ${action} operation`,
           suggestion:
             "Try using smaller parameters (lower maxDepth, more specific paths, or simpler patterns)",
-          providedParams: { action, path, maxDepth, pattern },
+          providedParams: { action, path, maxDepth },
           tip: "Large directories or complex patterns can cause memory issues. Use more targeted operations.",
           safetyRecommendations: [
             "Use maxDepth of 1-3 for tree operations",
@@ -638,27 +569,6 @@ export const fileSystem = tool({
           throw new Error(
             `System resource limits exceeded during ${action} operation`
           );
-        }
-      }
-
-      // For find operations with simple patterns, try a fallback approach
-      if (action === "find" && pattern && pattern.split("*").length <= 3) {
-        const errorResponse = {
-          error: true,
-          operation: action,
-          message: `Find operation failed with pattern "${pattern}"`,
-          suggestion: `Try using a simpler pattern like "**/*${pattern.replace(
-            /\*/g,
-            ""
-          )}*" or search in a specific subdirectory`,
-          providedParams: { action, path, pattern },
-          fallbackSuggestion: `**/*${pattern.replace(/\*/g, "")}*`,
-          tip: "Sometimes glob patterns can cause issues with specific directory structures",
-        };
-        if (returnErrorObjects) {
-          return errorResponse;
-        } else {
-          throw new Error(`Find operation failed with pattern "${pattern}"`);
         }
       }
 
@@ -785,7 +695,7 @@ async function getDirectoryStats(
       includeHidden,
       respectGitignore,
       stats,
-      formatted: `Directory Statistics for: ${dirPath}
+      formatted: `Directory Statistics for ${dirPath}:
 - Total Files: ${stats.totalFiles}
 - Total Directories: ${stats.totalDirectories}
 - Total Size: ${formatBytes(stats.totalSize)}
@@ -795,6 +705,7 @@ async function getDirectoryStats(
 - Ignored Items: ${stats.ignoredItems}${
         respectGitignore ? " (excluded)" : " (would be excluded)"
       }`,
+      warning: undefined as string | undefined,
     };
 
     // Add warning if we hit limits
@@ -806,257 +717,6 @@ async function getDirectoryStats(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to collect directory statistics: ${errorMessage}`);
-  }
-}
-
-async function findInDirectory(
-  dirPath: string,
-  pattern: string,
-  excludePatterns: string[],
-  includeHidden: boolean,
-  respectGitignore: boolean
-) {
-  // Convert pipe-separated patterns to array of glob patterns
-  // Also sanitize patterns to prevent array overflow issues
-  let basePatterns: string[];
-
-  if (pattern.includes("|")) {
-    const splitPatterns = pattern.split("|").map((p) => p.trim());
-    // Limit number of patterns to prevent overflow
-    if (splitPatterns.length > 50) {
-      return {
-        error: true,
-        suggestion: `Too many patterns (${splitPatterns.length}). Please limit to 50 or fewer patterns, or use broader glob patterns like "**/*{tic,toe,tac}*".`,
-        message: "Pattern contains too many alternatives",
-        providedPattern: pattern,
-        patternCount: splitPatterns.length,
-      };
-    }
-    basePatterns = splitPatterns.map(preprocessPattern);
-  } else {
-    // Preprocess single pattern to prevent overflow
-    const processedPattern = preprocessPattern(pattern);
-    basePatterns = [processedPattern];
-  }
-
-  // Validate each pattern for complexity that might cause overflow
-  for (const pat of basePatterns) {
-    if (pat.length > 300) {
-      return {
-        error: true,
-        suggestion: `Pattern "${pat}" is too long (${pat.length} characters). Please use shorter, simpler patterns.`,
-        message: "Individual pattern too long",
-        providedPattern: pat,
-      };
-    }
-
-    // Check for complex patterns that might cause array overflow
-    const wildcardCount = (pat.match(/\*/g) || []).length;
-    const questionMarkCount = (pat.match(/\?/g) || []).length;
-    const complexityScore = wildcardCount * 2 + questionMarkCount;
-
-    if (complexityScore > 25) {
-      const segments = pat.split("*").filter((s) => s.length > 0);
-      return {
-        error: true,
-        suggestion: `Pattern "${pat}" is too complex (${wildcardCount} wildcards, complexity score: ${complexityScore}). Try "**/*{${segments
-          .slice(0, 3)
-          .join(",")}}*" or break into separate searches.`,
-        message: "Pattern too complex - might cause overflow",
-        providedPattern: pat,
-        complexityScore,
-        simplifiedSuggestion: `**/*{${segments.slice(0, 3).join(",")}}*`,
-        tip: "Use **/*word* for simple contains searches, or **/*.ext for file extensions",
-      };
-    }
-
-    // Special check for patterns like *word*word* which can cause exponential expansion
-    if (pat.includes("*") && pat.split("*").length > 6) {
-      const segments = pat.split("*").filter((s) => s.length > 0);
-      return {
-        error: true,
-        suggestion: `Pattern "${pat}" has too many wildcard segments (${
-          pat.split("*").length
-        }). Try "**/*{${segments
-          .slice(0, 3)
-          .join(",")}}*" or use separate searches for each term.`,
-        message: "Pattern has too many wildcard segments",
-        providedPattern: pat,
-        segmentCount: pat.split("*").length,
-        simplifiedSuggestion: `**/*{${segments.slice(0, 3).join(",")}}*`,
-        alternativeSuggestions: segments.slice(0, 3).map((s) => `**/*${s}*`),
-      };
-    }
-  }
-
-  const gitignoreManager = respectGitignore
-    ? await createGitignoreManager(dirPath)
-    : null;
-
-  // Default exclusions (always applied regardless of gitignore setting)
-  const defaultExclusions = [
-    "!**/.chara/**",
-    "!**/.git/**",
-    "!**/node_modules/**",
-    "!**/.svelte-kit/**",
-    "!**/build/**",
-    "!**/dist/**",
-    "!**/.next/**",
-    "!**/coverage/**",
-  ];
-
-  // Additional common exclusions when not using gitignore (disabled for now)
-  const commonExclusions: string[] = [];
-
-  // Add user exclusions
-  const userExclusions = excludePatterns.map((p) =>
-    p.startsWith("!") ? p : `!${p}`
-  );
-
-  // Hidden files exclusion
-  const hiddenExclusions = includeHidden ? [] : ["!**/.*"];
-
-  const allPatterns = [
-    ...basePatterns,
-    ...defaultExclusions,
-    ...commonExclusions,
-    ...userExclusions,
-    ...hiddenExclusions,
-  ];
-
-  // Check total pattern count to prevent overflow
-  if (allPatterns.length > 100) {
-    return {
-      error: true,
-      suggestion: `Total pattern count (${allPatterns.length}) exceeds safe limit. Please use fewer, broader patterns.`,
-      message: "Too many total patterns",
-      totalPatterns: allPatterns.length,
-    };
-  }
-
-  try {
-    // Simplified approach using only the base patterns with proper exclusions
-    const safePatterns = basePatterns.concat([
-      "!**/node_modules/**",
-      "!**/.git/**",
-      "!**/.chara/**",
-      "!**/.svelte-kit/**",
-      "!**/build/**",
-      "!**/dist/**",
-      "!**/.next/**",
-      "!**/coverage/**",
-      ...userExclusions,
-    ]);
-
-    if (!includeHidden) {
-      safePatterns.push("!**/.*");
-    }
-
-    // Add timeout and safety checks for complex patterns
-    const globbyOptions = {
-      cwd: dirPath,
-      onlyFiles: false, // Include both files and directories
-      markDirectories: true,
-      absolute: false,
-      dot: includeHidden,
-      followSymbolicLinks: false,
-      caseSensitiveMatch: false,
-      // Add safety limits
-      deep: 8, // Allow deeper search since we're excluding large dirs
-      suppressErrors: true, // Don't fail on permission errors
-    };
-
-    // For simple patterns, use a shorter timeout
-    const isSimplePattern =
-      basePatterns.length === 1 &&
-      (basePatterns[0].match(/\*/g) || []).length <= 2;
-    const timeoutMs = isSimplePattern ? 5000 : 10000;
-
-    // Wrap globby in a Promise.race to add timeout
-    const globbyPromise = globby(safePatterns, globbyOptions);
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("Pattern search timeout")), timeoutMs);
-    });
-
-    const files = (await Promise.race([
-      globbyPromise,
-      timeoutPromise,
-    ])) as string[];
-
-    // Log results for debugging
-    console.log(
-      `Find operation: pattern="${pattern}" found ${files.length} results`
-    );
-
-    // If hidden files are not included, manually add important dotfiles
-    let allFiles = files;
-    if (!includeHidden) {
-      const importantDotfiles = [".gitignore", ".chara.json"];
-      for (const dotfile of importantDotfiles) {
-        const dotfilePath = join(dirPath, dotfile);
-        try {
-          await stat(dotfilePath);
-          // File exists, add it if not already in results
-          if (!allFiles.includes(dotfile)) {
-            allFiles.push(dotfile);
-          }
-        } catch {
-          // File doesn't exist, skip
-        }
-      }
-    }
-
-    // Filter by gitignore rules if enabled
-    const filteredFiles =
-      respectGitignore && gitignoreManager
-        ? allFiles.filter((file) => {
-            const isDirectory = file.endsWith("/");
-            const cleanPath = isDirectory ? file.slice(0, -1) : file;
-            return !gitignoreManager.isIgnored(cleanPath, dirPath, isDirectory);
-          })
-        : allFiles;
-
-    const results = filteredFiles.map((file) => {
-      const isDirectory = file.endsWith("/");
-      const cleanPath = isDirectory ? file.slice(0, -1) : file;
-      return {
-        path: cleanPath,
-        type: isDirectory ? "directory" : "file",
-        relativePath: file,
-        absolutePath: resolve(dirPath, cleanPath),
-      };
-    });
-
-    return {
-      operation: "find",
-      searchPath: dirPath,
-      pattern,
-      originalPattern: pattern,
-      preprocessedPatterns: basePatterns,
-      excludePatterns,
-      includeHidden,
-      respectGitignore,
-      count: results.length,
-      totalFound: files.length,
-      results,
-      formatted:
-        results.length > 0
-          ? results
-              .map(
-                (r) =>
-                  `${r.type === "directory" ? "[DIR]" : "[FILE]"} ${r.path}`
-              )
-              .join("\n")
-          : "No matches found",
-    };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-
-    throw new Error(
-      `Find operation failed: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
   }
 }
 
@@ -1092,9 +752,9 @@ async function getEnvironmentInfo(
   workingDir?: string,
   includeSystem: boolean = true,
   includeProject: boolean = true
-) {
+): Promise<EnvironmentInfo> {
   const cwd = workingDir || process.cwd();
-  const result: any = {
+  const result: EnvironmentInfo = {
     operation: "env",
     workingDirectory: cwd,
     timestamp: new Date().toISOString(),
@@ -1150,7 +810,9 @@ async function getEnvironmentInfo(
         existsSync(join(cwd, "docker-compose.yaml")),
     };
 
-    result.project.files = projectFiles;
+    if (result.project) {
+      result.project.files = projectFiles;
+    }
   }
 
   // System information
@@ -1207,8 +869,9 @@ async function getEnvironmentInfo(
 
     result.environment = {};
     safeEnvVars.forEach((key) => {
-      if (process.env[key]) {
-        result.environment[key] = process.env[key];
+      const envValue = process.env[key];
+      if (envValue && result.environment) {
+        result.environment[key] = envValue;
       }
     });
   }
