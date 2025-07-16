@@ -8,6 +8,7 @@ import { thinking } from "./thinking";
 import { fileSystem } from "./file-system";
 import { runner } from "./runner";
 import { examination } from "./examination";
+import { mkdir } from "./mkdir";
 
 // Tools for write mode - all tools available for interactive development
 export const chatToolsWriteMode = {
@@ -15,6 +16,7 @@ export const chatToolsWriteMode = {
   "edit-file": editFile,
   "file-system": fileSystem,
   "move-file": moveFile,
+  mkdir: mkdir,
   grep: grep,
   fetch: fetchTool,
   terminal: terminal,

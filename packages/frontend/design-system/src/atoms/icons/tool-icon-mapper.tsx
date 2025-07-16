@@ -10,6 +10,7 @@ import { ThinkingIcon } from "./thinking-icon";
 import { RunnerIcon } from "./runner-icon";
 import { ExaminationIcon } from "./examination-icon";
 import { ToolIcon } from "./tool-icon";
+import { MkdirIcon } from "./mkdir-icon";
 
 /**
  * Props for tool icons
@@ -34,7 +35,7 @@ export interface ToolIconProps {
  */
 export const getToolIcon = (
   toolCallType: string,
-  props?: ToolIconProps,
+  props?: ToolIconProps
 ): React.ReactElement => {
   const width = typeof props?.width === "number" ? props.width : 16;
   const height = typeof props?.height === "number" ? props.height : 16;
@@ -126,6 +127,15 @@ export const getToolIcon = (
     case "examination":
       return (
         <ExaminationIcon
+          width={width}
+          height={height}
+          color={color}
+          className={className}
+        />
+      );
+    case "mkdir":
+      return (
+        <MkdirIcon
           width={width}
           height={height}
           color={color}

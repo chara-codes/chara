@@ -43,6 +43,7 @@ import { ToolIcon } from "./icons/tool-icon";
 import { ThinkingIcon } from "./icons/thinking-icon";
 import { BrainIcon } from "./icons/brain-icon";
 import { StarIcon } from "./icons/star-icon";
+import { MkdirIcon } from "./icons/mkdir-icon";
 
 /**
  * Central export file for all icon components
@@ -97,6 +98,7 @@ export {
   MoveIcon,
   ToolIcon,
   StarIcon,
+  MkdirIcon,
 };
 
 // Export tool icon mapper
@@ -149,3 +151,4 @@ export type { ToolIconProps } from "./icons/tool-icon";
 export type { ThinkingIconProps } from "./icons/thinking-icon";
 export type { ToolIconProps as ToolIconMapperProps } from "./icons/tool-icon-mapper";
 export type { StarIconProps } from "./icons/star-icon";
+export type { MkdirIconProps } from "./icons/mkdir-icon";
