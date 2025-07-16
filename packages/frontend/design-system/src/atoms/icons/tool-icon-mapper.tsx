@@ -11,6 +11,7 @@ import { RunnerIcon } from "./runner-icon";
 import { ExaminationIcon } from "./examination-icon";
 import { ToolIcon } from "./tool-icon";
 import { MkdirIcon } from "./mkdir-icon";
+import { FindIcon } from "./find-icon";
 
 /**
  * Props for tool icons
@@ -73,6 +74,15 @@ export const getToolIcon = (
     case "file-system":
       return (
         <FilesIcon
+          width={width}
+          height={height}
+          color={color}
+          className={className}
+        />
+      );
+    case "find":
+      return (
+        <FindIcon
           width={width}
           height={height}
           color={color}
