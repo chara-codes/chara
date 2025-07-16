@@ -79,6 +79,15 @@ export const getToolIcon = (
           className={className}
         />
       );
+    case "directory":
+      return (
+        <FilesIcon
+          width={width}
+          height={height}
+          color={color}
+          className={className}
+        />
+      );
     case "grep":
       return (
         <SearchIcon
