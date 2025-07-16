@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import z from "zod";
-import { readdir, mkdir, stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { globby } from "globby";
 import { readFile as fsReadFile } from "node:fs/promises";
@@ -65,22 +65,10 @@ interface GitignoreManager {
   isIgnored(
     filePath: string,
     fromRoot?: string,
-    isDirectory?: boolean,
+    isDirectory?: boolean
   ): boolean;
   isDefaultIgnored(filePath: string): boolean;
 }
-
-const FileSystemAction = z.enum([
-  "list",
-  "tree",
-  "create",
-  "current",
-  "stats",
-  "find",
-  "info",
-  "env",
-  "read",
-]);
 
 // Default directories and patterns to always ignore
 const DEFAULT_IGNORE_PATTERNS = [
@@ -99,7 +87,7 @@ const DEFAULT_IGNORE_PATTERNS = [
  * Creates a gitignore manager that handles both .gitignore rules and default exclusions
  */
 async function createGitignoreManager(
-  rootPath: string,
+  rootPath: string
 ): Promise<GitignoreManager> {
   const ig = ignore();
   const defaultIg = ignore();
@@ -146,7 +134,7 @@ async function createGitignoreManager(
     isIgnored(
       filePath: string,
       fromRoot?: string,
-      isDirectory?: boolean,
+      isDirectory?: boolean
     ): boolean {
       const checkPath = fromRoot
         ? relative(fromRoot, resolve(fromRoot, filePath))
@@ -205,7 +193,6 @@ function getActionSuggestion(invalidAction: string): string {
   const validActions = [
     "list",
     "tree",
-    "create",
     "current",
     "stats",
     "find",
@@ -221,7 +208,6 @@ function getActionSuggestion(invalidAction: string): string {
     locate: "find",
     ls: "list",
     dir: "list",
-    mkdir: "create",
     pwd: "current",
     cwd: "current",
     stat: "info",
@@ -238,7 +224,9 @@ function getActionSuggestion(invalidAction: string): string {
 
   // Check for direct mapping
   if (actionMappings[invalidAction.toLowerCase()]) {
-    return `Did you mean "${actionMappings[invalidAction.toLowerCase()]}"? Valid actions are: ${validActions.join(", ")}`;
+    return `Did you mean "${
+      actionMappings[invalidAction.toLowerCase()]
+    }"? Valid actions are: ${validActions.join(", ")}`;
   }
 
   // Find closest match by string similarity with safety checks
@@ -251,7 +239,7 @@ function getActionSuggestion(invalidAction: string): string {
       try {
         const score = calculateSimilarity(
           invalidAction.toLowerCase(),
-          validAction,
+          validAction
         );
         if (score > bestScore) {
           bestScore = score;
@@ -264,7 +252,9 @@ function getActionSuggestion(invalidAction: string): string {
     }
   }
 
-  return `Invalid action "${invalidAction}". Did you mean "${bestMatch}"? Valid actions are: ${validActions.join(", ")}`;
+  return `Invalid action "${invalidAction}". Did you mean "${bestMatch}"? Valid actions are: ${validActions.join(
+    ", "
+  )}`;
 }
 
 // Simple string similarity calculation with safety checks
@@ -316,7 +306,7 @@ function levenshteinDistance(str1: string, str2: string): number {
       matrix[j][i] = Math.min(
         matrix[j][i - 1] + 1,
         matrix[j - 1][i] + 1,
-        matrix[j - 1][i - 1] + indicator,
+        matrix[j - 1][i - 1] + indicator
       );
     }
   }
@@ -385,7 +375,6 @@ export const fileSystem = tool({
 **Directory Operations:**
 - **list**: Get a flat listing of files and directories with type indicators
 - **tree**: Get a recursive tree structure as JSON with optional depth limit
-- **create**: Create new directories or files (with recursive parent creation)
 - **current**: Get the current working directory path
 - **stats**: Get detailed statistics about directory contents
 - **find**: Search for files and directories using glob patterns (defaults to '**/*' if no pattern provided)
@@ -412,14 +401,14 @@ export const fileSystem = tool({
     action: z
       .string()
       .describe(
-        "Operation to perform: 'list', 'tree', 'create', 'current', 'stats', 'find', 'read', 'info', or 'env'",
+        "Operation to perform: 'list', 'tree', 'current', 'stats', 'find', 'read', 'info', or 'env'"
       ),
 
     path: z
       .string()
       .optional()
       .describe(
-        "File or directory path (defaults to current directory for most operations, required for create and info)",
+        "File or directory path (defaults to current directory for most operations, required for info)"
       ),
 
     maxDepth: z
@@ -444,7 +433,7 @@ export const fileSystem = tool({
       .string()
       .optional()
       .describe(
-        "Glob pattern for find operation (e.g., '**/*.js', '*.txt'). Defaults to '**/*' if not specified.",
+        "Glob pattern for find operation (e.g., '**/*.js', '*.txt'). Defaults to '**/*' if not specified."
       ),
 
     excludePatterns: z
@@ -461,7 +450,7 @@ export const fileSystem = tool({
       .string()
       .optional()
       .describe(
-        "Working directory for env operation (defaults to current directory)",
+        "Working directory for env operation (defaults to current directory)"
       ),
 
     includeSystem: z
@@ -475,7 +464,7 @@ export const fileSystem = tool({
       .optional()
       .default(true)
       .describe(
-        "Include project information from .chara.json in env operation",
+        "Include project information from .chara.json in env operation"
       ),
 
     returnErrorObjects: z
@@ -483,7 +472,7 @@ export const fileSystem = tool({
       .optional()
       .default(false)
       .describe(
-        "Return structured error objects instead of throwing exceptions (for LLM usage)",
+        "Return structured error objects instead of throwing exceptions (for LLM usage)"
       ),
   }),
 
@@ -509,7 +498,6 @@ export const fileSystem = tool({
       const validActions = [
         "list",
         "tree",
-        "create",
         "current",
         "stats",
         "find",
@@ -582,45 +570,12 @@ export const fileSystem = tool({
               absolutePath: resolve(process.cwd()),
             };
 
-          case "create": {
-            if (!path) {
-              throw new Error("Path is required for create operation");
-            }
-            // Check if path looks like a file (has extension) or directory
-            const isFile = path.includes(".") && !path.endsWith("/");
-            if (isFile) {
-              // Create parent directory first
-              const parentDir = path.split("/").slice(0, -1).join("/");
-              if (parentDir) {
-                await mkdir(parentDir, { recursive: true });
-              }
-              // Create empty file
-              const { writeFile } = await import("fs/promises");
-              await writeFile(path, "");
-              return {
-                operation: "create",
-                type: "file",
-                path,
-                message: `Successfully created file: ${path}`,
-              };
-            } else {
-              // Create directory
-              await mkdir(path, { recursive: true });
-              return {
-                operation: "create",
-                type: "directory",
-                path,
-                message: `Successfully created directory: ${path}`,
-              };
-            }
-          }
-
           case "list":
             return await listDirectory(
               workingPath,
               includeHidden,
               includeSize,
-              respectGitignore,
+              respectGitignore
             );
 
           case "tree":
@@ -629,14 +584,14 @@ export const fileSystem = tool({
               maxDepth,
               includeHidden,
               includeSize,
-              respectGitignore,
+              respectGitignore
             );
 
           case "stats":
             return await getDirectoryStats(
               workingPath,
               includeHidden,
-              respectGitignore,
+              respectGitignore
             );
 
           case "find": {
@@ -647,7 +602,7 @@ export const fileSystem = tool({
               searchPattern,
               excludePatterns,
               includeHidden,
-              respectGitignore,
+              respectGitignore
             );
           }
 
@@ -661,7 +616,7 @@ export const fileSystem = tool({
             return await getEnvironmentInfo(
               workingDir,
               includeSystem,
-              includeProject,
+              includeProject
             );
 
           case "read":
@@ -677,7 +632,6 @@ export const fileSystem = tool({
               validActions: [
                 "list",
                 "tree",
-                "create",
                 "current",
                 "stats",
                 "find",
@@ -723,7 +677,7 @@ export const fileSystem = tool({
           };
         } else {
           throw new Error(
-            `File system operation '${action}' failed: ${errorMessage}`,
+            `File system operation '${action}' failed: ${errorMessage}`
           );
         }
       }
@@ -763,7 +717,7 @@ export const fileSystem = tool({
           return errorResponse;
         } else {
           throw new Error(
-            `System resource limits exceeded during ${action} operation`,
+            `System resource limits exceeded during ${action} operation`
           );
         }
       }
@@ -774,7 +728,10 @@ export const fileSystem = tool({
           error: true,
           operation: action,
           message: `Find operation failed with pattern "${pattern}"`,
-          suggestion: `Try using a simpler pattern like "**/*${pattern.replace(/\*/g, "")}*" or search in a specific subdirectory`,
+          suggestion: `Try using a simpler pattern like "**/*${pattern.replace(
+            /\*/g,
+            ""
+          )}*" or search in a specific subdirectory`,
           providedParams: { action, path, pattern },
           fallbackSuggestion: `**/*${pattern.replace(/\*/g, "")}*`,
           tip: "Sometimes glob patterns can cause issues with specific directory structures",
@@ -800,7 +757,7 @@ export const fileSystem = tool({
         return errorResponse;
       } else {
         throw new Error(
-          `Unexpected error during ${action} operation: ${errorMessage}`,
+          `Unexpected error during ${action} operation: ${errorMessage}`
         );
       }
     }
@@ -811,7 +768,7 @@ async function listDirectory(
   dirPath: string,
   includeHidden: boolean,
   includeSize: boolean,
-  respectGitignore: boolean,
+  respectGitignore: boolean
 ) {
   try {
     const entries = await readdir(dirPath, { withFileTypes: true });
@@ -831,7 +788,7 @@ async function listDirectory(
     const limitedEntries = entries.slice(0, 2000);
     if (entries.length > 2000) {
       console.warn(
-        `Directory ${dirPath} has ${entries.length} entries, limiting to 2000`,
+        `Directory ${dirPath} has ${entries.length} entries, limiting to 2000`
       );
     }
 
@@ -917,7 +874,7 @@ async function getDirectoryTree(
   includeHidden: boolean = false,
   includeSize: boolean = false,
   respectGitignore: boolean = true,
-  currentDepth: number = 0,
+  currentDepth: number = 0
 ): Promise<any> {
   try {
     const gitignoreManager = respectGitignore
@@ -926,7 +883,7 @@ async function getDirectoryTree(
 
     async function buildTree(
       currentPath: string,
-      depth: number = 0,
+      depth: number = 0
     ): Promise<TreeEntry[]> {
       if (maxDepth !== undefined && depth >= maxDepth) {
         return [];
@@ -940,7 +897,7 @@ async function getDirectoryTree(
         const limitedEntries = entries.slice(0, 1000);
         if (entries.length > 1000) {
           console.warn(
-            `Directory ${currentPath} has ${entries.length} entries, limiting to 1000`,
+            `Directory ${currentPath} has ${entries.length} entries, limiting to 1000`
           );
         }
 
@@ -969,7 +926,7 @@ async function getDirectoryTree(
             gitignoreManager?.isIgnored(
               relativePath,
               dirPath,
-              entry.isDirectory(),
+              entry.isDirectory()
             ) || false;
 
           if (respectGitignore && isIgnored) {
@@ -1006,7 +963,9 @@ async function getDirectoryTree(
       } catch (error) {
         // Return empty array instead of throwing
         console.warn(
-          `Failed to read directory ${currentPath}: ${error instanceof Error ? error.message : String(error)}`,
+          `Failed to read directory ${currentPath}: ${
+            error instanceof Error ? error.message : String(error)
+          }`
         );
         return [];
       }
@@ -1033,7 +992,7 @@ async function getDirectoryTree(
 async function getDirectoryStats(
   dirPath: string,
   includeHidden: boolean,
-  respectGitignore: boolean,
+  respectGitignore: boolean
 ) {
   try {
     const stats: DirectoryStats = {
@@ -1052,7 +1011,7 @@ async function getDirectoryStats(
     async function collectStats(currentPath: string) {
       if (processedDirs >= maxDirs) {
         console.warn(
-          `Directory stats collection stopped at ${maxDirs} directories to prevent overflow`,
+          `Directory stats collection stopped at ${maxDirs} directories to prevent overflow`
         );
         return;
       }
@@ -1064,7 +1023,7 @@ async function getDirectoryStats(
         const limitedEntries = entries.slice(0, 2000);
         if (entries.length > 2000) {
           console.warn(
-            `Directory ${currentPath} has ${entries.length} entries, limiting to 2000`,
+            `Directory ${currentPath} has ${entries.length} entries, limiting to 2000`
           );
         }
 
@@ -1083,7 +1042,7 @@ async function getDirectoryStats(
             gitignoreManager?.isIgnored(
               relativePath,
               dirPath,
-              entry.isDirectory(),
+              entry.isDirectory()
             ) || false;
 
           if (isHidden) {
@@ -1136,8 +1095,12 @@ async function getDirectoryStats(
 - Total Files: ${stats.totalFiles}
 - Total Directories: ${stats.totalDirectories}
 - Total Size: ${formatBytes(stats.totalSize)}
-- Hidden Items: ${stats.hiddenItems}${includeHidden ? " (included)" : " (excluded)"}
-- Ignored Items: ${stats.ignoredItems}${respectGitignore ? " (excluded)" : " (would be excluded)"}`,
+- Hidden Items: ${stats.hiddenItems}${
+        includeHidden ? " (included)" : " (excluded)"
+      }
+- Ignored Items: ${stats.ignoredItems}${
+        respectGitignore ? " (excluded)" : " (would be excluded)"
+      }`,
     };
 
     // Add warning if we hit limits
@@ -1183,7 +1146,7 @@ async function findInDirectory(
   pattern: string,
   excludePatterns: string[],
   includeHidden: boolean,
-  respectGitignore: boolean,
+  respectGitignore: boolean
 ) {
   // Convert pipe-separated patterns to array of glob patterns
   // Also sanitize patterns to prevent array overflow issues
@@ -1228,7 +1191,9 @@ async function findInDirectory(
       const segments = pat.split("*").filter((s) => s.length > 0);
       return {
         error: true,
-        suggestion: `Pattern "${pat}" is too complex (${wildcardCount} wildcards, complexity score: ${complexityScore}). Try "**/*{${segments.slice(0, 3).join(",")}}*" or break into separate searches.`,
+        suggestion: `Pattern "${pat}" is too complex (${wildcardCount} wildcards, complexity score: ${complexityScore}). Try "**/*{${segments
+          .slice(0, 3)
+          .join(",")}}*" or break into separate searches.`,
         message: "Pattern too complex - might cause overflow",
         providedPattern: pat,
         complexityScore,
@@ -1242,7 +1207,11 @@ async function findInDirectory(
       const segments = pat.split("*").filter((s) => s.length > 0);
       return {
         error: true,
-        suggestion: `Pattern "${pat}" has too many wildcard segments (${pat.split("*").length}). Try "**/*{${segments.slice(0, 3).join(",")}}*" or use separate searches for each term.`,
+        suggestion: `Pattern "${pat}" has too many wildcard segments (${
+          pat.split("*").length
+        }). Try "**/*{${segments
+          .slice(0, 3)
+          .join(",")}}*" or use separate searches for each term.`,
         message: "Pattern has too many wildcard segments",
         providedPattern: pat,
         segmentCount: pat.split("*").length,
@@ -1273,7 +1242,7 @@ async function findInDirectory(
 
   // Add user exclusions
   const userExclusions = excludePatterns.map((p) =>
-    p.startsWith("!") ? p : `!${p}`,
+    p.startsWith("!") ? p : `!${p}`
   );
 
   // Hidden files exclusion
@@ -1348,7 +1317,7 @@ async function findInDirectory(
 
     // Log results for debugging
     console.log(
-      `Find operation: pattern="${pattern}" found ${files.length} results`,
+      `Find operation: pattern="${pattern}" found ${files.length} results`
     );
 
     // If hidden files are not included, manually add important dotfiles
@@ -1407,7 +1376,7 @@ async function findInDirectory(
           ? results
               .map(
                 (r) =>
-                  `${r.type === "directory" ? "[DIR]" : "[FILE]"} ${r.path}`,
+                  `${r.type === "directory" ? "[DIR]" : "[FILE]"} ${r.path}`
               )
               .join("\n")
           : "No matches found",
@@ -1416,7 +1385,9 @@ async function findInDirectory(
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     throw new Error(
-      `Find operation failed: ${error instanceof Error ? error.message : String(error)}`,
+      `Find operation failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
   }
 }
@@ -1452,7 +1423,7 @@ async function getFileInfo(filePath: string) {
 async function getEnvironmentInfo(
   workingDir?: string,
   includeSystem: boolean = true,
-  includeProject: boolean = true,
+  includeProject: boolean = true
 ) {
   const cwd = workingDir || process.cwd();
   const result: any = {
@@ -1485,7 +1456,9 @@ async function getEnvironmentInfo(
     } catch (error) {
       result.project = {
         hasCharaConfig: false,
-        error: `Failed to read .chara.json: ${error instanceof Error ? error.message : String(error)}`,
+        error: `Failed to read .chara.json: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
 

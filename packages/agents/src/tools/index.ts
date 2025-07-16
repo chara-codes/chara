@@ -6,6 +6,7 @@ import { terminal } from "./terminal";
 import { grep } from "./grep";
 import { thinking } from "./thinking";
 import { fileSystem } from "./file-system";
+import { mkdir } from "./mkdir";
 import { runner } from "./runner";
 import { examination } from "./examination";
 
@@ -15,12 +16,17 @@ import { examination } from "./examination";
 export { chatTools, chatToolsWriteMode, chatToolsAskMode } from "./chat-tools";
 export { initTools } from "./init-tools";
 
+// Export individual tools
+export { mkdir };
+export { fileSystem };
+
 // Modern tool exports with new unified file system tool
 export const modernTools = {
   "read-file": readFile,
   "edit-file": editFile,
   "move-file": moveFile,
   "file-system": fileSystem,
+  mkdir: mkdir,
   fetch: fetchTool,
   terminal: terminal,
   grep: grep,
@@ -35,6 +41,7 @@ export const tools = {
   "edit-file": editFile,
   "move-file": moveFile,
   "file-system": fileSystem, // Unified file system tool
+  mkdir: mkdir,
   fetch: fetchTool,
   terminal: terminal,
   grep: grep,

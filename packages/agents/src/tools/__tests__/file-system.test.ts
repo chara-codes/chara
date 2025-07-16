@@ -49,7 +49,7 @@ describe("fileSystem tool", () => {
       await expect(
         fileSystem.execute({
           action: "read",
-        }),
+        })
       ).rejects.toThrow("Path is required for read operation");
     });
 
@@ -60,7 +60,7 @@ describe("fileSystem tool", () => {
         fileSystem.execute({
           action: "read",
           path: nonExistentFile,
-        }),
+        })
       ).rejects.toThrow("Failed to read file");
     });
 
@@ -71,84 +71,8 @@ describe("fileSystem tool", () => {
         fileSystem.execute({
           action: "read",
           path: testFS.getPath("test-dir"),
-        }),
+        })
       ).rejects.toThrow("Path is a directory, not a file");
-    });
-  });
-
-  describe("create operation", () => {
-    test("should create directory successfully", async () => {
-      const dirPath = testFS.getPath("new-directory");
-
-      const result = await fileSystem.execute({
-        action: "create",
-        path: dirPath,
-      });
-
-      expect(result.operation).toBe("create");
-      expect(result.path).toBe(dirPath);
-      expect(result.message).toContain("Successfully created directory");
-      expect(await stat(dirPath)).toBeTruthy();
-    });
-
-    test("should create file successfully", async () => {
-      const filePath = testFS.getPath("new-file.txt");
-
-      const result = await fileSystem.execute({
-        action: "create",
-        path: filePath,
-      });
-
-      expect(result.operation).toBe("create");
-      expect(result.path).toBe(filePath);
-      expect(result.message).toContain("Successfully created file");
-      expect(await stat(filePath)).toBeTruthy();
-
-      // File should be empty initially
-      const readResult = await fileSystem.execute({
-        action: "read",
-        path: filePath,
-      });
-      expect(readResult.content).toBe("");
-    });
-
-    test("should create file with nested directories", async () => {
-      const filePath = testFS.getPath("nested/deep/structure/test.js");
-
-      const result = await fileSystem.execute({
-        action: "create",
-        path: filePath,
-      });
-
-      expect(result.operation).toBe("create");
-      expect(result.path).toBe(filePath);
-      expect(result.message).toContain("Successfully created file");
-      expect(await stat(filePath)).toBeTruthy();
-    });
-
-    test("should create nested directories", async () => {
-      const nestedPath = testFS.getPath("level1/level2/level3");
-
-      const result = await fileSystem.execute({
-        action: "create",
-        path: nestedPath,
-      });
-
-      expect(result.operation).toBe("create");
-      expect(result.path).toBe(nestedPath);
-
-      // Verify all levels exist
-      expect(await testFS.fileExists("level1")).toBe(true);
-      expect(await testFS.fileExists("level1/level2")).toBe(true);
-      expect(await testFS.fileExists("level1/level2/level3")).toBe(true);
-    });
-
-    test("should throw error when path is not provided", async () => {
-      await expect(
-        fileSystem.execute({
-          action: "create",
-        }),
-      ).rejects.toThrow("Path is required for create operation");
     });
   });
 
@@ -287,7 +211,7 @@ describe("fileSystem tool", () => {
       expect(level1).toBeDefined();
 
       const level2 = level1.children.find(
-        (item: any) => item.name === "level2",
+        (item: any) => item.name === "level2"
       );
       expect(level2).toBeDefined();
       expect(level2.children).toHaveLength(0); // Depth limit reached
@@ -305,13 +229,13 @@ describe("fileSystem tool", () => {
       });
 
       const file = result.tree.find(
-        (item: any) => item.name === "sized-file.txt",
+        (item: any) => item.name === "sized-file.txt"
       );
       expect(file.size).toBe(11); // "hello world".length
 
       const dir = result.tree.find((item: any) => item.name === "dir");
       const nestedFile = dir.children.find(
-        (item: any) => item.name === "nested-file.txt",
+        (item: any) => item.name === "nested-file.txt"
       );
       expect(nestedFile.size).toBe(14); // "nested content".length
     });
@@ -530,7 +454,7 @@ describe("fileSystem tool", () => {
       await expect(
         fileSystem.execute({
           action: "info",
-        }),
+        })
       ).rejects.toThrow("Path is required for info operation");
     });
 
@@ -541,7 +465,7 @@ describe("fileSystem tool", () => {
         fileSystem.execute({
           action: "info",
           path: nonExistentPath,
-        }),
+        })
       ).rejects.toThrow("Failed to get file info");
     });
   });
@@ -700,7 +624,7 @@ describe("fileSystem tool", () => {
         fileSystem.execute({
           action: "invalid" as any,
           path: testFS.getPath(),
-        }),
+        })
       ).rejects.toThrow("Unknown action: invalid");
     });
 
@@ -711,7 +635,7 @@ describe("fileSystem tool", () => {
         fileSystem.execute({
           action: "list",
           path: nonExistentPath,
-        }),
+        })
       ).rejects.toThrow("File system operation 'list' failed");
     });
 
@@ -723,7 +647,7 @@ describe("fileSystem tool", () => {
         fileSystem.execute({
           action: "list",
           path: restrictedPath,
-        }),
+        })
       ).rejects.toThrow("File system operation 'list' failed");
     });
   });
@@ -775,11 +699,11 @@ describe("fileSystem tool", () => {
   describe("tool metadata", () => {
     test("should have correct tool description", () => {
       expect(fileSystem.description).toContain(
-        "Comprehensive file system management tool",
+        "Comprehensive file system management tool"
       );
       expect(fileSystem.description).toContain("list");
       expect(fileSystem.description).toContain("tree");
-      expect(fileSystem.description).toContain("create");
+
       expect(fileSystem.description).toContain("current");
       expect(fileSystem.description).toContain("stats");
       expect(fileSystem.description).toContain("find");
