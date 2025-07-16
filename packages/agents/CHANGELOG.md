@@ -1,5 +1,14 @@
 # @chara-codes/agents
 
+## 0.1.15
+
+### Patch Changes
+
+- f09ace0: message saving and removing added
+- Updated dependencies [f09ace0]
+  - @chara-codes/settings@0.1.15
+  - @chara-codes/logger@0.1.15
+
 ## 0.1.14
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @chara-codes/web
 
+## 0.1.15
+
+### Patch Changes
+
+- f09ace0: message saving and removing added
+- Updated dependencies [f09ace0]
+  - @chara-codes/design-system@0.1.15
+  - @chara-codes/core@0.1.15
+
 ## 0.1.14
 
 ### Patch Changes

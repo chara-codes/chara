@@ -1,5 +1,11 @@
 # @chara-codes/settings
 
+## 0.1.15
+
+### Patch Changes
+
+- f09ace0: message saving and removing added
+
 ## 0.1.14
 
 ### Patch Changes
