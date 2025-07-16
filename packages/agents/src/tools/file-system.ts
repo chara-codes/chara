@@ -181,32 +181,16 @@ function isImportantHiddenFile(name: string): boolean {
 
 // Helper function to provide suggestions for invalid actions
 function getActionSuggestion(invalidAction: string): string {
-  const validActions = [
-    "list",
-    "tree",
-    "current",
-    "stats",
-    "find",
-    "info",
-    "env",
-    "read",
-  ];
+  const validActions = ["stats", "find", "info", "env"];
 
   // Common mappings for LLM mistakes
   const actionMappings: Record<string, string> = {
     grep: "find",
     search: "find",
     locate: "find",
-    ls: "list",
-    dir: "list",
-    pwd: "current",
-    cwd: "current",
     stat: "info",
-    info: "info",
     details: "info",
     metadata: "info",
-    structure: "tree",
-    recursive: "tree",
     environment: "env",
     config: "env",
     statistics: "stats",
