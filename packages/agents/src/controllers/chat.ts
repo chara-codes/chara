@@ -32,7 +32,7 @@ export const chatController = {
     const { status, commit } = await isoGitService.getLastCommit(workingDir);
     if (status === "success" && userMessageId) {
       await trpc.chat.updateMessage.mutate({
-        messageId: userMessageId,
+        messageId: Number(userMessageId),
         commit: commit?.oid,
       });
     }

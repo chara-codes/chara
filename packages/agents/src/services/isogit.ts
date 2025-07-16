@@ -286,92 +286,6 @@ export class IsoGitService {
   /**
    * Check if a file has changes compared to the last commit
    */
-  private async hasFileChanges(
-    workingDir: string,
-    gitDir: string,
-    filepath: string
-  ): Promise<boolean> {
-    try {
-      logger.debug(`Checking file: ${filepath}`);
-
-      // Check if file is ignored by .gitignore
-      const ignored = await git.isIgnored({
-        fs,
-        dir: workingDir,
-        gitdir: gitDir,
-        filepath,
-      });
-      if (ignored) {
-        logger.debug(`File ${filepath} is ignored by gitignore`);
-        return false;
-      }
-
-      // Check if file has changes by comparing content with last commit
-      try {
-        // First check git status
-        const status = await git.status({
-          fs,
-          dir: workingDir,
-          gitdir: gitDir,
-          filepath,
-        });
-
-        if (status === "unmodified") {
-          return false;
-        }
-        if (status === "added") {
-          // File was committed but might have been modified since
-          // Check if current content differs from committed content
-          logger.debug(
-            `File ${filepath} has 'added' status, checking content...`
-          );
-          try {
-            const oid = await git.resolveRef({
-              fs,
-              dir: gitDir,
-              ref: "HEAD",
-            });
-            const { blob } = await git.readBlob({
-              fs,
-              dir: gitDir,
-              oid,
-              filepath,
-            });
-
-            const currentContent = await Bun.file(
-              join(workingDir, filepath)
-            ).text();
-            const committedContent = new TextDecoder().decode(blob);
-
-            const hasChanges = currentContent !== committedContent;
-            logger.debug(
-              `Content comparison for ${filepath}: current="${currentContent}", committed="${committedContent}", different=${hasChanges}`
-            );
-            return hasChanges;
-          } catch (error) {
-            // File doesn't exist in commit or error reading - no changes
-            logger.debug(
-              `Error reading committed content for ${filepath}:`,
-              error
-            );
-            return false;
-          }
-        } else {
-          // File is new, modified, or deleted
-          return true;
-        }
-      } catch (error) {
-        // If status check fails, assume it's a new file that should be added
-        logger.debug(
-          `File ${filepath}: status check failed, assuming new file`
-        );
-        return true;
-      }
-    } catch (error) {
-      // Skip files that can't be processed
-      return false;
-    }
-  }
 
   /**
    * Save all changes to git history
@@ -392,36 +306,108 @@ export class IsoGitService {
         );
       }
 
-      // Get all files and check their status to see what has changed
-      const allFiles = await this.getAllFiles(workingDir);
+      // Use statusMatrix to get comprehensive file status information
+      const statusMatrix = await git.statusMatrix({
+        fs,
+        dir: workingDir,
+        gitdir: gitDir,
+      });
 
-      if (allFiles.length === 0) {
+      if (statusMatrix.length === 0) {
         return {
           status: "no_changes",
-          message: "No changes to commit",
+          message: "No files found in repository",
           filesProcessed: 0,
         };
       }
 
-      // Check each file for changes and add only those that need to be committed
+      // Process files based on their status matrix
+      // statusMatrix format: [filepath, HEAD, workdir, stage]
+      // HEAD: 0 = absent, 1 = present
+      // workdir: 0 = absent, 1 = file same as HEAD, 2 = file different from HEAD
+      // stage: 0 = absent, 1 = same as HEAD, 2 = same as workdir, 3 = different from both
+      //
+      // Status combinations we handle:
+      // [filepath, 0, 2, 0] - new, untracked file
+      // [filepath, 0, 2, 2] - added, staged file
+      // [filepath, 0, 2, 3] - added, staged, with unstaged changes
+      // [filepath, 1, 1, 1] - unmodified (skipped)
+      // [filepath, 1, 2, 1] - modified, unstaged
+      // [filepath, 1, 2, 2] - modified, staged
+      // [filepath, 1, 2, 3] - modified, staged, with unstaged changes
+      // [filepath, 1, 0, *] - deleted files (skipped - can't add non-existent files)
+      // [filepath, 1, 2, 0] - deleted then recreated with same name
       const addedFiles: string[] = [];
+
       logger.debug(
-        `Processing ${allFiles.length} files: ${allFiles.join(", ")}`
+        `Processing ${statusMatrix.length} files from status matrix`
       );
 
-      for (const filepath of allFiles) {
-        const hasChanges = await this.hasFileChanges(
-          workingDir,
-          gitDir,
-          filepath
-        );
+      for (const [filepath, HEAD, workdir, stage] of statusMatrix) {
+        // Skip files that don't exist in working directory (deleted files)
+        // Note: We skip workdir === 0 because we can't add non-existent files
+        if (workdir === 0) {
+          logger.debug(`Skipping deleted file: ${filepath}`);
+          continue;
+        }
 
-        if (hasChanges) {
+        // Check if file is ignored by .gitignore
+        try {
+          const ignored = await git.isIgnored({
+            fs,
+            dir: workingDir,
+            gitdir: gitDir,
+            filepath,
+          });
+          if (ignored) {
+            logger.debug(`File ${filepath} is ignored by gitignore`);
+            continue;
+          }
+        } catch (error) {
+          logger.debug(`Error checking if ${filepath} is ignored:`, error);
+          continue;
+        }
+
+        // Determine if file needs to be added based on status matrix
+        // We commit files that have changes or are new/untracked
+        let needsCommit = false;
+
+        if (HEAD === 0 && workdir === 2 && stage === 0) {
+          // New, untracked file [0, 2, 0]
+          needsCommit = true;
+          logger.debug(`New untracked file detected: ${filepath}`);
+        } else if (
+          HEAD === 0 &&
+          workdir === 2 &&
+          (stage === 2 || stage === 3)
+        ) {
+          // Added file (staged [0, 2, 2] or staged with unstaged changes [0, 2, 3])
+          needsCommit = true;
+          logger.debug(`Added file detected: ${filepath}`);
+        } else if (HEAD === 1 && workdir === 2 && stage === 1) {
+          // Modified file, unstaged [1, 2, 1]
+          needsCommit = true;
+          logger.debug(`Modified unstaged file detected: ${filepath}`);
+        } else if (
+          HEAD === 1 &&
+          workdir === 2 &&
+          (stage === 2 || stage === 3)
+        ) {
+          // Modified file (staged [1, 2, 2] or staged with unstaged changes [1, 2, 3])
+          needsCommit = true;
+          logger.debug(`Modified staged file detected: ${filepath}`);
+        } else if (HEAD === 1 && workdir === 2 && stage === 0) {
+          // File was deleted but recreated with same name [1, 2, 0]
+          needsCommit = true;
+          logger.debug(`Recreated file detected: ${filepath}`);
+        }
+
+        if (needsCommit) {
           logger.debug(`Adding file: ${filepath}`);
           await git.add({ fs, dir: workingDir, gitdir: gitDir, filepath });
           addedFiles.push(filepath);
         } else {
-          logger.debug(`Skipping file: ${filepath} (no changes)`);
+          logger.debug(`Skipping file: ${filepath} (no changes needed)`);
         }
       }
 
@@ -690,16 +676,79 @@ export class IsoGitService {
         );
       }
 
-      // Get all files and check for changes
-      const allFiles = await this.getAllFiles(workingDir);
+      // Use statusMatrix to get comprehensive file status information
+      const statusMatrix = await git.statusMatrix({
+        fs,
+        dir: workingDir,
+        gitdir: gitDir,
+      });
+
       const changedFiles: string[] = [];
 
-      for (const filepath of allFiles) {
-        const hasChanges = await this.hasFileChanges(
-          workingDir,
-          gitDir,
-          filepath
-        );
+      // Process files based on their status matrix
+      // For uncommitted changes, we check all possible states including deletions
+      // statusMatrix format: [filepath, HEAD, workdir, stage]
+      // HEAD: 0 = absent, 1 = present
+      // workdir: 0 = absent, 1 = file same as HEAD, 2 = file different from HEAD
+      // stage: 0 = absent, 1 = same as HEAD, 2 = same as workdir, 3 = different from both
+      for (const [filepath, HEAD, workdir, stage] of statusMatrix) {
+        // Include deleted files in uncommitted changes check
+        // Note: For hasUncommittedChanges, we want to know about deletions too
+        if (workdir === 0) {
+          // File was deleted
+          if (HEAD === 1) {
+            // File existed in HEAD but is now deleted
+            changedFiles.push(filepath);
+          }
+          continue;
+        }
+
+        // Check if file is ignored by .gitignore
+        try {
+          const ignored = await git.isIgnored({
+            fs,
+            dir: workingDir,
+            gitdir: gitDir,
+            filepath,
+          });
+          if (ignored) {
+            continue;
+          }
+        } catch (error) {
+          continue;
+        }
+
+        // Determine if file has uncommitted changes
+        // Any deviation from [1, 1, 1] indicates changes
+        let hasChanges = false;
+
+        if (HEAD === 0 && workdir === 2 && stage === 0) {
+          // New, untracked file [0, 2, 0]
+          hasChanges = true;
+        } else if (
+          HEAD === 0 &&
+          workdir === 2 &&
+          (stage === 2 || stage === 3)
+        ) {
+          // Added file (staged [0, 2, 2] or staged with unstaged changes [0, 2, 3])
+          hasChanges = true;
+        } else if (HEAD === 1 && workdir === 2 && stage === 1) {
+          // Modified file, unstaged [1, 2, 1]
+          hasChanges = true;
+        } else if (
+          HEAD === 1 &&
+          workdir === 2 &&
+          (stage === 2 || stage === 3)
+        ) {
+          // Modified file (staged [1, 2, 2] or staged with unstaged changes [1, 2, 3])
+          hasChanges = true;
+        } else if (HEAD === 1 && workdir === 2 && stage === 0) {
+          // File was deleted but recreated with same name [1, 2, 0]
+          hasChanges = true;
+        } else if (HEAD === 1 && workdir === 1 && stage === 0) {
+          // File exists in workdir and HEAD but not staged [1, 1, 0] (unusual state)
+          hasChanges = true;
+        }
 
         if (hasChanges) {
           changedFiles.push(filepath);
