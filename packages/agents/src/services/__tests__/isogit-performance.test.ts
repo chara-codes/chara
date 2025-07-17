@@ -27,7 +27,7 @@ describe("IsoGitService Performance & Edge Cases", () => {
       const endTime = Date.now();
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(2); // large-file.txt + .gitignore
+      expect(result.filesProcessed).toBe(1); // large-file.txt (.gitignore already committed)
 
       // Should complete within reasonable time (adjust threshold as needed)
       const duration = endTime - startTime;
@@ -50,7 +50,7 @@ describe("IsoGitService Performance & Edge Cases", () => {
       const endTime = Date.now();
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(fileCount + 1); // 100 files + .gitignore
+      expect(result.filesProcessed).toBe(fileCount); // 100 files (.gitignore already committed)
 
       const duration = endTime - startTime;
       expect(duration).toBeLessThan(15000); // 15 seconds max for 100 files
@@ -73,7 +73,7 @@ describe("IsoGitService Performance & Edge Cases", () => {
       const endTime = Date.now();
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(21); // 10 files + 10 .gitkeep files + .gitignore
+      expect(result.filesProcessed).toBe(20); // 10 files + 10 .gitkeep files (.gitignore already committed)
 
       const duration = endTime - startTime;
       expect(duration).toBeLessThan(5000); // 5 seconds max
@@ -108,7 +108,7 @@ describe("IsoGitService Performance & Edge Cases", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(unicodeFiles.length + 1); // unicode files + .gitignore
+      expect(result.filesProcessed).toBe(unicodeFiles.length); // unicode files (.gitignore already committed)
 
       for (const fileName of unicodeFiles) {
         expect(result.files).toContain(fileName);
@@ -133,7 +133,7 @@ describe("IsoGitService Performance & Edge Cases", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(specialChars.length + 1); // special chars files + .gitignore
+      expect(result.filesProcessed).toBe(specialChars.length); // special chars files (.gitignore already committed)
     });
 
     test("should handle empty directories gracefully", async () => {
@@ -145,7 +145,7 @@ describe("IsoGitService Performance & Edge Cases", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(4); // regular.txt + 2 .gitkeep files + .gitignore
+      expect(result.filesProcessed).toBe(3); // regular.txt + 2 .gitkeep files (.gitignore already committed)
       expect(result.files).toContain("regular.txt");
     });
 
@@ -157,7 +157,7 @@ describe("IsoGitService Performance & Edge Cases", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(4); // 3 line ending files + .gitignore
+      expect(result.filesProcessed).toBe(3); // 3 line ending files (.gitignore already committed)
     });
 
     test("should handle zero-byte files", async () => {
@@ -167,7 +167,7 @@ describe("IsoGitService Performance & Edge Cases", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(3); // zero-bytes.txt + normal.txt + .gitignore
+      expect(result.filesProcessed).toBe(2); // zero-bytes.txt + normal.txt (.gitignore already committed)
       expect(result.files).toContain("zero-bytes.txt");
       expect(result.files).toContain("normal.txt");
     });
@@ -181,7 +181,7 @@ describe("IsoGitService Performance & Edge Cases", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(5); // 4 whitespace files + .gitignore
+      expect(result.filesProcessed).toBe(4); // 4 whitespace files (.gitignore already committed)
     });
 
     test("should handle rapid successive commits", async () => {

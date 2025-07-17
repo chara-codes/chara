@@ -1,9 +1,9 @@
 "use client";
 
-import type React from "react";
-import { useState, useEffect, memo } from "react";
-import styled, { keyframes } from "styled-components";
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
+import type React from "react";
+import { memo, useEffect, useState } from "react";
+import styled, { keyframes } from "styled-components";
 import { TerminalIcon } from "../../atoms/icons";
 
 interface ToolCallData {
@@ -52,9 +52,7 @@ const TerminalContainer = styled.div<{ isVisible?: boolean }>`
   font-size: 12px;
   line-height: 1.5;
   overflow: hidden;
-  transition:
-    opacity 0.2s ease,
-    height 0.2s ease;
+  transition: opacity 0.2s ease, height 0.2s ease;
   opacity: ${({ isVisible }) => (isVisible ? 1 : 0)};
   height: ${({ isVisible }) => (isVisible ? "auto" : "0")};
   margin-bottom: ${({ isVisible }) => (isVisible ? "16px" : "0")};
@@ -283,8 +281,8 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
           workingDirectory: args.cd
             ? String(args.cd)
             : args.workingDirectory
-              ? String(args.workingDirectory)
-              : undefined,
+            ? String(args.workingDirectory)
+            : undefined,
         };
       }
       return { command: "", workingDirectory: undefined };
@@ -343,20 +341,14 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
     const [viewMode, setViewMode] = useState<ViewMode>("collapsed");
 
     // Validate props and provide fallbacks instead of early return
-    const validCommand =
-      command && typeof command === "string"
-        ? command
-        : "echo 'Invalid command'";
+    const validCommand = command && typeof command === "string" ? command : "";
 
     useEffect(() => {
       if (isGenerating && currentIndex < output.length) {
-        const timer = setTimeout(
-          () => {
-            setDisplayedOutput(output.slice(0, currentIndex + 1));
-            setCurrentIndex(currentIndex + 1);
-          },
-          Math.max(1, streamingSpeed),
-        );
+        const timer = setTimeout(() => {
+          setDisplayedOutput(output.slice(0, currentIndex + 1));
+          setCurrentIndex(currentIndex + 1);
+        }, Math.max(1, streamingSpeed));
 
         return () => clearTimeout(timer);
       }
@@ -522,7 +514,7 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
       prevProps.maxHeight === nextProps.maxHeight &&
       prevProps.toolCallError === nextProps.toolCallError
     );
-  },
+  }
 );
 
 TerminalToolBlock.displayName = "TerminalToolBlock";

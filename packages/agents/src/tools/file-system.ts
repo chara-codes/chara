@@ -235,13 +235,13 @@ function isImportantHiddenFile(name: string): boolean {
 
 // Helper function to provide suggestions for invalid actions
 function getActionSuggestion(invalidAction: string): string {
-  const validActions = ["stats", "find", "info", "env"];
+  const validActions = ["stats", "info", "env"];
 
   // Common mappings for LLM mistakes
   const actionMappings: Record<string, string> = {
-    grep: "find",
-    search: "find",
-    locate: "find",
+    grep: "stats",
+    search: "stats",
+    locate: "info",
     stat: "info",
     details: "info",
     metadata: "info",
@@ -558,7 +558,7 @@ export const fileSystem = tool({
           safetyRecommendations: [
             "Use maxDepth of 1-3 for tree operations",
             "Use specific subdirectories instead of root",
-            "Use simple patterns like '**/*.ext' for find operations",
+            "Use stats for directory overviews",
             "Break complex searches into multiple simpler ones",
           ],
           technicalError: errorMessage,

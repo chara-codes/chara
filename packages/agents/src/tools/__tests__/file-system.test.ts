@@ -68,108 +68,6 @@ describe("fileSystem tool", () => {
     });
   });
 
-  describe("find operation", () => {
-    test("should find files matching pattern", async () => {
-      await testFS.createFile("test.js", "javascript");
-      await testFS.createFile("test.ts", "typescript");
-      await testFS.createFile("readme.md", "markdown");
-      await mkdir(testFS.getPath("src"));
-      await testFS.createFile("src/app.js", "app code");
-
-      const result = await fileSystem.execute({
-        action: "find",
-        path: testFS.getPath(),
-        pattern: "**/*.js",
-      });
-
-      expect(result.operation).toBe("find");
-      expect(result.count).toBe(2);
-      expect(result.formatted).toContain("[FILE] test.js");
-      expect(result.formatted).toContain("[FILE] src/app.js");
-      expect(result.formatted).not.toContain("test.ts");
-      expect(result.formatted).not.toContain("readme.md");
-    });
-
-    test("should find directories", async () => {
-      await mkdir(testFS.getPath("src"));
-      await mkdir(testFS.getPath("tests"));
-      await mkdir(testFS.getPath("docs"));
-      await testFS.createFile("src/file.js", "code");
-
-      const result = await fileSystem.execute({
-        action: "find",
-        path: testFS.getPath(),
-        pattern: "**/src",
-      });
-
-      expect(result.count).toBe(1);
-      expect(result.formatted).toContain("[DIR] src");
-    });
-
-    test("should respect exclude patterns", async () => {
-      await testFS.createFile("keep.js", "keep this");
-      await testFS.createFile("exclude.js", "exclude this");
-      await testFS.createFile("test.js", "test file");
-
-      const result = await fileSystem.execute({
-        action: "find",
-        path: testFS.getPath(),
-        pattern: "**/*.js",
-        excludePatterns: ["exclude*", "test*"],
-      });
-
-      expect(result.count).toBe(1);
-      expect(result.formatted).toContain("[FILE] keep.js");
-      expect(result.formatted).not.toContain("exclude.js");
-      expect(result.formatted).not.toContain("test.js");
-    });
-
-    test("should use default pattern when pattern is missing", async () => {
-      await testFS.createFile("test.js", "javascript");
-      await testFS.createFile("test.ts", "typescript");
-      await mkdir(testFS.getPath("src"));
-      await testFS.createFile("src/app.js", "app code");
-
-      const result = await fileSystem.execute({
-        action: "find",
-        path: testFS.getPath(),
-      });
-
-      expect(result.operation).toBe("find");
-      expect(result.count).toBeGreaterThan(0);
-      expect(result.formatted).toContain("[FILE] test.js");
-      expect(result.formatted).toContain("[FILE] test.ts");
-      expect(result.formatted).toContain("[FILE] src/app.js");
-    });
-
-    test("should work with original error scenario - find without pattern", async () => {
-      // Simulate the original error scenario from the stream
-      await testFS.createFile("space-invaders/game.js", "game logic");
-      await testFS.createFile("space-invaders/player.js", "player code");
-      await mkdir(testFS.getPath("space-invaders/assets"));
-      await testFS.createFile("space-invaders/assets/sprite.png", "image data");
-
-      // This should now work without throwing "Pattern is required for find operation"
-      const result = await fileSystem.execute({
-        action: "find",
-        path: testFS.getPath("space-invaders"),
-        includeHidden: false,
-        includeSize: false,
-        excludePatterns: [],
-        respectGitignore: true,
-        includeSystem: true,
-        includeProject: true,
-        returnErrorObjects: false,
-      });
-
-      expect(result.operation).toBe("find");
-      expect(result.count).toBeGreaterThan(0);
-      expect(result.formatted).toContain("[FILE] game.js");
-      expect(result.formatted).toContain("[FILE] player.js");
-      expect(result.formatted).toContain("[FILE] assets/sprite.png");
-    });
-  });
-
   describe("info operation", () => {
     test("should get file info successfully", async () => {
       const content = "Test file content";
@@ -465,16 +363,15 @@ describe("fileSystem tool", () => {
       const [result1, result2] = await Promise.all([
         fileSystem.execute({ action: "stats", path: testFS.getPath() }),
         fileSystem.execute({
-          action: "find",
+          action: "stats",
           path: testFS.getPath(),
-          pattern: "*.txt",
         }),
       ]);
 
       expect(result1.operation).toBe("stats");
-      expect(result2.operation).toBe("find");
+      expect(result2.operation).toBe("stats");
       expect(result1.stats.totalFiles).toBe(2);
-      expect(result2.results.length).toBe(2);
+      expect(result2.stats.totalFiles).toBe(2);
     });
   });
 
@@ -484,7 +381,7 @@ describe("fileSystem tool", () => {
         "Comprehensive file system management tool"
       );
       expect(fileSystem.description).toContain("stats");
-      expect(fileSystem.description).toContain("find");
+
       expect(fileSystem.description).toContain("info");
       expect(fileSystem.description).toContain("env");
     });

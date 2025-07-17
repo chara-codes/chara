@@ -42,7 +42,11 @@ describe("IsoGitService", () => {
 
       // Verify git repository was created
       const gitDir = join(testFS.getPath(), ".chara", "history");
-      const currentBranch = await git.currentBranch({ fs, dir: gitDir });
+      const currentBranch = await git.currentBranch({
+        fs,
+        dir: testFS.getPath(),
+        gitdir: gitDir,
+      });
       expect(currentBranch).toBe("main");
     });
 
@@ -87,7 +91,11 @@ describe("IsoGitService", () => {
 
       // Verify commit exists in git history
       const gitDir = join(testFS.getPath(), ".chara", "history");
-      const commits = await git.log({ fs, dir: gitDir });
+      const commits = await git.log({
+        fs,
+        dir: testFS.getPath(),
+        gitdir: gitDir,
+      });
       expect(commits).toHaveLength(1);
       expect(commits[0].commit.message.trim()).toBe(
         "Initial commit - Chara history repository initialized"
@@ -165,7 +173,11 @@ describe("IsoGitService", () => {
       await service.initializeRepository(testFS.getPath());
 
       const gitDir = join(testFS.getPath(), ".chara", "history");
-      const currentBranch = await git.currentBranch({ fs, dir: gitDir });
+      const currentBranch = await git.currentBranch({
+        fs,
+        dir: testFS.getPath(),
+        gitdir: gitDir,
+      });
       expect(currentBranch).toBe("main");
     });
   });
@@ -203,9 +215,9 @@ describe("IsoGitService", () => {
     test("should return no_changes when no files exist", async () => {
       const result = await service.saveToHistory(testFS.getPath());
 
-      expect(result.status).toBe("success");
-      expect(result.message).toContain("Successfully committed");
-      expect(result.filesProcessed).toBe(1); // .gitignore file created by initializeRepository
+      expect(result.status).toBe("no_changes");
+      expect(result.message).toContain("No changes to commit");
+      expect(result.filesProcessed).toBe(0); // .gitignore already committed in initial commit
     });
 
     test("should commit new files", async () => {
@@ -216,10 +228,10 @@ describe("IsoGitService", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(3); // test1.txt, test2.txt, and .gitignore
+      expect(result.filesProcessed).toBe(2); // test1.txt, test2.txt (.gitignore already committed)
       expect(result.files).toContain("test1.txt");
       expect(result.files).toContain("test2.txt");
-      expect(result.files).toContain(".gitignore");
+      expect(result.files).not.toContain(".gitignore");
       expect(result.commitSha).toBeDefined();
       expect(result.commitMessage).toContain("Save changes");
     });
@@ -243,12 +255,12 @@ describe("IsoGitService", () => {
 
       const result1 = await service.saveToHistory(testFS.getPath());
       expect(result1.status).toBe("success");
-      expect(result1.filesProcessed).toBe(3); // test1.txt, test2.txt, and .gitignore
+      expect(result1.filesProcessed).toBe(2); // test1.txt, test2.txt (.gitignore already committed)
 
-      // Second save should find no changes (but may still detect .gitignore staging)
+      // Second save should find no changes
       const result2 = await service.saveToHistory(testFS.getPath());
-      expect(result2.status).toBe("success");
-      expect(result2.filesProcessed).toBe(3); // test1.txt, test2.txt, and .gitignore might still be staged
+      expect(result2.status).toBe("no_changes");
+      expect(result2.filesProcessed).toBe(0); // No files should be processed on second save
     });
 
     test("should detect modified files", async () => {
@@ -256,14 +268,14 @@ describe("IsoGitService", () => {
       await testFS.createFile("test.txt", "Initial content");
       const result1 = await service.saveToHistory(testFS.getPath());
       expect(result1.status).toBe("success");
-      expect(result1.filesProcessed).toBe(2); // test.txt and .gitignore
+      expect(result1.filesProcessed).toBe(1); // test.txt (.gitignore already committed)
 
       // Modify the file
       await testFS.createFile("test.txt", "Modified content");
       const result2 = await service.saveToHistory(testFS.getPath());
 
       expect(result2.status).toBe("success");
-      expect(result2.filesProcessed).toBe(2); // modified test.txt + .gitignore
+      expect(result2.filesProcessed).toBe(1); // modified test.txt (.gitignore already committed)
       expect(result2.files).toContain("test.txt");
     });
 
@@ -280,9 +292,9 @@ describe("IsoGitService", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(2); // regular.txt and .gitignore
+      expect(result.filesProcessed).toBe(1); // regular.txt (.gitignore already committed)
       expect(result.files).toContain("regular.txt");
-      expect(result.files).toContain(".gitignore");
+      expect(result.files).not.toContain(".gitignore");
       expect(result.files).not.toContain(".chara/config/settings.json");
       expect(result.files).not.toContain(".git/config");
     });
@@ -296,7 +308,7 @@ describe("IsoGitService", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(5); // nested/file1.txt, nested/deep/file2.txt, nested/deep/structure/file3.txt, .gitkeep files, and .gitignore
+      expect(result.filesProcessed).toBe(4); // nested/file1.txt, nested/deep/file2.txt, nested/deep/structure/file3.txt, .gitkeep files (.gitignore already committed)
       expect(result.files).toContain("nested/file1.txt");
       expect(result.files).toContain("nested/deep/file2.txt");
       expect(result.files).toContain("nested/deep/structure/file3.txt");
@@ -331,9 +343,9 @@ describe("IsoGitService", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(2); // image.png and .gitignore
+      expect(result.filesProcessed).toBe(1); // image.png (.gitignore already committed)
       expect(result.files).toContain("image.png");
-      expect(result.files).toContain(".gitignore");
+      expect(result.files).not.toContain(".gitignore");
     });
 
     test("should handle files with special characters", async () => {
@@ -345,12 +357,12 @@ describe("IsoGitService", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(5); // 4 test files and .gitignore
+      expect(result.filesProcessed).toBe(4); // 4 test files (.gitignore already committed)
       expect(result.files).toContain("file with spaces.txt");
       expect(result.files).toContain("file-with-hyphens.txt");
       expect(result.files).toContain("file_with_underscores.txt");
       expect(result.files).toContain("файл.txt");
-      expect(result.files).toContain(".gitignore");
+      expect(result.files).not.toContain(".gitignore");
     });
 
     test("should handle large number of files", async () => {
@@ -363,8 +375,8 @@ describe("IsoGitService", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(fileCount + 1); // 50 test files + .gitignore
-      expect(result.files?.length).toBe(fileCount + 1);
+      expect(result.filesProcessed).toBe(fileCount); // 50 test files (.gitignore already committed)
+      expect(result.files?.length).toBe(fileCount);
     });
 
     test("should handle empty files", async () => {
@@ -374,10 +386,10 @@ describe("IsoGitService", () => {
       const result = await service.saveToHistory(testFS.getPath());
 
       expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(3); // empty.txt, nonempty.txt, and .gitignore
+      expect(result.filesProcessed).toBe(2); // empty.txt, nonempty.txt (.gitignore already committed)
       expect(result.files).toContain("empty.txt");
       expect(result.files).toContain("nonempty.txt");
-      expect(result.files).toContain(".gitignore");
+      expect(result.files).not.toContain(".gitignore");
     });
 
     test("should maintain git history correctly", async () => {
@@ -401,7 +413,11 @@ describe("IsoGitService", () => {
 
       // Verify git log has both commits
       const gitDir = join(testFS.getPath(), ".chara", "history");
-      const commits = await git.log({ fs, dir: gitDir });
+      const commits = await git.log({
+        fs,
+        dir: testFS.getPath(),
+        gitdir: gitDir,
+      });
 
       expect(commits).toHaveLength(3); // Including initial commit
       expect(commits[0].commit.message.trim()).toBe("Second commit");
@@ -446,8 +462,8 @@ describe("IsoGitService", () => {
       await Bun.file(testFS.getPath("to-delete.txt")).writer().end();
 
       const result = await service.saveToHistory(testFS.getPath());
-      expect(result.status).toBe("success");
-      expect(result.filesProcessed).toBe(2); // to-delete.txt (recreated as empty) + .gitignore
+      expect(result.status).toBe("no_changes");
+      expect(result.filesProcessed).toBe(0); // No files processed since none were actually created
     });
   });
 
@@ -487,7 +503,11 @@ describe("IsoGitService", () => {
 
       // Verify using git log
       const gitDir = join(testFS.getPath(), ".chara", "history");
-      const commits = await git.log({ fs, dir: gitDir });
+      const commits = await git.log({
+        fs,
+        dir: testFS.getPath(),
+        gitdir: gitDir,
+      });
 
       expect(commits).toHaveLength(2); // Including initial commit
       expect(commits[0].commit.message.trim()).toBe("Integration test commit");
@@ -503,7 +523,11 @@ describe("IsoGitService", () => {
       const gitDir = join(testFS.getPath(), ".chara", "history");
 
       // Verify the file exists in the commit tree
-      const commits = await git.log({ fs, dir: gitDir });
+      const commits = await git.log({
+        fs,
+        dir: testFS.getPath(),
+        gitdir: gitDir,
+      });
       expect(commits).toHaveLength(2); // Including initial commit
 
       // Read the file content from the working directory to verify it was committed
