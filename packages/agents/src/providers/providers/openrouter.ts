@@ -49,7 +49,7 @@ export class OpenRouterProvider extends AbstractProvider {
         extraBody: modelId.includes("moonshotai")
           ? {
               provider: {
-                order: ["moonshotai"],
+                order: ["moonshotai", "baseten/fp8", "deepinfra/fp4"],
               },
             }
           : {},

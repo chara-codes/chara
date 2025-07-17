@@ -152,7 +152,7 @@ class RunnerService {
    */
   private async startWithId(
     processId: string,
-    options: RunnerOptions,
+    options: RunnerOptions
   ): Promise<string> {
     const { command, cwd = this.defaultCwd } = options;
 
@@ -232,7 +232,7 @@ class RunnerService {
         subprocess.stdout,
         "stdout",
         this.processes,
-        this.addLogToBuffer.bind(this),
+        this.addLogToBuffer.bind(this)
       );
 
       // Stream stderr
@@ -241,7 +241,7 @@ class RunnerService {
         subprocess.stderr,
         "stderr",
         this.processes,
-        this.addLogToBuffer.bind(this),
+        this.addLogToBuffer.bind(this)
       );
 
       // Handle process exit
@@ -446,7 +446,7 @@ class RunnerService {
         subprocess.stdout,
         "stdout",
         this.processes,
-        this.addLogToBuffer.bind(this),
+        this.addLogToBuffer.bind(this)
       );
 
       // Stream stderr
@@ -455,7 +455,7 @@ class RunnerService {
         subprocess.stderr,
         "stderr",
         this.processes,
-        this.addLogToBuffer.bind(this),
+        this.addLogToBuffer.bind(this)
       );
 
       // Handle process exit
@@ -510,7 +510,7 @@ class RunnerService {
    */
   updateProcessInfo(
     processId: string,
-    updates: Partial<Pick<ServerInfo, "name" | "serverUrl" | "host" | "port">>,
+    updates: Partial<Pick<ServerInfo, "name" | "serverUrl" | "host" | "port">>
   ): boolean {
     const processData = this.processes.get(processId);
 
@@ -589,7 +589,7 @@ class RunnerService {
    */
   async stopAll(): Promise<void> {
     const promises = Array.from(this.processes.keys()).map((id) =>
-      this.stop(id),
+      this.stop(id)
     );
     await Promise.all(promises);
   }
@@ -644,7 +644,7 @@ export const requestStatus = (processId?: string): void => {
 
 export const requestRestart = (
   processId: string,
-  newCommand?: string,
+  newCommand?: string
 ): void => {
   appEvents.emit("runner:restart", { processId, newCommand });
 };
