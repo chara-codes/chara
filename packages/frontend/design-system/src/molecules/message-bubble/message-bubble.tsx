@@ -389,28 +389,29 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <>
             <ContextContainer isUser={isUser}>
               <ContextLabel isUser={isUser}>Using context:</ContextLabel>
-              {contextItems.map((item) => (
-                <ContextItemWrapper key={item.id}>
-                  <ContextItemComponent
-                    ref={(el) => {
-                      if (el) itemRefs.current.set(item.id, el);
-                    }}
-                    isUser={isUser}
-                    onClick={() => handleContextItemClick(item.id)}
-                    style={{
-                      backgroundColor:
-                        expandedContextId === item.id
-                          ? isUser
-                            ? "#e5e7eb"
-                            : "#d1d5db"
-                          : undefined,
-                    }}
-                  >
-                    {getIcon(item.type)}
-                    {item.name}
-                  </ContextItemComponent>
-                </ContextItemWrapper>
-              ))}
+              {Array.isArray(contextItems) &&
+                contextItems?.map((item) => (
+                  <ContextItemWrapper key={item.id}>
+                    <ContextItemComponent
+                      ref={(el) => {
+                        if (el) itemRefs.current.set(item.id, el);
+                      }}
+                      isUser={isUser}
+                      onClick={() => handleContextItemClick(item.id)}
+                      style={{
+                        backgroundColor:
+                          expandedContextId === item.id
+                            ? isUser
+                              ? "#e5e7eb"
+                              : "#d1d5db"
+                            : undefined,
+                      }}
+                    >
+                      {getIcon(item.type)}
+                      {item.name}
+                    </ContextItemComponent>
+                  </ContextItemWrapper>
+                ))}
             </ContextContainer>
 
             {expandedContextItem && (

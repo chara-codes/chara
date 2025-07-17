@@ -761,6 +761,9 @@ export const useChatStore = create<ChatState>()(
                 messageObj.contextItems = JSON.parse(
                   msg.context
                 ) as ContextItem[];
+                if (typeof messageObj.contextItems === "string") {
+                  messageObj.contextItems = JSON.parse(messageObj.contextItems);
+                }
               }
 
               if (msg.toolCalls) {
