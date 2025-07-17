@@ -1,8 +1,8 @@
-import git from "isomorphic-git";
 import * as fs from "node:fs";
-import { join } from "node:path";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { logger } from "@chara-codes/logger";
+import git from "isomorphic-git";
 
 export interface GitInitResult {
   status: "success" | "skipped";
@@ -103,7 +103,7 @@ export class IsoGitService {
 
       // Check if git is already initialized by trying to get the current branch
       try {
-        await git.currentBranch({ fs, dir: gitDir });
+        await git.currentBranch({ fs, dir: workingDir, gitdir: gitDir });
         return {
           status: "skipped",
           message: "Git repository already initialized in .chara/history",
@@ -116,7 +116,8 @@ export class IsoGitService {
       // Initialize git repository
       await git.init({
         fs,
-        dir: gitDir,
+        dir: workingDir,
+        gitdir: gitDir,
         defaultBranch: "main",
       });
 
@@ -234,7 +235,8 @@ export class IsoGitService {
       // Create initial commit
       const sha = await git.commit({
         fs,
-        dir: gitDir,
+        dir: workingDir,
+        gitdir: gitDir,
         message: "Initial commit - Chara history repository initialized",
         author: {
           name: "Chara Agent",
@@ -299,7 +301,7 @@ export class IsoGitService {
     try {
       // Check if git is initialized
       try {
-        await git.currentBranch({ fs, dir: gitDir });
+        await git.currentBranch({ fs, gitdir: gitDir, dir: workingDir });
       } catch {
         throw new Error(
           "Git repository not initialized. Please run init-git first."
@@ -427,7 +429,8 @@ export class IsoGitService {
       // Commit changes
       const sha = await git.commit({
         fs,
-        dir: gitDir,
+        dir: workingDir,
+        gitdir: gitDir,
         message,
         author: {
           name: "Chara Agent",
@@ -459,7 +462,7 @@ export class IsoGitService {
     try {
       // Check if git is initialized
       try {
-        await git.currentBranch({ fs, dir: gitDir });
+        await git.currentBranch({ fs, gitdir: gitDir, dir: workingDir });
       } catch {
         throw new Error(
           "Git repository not initialized. Please run init-git first."
@@ -470,7 +473,8 @@ export class IsoGitService {
       try {
         const commits = await git.log({
           fs,
-          dir: gitDir,
+          gitdir: gitDir,
+          dir: workingDir,
           depth: 1,
         });
 
@@ -514,7 +518,7 @@ export class IsoGitService {
     try {
       // Check if git is initialized
       try {
-        await git.currentBranch({ fs, dir: gitDir });
+        await git.currentBranch({ fs, gitdir: gitDir, dir: workingDir });
       } catch {
         throw new Error(
           "Git repository not initialized. Please run init-git first."
@@ -525,7 +529,8 @@ export class IsoGitService {
       try {
         const commits = await git.log({
           fs,
-          dir: gitDir,
+          dir: workingDir,
+          gitdir: gitDir,
           depth: options?.depth,
           ref: options?.ref,
         });
@@ -569,7 +574,7 @@ export class IsoGitService {
     try {
       // Check if git is initialized
       try {
-        await git.currentBranch({ fs, dir: gitDir });
+        await git.currentBranch({ fs, gitdir: gitDir, dir: workingDir });
       } catch {
         throw new Error(
           "Git repository not initialized. Please run init-git first."
@@ -580,7 +585,8 @@ export class IsoGitService {
       try {
         const commit = await git.readCommit({
           fs,
-          dir: gitDir,
+          dir: workingDir,
+          gitdir: gitDir,
           oid,
         });
 
@@ -624,7 +630,7 @@ export class IsoGitService {
     try {
       // Check if git is initialized
       try {
-        await git.currentBranch({ fs, dir: gitDir });
+        await git.currentBranch({ fs, gitdir: gitDir, dir: workingDir });
       } catch {
         throw new Error(
           "Git repository not initialized. Please run init-git first."
@@ -635,7 +641,8 @@ export class IsoGitService {
         // Get the current HEAD reference
         const sha = await git.resolveRef({
           fs,
-          dir: gitDir,
+          dir: workingDir,
+          gitdir: gitDir,
           ref: "HEAD",
         });
 
@@ -669,7 +676,7 @@ export class IsoGitService {
     try {
       // Check if git is initialized
       try {
-        await git.currentBranch({ fs, dir: gitDir });
+        await git.currentBranch({ fs, gitdir: gitDir, dir: workingDir });
       } catch {
         throw new Error(
           "Git repository not initialized. Please run init-git first."
@@ -782,7 +789,8 @@ export class IsoGitService {
       try {
         await git.readCommit({
           fs,
-          dir: gitDir,
+          dir: workingDir,
+          gitdir: gitDir,
           oid: targetCommitSha,
         });
       } catch {
@@ -795,12 +803,17 @@ export class IsoGitService {
       // Get current HEAD SHA to track what we're changing from
       const previousHeadSha = await git.resolveRef({
         fs,
-        dir: gitDir,
+        dir: workingDir,
+        gitdir: gitDir,
         ref: "HEAD",
       });
 
       // Get current branch name
-      const currentBranch = await git.currentBranch({ fs, dir: gitDir });
+      const currentBranch = await git.currentBranch({
+        fs,
+        gitdir: gitDir,
+        dir: workingDir,
+      });
       if (!currentBranch) {
         return {
           status: "error",
@@ -811,7 +824,12 @@ export class IsoGitService {
       // Count commits that will be removed
       let commitsRemoved = 0;
       try {
-        const commits = await git.log({ fs, dir: gitDir, ref: "HEAD" });
+        const commits = await git.log({
+          fs,
+          dir: workingDir,
+          gitdir: gitDir,
+          ref: "HEAD",
+        });
         for (const commit of commits) {
           if (commit.oid === targetCommitSha) {
             break;
@@ -853,7 +871,8 @@ export class IsoGitService {
                 git
                   .readCommit({
                     fs,
-                    dir: gitDir,
+                    dir: workingDir,
+                    gitdir: gitDir,
                     oid: targetCommitSha,
                   })
                   .then(async (commit) => {
@@ -867,7 +886,8 @@ export class IsoGitService {
                     ): Promise<void> => {
                       const { tree: treeEntries } = await git.readTree({
                         fs,
-                        dir: gitDir,
+                        dir: workingDir,
+                        gitdir: gitDir,
                         oid: treeOid,
                       });
 
@@ -887,7 +907,8 @@ export class IsoGitService {
                           // Read blob and write file
                           const { blob } = await git.readBlob({
                             fs,
-                            dir: gitDir,
+                            dir: workingDir,
+                            gitdir: gitDir,
                             oid: entry.oid,
                           });
 
@@ -946,7 +967,7 @@ export class IsoGitService {
   async isRepositoryInitialized(workingDir: string): Promise<boolean> {
     const gitDir = this.getGitDir(workingDir);
     try {
-      await git.currentBranch({ fs, dir: gitDir });
+      await git.currentBranch({ fs, gitdir: gitDir, dir: workingDir });
       return true;
     } catch {
       return false;
