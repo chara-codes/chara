@@ -1,5 +1,11 @@
 # chara
 
+## 0.1.16
+
+### Patch Changes
+
+- e752e56: Implement history of generation, add moonshotai support
+
 ## 0.1.15
 
 ### Patch Changes

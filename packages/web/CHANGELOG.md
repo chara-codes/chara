@@ -1,5 +1,14 @@
 # @chara-codes/web
 
+## 0.1.16
+
+### Patch Changes
+
+- e752e56: Implement history of generation, add moonshotai support
+- Updated dependencies [e752e56]
+  - @chara-codes/design-system@0.1.16
+  - @chara-codes/core@0.1.16
+
 ## 0.1.15
 
 ### Patch Changes

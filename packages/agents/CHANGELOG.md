@@ -1,5 +1,14 @@
 # @chara-codes/agents
 
+## 0.1.16
+
+### Patch Changes
+
+- e752e56: Implement history of generation, add moonshotai support
+- Updated dependencies [e752e56]
+  - @chara-codes/settings@0.1.16
+  - @chara-codes/logger@0.1.16
+
 ## 0.1.15
 
 ### Patch Changes
