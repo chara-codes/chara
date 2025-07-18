@@ -9,5 +9,11 @@
     "packageManager": "npm",
     "languages": ["typescript", "javascript"],
     "projectType": "web"
+  },
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
   }
 }
