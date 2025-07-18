@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="chara-logo.jpeg" alt="Chara Codes" title="Chara Codes" width=300/>
+    <img src="chara-logo.svg" alt="Chara Codes" title="Chara Codes" width=300/>
 </p>
 
 # Table of Contents
@@ -36,10 +36,9 @@ In Greek, the word 'chara' (χαρά) means 'joy' or 'happiness'. Chara Codes ai
 
 The project is organized as a monorepo with the following packages:
 
-- `@chara-codes/web` - Next.js frontend application
+- `@chara-codes/web` - frontend application
   - Split interface for chat and preview
   - Real-time code editing and preview
-  - Responsive UI built with Tailwind and shadcn/ui
 
 - `@chara-codes/server` - Backend server application
   - tRPC API with WebSocket support
@@ -83,8 +82,6 @@ chara dev
 Chara can be deployed using Docker for production environments. The project includes a `docker-compose.yml` configuration that sets up the following services:
 
 - **traefik**: Reverse proxy/load balancer that handles routing, TLS termination, and provides a dashboard
-- **charaserver**: Backend server application container
-- **charaweb**: Next.js frontend application container
 - **charatunnel**: Connection tunnel service for remote access
 
 ### Prerequisites
@@ -111,8 +108,6 @@ docker-compose down
 
 The Docker setup uses Traefik as a reverse proxy with automatic HTTPS redirection and is configured to expose services on these domains:
 
-- `web.chara-ai.dev` - Frontend application
-- `server.chara-ai.dev` - Backend API
 - `*.chara-ai.dev` - Dynamic tunnel subdomains
 
 You can modify the domain names and other settings in the `docker-compose.yml` file or through Traefik's dynamic configuration.
@@ -121,9 +116,9 @@ You can modify the domain names and other settings in the `docker-compose.yml` f
 
 Chara uses a modern stack with:
 
-- **Frontend**: Next.js, React, TailwindCSS, shadcn/ui
+- **Frontend**: React, Styled components, Vite
 - **Backend**: Bun, tRPC, Drizzle ORM, LibSQL
-- **AI**: Multiple provider support through AI SDK
+- **Agents**: Multiple provider support through AI SDK
 - **Real-time**: WebSocket for live updates
 - **CLI**: Bun-powered command line tool
 
