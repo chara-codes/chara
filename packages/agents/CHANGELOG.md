@@ -1,5 +1,14 @@
 # @chara-codes/agents
 
+## 0.1.18
+
+### Patch Changes
+
+- f7b3eb2: fix terminal tool
+- Updated dependencies [f7b3eb2]
+  - @chara-codes/settings@0.1.18
+  - @chara-codes/logger@0.1.18
+
 ## 0.1.17
 
 ### Patch Changes

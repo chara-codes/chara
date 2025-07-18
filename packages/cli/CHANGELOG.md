@@ -1,5 +1,11 @@
 # chara
 
+## 0.1.18
+
+### Patch Changes
+
+- f7b3eb2: fix terminal tool
+
 ## 0.1.17
 
 ### Patch Changes
