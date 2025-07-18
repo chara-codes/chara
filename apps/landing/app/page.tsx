@@ -23,7 +23,7 @@ export default function Home() {
   const copyToClipboard = () => {
     const packageManager =
       document.getElementById("package-manager")?.textContent?.trim() || "bunx";
-    const command = `${packageManager} chara dev`;
+    const command = `${packageManager} @chara-codes/cli dev`;
     navigator.clipboard.writeText(command);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -237,7 +237,7 @@ export default function Home() {
                       <span id="package-manager" className="text-amber-300">
                         bunx
                       </span>
-                      <span className="text-white"> chara dev</span>
+                      <span className="text-white"> @chara-codes/cli dev</span>
                     </div>
                   </code>
                 </pre>

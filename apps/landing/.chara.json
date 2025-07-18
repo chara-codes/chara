@@ -1,0 +1,13 @@
+{
+  "dev": "npm run dev",
+  "diagnostic": "npm run build && npm run lint",
+  "info": {
+    "description": "The Chara Codes Landing page. Next.js project with React, TypeScript, and Tailwind CSS, ui.shadcn. https://chara-ai.dev",
+    "frameworks": ["next", "react"],
+    "tools": ["tailwind-css"],
+    "stack": ["typescript", "nodejs"],
+    "packageManager": "npm",
+    "languages": ["typescript", "javascript"],
+    "projectType": "web"
+  }
+}

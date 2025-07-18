@@ -6,11 +6,23 @@ import { SparklesIcon } from "lucide-react"
 export function MagicButton() {
   const [isHovered, setIsHovered] = useState(false)
 
+  const handleScrollToSubscribe = () => {
+    const subscribeSection = document.getElementById('subscribe')
+    if (subscribeSection) {
+      subscribeSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }
+  }
+
   return (
     <button
-      className="relative px-5 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-amber-500 text-white font-medium overflow-hidden group"
+      className="relative px-5 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-amber-500 text-white font-medium overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleScrollToSubscribe}
+      aria-label="Scroll to subscribe form"
     >
       <span className="relative z-10 flex items-center gap-1.5">
         <SparklesIcon className="w-4 h-4" />
