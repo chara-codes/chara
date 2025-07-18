@@ -1,5 +1,13 @@
 # @chara-codes/design-system
 
+## 0.1.17
+
+### Patch Changes
+
+- d3b729e: Refactory of the project, cleanup, update documentation, update LICENSE
+- Updated dependencies [d3b729e]
+  - @chara-codes/core@0.1.17
+
 ## 0.1.16
 
 ### Patch Changes

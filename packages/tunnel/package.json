@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/tunnel",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "A lightweight tunneling service that exposes local development servers to the internet through custom subdomains",
   "keywords": [
     "tunnel",

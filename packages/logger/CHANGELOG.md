@@ -1,5 +1,11 @@
 # @chara-codes/logger
 
+## 0.1.17
+
+### Patch Changes
+
+- d3b729e: Refactory of the project, cleanup, update documentation, update LICENSE
+
 ## 0.1.16
 
 ### Patch Changes
