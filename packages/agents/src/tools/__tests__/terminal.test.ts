@@ -200,7 +200,7 @@ describe("terminal tool", () => {
       terminal.execute({
         command: "echo test",
         cd: "/nonexistent/directory/path",
-      }),
+      })
     ).rejects.toThrow("Failed to execute command");
   });
 
@@ -284,8 +284,35 @@ describe("terminal tool", () => {
   test("should have correct tool metadata", () => {
     expect(terminal.description).toContain("Executes a shell one-liner");
     expect(terminal.description).toContain("cd parameter");
-    expect(terminal.description).toContain("Do not use this tool for commands");
+    expect(terminal.description).toContain(
+      "IMPORTANT: Do NOT use this tool for long-running tasks"
+    );
+    expect(terminal.description).toContain("Development servers");
+    expect(terminal.description).toContain("5-minute timeout");
     expect(terminal.parameters).toBeDefined();
+  });
+
+  test("should prevent long-running commands", async () => {
+    const longRunningCommands = [
+      "npm run dev",
+      "yarn dev",
+      "pnpm dev",
+      "bun run start",
+      "next dev",
+      "vite dev",
+      "nodemon app.js",
+      "python -m http.server",
+      "serve .",
+    ];
+
+    for (const command of longRunningCommands) {
+      await expect(
+        terminal.execute({
+          command,
+          cd: testFS.getPath(),
+        })
+      ).rejects.toThrow(/long-running task.*runner tool/);
+    }
   });
 
   test("should handle empty command", async () => {

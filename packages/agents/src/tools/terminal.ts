@@ -6,20 +6,51 @@ const COMMAND_OUTPUT_LIMIT = 16 * 1024; // 16KB limit
 
 export const terminal = tool({
   description: `Executes a shell one-liner and returns its combined output.
-  This tool launches a process in the user’s shell, capturing both stdout and stderr streams—preserving their original write order—and returns them together in a single string.
-  Unless there’s a specific need to display it again, avoid redundantly listing the output since the result will already be shown to the user.
-  Always use the cd parameter to switch to one of the project’s root directories; do not include directory changes directly in the shell command, or it may cause errors.
-  Do not use this tool for commands that don’t terminate on their own, such as launching servers (e.g., npm run start, npm run dev, python -m http.server) or persistent file watchers.
+  This tool launches a process in the user's shell, capturing both stdout and stderr streams—preserving their original write order—and returns them together in a single string.
+  Unless there's a specific need to display it again, avoid redundantly listing the output since the result will already be shown to the user.
+  Always use the cd parameter to switch to one of the project's root directories; do not include directory changes directly in the shell command, or it may cause errors.
+
+  IMPORTANT: Do NOT use this tool for long-running tasks or commands that don't terminate on their own, including:
+  - Development servers (npm run dev, npm run start, yarn dev, pnpm dev)
+  - Production servers (python -m http.server, serve, etc.)
+  - File watchers (webpack --watch, nodemon, etc.)
+  - Interactive commands requiring user input
+  - Any process that runs indefinitely
+
+  This tool has a 5-minute timeout and is designed only for quick, finite operations like building, testing, installing packages, or running one-time scripts.
   Each time this tool is used, it starts a new shell process—no previous state is preserved between runs.`,
   parameters: z.object({
     command: z.string().describe("The one-liner command to execute"),
     cd: z
       .string()
       .describe(
-        "Working directory for the command. This must be one of the root directories of the project",
+        "Working directory for the command. This must be one of the root directories of the project"
       ),
   }),
   execute: async ({ command, cd }, context) => {
+    // Validate command to prevent long-running tasks
+    const longRunningPatterns = [
+      /\b(npm|yarn|pnpm|bun)\s+(run\s+)?(dev|start|serve)\b/,
+      /\b(next|nuxt|vite|webpack-dev-server)\s+(dev|start)\b/,
+      /\b(nodemon|pm2\s+start)\b/,
+      /\b(webpack\s+--watch|rollup\s+--watch)\b/,
+      /\b(python\s+-m\s+http\.server|serve|http-server)\b/,
+      /\b(rails\s+server|ruby\s+server)\b/,
+      /\b(php\s+-S)\b/,
+      /\b(docker\s+run\s+(?!.*--rm))/,
+    ];
+
+    const trimmedCommand = command.trim();
+    for (const pattern of longRunningPatterns) {
+      if (pattern.test(trimmedCommand)) {
+        throw new Error(
+          `Command "${command}" appears to be a long-running task (dev server, file watcher, etc.) which is not supported by this tool. ` +
+            `This tool is designed for quick, finite operations only. ` +
+            `If you need to start a development server, please use the runner tool instead to examine and manage running processes.`
+        );
+      }
+    }
+
     try {
       // Determine shell based on platform
       const shell = process.platform === "win32" ? "cmd" : "/bin/bash";
@@ -55,7 +86,7 @@ export const terminal = tool({
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(
           () => reject(new Error("Command timed out after 300 seconds")),
-          timeout,
+          timeout
         );
       });
 
@@ -149,7 +180,7 @@ export const terminal = tool({
       const { processedContent, wasEmpty } = processContent(
         combinedOutput,
         command,
-        exitCode,
+        exitCode
       );
 
       return processedContent;
@@ -157,7 +188,7 @@ export const terminal = tool({
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new Error(
-        `Failed to execute command "${command}": ${errorMessage}`,
+        `Failed to execute command "${command}": ${errorMessage}`
       );
     }
   },
@@ -171,7 +202,7 @@ interface ProcessContentResult {
 function processContent(
   content: string,
   command: string,
-  exitCode: number | null,
+  exitCode: number | null
 ): ProcessContentResult {
   const shouldTruncate = content.length > COMMAND_OUTPUT_LIMIT;
 
