@@ -1,6 +1,18 @@
 {
   "name": "@chara-codes/tunnel",
   "version": "0.1.16",
+  "description": "A lightweight tunneling service that exposes local development servers to the internet through custom subdomains",
+  "keywords": [
+    "tunnel",
+    "ngrok",
+    "localtunnel",
+    "chara",
+    "development",
+    "proxy",
+    "websocket",
+    "subdomain"
+  ],
+  "author": "Chara Team",
   "module": "./src/index.ts",
   "type": "module",
   "bin": {
@@ -16,6 +28,12 @@
   },
   "peerDependencies": {
     "typescript": "^5.8.2"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/tunnel"
   },
   "dependencies": {
     "@chara-codes/logger": "workspace:*",

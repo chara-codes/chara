@@ -1,6 +1,9 @@
 {
   "name": "@chara-codes/design-system",
   "version": "0.1.16",
+  "description": "Design system components and utilities for Chara frontend applications",
+  "author": "Chara Team",
+  "license": "Apache-2.0",
   "private": true,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -58,5 +61,19 @@
   "peerDependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/frontend/design-system"
+  },
+  "keywords": [
+    "chara",
+    "design-system",
+    "components",
+    "react",
+    "radix-ui",
+    "tailwindcss",
+    "ui"
+  ]
 }

@@ -1,6 +1,9 @@
 {
   "name": "@chara-codes/core",
   "version": "0.1.16",
+  "description": "Core utilities and shared components for Chara frontend applications",
+  "author": "Chara Team",
+  "license": "Apache-2.0",
   "private": true,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -24,5 +27,19 @@
     "tsup": "^8.5.0",
     "eslint": "^9.30.0",
     "@types/node": "^22.15.33"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/frontend/core"
+  },
+  "keywords": [
+    "chara",
+    "frontend",
+    "core",
+    "utilities",
+    "react",
+    "zustand",
+    "trpc"
+  ]
 }

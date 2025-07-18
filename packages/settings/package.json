@@ -13,12 +13,26 @@
     "dev": "tsc --watch"
   },
   "private": true,
+  "author": "Chara Team",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/settings"
+  },
+  "keywords": [
+    "settings",
+    "configuration",
+    "chara",
+    "project-settings",
+    "global-settings"
+  ],
   "publishConfig": {
     "access": "public"
   }

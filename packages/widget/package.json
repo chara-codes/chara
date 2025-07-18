@@ -1,6 +1,9 @@
 {
   "name": "@chara-codes/widget",
   "version": "0.1.16",
+  "description": "AI Widget component for embedding Chara AI coding assistant into web pages",
+  "author": "Chara Team",
+  "license": "Apache-2.0",
   "main": "src/index.tsx",
   "module": "src/index.tsx",
   "types": "src/index.tsx",
@@ -59,6 +62,20 @@
     "vite-plugin-mkcert": "^1.17.8",
     "vitest": "^3.2.2"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/widget"
+  },
+  "keywords": [
+    "ai",
+    "widget",
+    "chara",
+    "coding-assistant",
+    "react",
+    "webcomponent",
+    "element-selection"
+  ],
   "publishConfig": {
     "access": "public"
   }
