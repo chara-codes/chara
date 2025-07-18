@@ -7,11 +7,8 @@ A modular, configurable backend server for the Chara AI chat application, provid
 - **Simple Function-Based API**: Configure and start server with a single `startServer()` function call
 - **Modular Architecture**: Configurable server components with optional features
 - **tRPC API**: Type-safe API for client-server communication
-- **WebSocket Support**: Real-time communication for chat functionality (optional)
 - **MCP Integration**: Model Context Protocol support for advanced AI interactions (optional)
-- **AI Integration**: Multiple AI provider support (OpenAI, Anthropic, Azure, etc.)
 - **Database Integration**: SQLite database with Drizzle ORM
-- **Streaming Responses**: Support for streaming AI responses
 - **Typed Events**: Type-safe event emitter system
 - **Advanced Logging**: Structured, colored logging system
 - **Environment Variable Support**: Automatic loading from environment variables
@@ -42,11 +39,6 @@ Create a `.env` file in the `packages/server` directory:
 # Database configuration
 DATABASE_URL="file:chara.db"
 DATABASE_AUTH_TOKEN=""
-
-# AI provider configuration
-AI_KEY="your-api-key"
-AI_URL="https://api.openai.com/v1"  # Or other provider URLs
-AI_MODEL="gpt-4o-mini"  # Default model to use
 
 # Server configuration
 SERVER_PORT=3030
@@ -100,50 +92,6 @@ const { manager, appRouter } = await startServer({
   },
 });
 ```
-
-### Supported AI Providers
-
-The server automatically detects the AI provider based on the API URL:
-
-- OpenAI: `https://api.openai.com/v1`
-- Azure OpenAI: `https://{resource-name}.azure.com/openai`
-- Anthropic: `https://api.anthropic.com/v1`
-- Cohere: `https://api.cohere.ai/v1`
-- Perplexity: `https://api.perplexity.ai/v1`
-- Mistral: `https://api.mistral.ai/v1`
-- Deepseek: `https://api.deepseek.com/v1`
-- Ollama: `http://localhost:11434/v1` or any URL containing "ollama"
-- DeepInfra: `https://api.deepinfra.com/v1`
-
-## Local AI Development with Ollama in Docker
-
-### Step 1: Install & Run Ollama in Docker
-
-Base command to run ollama in Docker:
-
-```bash
-docker run -d -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
-```
-
-For further details (e.g. running ollama with GPU), refer to the [Ollama Docker documentation](https://hub.docker.com/r/ollama/ollama).
-
-### Step 2: Pull Models
-
-To pull models, use the following commands:
-
-```bash
-docker exec -it ollama bash
-ollama pull wizardcoder
-```
-
-### Step 3: Use ollama in local development
-
-To use the local ollama instance in your development environment, add the following lines to your `packages/server/.env` file:
-
-```bash
-AI_URL="http://localhost:11434/api"
-AI_MODEL="wizardcoder"
-````
 
 ## Database Setup
 

@@ -19,33 +19,15 @@ A command-line interface tool for Chara Codes that facilitates AI-powered develo
 
 ```bash
 # Install globally
-npm install -g chara
+npm install -g @chara-codes/cli
 # or
-bun install -g chara
+bun install -g @chara-codes/cli
 
 # Install locally in your project
-npm install --save-dev chara
+npm install --save-dev @chara-codes/cli
 # or
-bun add -d chara
+bun add -d @chara-codes/cli
 ```
-
-### Alpha Release (Playground)
-
-For testing the latest features from the playground branch:
-
-```bash
-# Install globally
-npm install -g chara@alpha
-# or
-bun install -g chara@alpha
-
-# Install locally in your project
-npm install --save-dev chara@alpha
-# or
-bun add -d chara@alpha
-```
-
-> **Note**: Alpha releases are automatically published from the `playground` branch and may contain experimental features. Use stable releases for production environments.
 
 ## Basic Usage
 

@@ -8,13 +8,13 @@ import {
   red,
   yellow,
 } from "picocolors";
+import { Dumper, type DumpOptions } from "./dumper";
 import {
+  type LoggerConfig,
   LogLevel,
   LogLevelSeverity,
   type TransportType,
-  type LoggerConfig,
 } from "./types";
-import { Dumper, type DumpOptions } from "./dumper";
 
 // Map LogLevel to severity
 const LOG_LEVEL_SEVERITY: Record<LogLevel, LogLevelSeverity> = {
@@ -32,7 +32,7 @@ const LOG_LEVEL_SEVERITY: Record<LogLevel, LogLevelSeverity> = {
 export const coloredConsoleTransport: TransportType = (
   level,
   message,
-  metadata,
+  metadata
 ) => {
   let formattedMessage = "";
   const timestamp = new Date().toLocaleTimeString();
@@ -57,10 +57,14 @@ export const coloredConsoleTransport: TransportType = (
       formattedMessage = `${gray("⋯")} ${gray(timestamp)} ${gray(message)}`;
       break;
     case LogLevel.EVENT:
-      formattedMessage = `${magenta("◆")} ${gray(timestamp)} ${magenta(message)}`;
+      formattedMessage = `${magenta("◆")} ${gray(timestamp)} ${magenta(
+        message
+      )}`;
       break;
     case LogLevel.SERVER:
-      formattedMessage = `${green("▶")} ${gray(timestamp)} ${bold(green(message))}`;
+      formattedMessage = `${green("▶")} ${gray(timestamp)} ${bold(
+        green(message)
+      )}`;
       break;
     default:
       formattedMessage = `${gray(timestamp)} ${message}`;
@@ -110,19 +114,23 @@ export class Logger {
   }
 
   public dumpDebug(data: unknown, label?: string): void {
-    const dumper = new Dumper({ colors: true, compact: true, showTypes: false });
+    const dumper = new Dumper({
+      colors: true,
+      compact: true,
+      showTypes: false,
+    });
     const formattedOutput = dumper.dump(data, label);
     this.log(LogLevel.DEBUG, formattedOutput);
   }
 
   public dumpCompact(data: unknown, label?: string): void {
-    const dumper = new Dumper({ 
-      colors: true, 
-      compact: true, 
+    const dumper = new Dumper({
+      colors: true,
+      compact: true,
       maxDepth: 2,
       showTypes: false,
       maxArrayLength: 10,
-      maxStringLength: 50
+      maxStringLength: 50,
     });
     const formattedOutput = dumper.dump(data, label);
     this.log(LogLevel.INFO, formattedOutput);
@@ -144,7 +152,15 @@ export class Logger {
     this.log(LogLevel.WARNING, message, metadata);
   }
 
+  public warn(message: string, metadata?: unknown): void {
+    this.log(LogLevel.WARNING, message, metadata);
+  }
+
   public error(message: string, metadata?: unknown): void {
+    this.log(LogLevel.ERROR, message, metadata);
+  }
+
+  public err(message: string, metadata?: unknown): void {
     this.log(LogLevel.ERROR, message, metadata);
   }
 
