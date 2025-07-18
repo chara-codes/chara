@@ -1,21 +1,12 @@
+import { existsSync } from "node:fs";
+import ping from "ping";
+import { dirname, join, resolve } from "node:path";
+import { logger } from "@chara-codes/logger";
+import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
+import { bold, cyan, green, yellow } from "picocolors";
 import type { CommandModule } from "yargs";
-import { readConfig } from "../config";
-import { resolve } from "path";
-import {
-  createTRPCProxyClient,
-  createWSClient,
-  wsLink,
-  httpBatchLink,
-  loggerLink,
-} from "@trpc/client";
-import { cyan, bold } from "picocolors";
-import type { AppRouter } from "@chara/server";
-import { logger } from "@chara/logger";
-import { applyInstructions } from "../instructions/apply-instructions";
-import superjson from "superjson";
-import { initMCPClient } from "../mcp/mcpWsclient";
-import type { ActiveClient } from "../types";
-import { prepareClients } from "../mcp/client";
+import { ActionFactory } from "../actions";
+import { intro, outro } from "../utils/prompts";
 
 interface DevCommandArgs {
   projectDir?: string;
@@ -23,58 +14,10 @@ interface DevCommandArgs {
   trace?: boolean;
 }
 
-async function connectToServerEvents(): Promise<void> {
-  // Create WebSocket client
-  const wsClient = createWSClient({
-    url: "ws://localhost:3030/events",
-  });
-
-  // Create tRPC client with WebSocket link
-  const client = createTRPCProxyClient<AppRouter>({
-    links: [
-      loggerLink(),
-      wsLink({
-        client: wsClient,
-        transformer: superjson
-      }),
-    ],
-  });
-
-  client.events.subscribe(undefined, {
-    onData(data: any) {
-      logger.event("Server event received");
-
-      if (data.type === "instructions_execute") {
-        logger.event("Instructions received");
-        try {
-          applyInstructions(data.data);
-        } catch (e) {
-          logger.error(e as string);
-        }
-      }
-    },
-    onError(err: any) {
-      logger.error("Subscription error", err);
-    },
-    onStarted() {
-      logger.event("CLI WS client started succesfully");
-    },
-  });
-}
-
-// Connect to server HTTP endpoints
-function createApiClient() {
-  return createTRPCProxyClient<any>({
-    links: [
-      httpBatchLink({
-        url: "http://localhost:3030/trpc",
-        transformer: superjson
-      }),
-    ],
-  });
-}
-
-export const devCommand: CommandModule<{}, DevCommandArgs> = {
+export const devCommand: CommandModule<
+  Record<string, unknown>,
+  DevCommandArgs
+> = {
   command: "dev",
   describe: "Start development with Chara Codes",
   builder: (yargs) =>
@@ -98,56 +41,304 @@ export const devCommand: CommandModule<{}, DevCommandArgs> = {
         alias: "t",
       }),
   handler: async (argv) => {
-    // Resolve the project directory path
-    const projectDir = resolve(argv.projectDir || process.cwd());
-    // Set log level based on flags
-    if (argv.trace) {
-      logger.setLevel("trace");
-    } else if (argv.verbose) {
-      logger.setLevel("debug");
-    } else {
-      logger.setLevel("info");
-    }
-
-    logger.info(bold(cyan("\n🚀 Starting development with Chara Codes...\n")));
-
-    // Change the current working directory to the project root
-    try {
-      process.chdir(projectDir);
-      logger.info(`Working directory: ${projectDir}`);
-    } catch (error) {
-      logger.error(`Failed to change to directory: ${projectDir}`);
-      logger.error((error as Error).message);
-      process.exit(1);
-    }
-
-    // Read the config from the project directory
-    const config = await readConfig();
-    logger.debug("Configuration loaded", config);
-
-    // Connect to MCP servers list
-    let clientsList: ActiveClient[] = [];
-    if (config.mcpServers) {
-      clientsList = await prepareClients(config.mcpServers);
-    }
-    logger.info(`Connected to ${clientsList.length} servers`);
-    
+    intro(bold(cyan("\n🚀 Starting development with Chara Codes...\n")));
 
     try {
-      // Connect to server events via WebSocket
-      logger.debug("Connecting to server events...");
-      await connectToServerEvents();
-      logger.debug("Connected to server events");
+      // Step 1: Setup logging
+      await ActionFactory.execute("setup-logging", {
+        verbose: argv.verbose,
+        trace: argv.trace,
+      });
 
-      // Initialize API client
-      const apiClient = createApiClient();
-      await initMCPClient();
-      logger.debug("API client initialized");
+      // Step 2: Setup project directory
+      const projectDir = await ActionFactory.execute("setup-project", {
+        verbose: argv.verbose,
+        projectDir: argv.projectDir,
+      });
 
-      logger.success("✓ Chara development environment is ready!");
-      logger.debug(`API endpoint: ${bold("http://localhost:3030/trpc")}`);
-      logger.debug(`WebSocket endpoint: ${bold("ws://localhost:3030/events")}`);
-      logger.info(`Press ${bold("Ctrl+C")} to stop\n`);
+      // Step 3: Check if global config exists, if not run init
+      const globalConfigExists = await existsGlobalConfig();
+      if (!globalConfigExists) {
+        logger.warning(
+          `No global configuration found. Running initialization...`
+        );
+        await ActionFactory.execute("init", {
+          verbose: argv.verbose,
+        });
+      }
+
+      // Step 4: Check if default model exists in global config
+      let globalConfig: any = {};
+      try {
+        globalConfig = await readGlobalConfig();
+        if (!globalConfig.defaultModel) {
+          logger.warning(
+            `No default model found in global configuration. Setting up default model...`
+          );
+
+          // We need to start a temporary server to get available models
+          const tempServer = await ActionFactory.execute("start-agents", {
+            verbose: argv.verbose,
+            silent: true,
+            port: 3031,
+            mcpEnabled: false,
+            websocketEnabled: false,
+          });
+
+          try {
+            await ActionFactory.execute("default-model", {
+              verbose: argv.verbose,
+              serverUrl: "http://localhost:3031",
+            });
+          } finally {
+            // Stop the temporary server
+            await ActionFactory.execute("stop-agents", {
+              verbose: argv.verbose,
+              server: tempServer.server,
+              silent: true,
+            });
+          }
+        }
+      } catch (error) {
+        logger.error("Error reading global configuration:", error);
+        throw error;
+      }
+
+      // Step 5: Check if local/project config exists
+      const localConfigPath = join(projectDir || process.cwd(), ".chara.json");
+      if (!existsSync(localConfigPath)) {
+        logger.warning(
+          `No local configuration found. Initializing project configuration...`
+        );
+        await ActionFactory.execute("initialize-config", {
+          verbose: argv.verbose,
+          configFile: ".chara.json",
+        });
+      }
+
+      // Step 6: Load local configuration
+      const config = await ActionFactory.execute("load-config", {
+        verbose: argv.verbose,
+      });
+
+      // Step 7: Check if local config has MCP servers
+      const hasMcpServers =
+        config?.mcpServers && Object.keys(config.mcpServers).length > 0;
+
+      if (argv.verbose) {
+        logger.debug(`MCP servers available: ${hasMcpServers ? "Yes" : "No"}`);
+        if (hasMcpServers) {
+          logger.debug(
+            `MCP servers: ${Object.keys(config.mcpServers).join(", ")}`
+          );
+        }
+      }
+
+      // Step 8: Start server with appropriate configuration
+      const serverResult = await ActionFactory.execute("start-server", {
+        verbose: argv.verbose,
+        port: 3030,
+        mcpEnabled: hasMcpServers,
+        websocketEnabled: hasMcpServers, // Only enable WebSocket if MCP is available
+        silent: false,
+      });
+
+      // Step 9: Connect to MCP servers if available
+      let clientsList: any[] = [];
+      if (hasMcpServers) {
+        clientsList = await ActionFactory.execute("connect-mcp", {
+          verbose: argv.verbose,
+          mcpServers: config.mcpServers,
+        });
+      }
+
+      // Step 10: Connect to server events via WebSocket (if enabled)
+      if (hasMcpServers) {
+        await ActionFactory.execute("connect-events", {
+          verbose: argv.verbose,
+        });
+      }
+
+      // Step 11: Initialize API client
+      if (hasMcpServers) {
+        await ActionFactory.execute("init-api", {
+          verbose: argv.verbose,
+        });
+      }
+
+      // Step 12: Initialize MCP client (if MCP servers are available)
+      if (hasMcpServers) {
+        await ActionFactory.execute("init-mcp-client", {
+          verbose: argv.verbose,
+        });
+      }
+
+      // Step 13: Start agents with appropriate configuration
+      const agentsResult = await ActionFactory.execute("start-agents", {
+        verbose: argv.verbose,
+        port: 3031,
+        mcp: hasMcpServers,
+        runner: true,
+        websocket: true,
+        silent: false,
+      });
+
+      // Step 14: Start web applications that should connect to server and agents
+      const pathToRoot = dirname(process.execPath);
+      const indexWeb = Bun.file(`${pathToRoot}/web/index.html`);
+      const indexWidget = Bun.file(`${pathToRoot}/widget/index.html`);
+      const hasWeb = await indexWeb.exists();
+      const hasWidget = await indexWidget.exists();
+
+      const serveStatic = await ActionFactory.execute("serve-static", {
+        verbose: argv.verbose,
+        port: 1237,
+        directories: {
+          "/": hasWeb
+            ? `${pathToRoot}/web/`
+            : resolve(`${__dirname}../../../../web/dist/`),
+          "/widget": hasWidget
+            ? `${pathToRoot}/widget/`
+            : resolve(`${__dirname}../../../../widget/dist/`),
+        },
+        silent: true,
+      });
+
+      // Step 15: Run widget mode (tunnel server, tunnel client, event listener for the runner)
+      const pingControl = await ping.promise.probe("control.localhost");
+      const pingChara = await ping.promise.probe("chara.localhost");
+
+      let tunnelClient: any = null;
+      if (pingChara.alive && pingControl.alive) {
+        const { events } = agentsResult.server;
+        const tunnel = await ActionFactory.execute("start-tunnel-server", {
+          verbose: argv.verbose,
+          port: 1337,
+          domain: "localhost",
+          controlDomain: "control.localhost",
+          replacements: [
+            {
+              pattern: "</body>",
+              replacement: `<script type="module" src="http://localhost:1237/widget/main.js"></script><chara-codes></chara-codes></body>`,
+            },
+          ],
+          silent: true,
+        });
+
+        events.on(
+          "runner:status",
+          async ({ proccesId, status, serverInfo }) => {
+            console.log(status);
+            if (status === "active" && tunnel && !tunnelClient) {
+              tunnelClient = await ActionFactory.execute(
+                "start-tunnel-client",
+                {
+                  verbose: argv.verbose,
+                  port: serverInfo.port,
+                  remoteHost: "control.localhost:1337",
+                  subdomain: "chara",
+                  secure: false,
+                  silent: true,
+                }
+              );
+              logger.server(
+                `Tunnel client started on port http://${tunnelClient.subdomain}:1337`
+              );
+            } else {
+              if (tunnelClient) {
+                await ActionFactory.execute("stop-tunnel-client", {
+                  client: tunnelClient,
+                  force: true,
+                  silent: true,
+                });
+              }
+            }
+          }
+        );
+      } else {
+        logger.warning(
+          `Please add the following line to your ${bold("/etc/host")} file`
+        );
+        console.log(bold("\n127.0.0.1 control.localhost chara.localhost\n"));
+      }
+
+      if (argv.verbose) {
+        logger.info(`\n${bold("🔧 Server Configuration:")}`);
+        logger.info(
+          `  • API endpoint: ${bold(
+            `http://localhost:${serverResult.port}/trpc`
+          )}`
+        );
+        logger.info(
+          `  • MCP enabled: ${hasMcpServers ? green("Yes") : yellow("No")}`
+        );
+        logger.info(`  • Runner enabled: ${green("Yes")}`);
+      }
+
+      logger.info(
+        `  • Project directory: ${cyan(projectDir || process.cwd())}`
+      );
+
+      if (hasMcpServers && clientsList.length > 0) {
+        logger.info(
+          `  • Active MCP clients: ${clientsList
+            .map((client: any) => cyan(client.name || "Unknown"))
+            .join(", ")}`
+        );
+      }
+
+      // Print server information
+      logger.server(`${bold("🖥️  Running Servers:")}`);
+      logger.server(
+        `  • Backend Server: ${cyan(`http://localhost:${serverResult.port}`)}`
+      );
+      logger.server(
+        `  • Agents Server: ${cyan(`http://localhost:${agentsResult.port}`)}`
+      );
+      logger.server(
+        `  • Chara Codes Web: ${cyan(`http://localhost:${serveStatic.port}`)}`
+      );
+      if (tunnelClient) {
+        logger.server(
+          `Tunnel client started on port http://${tunnelClient.subdomain}:1337`
+        );
+      }
+
+      outro(
+        `${bold(green("🎉 Development environment ready!"))}. ${cyan(
+          `Press ${bold("Ctrl+C")} to stop`
+        )}`
+      );
+      // Keep the process running
+      process.on("SIGINT", async () => {
+        console.log("\n\n🛑 Shutting down development environment...");
+
+        try {
+          await ActionFactory.execute("stop-agents", {
+            verbose: argv.verbose,
+            server: agentsResult.server,
+            silent: true,
+          });
+
+          await ActionFactory.execute("stop-server", {
+            verbose: argv.verbose,
+            server: serverResult.server,
+            silent: true,
+          });
+
+          console.log("✓ Serve static stopped successfully");
+          await ActionFactory.execute("stop-serve-static", {
+            verbose: argv.verbose,
+            server: serveStatic.server,
+            silent: true,
+          });
+          console.log("✓ Development environment stopped successfully");
+        } catch (error) {
+          logger.error("Error during shutdown:", error);
+        }
+
+        process.exit(0);
+      });
     } catch (error) {
       logger.error("Failed to initialize development environment:");
       logger.error((error as Error).message);

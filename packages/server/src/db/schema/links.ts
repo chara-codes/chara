@@ -1,7 +1,6 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { stacks } from "./stacks";
 import { relations, sql } from "drizzle-orm";
-import { linkTypes } from "../../types.ts";
 
 /**
  * Represents web links/URLs that have been saved to stacks.
@@ -18,12 +17,12 @@ export const links = sqliteTable("links", {
   id: integer("id").primaryKey({
     autoIncrement: true,
   }),
-  /** Display title for the linked content */
+  /** Display title for the link */
   title: text("title").notNull(),
+  /** Display description for the link */
+  description: text("description"),
   /** The complete URL pointing to the linked content */
   url: text("url").notNull(),
-  /** Link type */
-  kind: text("kind", { enum: linkTypes }).notNull(),
   /** Timestamp when this link was created */
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()

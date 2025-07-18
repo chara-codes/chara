@@ -1,6 +1,6 @@
 import * as zlib from "zlib";
 import { Writable } from "stream";
-import { logger } from "../logger";
+import { logger } from "@chara-codes/logger";
 
 /**
  * Determines the compression type to use based on Content-Encoding header
@@ -29,7 +29,7 @@ export function getCompressionType(headers: Headers): string | undefined {
  */
 export function createCompressionStream(
   stream: ReadableStream<Uint8Array>,
-  compressionType: string,
+  compressionType: string
 ): ReadableStream<Uint8Array> {
   // Create a new ReadableStream that will emit compressed data
   return new ReadableStream({
@@ -91,7 +91,7 @@ export function createCompressionStream(
             // Handle backpressure if the write buffer is full
             if (!writeResult) {
               await new Promise((resolve) =>
-                writableNodeStream.once("drain", resolve),
+                writableNodeStream.once("drain", resolve)
               );
             }
           }
@@ -107,9 +107,9 @@ export function createCompressionStream(
 }
 
 /**
- * Prepares headers for compression by setting Content-Encoding 
+ * Prepares headers for compression by setting Content-Encoding
  * and removing Content-Length
- * 
+ *
  * @param headers The HTTP response headers to modify
  * @param compressionType The type of compression being applied
  * @returns The modified headers
@@ -119,12 +119,12 @@ export function prepareHeadersForCompression(
   compressionType: string
 ): Headers {
   const newHeaders = new Headers(headers);
-  
+
   // Set the Content-Encoding header
   newHeaders.set("content-encoding", compressionType);
-  
+
   // Remove Content-Length header as it will change with compression
   newHeaders.delete("content-length");
-  
+
   return newHeaders;
 }

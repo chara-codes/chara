@@ -9,9 +9,9 @@ import {
   type InstructionsResult,
   type ActionResult,
 } from "./types";
-import { logger } from "@chara/logger";
+import { logger } from "@chara-codes/logger";
 import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
-import type { AppRouter } from "@chara/server";
+import type { AppRouter } from "@chara-codes/server";
 import superjson from "superjson";
 
 const execAsync = promisify(exec);
@@ -50,13 +50,13 @@ async function reportResults(results: InstructionsResult): Promise<void> {
     logger.success("Successfully reported results to server");
   } catch (error) {
     logger.error(
-      `Failed to report results to server: ${(error as Error).message}`,
+      `Failed to report results to server: ${(error as Error).message}`
     );
   }
 }
 
 export async function applyInstructions(
-  instructions: Instructions,
+  instructions: Instructions
 ): Promise<InstructionsResult> {
   const { actions, projectRoot } = instructions;
 

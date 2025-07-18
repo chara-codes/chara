@@ -1,12 +1,11 @@
-import { projects } from "./projects";
+import { sql } from "drizzle-orm";
 import {
+  type AnySQLiteColumn,
+  index,
   int,
   sqliteTable,
   text,
-  index,
-  type AnySQLiteColumn,
 } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
 
 /**
  * Represents chat conversations in the system.
@@ -24,19 +23,14 @@ export const chats = sqliteTable(
     title: text().notNull(),
 
     /** Timestamp (in milliseconds) when the chat was created */
-    createdAt: int("created_at", { mode: "timestamp" })
+    createdAt: int("created_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
 
     /** Timestamp when the chat was last updated */
-    updatedAt: int("updated_at", { mode: "timestamp" })
+    updatedAt: int("updated_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
-
-    /** Reference to the project this chat belongs to */
-    projectId: int()
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
 
     /** Optional reference to a parent chat, allowing for hierarchical chat organization */
     parentId: int().references((): AnySQLiteColumn => chats.id, {
@@ -44,7 +38,6 @@ export const chats = sqliteTable(
     }),
   },
   (table) => ({
-    projectIdx: index("idx_chats_project_id").on(table.projectId),
     parentIdx: index("idx_chats_parent_id").on(table.parentId),
-  }),
+  })
 );

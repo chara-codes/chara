@@ -9,7 +9,7 @@ COPY ./bun.lock .
 # Copy source files
 COPY . .
 
-WORKDIR /app/packages/landing
+WORKDIR /app/apps/landing
 
 # Install dependencies
 RUN bun install

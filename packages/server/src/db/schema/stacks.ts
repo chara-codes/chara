@@ -1,14 +1,6 @@
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { stackTypes } from "../../types.ts";
-
-/**
- * Represents technology stacks used in projects.
- *
- * A stack is a collection of technologies, frameworks, libraries, or tools
- * that are used together in a project. This table stores information about
- * these technology combinations, including their names and descriptions.
- */
+import { stackIconTypes, stackTypes } from "../../types.ts";
 
 export const stacks = sqliteTable("stacks", {
   /** Unique identifier for the technology stack */
@@ -17,8 +9,16 @@ export const stacks = sqliteTable("stacks", {
   title: text("title").notNull(),
   /** Stack type */
   type: text("type", { enum: stackTypes }).notNull().default("others"),
+  /** Short description of the technology stack */
+  shortDescription: text("shortDescription"),
   /** Detailed description of the technology stack and its components */
-  description: text("description"),
+  longDescription: text("long_description"),
+  /** Tech stack icon */
+  icon: text("icon", { enum: stackIconTypes }).notNull().default("code"),
+  /** Indicates if the stack is new */
+  isNew: integer("is_new", { mode: "boolean" }).notNull().default(true),
+  /** Stack popularity rating */
+  popularity: integer("popularity").notNull().default(0),
   /** Timestamp when the stack entry was created */
   createdAt: integer("created_at", { mode: "timestamp" })
     .default(sql`CURRENT_TIMESTAMP`)

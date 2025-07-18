@@ -5,7 +5,7 @@
 # Configuration variables
 REPO_DIR="${REPO_DIR:-$(pwd)}"
 DOCKER_COMPOSE_FILE="${DOCKER_COMPOSE_FILE:-docker-compose.yml}"
-GIT_BRANCH="${GIT_BRANCH:-main}"
+GIT_BRANCH="${GIT_BRANCH:-playground}"
 LOG_FILE="${LOG_FILE:-deploy.log}"
 GIT_USER="${GIT_USER:-apk}"
 

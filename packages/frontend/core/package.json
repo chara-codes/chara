@@ -1,0 +1,45 @@
+{
+  "name": "@chara-codes/core",
+  "version": "0.1.18",
+  "description": "Core utilities and shared components for Chara frontend applications",
+  "author": "Chara Team",
+  "license": "Apache-2.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "bbuild": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "ttest": "vitest run"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "@trpc/react-query": "^11.4.3",
+    "zod": "^3.25.67",
+    "zustand": "^5.0.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4",
+    "tsup": "^8.5.0",
+    "eslint": "^9.30.0",
+    "@types/node": "^22.15.33"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/frontend/core"
+  },
+  "keywords": [
+    "chara",
+    "frontend",
+    "core",
+    "utilities",
+    "react",
+    "zustand",
+    "trpc"
+  ]
+}

@@ -1,44 +1,31 @@
 import type { z } from "zod";
-import { type LinkRow, techSchema } from "../dto/stack";
-import type { LinkType } from "../types.ts";
+import { type LinkRow, linkSchema } from '../dto/stack';
 
-export type TechInput = z.infer<typeof techSchema>;
+export type TechInput = z.infer<typeof linkSchema>;
 
 /**
  * Convert UI‑level “tech” objects into Link rows for bulk insert.
  */
-export function techsToLinks(techs: TechInput[], stackId: number) {
-  return techs
-    .flatMap((t) => [
-      t.docsUrl && {
-        title: t.name,
-        url: t.docsUrl,
-        kind: "docs" as LinkType,
-        stackId,
-      },
-      t.codeUrl && {
-        title: t.name,
-        url: t.codeUrl,
-        kind: "code" as LinkType,
-        stackId,
-      },
-    ])
-    .filter(Boolean) as Omit<LinkRow, "id" | "createdAt">[];
-}
+export function techsToLinks(links: TechInput[], stackId: number) {
+  return links.map(
+    ({ title, url, description }) => ({
+      title,
+      url,
+      description: description ?? null,
+      stackId,
+    }),
+  ) as Omit<LinkRow, "id" | "createdAt">[];
 
-/**
+ }
+
+ /**
  * Fold Link rows back into distinct tech objects for the API layer.
  */
-export function linksToTechs(rows: LinkRow[]): TechInput[] {
-  const map = new Map<string, TechInput>();
+ export function linksToTechs(rows: LinkRow[]): TechInput[] {
+   return rows.map(({ title, url, description }) => ({
+     title,
+     url,
+     description: description ?? undefined,
+   }));
 
-  for (const l of rows) {
-    const tech = map.get(l.title) ?? { name: l.title };
-
-    if (l.kind === "code") tech.codeUrl = l.url;
-    if (l.kind === "docs") tech.docsUrl = l.url;
-
-    map.set(l.title, tech);
-  }
-  return [...map.values()];
-}
+ }

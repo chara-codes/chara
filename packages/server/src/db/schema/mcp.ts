@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { stacks } from "./stacks";
+import { relations } from "drizzle-orm";
 
 /**
  * Represents Model Context Protocol (MCP) configurations used in the project.
@@ -20,7 +21,8 @@ export const mcp = sqliteTable("mcp", {
   id: int().primaryKey({
     autoIncrement: true,
   }),
-
+  /** Server name */
+  name: text("name").notNull(),
   /** Server configuration as a JSON object */
   serverConfig: text({ mode: "json" }).notNull().$type<{
     /** Command to execute */
@@ -39,5 +41,14 @@ export const mcp = sqliteTable("mcp", {
   /** Foreign key reference to the stack this MCP belongs to */
   stackId: int()
     .notNull()
-    .references(() => stacks.id),
+    .references(() => stacks.id, { onDelete: "cascade" }),
 });
+export const stackMcpRelations = relations(stacks, ({ many }) => ({
+  mcps: many(mcp),
+}));
+export const mcpStackRelations = relations(mcp, ({ one }) => ({
+  stack: one(stacks, {
+    fields: [mcp.stackId],
+    references: [stacks.id],
+  }),
+}));

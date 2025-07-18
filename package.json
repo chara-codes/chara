@@ -3,23 +3,29 @@
   "private": "true",
   "module": "index.ts",
   "type": "module",
-  "packageManager": "bun@1.2.6",
+  "packageManager": "bun@1.2.18",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "packages/frontend/*"
   ],
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "clean": "rm -rf node_modules packages/*/node_modules bun.lock packages/*/bun.lock"
+    "clean": "rm -rf node_modules packages/*/node_modules packages/*/*/node_modules bun.lock packages/*/bun.lock",
+    "test": "turbo run test"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.11"
+    "@types/bun": "^1.2.18",
+    "@types/http-proxy": "^1.17.16"
   },
   "trustedDependencies": [
     "@swc/core",
     "protobufjs"
   ],
   "dependencies": {
-    "turbo": "^2.5.2"
+    "@changesets/cli": "^2.29.5",
+    "http-proxy": "^1.18.1",
+    "pretty-bytes": "^7.0.0",
+    "turbo": "^2.5.5"
   }
 }

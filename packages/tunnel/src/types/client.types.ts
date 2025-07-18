@@ -64,13 +64,20 @@ export interface RouteSchema {
   response?: Record<number, Record<string, any>>;
 }
 
+// Configuration for request redirection
+export interface RedirectConfig {
+  url: string;
+  headers?: Record<string, string>;
+}
+
 // Configuration for custom route handlers
 export interface RouteOptions {
-  method: string;
+  method?: string; // Optional when redirect is used (to support all methods)
   url: string;
   schema?: RouteSchema;
   preHandler?: (request: RouteRequest, reply: RouteReply) => Promise<void>;
-  handler: (request: RouteRequest, reply: RouteReply) => Promise<any>;
+  handler?: (request: RouteRequest, reply: RouteReply) => Promise<any>;
+  redirect?: RedirectConfig;
 }
 
 // Request object passed to route handlers

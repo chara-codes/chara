@@ -1,136 +1,165 @@
+import { logger } from "@chara-codes/logger";
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
-import { messageSchema } from "../../dto/chat.ts";
 import {
-  DEFAULT_PROJECT_ID,
-  DEFAULT_PROJECT_NAME,
-  DEFAULT_STACK_ID,
-  ensureChat,
-  findExistingChat,
-  ensureProjectExists,
-  streamObjectAndPersist,
-  streamTextAndPersist,
-  getHistoryAndPersist,
+  createChat,
+  getChatList,
+  getHistory,
+  saveMessage,
+  updateMessage,
+  deleteMessages,
 } from "../../repos/chatRepo.ts";
-import { myLogger as logger } from "../../utils/logger";
+import { publicProcedure, router } from "../trpc";
 
 export const chatRouter = router({
-  streamText: publicProcedure
-    .input(
-      z.object({
-        project: z.object({ id: z.number(), name: z.string() }),
-        stack: z.object({ id: z.string(), name: z.string() }),
-        chatId: z.number().optional(),
-        question: z.string(),
-      }),
-    )
-    .query(async function* ({ ctx, input }) {
-      try {
-        const projectId = input?.project?.id ?? DEFAULT_PROJECT_ID;
-        const projectName = input?.project?.name ?? DEFAULT_PROJECT_NAME;
-        const stackId = input?.stack?.id ?? DEFAULT_STACK_ID;
-
-        // Ensure the project exists or create it
-        await ensureProjectExists({
-          projectId,
-          projectName,
-          stackId: Number(stackId),
-        });
-
-        const chatId =
-          input.chatId ??
-          (await ensureChat(projectId, input.question.slice(0, 60)));
-        yield* streamTextAndPersist({ chatId, question: input.question, ctx });
-      } catch (err) {
-        logger.error(JSON.stringify(err), "streamText endpoint failed");
-        throw err;
-      }
-    }),
-
-  streamObject: publicProcedure
-    .input(
-      z.object({
-        project: z.object({ id: z.number(), name: z.string() }),
-        stack: z.object({ id: z.string(), name: z.string() }),
-        chatId: z.number().optional(),
-        question: z.string(),
-      }),
-    )
-    .query(async function* ({ ctx, input }) {
-      try {
-        const projectId = input?.project?.id ?? DEFAULT_PROJECT_ID;
-        const projectName = input?.project?.name ?? DEFAULT_PROJECT_NAME;
-        const stackId = input?.stack?.id ?? DEFAULT_STACK_ID;
-
-        // Ensure the project exists or create it
-        await ensureProjectExists({
-          projectId,
-          projectName,
-          stackId: Number(stackId),
-        });
-
-        const chatId =
-          input.chatId ??
-          (await ensureChat(projectId, input.question.slice(0, 60)));
-
-        yield* streamObjectAndPersist({
-          chatId,
-          project: input.project,
-          question: input.question,
-          ctx,
-          schema: messageSchema,
-        });
-      } catch (err) {
-        logger.error(JSON.stringify(err), "streamObject endpoint failed");
-        throw err;
-      }
-    }),
-
   getHistory: publicProcedure
     .input(
       z.object({
-        projectId: z.number(),
-        chatId: z.number().optional(),
+        chatId: z.number(),
         lastMessageId: z.string().nullable().optional(),
         limit: z.number().optional(),
-      }),
+      })
     )
     .query(async ({ input }) => {
       try {
-        const projectId = input?.projectId ?? DEFAULT_PROJECT_ID;
+        const chatId = input.chatId;
 
-        const chatId = input.chatId ?? (await findExistingChat(projectId));
-
-        if (!chatId) {
-          return {
-            projectId: input.projectId,
-            chatId: null,
-            history: [],
-          };
-        }
-
-        const lastMessageId = input?.lastMessageId
-          ? parseInt(input.lastMessageId)
+        const lastMessageId = input.lastMessageId
+          ? Number(input.lastMessageId)
           : null;
 
-        if (lastMessageId && isNaN(lastMessageId)) {
-          throw new Error("Invalid lastMessageId");
-        }
-
-        const history = await getHistoryAndPersist({
+        const history = await getHistory({
           chatId,
           lastMessageId,
           limit: input.limit,
         });
 
         return {
-          projectId: input.projectId,
           chatId: chatId,
           history: history.messages,
           hasMore: history.hasMore,
         };
       } catch (err) {
         logger.error(JSON.stringify(err), "getHistory endpoint failed");
+        throw err;
+      }
+    }),
+
+  getChatList: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+        parentId: z.number().nullable().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const result = await getChatList({
+          limit: input.limit,
+          offset: input.offset,
+          parentId: input.parentId,
+        });
+
+        return {
+          chats: result.chats,
+          hasMore: result.hasMore,
+        };
+      } catch (err) {
+        logger.error(JSON.stringify(err), "getChatList endpoint failed");
+        throw err;
+      }
+    }),
+
+  createChat: publicProcedure
+    .input(
+      z.object({
+        title: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const chat = await createChat(input.title);
+
+        return chat;
+      } catch (err) {
+        logger.error(JSON.stringify(err), "createChat endpoint failed");
+        throw err;
+      }
+    }),
+
+  saveMessage: publicProcedure
+    .input(
+      z.object({
+        chatId: z.number(),
+        content: z.string(),
+        role: z.string(),
+        commit: z.string().optional(),
+        context: z.any().optional(),
+        toolCalls: z.any().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const message = await saveMessage({
+          chatId: input.chatId,
+          content: input.content,
+          role: input.role,
+          commit: input.commit,
+          context: input.context,
+          toolCalls: input.toolCalls,
+        });
+
+        return message;
+      } catch (err) {
+        logger.error(JSON.stringify(err), "saveMessage endpoint failed");
+        throw err;
+      }
+    }),
+
+  updateMessage: publicProcedure
+    .input(
+      z.object({
+        messageId: z.number(),
+        commit: z.string().optional(),
+        content: z.string().optional(),
+        context: z.any().optional(),
+        toolCalls: z.any().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const message = await updateMessage({
+          messageId: input.messageId,
+          commit: input.commit,
+          content: input.content,
+          context: input.context,
+          toolCalls: input.toolCalls,
+        });
+
+        return message;
+      } catch (err) {
+        logger.error(JSON.stringify(err), "updateMessage endpoint failed");
+        throw err;
+      }
+    }),
+
+  deleteMessages: publicProcedure
+    .input(
+      z.object({
+        chatId: z.number(),
+        messageId: z.number(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const result = await deleteMessages({
+          chatId: input.chatId,
+          messageId: input.messageId,
+        });
+
+        return result;
+      } catch (err) {
+        logger.error(JSON.stringify(err), "deleteMessages endpoint failed");
         throw err;
       }
     }),

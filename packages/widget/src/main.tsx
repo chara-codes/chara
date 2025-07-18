@@ -1,28 +1,16 @@
-import { StrictMode } from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
+import r2wc from "react-to-webcomponent";
 
-import tailwindStyles from "./index.css?inline";
+import React from "react";
+import ReactDOM from "react-dom/client"; // if using React 18
 
-class CharaCodesApp extends HTMLElement {
-  constructor() {
-    super();
-    const shadow = this.attachShadow({ mode: "open" });
+import { CharaWidgetPanel } from ".";
 
-    const mountPoint = document.createElement("div");
-    shadow.appendChild(mountPoint);
+const CharaCodesWidget = r2wc(CharaWidgetPanel, React, ReactDOM, {
+  props: {
+    defaultOpen: "boolean",
+    position: "string",
+    enabledInputButtons: "string",
+  },
+});
 
-    // Inject CSS string directly
-    const style = document.createElement("style");
-    style.textContent = tailwindStyles;
-    shadow.appendChild(style);
-
-    ReactDOM.createRoot(mountPoint).render(
-      <StrictMode>
-        <App />
-      </StrictMode>,
-    );
-  }
-}
-
-customElements.define("chara-codes", CharaCodesApp);
+customElements.define("chara-codes", CharaCodesWidget);

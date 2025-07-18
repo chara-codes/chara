@@ -1,104 +1,54 @@
-# Chara Web
+# React + TypeScript + Vite
 
-This package contains the web interface for the Chara AI chat application. It's built with Next.js, React, and Tailwind CSS, providing a modern and responsive UI for interacting with AI assistants.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Features
+Currently, two official plugins are available:
 
-- Split interface with chat panel and preview panel
-- Markdown rendering for AI responses
-- Code highlighting
-- File tree navigation
-- File change previews
-- Command execution interface
-- Regeneration and navigation of AI responses
-- File attachment support
-- Responsive design for mobile and desktop
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Getting Started
+## Expanding the ESLint configuration
 
-### Prerequisites
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-- bun
-
-### Installation
-
-```bash
-# Install dependencies from the root of the workspace
-bun install
+```js
+export default tseslint.config({
+  extends: [
+    // Remove ...tseslint.configs.recommended and replace with this
+    ...tseslint.configs.recommendedTypeChecked,
+    // Alternatively, use this for stricter rules
+    ...tseslint.configs.strictTypeChecked,
+    // Optionally, add this for stylistic rules
+    ...tseslint.configs.stylisticTypeChecked,
+  ],
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
 ```
 
-### Development
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-```bash
-# Start the development server
-bun dev
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default tseslint.config({
+  plugins: {
+    // Add the react-x and react-dom plugins
+    'react-x': reactX,
+    'react-dom': reactDom,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended typescript rules
+    ...reactX.configs['recommended-typescript'].rules,
+    ...reactDom.configs.recommended.rules,
+  },
+})
 ```
-
-This will start the Next.js development server on http://localhost:3000.
-
-### Building for Production
-
-```bash
-# Build the application
-bun build
-
-# Start the production server
-bun start
-```
-
-## Project Structure
-
-- `app/` - Next.js app router pages and layouts
-- `components/` - React components
-  - `ui/` - Shadcn UI components
-- `hooks/` - Custom React hooks
-- `lib/` - Utility functions and helpers
-- `mocks/` - Mock data for development
-- `public/` - Static assets
-- `styles/` - Global CSS styles
-- `types/` - TypeScript type definitions
-
-## Key Components
-
-### Chat Panel
-
-The chat panel displays the conversation between the user and the AI assistant. It supports:
-
-- Message history
-- Message regeneration
-- File attachments
-- Code highlighting
-- Markdown rendering
-
-### Preview Panel
-
-The preview panel shows:
-
-- Code previews
-- File changes
-- Visual previews of content
-
-### Split Interface
-
-The interface can be resized by dragging the divider between the chat and preview panels. The preview panel can also be expanded to full screen.
-
-## Development Notes
-
-- The application uses the Vercel AI SDK for streaming responses
-- UI components are built with Shadcn UI and styled with Tailwind CSS
-- TypeScript is used throughout for type safety
-- The app uses React Server Components where appropriate
-
-## Related Packages
-
-This web package is designed to work with the following packages in the Chara workspace:
-
-- `@chara/server` - Backend server that powers the AI interactions
-
-## License
-
-MIT License
-
-Copyright (c) 2025 Chara Codes
-
-This project is licensed under the MIT License - see the main [LICENSE](../../LICENSE) file for details.

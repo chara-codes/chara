@@ -1,10 +1,13 @@
 import { publicProcedure } from "../trpc";
 import { z } from "zod";
-import { observable } from '@trpc/server/observable';
-import { logger } from "@chara/logger";
+import { observable } from "@trpc/server/observable";
+import { logger } from "@chara-codes/logger";
 
-
-type EmitFunction = (data: { instructionId: string; command: string, params: string }) => void;
+type EmitFunction = (data: {
+  instructionId: string;
+  command: string;
+  params: string;
+}) => void;
 const clients: Record<string, EmitFunction> = {};
 
 // Map to store pending response resolvers
@@ -16,7 +19,11 @@ export const trpcMCPCalls = { clients, pendingResponses };
 export const mcpClientsSubscriptions = publicProcedure
   .input(z.object({ clientId: z.string() }))
   .subscription(({ input }) => {
-    return observable<{ instructionId: string; command: string; params: string }>((emit) => {
+    return observable<{
+      instructionId: string;
+      command: string;
+      params: string;
+    }>((emit) => {
       clients[input.clientId] = (data) => emit.next(data);
 
       return () => {
@@ -26,7 +33,13 @@ export const mcpClientsSubscriptions = publicProcedure
   });
 
 export const mcpClientsMutations = publicProcedure
-  .input(z.object({ clientId: z.string(), instructionId: z.string(), result: z.string() }))
+  .input(
+    z.object({
+      clientId: z.string(),
+      instructionId: z.string(),
+      result: z.string(),
+    })
+  )
   .mutation(({ input }) => {
     const resolver = pendingResponses.get(input.instructionId);
     if (resolver) {
@@ -35,5 +48,3 @@ export const mcpClientsMutations = publicProcedure
     }
     return { ok: true };
   });
-
-

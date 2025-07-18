@@ -1,15 +1,26 @@
 {
-  "name": "@chara/logger",
-  "version": "0.1.0",
-  "description": "Logging utility for Chara applications",
+  "name": "@chara-codes/logger",
+  "version": "0.1.18",
+  "description": "A flexible and customizable logging utility for Chara applications with advanced variable dumping capabilities",
+  "keywords": [
+    "logger",
+    "logging",
+    "chara",
+    "debug",
+    "console",
+    "dump",
+    "variable-inspection"
+  ],
+  "author": "Chara Team",
   "main": "src/index.ts",
   "module": "src/index.ts",
-  "types": "src/index.d.ts",
+  "types": "src/index.ts",
   "type": "module",
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test": "bun test"
   },
   "files": [
     "dist",
@@ -23,5 +34,14 @@
   },
   "peerDependencies": {
     "typescript": "^5.8.2"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/logger"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

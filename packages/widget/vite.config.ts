@@ -1,27 +1,47 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
+
+/// <reference types="vitest" />
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  server: {
+    port: 1235,
+  },
+  plugins: [
+    react({
+      jsxImportSource: "react",
+      jsxRuntime: "automatic",
+    }),
+    tailwindcss(),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@chara-codes/design-system": path.resolve(
+        __dirname,
+        "../frontend/design-system/src"
+      ),
+      "@chara-codes/core": path.resolve(__dirname, "../frontend/core/src"),
+      // Add alias for design-system internal paths
+      "@/theme": path.resolve(__dirname, "../frontend/design-system/src/theme"),
     },
   },
-  preview: {
-    port: 3000,
-    allowedHosts: ["widget.chara-ai.dev"],
-  },
   build: {
-    cssCodeSplit: false,
     rollupOptions: {
       output: {
         entryFileNames: "main.js",
         assetFileNames: "main.css",
       },
     },
+    cssCodeSplit: false,
+    chunkSizeWarningLimit: 2000,
+  },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test/setup.ts"],
   },
 });

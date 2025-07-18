@@ -1,20 +1,35 @@
 import { z } from "zod";
-import { stackTypes } from "../types.ts";
+import { stackTypes, stackIconTypes } from "../types.ts";
 import { linksToTechs, type TechInput } from "../utils/techLinks";
-import { stacks, links } from "../db/schema";
+import { stacks, links, mcp } from "../db/schema";
+import { mcpsToStack, type McpInput } from "../utils/mcpUtils";
 
 // ——— Input validation schemas ———
-export const techSchema = z.object({
+export const linkSchema = z.object({
+  url: z.string().url().min(1),
+  title: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export const mcpSchema = z.object({
   name: z.string().min(1),
-  docsUrl: z.string().url().optional().or(z.literal("")),
-  codeUrl: z.string().url().optional().or(z.literal("")),
+  serverConfig: z.object({
+    command: z.string().min(1),
+    args: z.array(z.string()).optional(),
+    env: z.record(z.string()).optional(),
+  }),
 });
 
 export const createStackSchema = z.object({
   title: z.string().min(1),
-  description: z.string().optional(),
+  shortDescription: z.string().optional(),
+  longDescription: z.string().optional(),
   type: z.enum(stackTypes).default("others"),
-  technologies: z.array(techSchema).default([]),
+  icon: z.enum(stackIconTypes).default("code"),
+  isNew: z.boolean().default(true),
+  popularity: z.number().min(0).max(10).default(0),
+  links: z.array(linkSchema).default([]),
+  mcps: z.array(mcpSchema).default([]),
 });
 
 export const updateStackSchema = createStackSchema.extend({
@@ -23,25 +38,37 @@ export const updateStackSchema = createStackSchema.extend({
 
 // ——— DTOs returned to callers ———
 export type TechDTO = TechInput;
+export type McpDTO = McpInput;
 export type StackRow = typeof stacks.$inferSelect;
 export type LinkRow = typeof links.$inferSelect;
+export type McpRow = typeof mcp.$inferSelect;
 
 export type StackDTO = Omit<StackRow, "type"> & {
   type: (typeof stackTypes)[number];
-  technologies: TechDTO[];
+  isNew: boolean;
+  popularity: number;
+  links: TechDTO[];
+  mcps: McpDTO[];
 };
 
 /**
- * Map a joined row (stack + links) into the API DTO.
+ * Map a joined row (stack + links + mcp) into the API DTO.
  */
-export function toStackDTO(row: StackRow & { links: LinkRow[] }): StackDTO {
+export function toStackDTO(
+  row: StackRow & { links?: LinkRow[]; mcps?: McpRow[] },
+): StackDTO {
   return {
     id: row.id,
     title: row.title,
     type: row.type,
-    description: row.description,
+    shortDescription: row.shortDescription,
+    longDescription: row.longDescription,
+    icon: row.icon,
+    isNew: row.isNew,
+    popularity: row.popularity,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-    technologies: linksToTechs(row.links),
+    links: linksToTechs(row.links ?? []),
+    mcps: mcpsToStack(row.mcps ?? []),
   };
 }

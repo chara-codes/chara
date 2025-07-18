@@ -1,13 +1,14 @@
 import { db } from "../api/db";
-import { stacks, links } from "../db/schema";
+import { stacks, links, mcp } from "../db/schema";
 import { eq, like, sql } from "drizzle-orm";
 import { techsToLinks } from "../utils/techLinks";
+import { mcpsToDb } from "../utils/mcpUtils";
 import {
   createStackSchema,
   updateStackSchema,
   toStackDTO,
   type StackDTO,
-} from "../dto/stack";
+} from "../dto";
 
 export class StackNotFoundError extends Error {
   constructor() {
@@ -22,7 +23,12 @@ type Conn = typeof db | TransactionType;
 
 // ——— Queries ———
 export async function listWithLinks(conn: Conn = db): Promise<StackDTO[]> {
-  const rows = await conn.query.stacks.findMany({ with: { links: true } });
+  const rows = await conn.query.stacks.findMany({
+    with: {
+      links: true,
+      mcps: true,
+    },
+  });
   return rows.map(toStackDTO);
 }
 
@@ -32,7 +38,10 @@ export async function findById(
 ): Promise<StackDTO | null> {
   const row = await conn.query.stacks.findFirst({
     where: eq(stacks.id, id),
-    with: { links: true },
+    with: {
+      links: true,
+      mcps: true,
+    },
   });
   return row ? toStackDTO(row) : null;
 }
@@ -47,15 +56,20 @@ export async function create(
       .values({
         title: input.title,
         type: input.type,
-        description: input.description,
+        shortDescription: input.shortDescription,
+        longDescription: input.longDescription,
+        icon: input.icon,
+        isNew: input.isNew ?? true,
+        popularity: input.popularity ?? 0,
       })
       .returning();
 
-    if (input.technologies.length) {
-      await tx
-        .insert(links)
-        .values(techsToLinks(input.technologies, stack.id))
-        .run();
+    if (input.links.length) {
+      await tx.insert(links).values(techsToLinks(input.links, stack.id)).run();
+    }
+
+    if (input.mcps.length) {
+      await tx.insert(mcp).values(mcpsToDb(input.mcps, stack.id)).run();
     }
 
     const full = await findById(stack.id, tx);
@@ -72,19 +86,25 @@ export async function update(
       .update(stacks)
       .set({
         title: input.title,
-        description: input.description,
+        shortDescription: input.shortDescription,
+        longDescription: input.longDescription,
         type: input.type,
+        icon: input.icon,
+        isNew: input.isNew,
+        popularity: input.popularity,
         updatedAt: new Date(),
       })
       .where(eq(stacks.id, input.id))
       .returning();
 
     await tx.delete(links).where(eq(links.stackId, input.id));
-    if (input.technologies.length) {
-      await tx
-        .insert(links)
-        .values(techsToLinks(input.technologies, input.id))
-        .run();
+    if (input.links.length) {
+      await tx.insert(links).values(techsToLinks(input.links, input.id)).run();
+    }
+
+    await tx.delete(mcp).where(eq(mcp.stackId, input.id));
+    if (input.mcps.length) {
+      await tx.insert(mcp).values(mcpsToDb(input.mcps, input.id)).run();
     }
 
     const full = await findById(stack.id, tx);
@@ -117,15 +137,25 @@ export async function duplicate(id: number): Promise<StackDTO> {
     // Insert clone row
     const [clone] = await tx
       .insert(stacks)
-      .values({ title, type: src.type, description: src.description })
+      .values({
+        title,
+        type: src.type,
+        shortDescription: src.shortDescription,
+        longDescription: src.longDescription,
+        icon: src.icon,
+        isNew: src.isNew,
+        popularity: src.popularity,
+      })
       .returning();
 
     // Clone links
-    if (src.technologies.length) {
-      await tx
-        .insert(links)
-        .values(techsToLinks(src.technologies, clone.id))
-        .run();
+    if (src.links.length) {
+      await tx.insert(links).values(techsToLinks(src.links, clone.id)).run();
+    }
+
+    // Clone mcps
+    if (src.mcps.length) {
+      await tx.insert(mcp).values(mcpsToDb(src.mcps, clone.id)).run();
     }
 
     const full = await findById(clone.id, tx);

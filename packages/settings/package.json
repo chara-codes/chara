@@ -1,0 +1,39 @@
+{
+  "name": "@chara-codes/settings",
+  "version": "0.1.18",
+  "description": "Utility to work with different type of settings - project settings, global settings",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "bbuild": "bun build ./src/index.ts --outfile ./dist/index.ts",
+    "test": "bun test",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch"
+  },
+  "private": true,
+  "author": "Chara Team",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/settings"
+  },
+  "keywords": [
+    "settings",
+    "configuration",
+    "chara",
+    "project-settings",
+    "global-settings"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

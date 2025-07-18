@@ -1,5 +1,5 @@
 import type { CommandModule } from "yargs";
-import { logger, LogLevel } from "@chara/logger";
+import { logger, LogLevel } from "@chara-codes/logger";
 import { TunnelClient } from "../client";
 import type {
   RouteReply,
@@ -68,6 +68,14 @@ export const clientCommand: CommandModule<{}, ClientCommandArgs> = {
       url: "/_test/:id*",
       handler: function (request: RouteRequest): Promise<any> {
         return Promise.resolve(request);
+      },
+    });
+
+    client.redirectAll("/openrouter/:path*", {
+      url: "https://openrouter.ai/",
+      headers: {
+        Authorization: "Bearer <OPENROUTER_API_KEY>",
+        "Content-Type": "application/json",
       },
     });
 

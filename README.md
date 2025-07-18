@@ -1,63 +1,106 @@
 <p align="center">
-    <img src="chara-logo.jpeg" alt="Chara Codes" title="Chara Codes" width=300/>
+    <img src="chara-logo.svg" alt="Chara Codes" title="Chara Codes" width=300/>
 </p>
 
-# Table of Contents
+# Chara Codes
+
+[![npm version](https://badge.fury.io/js/@chara-codes%2Fcli.svg)](https://badge.fury.io/js/@chara-codes%2Fcli)
+[![npm downloads](https://img.shields.io/npm/dm/@chara-codes%2Fcli.svg)](https://www.npmjs.com/package/@chara-codes%2Fcli)
+
+An AI-powered development environment that brings joy to coding through intelligent assistance, real-time collaboration, and seamless workflow management.
+
+## Table of Contents
+
 - [Introduction](#introduction)
 - [Features](#features)
+- [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
+- [Installation](#installation)
 - [Architecture](#architecture)
 - [Configuration](#configuration)
+- [Development](#development)
+- [Docker Deployment](#docker-deployment)
+- [Release Management](#release-management)
 - [Contributing](#contributing)
 - [Documentation](#documentation)
-- [Technical depts](#technical-depts)
+- [Technical Roadmap](#technical-roadmap)
 - [License](#license)
 
 ## Introduction
 
-Chara Codes is an AI-powered development environment designed to streamline frontend development workflows. It combines AI assistance with intuitive tools to help developers write, review, and manage code more efficiently. The platform provides real-time AI suggestions, code generation, and project management capabilities through a modern web interface.
-In Greek, the word 'chara' (χαρά) means 'joy' or 'happiness'. Chara Codes aims to bring joy to developers by simplifying and enhancing their coding experience.
+Chara Codes is a comprehensive AI-powered development platform designed to streamline modern software development workflows. The name 'chara' (χαρά) means 'joy' in Greek, reflecting our mission to bring joy back to coding through intelligent automation and seamless AI integration.
+
+The platform combines multiple AI providers, Model Context Protocol (MCP) integration, real-time collaboration, and intuitive tooling to create a unified development experience that enhances productivity while maintaining developer control.
 
 ## Features
 
-- 🤖 AI-powered code generation and suggestions
-- 💻 Intuitive split interface with chat and preview panels
-- 📝 Real-time code preview and editing
-- 🔄 Seamless integration with multiple AI providers
-- 🌐 Built-in Model Context Protocol (MCP) support
-- 📊 Advanced code visualization and navigation
-- 🔍 Smart code analysis and suggestions
-- 🖥️ Focus on local environment changes with minimal setup
-- 🔌 Support for multiple technology stacks (React, Vue, Angular, etc.)
+### 🤖 **Multi-Provider AI Integration**
+- Support for 9+ AI providers (OpenAI, Anthropic, Google, DeepSeek, Ollama, and more)
+- Intelligent context management and streaming responses
 
-## Project Structure
+### 🛠️ **Comprehensive Tooling**
+- Extensible tool system with 15+ built-in tools
+- File system operations with security validation
+- Terminal execution with real-time streaming
+- Code analysis and diagnostics support
 
-The project is organized as a monorepo with the following packages:
+### 🌐 **Model Context Protocol (MCP)**
+- Full MCP integration for enhanced AI context awareness
+- Automatic discovery and connection to MCP servers
+- Support for resources, tools, prompts, and sampling
 
-- `@chara/web` - Next.js frontend application
-  - Split interface for chat and preview
-  - Real-time code editing and preview
-  - Responsive UI built with Tailwind and shadcn/ui
+### 💻 **Development Environment**
+- Intuitive web interface with split chat/preview panels
+- Real-time code editing and preview
+- Process management for development servers
+- Hot-reload support with tunnel capabilities
 
-- `@chara/server` - Backend server application
-  - tRPC API with WebSocket support
-  - Multiple AI provider integrations
-  - SQLite/LibSQL database with Drizzle ORM
-  - Streaming response support
+### 📡 **Real-Time Communication**
+- WebSocket support for live updates
+- Event-driven architecture with typed events
+- Bidirectional communication between client and server
+- Widget mode integration for embedded AI assistance
 
-- `./automation` - Testing framework
-  - End-to-end testing with Playwright
-  - AI-assisted test generation and validation
-  - Visual regression testing
-  - Streamlined helper patterns
-  - Local-remote sync capabilities
+### 🏃 **Process Management**
+- Advanced runner service for long-running processes
+- Real-time monitoring and logging
+- HTTP endpoint testing and health checks
 
-## Getting Started
+### 🎯 **AI Widget Mode**
+- Embeddable AI coding agent that integrates into any webpage
+- Interactive element selection with visual highlighting
+- Context-aware assistance based on selected page elements
+- Seamless integration with existing development workflows
+- Real-time DOM inspection and manipulation capabilities
+
+## Quick Start
+
+### Option 1: Global CLI Installation (Recommended)
+
+```bash
+# Install the Chara CLI globally
+npm install -g @chara-codes/cli
+
+# Navigate to your project
+cd /path/to/your/project
+
+# Start development environment
+chara dev
+```
+
+The `chara dev` command automatically:
+- ✅ Initializes global configuration if needed
+- ✅ Sets up AI model selection
+- ✅ Creates project configuration
+- ✅ Starts all necessary servers
+- ✅ Opens web interface at `http://localhost:1237`
+
+### Option 2: Manual Setup
 
 ```bash
 # Clone the repository
 git clone git@github.com:chara-codes/chara.git
+cd chara
 
 # Install dependencies
 bun install
@@ -66,156 +109,334 @@ bun install
 bun dev
 ```
 
-## Docker Usage
+## Project Structure
 
-Chara can be deployed using Docker for production environments. The project includes a `docker-compose.yml` configuration that sets up the following services:
+Chara is organized as a monorepo with the following packages:
 
-- **traefik**: Reverse proxy/load balancer that handles routing, TLS termination, and provides a dashboard
-- **charaserver**: Backend server application container
-- **charaweb**: Next.js frontend application container
-- **charatunnel**: Connection tunnel service for remote access
-
-### Prerequisites
-
-- Docker and Docker Compose installed
-- SSL certificates in the `./certs` directory
-- Traefik dynamic configuration in `./traefik/dynamic`
-- A `config.json` file for the tunnel service
-
-### Running with Docker
-
-```bash
-# Build and start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
+```
+chara/
+├── packages/
+│   ├── cli/           # Command-line interface (published as '@chara-codes/cli')
+│   ├── server/        # Backend tRPC server with WebSocket support
+│   ├── agents/        # AI agents and multi-provider integration
+│   ├── web/           # React frontend application
+│   ├── widget/        # AI Widget component for web page embedding
+│   ├── logger/        # Flexible logging utility with variable dumping
+│   ├── tunnel/        # Lightweight tunneling service for local development
+│   ├── settings/      # Configuration management for project and global settings
+│   └── frontend/      # Frontend core components and design system
+│       ├── core/      # Core utilities and shared components
+│       └── design-system/ # UI components and design tokens
+├── automation/        # End-to-end testing framework
+└── docs/             # Documentation and guides
 ```
 
-### Configuration
+### Package Details
 
-The Docker setup uses Traefik as a reverse proxy with automatic HTTPS redirection and is configured to expose services on these domains:
+#### `@chara-codes/cli`
+- **Published as**: `@chara-codes/cli` on npm
+- **Purpose**: Development environment management
+- **Features**: AI configuration, MCP integration, tunnel support
+- **Commands**: `dev`, `init`, `default-model`, `initialize-config`
 
-- `web.chara-ai.dev` - Frontend application
-- `server.chara-ai.dev` - Backend API
-- `*.chara-ai.dev` - Dynamic tunnel subdomains
+#### `@chara-codes/server`
+- **Purpose**: Backend API and data management
+- **Tech**: tRPC, WebSocket, SQLite/LibSQL, Drizzle ORM
+- **Features**: Chat management, file operations, real-time events
 
-You can modify the domain names and other settings in the `docker-compose.yml` file or through Traefik's dynamic configuration.
+#### `@chara-codes/agents`
+- **Purpose**: AI provider integration and agent orchestration
+- **Features**: 9+ AI providers, extensible tools, MCP support
+- **Agents**: Chat, Git, Beautify, Initialization agents
+
+#### `@chara-codes/web`
+- **Purpose**: Frontend user interface
+- **Tech**: React, Styled Components, Vite
+- **Features**: Split interface, real-time collaboration, code preview, AI widget mode
+
+#### `@chara-codes/widget`
+- **Purpose**: AI Widget component for embedding into web pages
+- **Tech**: React, Web Components, Tailwind CSS
+- **Features**: Element selection, context-aware assistance, visual highlighting
+- **Use Cases**: In-page AI assistance, element inspection, contextual help
+
+#### `@chara-codes/logger`
+- **Purpose**: Flexible logging utility with advanced capabilities
+- **Features**: Multiple log levels, variable dumping, colorized output, metadata support
+- **Use Cases**: Development debugging, application monitoring, data inspection
+
+#### `@chara-codes/tunnel`
+- **Purpose**: Lightweight tunneling service for exposing local servers
+- **Features**: Custom subdomains, content replacements, WebSocket communication
+- **Use Cases**: Local development sharing, webhook testing, demos
+
+#### `@chara-codes/settings`
+- **Purpose**: Configuration management utility
+- **Features**: Project and global settings management, environment configuration
+- **Use Cases**: Configuration persistence, settings synchronization, environment setup
+
+#### `@chara-codes/core`
+- **Purpose**: Core utilities and shared components for frontend applications
+- **Tech**: React, Zustand, tRPC, TypeScript
+- **Features**: Data services, state management, utility functions
+- **Use Cases**: Shared frontend logic, state management, API integration
+
+#### `@chara-codes/design-system`
+- **Purpose**: Design system components and UI primitives
+- **Tech**: React, Radix UI, Tailwind CSS, Class Variance Authority
+- **Features**: Accessible components, consistent styling, theme support
+- **Use Cases**: UI consistency, component library, design tokens
+
+## Installation
+
+### CLI Installation
+
+```bash
+# Stable release
+npm install -g @chara-codes/cli
+
+# Alpha release (from playground branch)
+npm install -g @chara-codes/cli@alpha
+
+# Local project installation
+npm install --save-dev @chara-codes/cli
+```
+
+### Development Setup
+
+```bash
+# Clone and install
+git clone git@github.com:chara-codes/chara.git
+cd chara
+bun install
+
+# Start all services
+bun dev
+
+# Individual package development
+cd packages/cli && bun run dev
+cd packages/server && bun run dev
+cd packages/agents && bun run dev
+cd packages/web && bun run dev
+```
 
 ## Architecture
 
-Chara uses a modern stack with:
-
-- **Frontend**: Next.js, React, TailwindCSS, shadcn/ui
-- **Backend**: Bun, tRPC, Drizzle ORM, LibSQL
-- **AI**: Multiple provider support through AI SDK
-- **Real-time**: WebSocket for live updates
-- **CLI**: Bun-powered command line tool
-
-### Architecture Diagram
+### System Overview
 
 ```mermaid
 graph TD
-    subgraph "Chara Codes"
-        Web["@chara/web"]
-        CLI["@chara/cli"]
-        Server["@chara/server"]
+    subgraph "Chara Platform"
+        CLI["CLI (@chara-codes/cli)"]
+        Web["Web Interface"]
+        Server["tRPC Server"]
+        Agents["AI Agents"]
     end
 
-    LLMs["LLMs API<br/>(OpenAI, Ollama, Anthropic, Deepseek, etc)"]
-    MCP["MCP"]
+    subgraph "AI Providers"
+        OpenAI["OpenAI"]
+        Anthropic["Anthropic"]
+        Google["Google"]
+        Others["Others..."]
+    end
 
-    Server1["Server 1"]
-    Server2["Server 2"]
-    ServerN["Server N"]
+    subgraph "MCP Ecosystem"
+        MCP["MCP Protocol"]
+        MCPServers["MCP Servers"]
+    end
 
-    Server1 --> MCP
-    Server2 --> MCP
-    ServerN --> MCP
-
-    CLI --> MCP
     CLI --> Server
-    Server --> LLMs
+    CLI --> Agents
     CLI --> Web
+    Web --> Server
+    Server --> Agents
+    Agents --> OpenAI
+    Agents --> Anthropic
+    Agents --> Google
+    Agents --> Others
+    Agents --> MCP
+    MCP --> MCPServers
 ```
+
+### Tech Stack
+
+- **Runtime**: Bun (primary), Node.js (compatible)
+- **Backend**: tRPC, WebSocket, SQLite/LibSQL, Drizzle ORM
+- **Frontend**: React, Styled Components, Vite
+- **AI**: AI SDK with multiple provider support
+- **Protocol**: Model Context Protocol (MCP)
+- **Testing**: Playwright, Visual regression testing
 
 ## Configuration
 
-Each package can be configured independently:
+### Global Configuration
 
-- **Web**: Environment variables for API endpoints and features
-- **Server**: `.env` file for database and AI provider settings
-- **CLI**: `.chara.json` for project-specific configuration
+Initialize global settings with AI provider credentials:
 
-See individual package READMEs for detailed configuration options.
+```bash
+chara init
+```
+
+Creates `~/.chararc` with all provider environment variables:
+
+```json
+{
+  "env": {
+    "OPENAI_API_KEY": "your_key_here",
+    "ANTHROPIC_API_KEY": "your_key_here",
+    "GOOGLE_GENERATIVE_AI_API_KEY": "your_key_here"
+  },
+  "defaultModel": "openai:::gpt-4o"
+}
+```
+
+### Project Configuration
+
+Create `.chara.json` in your project root:
+
+```json
+{
+  "host": "localhost",
+  "port": 3000,
+  "dev": "bun dev",
+  "mcpServers": {
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/project"]
+    }
+  }
+}
+```
+
+### Supported AI Providers
+
+- **OpenAI** - GPT-4o, GPT-4, GPT-3.5
+- **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus
+- **Google** - Gemini Pro, Gemini Flash
+- **DeepSeek** - Chat and reasoning models
+- **OpenRouter** - 100+ models through single API
+- **Ollama** - Local model execution
+- **LM Studio** - Local model serving
+- **Moonshot** - Kimi models
+- **DIAL** - EPAM AI platform
+
+
+## Environment Setup
+
+1. **Initialize configuration**:
+   ```bash
+   chara init
+   ```
+
+2. **Set default model**:
+   ```bash
+   chara default-model
+   ```
+
+3. **Start development**:
+   ```bash
+   chara dev
+   ```
+
+### Access Points
+
+- **Web Interface**: `http://localhost:1237`
+- **Main Server**: `http://localhost:3030`
+- **Agents Server**: `http://localhost:3031`
+- **Tunnel Access**: `http://chara.localhost:1337` - AI Widget available only in the mode
+
+## AI Widget Mode
+
+Chara Codes features an innovative AI Widget mode that embeds an intelligent coding assistant directly into web pages, providing contextual AI assistance based on user-selected elements.
+
+### Key Features
+
+- **Element Selection**: Click and select any element on a webpage to provide context to the AI agent
+- **Visual Highlighting**: Selected elements are visually highlighted for clear identification
+- **Contextual Understanding**: AI agent receives detailed information about selected elements including:
+  - DOM structure and hierarchy
+  - CSS styles and computed properties
+  - Element attributes and data
+  - Surrounding context and relationships
+
+### How It Works
+
+1. **Widget Integration**: The AI widget can be embedded into any webpage during development
+2. **Element Inspection**: Users can click on page elements to select them as context
+3. **AI Analysis**: The agent analyzes selected elements and their properties
+4. **Intelligent Assistance**: Provides relevant suggestions, code generation, or debugging help
+5. **Real-time Updates**: Changes can be applied and previewed immediately
+
+### Use Cases
+
+- **Design System Integration**: Select components to get styling suggestions or modifications
+- **Debugging Assistance**: Select problematic elements to get debugging help and solutions
+- **Code Generation**: Select UI elements to generate corresponding code or improvements
+- **Accessibility Analysis**: Get accessibility suggestions for selected elements
+- **Performance Optimization**: Receive performance recommendations for specific page elements
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Add appropriate PR labels
+4. Submit a pull request
+
+For detailed guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Documentation
 
-### AI
- - [AI SDK](https://ai-sdk.dev/)
- - [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents)
- - [Mastra Typescript Agentic Framework](https://mastra.ai/)
+### AI & Development
+- [AI SDK](https://ai-sdk.dev/)
+- [Building Effective Agents](https://www.anthropic.com/engineering/building-effective-agents)
+- [Mastra Framework](https://mastra.ai/)
 
-#### [Vibe Coding](https://en.wikipedia.org/wiki/Vibe_coding)
- - [Zed editor](https://zed.dev/)
- - [Cursor AI code editor](https://www.cursor.com/)
- - [v0](https://v0.dev/)
- - [bolt.new](https://bolt.new/)
+### Model Context Protocol
+- [MCP Introduction](https://modelcontextprotocol.io/introduction)
+- [MCP Registry](https://mcp.so/)
+- [Awesome MCP Servers](https://github.com/punkpeye/awesome-mcp-servers)
 
-#### MCP
- - [MCP](https://modelcontextprotocol.io/introduction)
- - [MCP Registry](https://mcp.so/)
- - [MCP Registry 1](https://mcp-get.com/)
- - [MCP Registry 2](https://smithery.ai/)
- - [Awesome MCP](https://github.com/punkpeye/awesome-mcp-servers)
- - [Awesome MCP 2](https://github.com/appcypher/awesome-mcp-servers)
- - [MCP SDK](https://github.com/modelcontextprotocol/typescript-sdk)
-
-### Backend (@chara/server)
-- [tRPC.io](https://trpc.io/)
+### Backend Technologies
+- [tRPC](https://trpc.io/)
 - [Drizzle ORM](https://orm.drizzle.team/)
 - [libsql](https://github.com/tursodatabase/libsql)
-- [Vector DB, AI & Embedings with libsql](https://docs.turso.tech/features/ai-and-embeddings)
-- [AI SDK](https://sdk.vercel.ai/docs)
-- [Anthropic API](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)
-- [OpenAI API](https://platform.openai.com/docs/api-reference)
 - [Bun Runtime](https://bun.sh/docs)
-- [Streaming with tRPC](https://trpc.io/docs/server/streaming)
-- [Ollama Integration](https://github.com/ollama/ollama)
 
-### Automation Testing (@chara/automation)
- - [Playwright](https://playwright.dev/)
- - [AI SDK](https://ai-sdk.dev/)
- - [Visual Testing](https://playwright.dev/docs/test-snapshots)
- - [Test Fixtures](https://playwright.dev/docs/test-fixtures)
- - [React Markdown](https://remarkjs.github.io/react-markdown/)
- - [lucide-react](https://lucide.dev/guide/packages/lucide-react)
+### Testing & Automation
+- [Playwright](https://playwright.dev/)
+- [Visual Testing](https://playwright.dev/docs/test-snapshots)
 
-### CLI (@chara/cli)
- - [yargs](https://yargs.js.org/)
- - [picocolors](https://github.com/alexeyraspopov/picocolors)
- - [Isomorphic git](https://isomorphic-git.org/)
+## Technical Roadmap
 
-### Common
- - [bun javascript runtime](https://bun.sh/)
- - [zod](https://zod.dev/)
-
-## Technical depts
-
- - [x] Implement object streaming in tRPC
- - [ ] Add support for multiple AI providers
- - [ ] Add history and undo/redo functionality
- - [ ] Implement MCP servers integration
+- [x] Multi-provider AI integration
+- [x] Model Context Protocol support
+- [x] Real-time WebSocket communication
+- [x] Comprehensive tooling system
+- [x] CLI with automated publishing
+- [x] AI Widget mode with element selection
+- [ ] Enhanced collaboration features
+- [ ] Advanced code analysis
+- [ ] Plugin system for extensions
+- [ ] Mobile app support
 
 ## License
 
-MIT License
+Apache License 2.0
 
 Copyright (c) 2025 Chara Codes
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

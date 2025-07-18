@@ -1,80 +1,28 @@
-import { streamText } from "ai";
-import { z } from "zod";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../api/db.ts";
-import { chats, messages, projects, stacks } from "../db/schema";
+import { chats, messages, stacks } from "../db/schema";
 import { myLogger as logger } from "../utils/logger";
-import { myAgent } from "../ai/agents/my-agent.ts";
 
-export const DEFAULT_PROJECT_ID = 1;
-export const DEFAULT_PROJECT_NAME = "new project";
-export const DEFAULT_STACK_ID = "1";
-
-/** Ensure a project exists in the database, or create it if it doesn't. */
-export async function ensureProjectExists({
-  projectId,
-  projectName,
-  stackId,
-}: {
-  projectId: number;
-  projectName: string;
-  stackId: number;
-}): Promise<void> {
-  try {
-    const [existing] = await db
-      .select({ id: projects.id })
-      .from(projects)
-      .where(eq(projects.id, projectId))
-      .limit(1);
-
-    if (existing) return;
-
-    await db
-      .insert(projects)
-      .values({ id: projectId, name: projectName, stackId });
-  } catch (err) {
-    logger.error(JSON.stringify(err), "ensureProjectExists failed");
-    throw err;
-  }
-}
-
-/** Check if a chat exists for the given project. */
-export async function findExistingChat(
-  projectId: number,
-): Promise<number | null> {
-  try {
-    const [existing] = await db
-      .select({ id: chats.id })
-      .from(chats)
-      .where(eq(chats.projectId, projectId))
-      .orderBy(sql`${chats.createdAt} desc`)
-      .limit(1);
-    return existing?.id ?? null;
-  } catch (err) {
-    logger.error(JSON.stringify(err), "findExistingChat failed");
-    throw err;
-  }
-}
-
-/** Create a new chat for the given project. */
-export async function createChat(projectId: number, titleSuggestion: string) {
+/** Create a new chat. */
+export async function createChat(titleSuggestion: string) {
   try {
     const [row] = await db
       .insert(chats)
-      .values({ projectId, title: titleSuggestion })
-      .returning({ id: chats.id });
-    return row.id;
+      .values({ title: titleSuggestion })
+      .returning({
+        id: chats.id,
+        createdAt: chats.createdAt,
+        title: chats.title,
+      });
+    return row;
   } catch (err) {
     logger.error(JSON.stringify(err), "createChat failed");
     throw err;
   }
 }
 
-/** Create (or reuse) a chat inside the given project. */
-export async function ensureChat(
-  projectId: number,
-  titleSuggestion: string,
-): Promise<number> {
+/** Create a new chat with the given title. */
+export async function ensureChat(titleSuggestion: string): Promise<number> {
   try {
     const defaultStack = {
       id: 1, // Default stack ID
@@ -95,44 +43,11 @@ export async function ensureChat(
       logger.info(`Default stack does not exist. Creating it.`);
       await db.insert(stacks).values(defaultStack).onConflictDoNothing();
     }
-    // Check if the project exists in the `projects` table
-    const [existingProject] = await db
-      .select({ id: projects.id })
-      .from(projects)
-      .where(eq(projects.id, projectId))
-      .limit(1);
 
-    if (!existingProject) {
-      logger.info(`Project with ID ${projectId} does not exist. Creating it.`);
-      try {
-        const [newProject] = await db
-          .insert(projects)
-          .values({ id: projectId, name: `Project ${projectId}`, stackId: 1 })
-          .returning({ id: projects.id });
-
-        if (!newProject) {
-          throw new Error(`Failed to create project with ID ${projectId}`);
-        }
-      } catch (err) {
-        logger.error(JSON.stringify(err), "Failed to create project");
-        throw err;
-      }
-    }
-
-    // Check for an existing chat in the `chats` table
-    const [existingChat] = await db
-      .select({ id: chats.id })
-      .from(chats)
-      .where(eq(chats.projectId, projectId))
-      .orderBy(sql`${chats.createdAt} desc`)
-      .limit(1);
-
-    if (existingChat) return existingChat.id;
-
-    // Create a new chat if one doesn't exist
+    // Create a new chat
     const [newChat] = await db
       .insert(chats)
-      .values({ projectId, title: titleSuggestion })
+      .values({ title: titleSuggestion })
       .returning({ id: chats.id });
 
     return newChat.id;
@@ -142,35 +57,9 @@ export async function ensureChat(
   }
 }
 
-/** Persist the user message straight away. */
-async function saveUserMessage(chatId: number, content: string) {
-  try {
-    await db.insert(messages).values({ chatId, role: "user", content });
-  } catch (err) {
-    logger.error(JSON.stringify(err), "saveUserMessage failed");
-    throw err;
-  }
-}
-
-/** Persist the assistant message (buffered). */
-async function saveAssistantMessage(chatId: number, content: string) {
-  try {
-    await db.transaction(async (tx) => {
-      await tx.insert(messages).values({ chatId, role: "assistant", content });
-      await tx
-        .update(chats)
-        .set({ updatedAt: sql`CURRENT_TIMESTAMP` })
-        .where(eq(chats.id, chatId));
-    });
-  } catch (err) {
-    logger.error(JSON.stringify(err), "saveAssistantMessage failed");
-    throw err;
-  }
-}
-
 async function getChatMessages(
   chatId: number,
-  options?: { lastMessageId: number | null; limit?: number },
+  options?: { lastMessageId: number | null; limit?: number }
 ) {
   const { lastMessageId, limit = 20 } = options || {};
 
@@ -211,70 +100,60 @@ async function getChatMessages(
   }
 }
 
-/** Stream plain‑text answer and persist history. */
-export async function* streamTextAndPersist({
-  chatId,
-  question,
-  ctx,
-}: {
-  chatId: number;
-  question: string;
-  ctx: any;
+/** Get a list of chats with optional pagination. */
+export async function getChatList(options?: {
+  limit?: number;
+  offset?: number;
+  parentId?: number | null;
 }) {
-  await saveUserMessage(chatId, question);
+  const { limit = 20, offset = 0, parentId } = options || {};
 
-  const { textStream } = streamText({
-    model: ctx.ai(process.env.AI_MODEL || "gpt-4o-mini"),
-    messages: [{ role: "user", content: question }],
-  });
-
-  let assistantBuf = "";
   try {
-    for await (const chunk of textStream) {
-      assistantBuf += chunk;
-      yield chunk;
+    let whereCondition = sql`1 = 1`;
+
+    if (parentId !== undefined) {
+      if (parentId === null) {
+        whereCondition = sql`${chats.parentId} IS NULL`;
+      } else {
+        whereCondition = eq(chats.parentId, parentId);
+      }
     }
+
+    const result = await db
+      .select({
+        id: chats.id,
+        title: chats.title,
+        createdAt: chats.createdAt,
+        updatedAt: chats.updatedAt,
+        parentId: chats.parentId,
+      })
+      .from(chats)
+      .where(whereCondition)
+      .orderBy(sql`${chats.updatedAt} DESC`)
+      .limit(limit + 1)
+      .offset(offset);
+
+    const hasMore = result.length > limit;
+    const chatsResult = hasMore ? result.slice(0, limit) : result;
+
+    return {
+      chats: chatsResult.map((chat) => ({
+        id: chat.id,
+        title: chat.title,
+        createdAt: chat.createdAt,
+        updatedAt: chat.updatedAt,
+        parentId: chat.parentId,
+      })),
+      hasMore,
+    };
   } catch (err) {
-    logger.error(JSON.stringify(err), "streamText failed");
+    logger.error(JSON.stringify(err), "getChatList failed");
     throw err;
   }
-
-  await saveAssistantMessage(chatId, assistantBuf);
-}
-
-/** Stream JSON‑shaped answer and persist history. */
-export async function* streamObjectAndPersist({
-  chatId,
-  question,
-  project,
-  ctx,
-  schema,
-}: {
-  chatId: number;
-  question: string;
-  project: { id: number; name: string };
-  ctx: any;
-  schema: ReturnType<typeof z.object>;
-}) {
-  await saveUserMessage(chatId, question);
-
-  const agentStream = await myAgent(question, project);
-  let assistantObj: Record<string, unknown> = {};
-  try {
-    for await (const partialObject of agentStream) {
-      assistantObj = { ...assistantObj, ...partialObject };
-      yield partialObject;
-    }
-  } catch (err) {
-    logger.error(JSON.stringify(err), "streamObject failed");
-    throw err;
-  }
-
-  await saveAssistantMessage(chatId, JSON.stringify(assistantObj));
 }
 
 /** Get chat history and persist access if needed. */
-export async function getHistoryAndPersist({
+export async function getHistory({
   chatId,
   lastMessageId,
   limit,
@@ -290,20 +169,187 @@ export async function getHistoryAndPersist({
     });
 
     return {
-      messages: history.messages.map((msg: any) => ({
+      messages: history.messages.map((msg) => ({
         id: msg.id,
         message: msg.content,
         role: msg.role,
-        timestamp:
-          msg.createdAt instanceof Date
-            ? msg.createdAt.getTime()
-            : msg.createdAt,
+        timestamp: msg.createdAt,
         context: msg.context ?? undefined,
+        toolCalls: msg.toolCalls ?? undefined,
+        commit: msg.commit ?? undefined,
       })),
       hasMore: history.hasMore,
     };
   } catch (err) {
     logger.error(JSON.stringify(err), "getHistoryAndPersist failed");
+    throw err;
+  }
+}
+
+/** Save a new message to a chat. */
+export async function saveMessage({
+  chatId,
+  content,
+  role,
+  commit,
+  context,
+  toolCalls,
+}: {
+  chatId: number;
+  content: string;
+  role: string;
+  commit?: string;
+  context?: any;
+  toolCalls?: any;
+}) {
+  try {
+    const [message] = await db
+      .insert(messages)
+      .values({
+        chatId,
+        content,
+        commit,
+        role,
+        context: context ? JSON.stringify(context) : null,
+        toolCalls: toolCalls ? JSON.stringify(toolCalls) : null,
+      })
+      .returning({
+        id: messages.id,
+        content: messages.content,
+        role: messages.role,
+        commit: messages.commit,
+        createdAt: messages.createdAt,
+        context: messages.context,
+        toolCalls: messages.toolCalls,
+      });
+
+    return {
+      id: message.id,
+      content: message.content,
+      role: message.role,
+      timestamp:
+        message.createdAt instanceof Date
+          ? message.createdAt.getTime()
+          : message.createdAt,
+      context: message.context
+        ? JSON.parse(message.context as string)
+        : undefined,
+      commit: message.commit,
+      toolCalls: message.toolCalls
+        ? JSON.parse(message.toolCalls as string)
+        : undefined,
+    };
+  } catch (err) {
+    logger.error(JSON.stringify(err), "saveMessage failed");
+    throw err;
+  }
+}
+
+/** Update a message with new values. */
+export async function updateMessage({
+  messageId,
+  commit,
+  content,
+  context,
+  toolCalls,
+}: {
+  messageId: number;
+  commit?: string;
+  content?: string;
+  context?: any;
+  toolCalls?: any;
+}) {
+  try {
+    const updateValues: any = {};
+
+    if (commit !== undefined) updateValues.commit = commit;
+    if (content !== undefined) updateValues.content = content;
+    if (context !== undefined)
+      updateValues.context = context ? JSON.stringify(context) : null;
+    if (toolCalls !== undefined)
+      updateValues.toolCalls = toolCalls ? JSON.stringify(toolCalls) : null;
+
+    if (Object.keys(updateValues).length === 0) {
+      throw new Error("No fields to update");
+    }
+
+    updateValues.updatedAt = sql`CURRENT_TIMESTAMP`;
+
+    const [updatedMessage] = await db
+      .update(messages)
+      .set(updateValues)
+      .where(eq(messages.id, messageId))
+      .returning({
+        id: messages.id,
+        content: messages.content,
+        role: messages.role,
+        commit: messages.commit,
+        createdAt: messages.createdAt,
+        updatedAt: messages.updatedAt,
+        context: messages.context,
+        toolCalls: messages.toolCalls,
+      });
+
+    if (!updatedMessage) {
+      throw new Error(`Message with ID ${messageId} not found`);
+    }
+
+    return {
+      id: updatedMessage.id,
+      content: updatedMessage.content,
+      role: updatedMessage.role,
+      timestamp:
+        updatedMessage.createdAt instanceof Date
+          ? updatedMessage.createdAt.getTime()
+          : updatedMessage.createdAt,
+      context: updatedMessage.context
+        ? JSON.parse(updatedMessage.context as string)
+        : undefined,
+      commit: updatedMessage.commit,
+      toolCalls: updatedMessage.toolCalls
+        ? JSON.parse(updatedMessage.toolCalls as string)
+        : undefined,
+    };
+  } catch (err) {
+    logger.error(JSON.stringify(err), "updateMessage failed");
+    throw err;
+  }
+}
+
+/** Delete all messages in a chat after a specific message ID. */
+export async function deleteMessages({
+  chatId,
+  messageId,
+}: {
+  chatId: number;
+  messageId: number;
+}) {
+  try {
+    // First, get the commit from the message just before the one being deleted
+    const [previousMessage] = await db
+      .select({ commit: messages.commit })
+      .from(messages)
+      .where(sql`${messages.id} = ${messageId}`)
+      .limit(1);
+
+    const result = await db
+      .delete(messages)
+      .where(
+        sql`${messages.chatId} = ${chatId} AND ${messages.id} >= ${messageId}`
+      )
+      .returning({ id: messages.id, commit: messages.commit });
+
+    logger.info(
+      `Deleted ${result.length} messages from chat ${chatId} after message ${messageId}`
+    );
+
+    return {
+      deletedCount: result.length,
+      deletedMessageIds: result.map((msg) => msg.id),
+      commitToReset: previousMessage?.commit || null,
+    };
+  } catch (err) {
+    logger.error(JSON.stringify(err), "deleteMessages failed");
     throw err;
   }
 }

@@ -1,12 +1,12 @@
-import { z } from "zod";
+import chokidar from "chokidar";
+import { on } from "events";
 import fs from "fs/promises";
 import path from "path";
-import chokidar from "chokidar";
-import { router, publicProcedure } from "../trpc";
-import { resolveProjectPath } from "../../utils/file-utils";
-import { myLogger } from "../../utils/logger";
+import { z } from "zod";
 import { ee } from "../../utils/event-emitter";
-import { on } from "events";
+import { resolveProjectPath } from "../../utils/file-utils";
+import { publicProcedure, router } from "../trpc";
+import { logger } from "@chara-codes/logger";
 
 interface FileSystemEntry {
   name: string;
@@ -77,7 +77,7 @@ export const filesRouter = router({
         resolveProjectPath(projectName),
         relativePath,
       );
-      myLogger.info("Fetching file contents for fileLocation", fileLocation);
+      logger.info("Fetching file contents for fileLocation", fileLocation);
       const content = await fs.readFile(fileLocation, "utf-8");
       return content;
     }),
@@ -111,7 +111,7 @@ export const filesRouter = router({
           projectName: input.projectName,
           relativePath,
         });
-        myLogger.info(`File added: ${relativePath}`);
+        logger.info(`File added: ${relativePath}`);
       });
       watcher.on("change", (filePath) => {
         const relativePath = path.relative(projectPath, filePath);
@@ -120,7 +120,7 @@ export const filesRouter = router({
           projectName: input.projectName,
           relativePath,
         });
-        myLogger.info(`File changed: ${relativePath}`);
+        logger.info(`File changed: ${relativePath}`);
       });
       watcher.on("unlink", (filePath) => {
         const relativePath = path.relative(projectPath, filePath);
@@ -129,14 +129,14 @@ export const filesRouter = router({
           projectName: input.projectName,
           relativePath,
         });
-        myLogger.warn(`File deleted: ${relativePath}`);
+        logger.warning(`File deleted: ${relativePath}`);
       });
       watcher.on("error", (error) => {
         ee.emit("file:error", {
           projectName: input.projectName,
           error: error.message,
         });
-        myLogger.error(
+        logger.error(
           `Watcher error for project ${input.projectName}: ${error.message}`,
         );
       });
@@ -147,7 +147,7 @@ export const filesRouter = router({
         fileError: createEventListener("file:error"),
       };
 
-      myLogger.success(
+      logger.success(
         "File watcher initialized for project:",
         input.projectName,
       );

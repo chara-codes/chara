@@ -5,7 +5,7 @@ import {
 } from "../compression";
 import type { ServerConfig } from "../../types/server.types";
 import { isTextResponse } from "../../utils/content-type";
-import { logger } from "@chara/logger";
+import { logger } from "@chara-codes/logger";
 
 /**
  * Processes a stream with optional text replacements and compression
@@ -25,7 +25,7 @@ export function processStream(
   resolver: (response: Response) => void,
   requestId: string,
   config?: ServerConfig,
-  compressionType?: string,
+  compressionType?: string
 ): void {
   let processedStream = stream;
   let responseHeaders = new Headers(headers);
@@ -38,7 +38,7 @@ export function processStream(
 
   if (shouldApplyReplacements) {
     logger.debug(
-      `Applying text replacements to response for request ${requestId}`,
+      `Applying text replacements to response for request ${requestId}`
     );
     processedStream = createReplacementStream(processedStream, config);
   }
@@ -46,28 +46,28 @@ export function processStream(
   // Apply compression if requested
   if (compressionType) {
     logger.debug(
-      `Applying ${compressionType} compression to response for request ${requestId}`,
+      `Applying ${compressionType} compression to response for request ${requestId}`
     );
 
     try {
       // Update headers for compression
       responseHeaders = prepareHeadersForCompression(
         responseHeaders,
-        compressionType,
+        compressionType
       );
 
       // Apply compression
       processedStream = createCompressionStream(
         processedStream,
-        compressionType,
+        compressionType
       );
 
       logger.debug(
-        `Successfully applied ${compressionType} compression to response`,
+        `Successfully applied ${compressionType} compression to response`
       );
     } catch (error) {
       logger.error(
-        `Error applying ${compressionType} compression: ${error}, skipping compression`,
+        `Error applying ${compressionType} compression: ${error}, skipping compression`
       );
     }
   }
@@ -77,6 +77,6 @@ export function processStream(
     new Response(processedStream, {
       status,
       headers: responseHeaders,
-    }),
+    })
   );
 }

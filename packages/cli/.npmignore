@@ -1,0 +1,70 @@
+# Source files
+src/
+*.ts
+*.tsx
+tsconfig.json
+tsconfig.*.json
+
+# Development files
+.chara/
+.cursor/
+.turbo/
+demo-project/
+docs/
+examples/
+scripts/
+node_modules/
+
+# Test files
+**/*.test.*
+**/*.spec.*
+__tests__/
+coverage/
+
+# Build artifacts (keep only dist/chara)
+dist/*
+!dist/chara
+
+# Development configuration
+.env
+.env.*
+.gitignore
+.editorconfig
+.eslintrc*
+.prettierrc*
+bun.lockb
+package-lock.json
+yarn.lock
+
+# Documentation (keep README.md)
+*.md
+!README.md
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+.nyc_output/
+
+# Temporary folders
+tmp/
+temp/

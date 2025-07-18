@@ -1,30 +1,78 @@
 {
-  "name": "@chara/cli",
-  "version": "1.0.0",
+  "name": "@chara-codes/cli",
+  "version": "0.1.18",
+  "description": "Chara CLI - AI-powered development assistant",
+  "main": "dist/chara",
   "module": "src/index.ts",
   "bin": {
-    "chara": "./dist/chara"
+    "chara": "./dist/chara",
+    "@chara-codes/cli": "./dist/chara"
   },
+  "files": [
+    "dist/chara",
+    "dist/web",
+    "dist/widget",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "bun build ./src/index.ts --outfile ./dist/chara --compile",
-    "dev": "bun ./src/index.ts dev",
-    "start": "./dist/chara"
+    "dev": "bun ./src/index.ts dev --projectDir ./demo-project/",
+    "d": "bun ./src/index.ts",
+    "start": "./dist/chara",
+    "test": "bun test",
+    "prepack": "./scripts/prebuild.sh",
+    "version:patch": "node scripts/bump-version.js patch",
+    "version:minor": "node scripts/bump-version.js minor",
+    "version:major": "node scripts/bump-version.js major",
+    "version:set": "node scripts/bump-version.js set",
+    "version:current": "node scripts/bump-version.js current"
   },
   "type": "module",
+  "keywords": [
+    "ai",
+    "development",
+    "assistant",
+    "cli",
+    "chara"
+  ],
+  "author": "Chara Team",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/chara-codes/chara#readme",
+  "bugs": {
+    "url": "https://github.com/chara-codes/chara/issues"
+  },
   "devDependencies": {
+    "@chara-codes/agents": "workspace:*",
+    "@chara-codes/logger": "workspace:*",
+    "@chara-codes/server": "workspace:*",
+    "@chara-codes/settings": "workspace:*",
+    "@chara-codes/tunnel": "workspace:*",
+    "@chara-codes/web": "workspace:*",
+    "@chara-codes/widget": "workspace:*",
     "@types/bun": "latest",
+    "@types/ping": "^0.4.4",
     "@types/yargs": "^17.0.33",
-    "vitest": "^3.0.9"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@chara/server": "workspace:*",
-    "@chara/logger": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.9.0",
+    "@modelcontextprotocol/sdk": "^1.15.0",
+    "enquirer": "^2.4.1",
+    "picocolors": "^1.1.1",
+    "ping": "^0.4.4",
+    "resolve-package-path": "^4.0.3",
     "superjson": "^2.2.2",
-    "picocolors": "^1.0.0",
     "yargs": "^17.7.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

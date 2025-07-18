@@ -1,19 +1,7 @@
-import { chats } from "./chats";
-import { chunks } from "./chunks";
-import { links, linksRelations, stacksRelations } from "./links";
-import { messages } from "./messages";
-import { mcp } from "./mcp";
-import { projects } from "./projects";
-import { stacks } from "./stacks";
+export * from "./links";
+export * from "./stacks";
+export * from "./mcp";
 
-export {
-  chats,
-  chunks,
-  links,
-  messages,
-  mcp,
-  projects,
-  stacks,
-  stacksRelations,
-  linksRelations,
-};
+export * from "./chats";
+export * from "./chunks";
+export * from "./messages";

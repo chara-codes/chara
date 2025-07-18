@@ -21,21 +21,27 @@ export const messages = sqliteTable(
       autoIncrement: true,
     }),
     /** The actual text content of the message */
-    content: text().notNull(),
+    content: text({ mode: "json" }).notNull(),
 
     /** Optional JSON object containing additional context for the message (can include list of files, commands, etc) */
     context: text({ mode: "json" }),
 
+    /** Optional JSON object containing additional context for the message (can include list of files, commands, etc) */
+    toolCalls: text({ mode: "json" }),
+
     /** Indicates message sender type: 'user' for user messages or 'assistant' for LLM responses */
     role: text().notNull(),
 
+    /** Commit sha */
+    commit: text(),
+
     /** Timestamp when this message was created */
-    createdAt: int("created_at", { mode: "timestamp" })
+    createdAt: int("created_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
 
     /** Timestamp when the message was last updated */
-    updatedAt: int("updated_at", { mode: "timestamp" })
+    updatedAt: int("updated_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
 
@@ -46,5 +52,5 @@ export const messages = sqliteTable(
   },
   (table) => ({
     chatIdx: index("idx_messages_chat_id").on(table.chatId),
-  }),
+  })
 );
