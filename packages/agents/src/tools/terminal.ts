@@ -43,11 +43,11 @@ export const terminal = tool({
     const trimmedCommand = command.trim();
     for (const pattern of longRunningPatterns) {
       if (pattern.test(trimmedCommand)) {
-        throw new Error(
+        const result =
           `Command "${command}" appears to be a long-running task (dev server, file watcher, etc.) which is not supported by this tool. ` +
-            `This tool is designed for quick, finite operations only. ` +
-            `If you need to start a development server, please use the runner tool instead to examine and manage running processes.`
-        );
+          `This tool is designed for quick, finite operations only. ` +
+          `If you need to start a development server, please use the runner tool instead to examine and manage running processes.`;
+        return result;
       }
     }
 
