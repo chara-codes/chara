@@ -17,6 +17,11 @@ interface GrepResult {
   after_context?: GrepMatch[];
 }
 
+interface GrepError {
+  error: string;
+  code?: string;
+}
+
 interface GrepOptions {
   pattern: string;
   ignoreCase?: boolean;
@@ -29,21 +34,25 @@ interface GrepOptions {
   maxCount?: number;
 }
 
-function createPattern(options: GrepOptions): RegExp {
+function createPattern(options: GrepOptions): RegExp | GrepError {
   const { pattern, ignoreCase = false, fixedStrings = false } = options;
 
   if (fixedStrings) {
     // For fixed strings, escape regex special characters
     const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const flags = ignoreCase ? "gi" : "g";
-    return new RegExp(escapedPattern, flags);
+    try {
+      return new RegExp(escapedPattern, flags);
+    } catch {
+      return { error: `Invalid escaped pattern: ${pattern}` };
+    }
   } else {
     // For regex patterns
     const flags = ignoreCase ? "gi" : "g";
     try {
       return new RegExp(pattern, flags);
     } catch {
-      throw new Error(`Invalid regular expression: ${pattern}`);
+      return { error: `Invalid regular expression: ${pattern}` };
     }
   }
 }
@@ -51,7 +60,7 @@ function createPattern(options: GrepOptions): RegExp {
 function matchesPattern(
   line: string,
   pattern: RegExp,
-  invertMatch = false,
+  invertMatch = false
 ): boolean {
   const matches = pattern.test(line);
   // Reset regex lastIndex to avoid stateful issues
@@ -62,7 +71,7 @@ function matchesPattern(
 function getMatches(
   line: string,
   pattern: RegExp,
-  invertMatch = false,
+  invertMatch = false
 ): Array<{ start: number; end: number }> {
   if (invertMatch) {
     return [];
@@ -74,7 +83,7 @@ function getMatches(
   // Reset regex to start from beginning
   pattern.lastIndex = 0;
 
-  // biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+  // biome-ignore lint/suspicious/noAssignInExpressions: necessary for regex matching loop
   while ((match = pattern.exec(line)) !== null) {
     matches.push({ start: match.index, end: match.index + match[0].length });
 
@@ -104,8 +113,8 @@ function makeRelativePath(filePath: string): string {
 
 async function searchFile(
   filePath: string,
-  options: GrepOptions,
-): Promise<GrepResult[]> {
+  options: GrepOptions
+): Promise<GrepResult[] | GrepError> {
   const {
     lineNumber = true,
     beforeContext = 0,
@@ -118,7 +127,11 @@ async function searchFile(
   const actualBeforeContext = context !== undefined ? context : beforeContext;
   const actualAfterContext = context !== undefined ? context : afterContext;
 
-  const pattern = createPattern(options);
+  const patternResult = createPattern(options);
+  if ("error" in patternResult) {
+    return patternResult;
+  }
+  const pattern = patternResult;
 
   try {
     const content = await readFile(filePath, "utf-8");
@@ -174,7 +187,7 @@ async function searchFile(
           // Add after context
           const afterEnd = Math.min(
             lines.length,
-            lineIdx + actualAfterContext + 1,
+            lineIdx + actualAfterContext + 1
           );
           for (let i = lineIdx + 1; i < afterEnd; i++) {
             const contextLine = lines[i];
@@ -218,9 +231,11 @@ async function searchFile(
 
     return results;
   } catch (error) {
-    throw new Error(
-      `Error reading file ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    return {
+      error: `Error reading file ${filePath}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    };
   }
 }
 
@@ -229,8 +244,8 @@ async function searchFiles(
   options: GrepOptions,
   filePattern?: string,
   useGitignore = true,
-  caseSensitiveFilePattern = true,
-): Promise<GrepResult[]> {
+  caseSensitiveFilePattern = true
+): Promise<GrepResult[] | GrepError> {
   const results: GrepResult[] = [];
   let totalMatches = 0;
   const { maxCount = 0 } = options;
@@ -249,7 +264,10 @@ async function searchFiles(
         if (!pathGroups.has(basePath)) {
           pathGroups.set(basePath, []);
         }
-        pathGroups.get(basePath)!.push(path);
+        const group = pathGroups.get(basePath);
+        if (group) {
+          group.push(path);
+        }
       } else {
         // Determine base directory for the path
         let basePath: string;
@@ -274,13 +292,15 @@ async function searchFiles(
         if (!pathGroups.has(basePath)) {
           pathGroups.set(basePath, []);
         }
-        pathGroups.get(basePath)!.push(relativePath);
+        const group = pathGroups.get(basePath);
+        if (group) {
+          group.push(relativePath);
+        }
       }
     }
 
     // Process each group with its own cwd
     for (const [basePath, groupPaths] of pathGroups) {
-      const patterns: string[] = [];
       const negativePatterns: string[] = [];
 
       // Always ignore these directories
@@ -297,7 +317,7 @@ async function searchFiles(
         "!**/coverage/**",
         "!**/.nyc_output/**",
         "!**/tmp/**",
-        "!**/temp/**",
+        "!**/temp/**"
       );
 
       // Apply file pattern filter if specified
@@ -321,16 +341,16 @@ async function searchFiles(
               // Create case-insensitive variants
               const lowerPattern = pattern.replace(
                 filePattern,
-                filePattern.toLowerCase(),
+                filePattern.toLowerCase()
               );
               const upperPattern = pattern.replace(
                 filePattern,
-                filePattern.toUpperCase(),
+                filePattern.toUpperCase()
               );
               const titlePattern = pattern.replace(
                 filePattern,
                 filePattern.charAt(0).toUpperCase() +
-                  filePattern.slice(1).toLowerCase(),
+                  filePattern.slice(1).toLowerCase()
               );
 
               caseVariants.push(lowerPattern, upperPattern, titlePattern);
@@ -354,43 +374,45 @@ async function searchFiles(
 
         // Search each file
         for (const file of files) {
-          try {
-            const fileResults = await searchFile(file, options);
-            for (const result of fileResults) {
-              // Convert absolute path back to relative for display if it's within original cwd
-              if (result.match) {
-                result.match.file = makeRelativePath(result.match.file);
-              }
-              if (result.before_context) {
-                result.before_context.forEach((ctx) => {
-                  ctx.file = makeRelativePath(ctx.file);
-                });
-              }
-              if (result.after_context) {
-                result.after_context.forEach((ctx) => {
-                  ctx.file = makeRelativePath(ctx.file);
-                });
-              }
-              results.push(result);
-              totalMatches++;
-              if (maxCount > 0 && totalMatches >= maxCount) {
-                return results;
-              }
-            }
-          } catch (error) {
+          const fileResults = await searchFile(file, options);
+          if ("error" in fileResults) {
             // Skip files that can't be read (binary files, permission issues, etc.)
             continue;
           }
+
+          for (const result of fileResults) {
+            // Convert absolute path back to relative for display if it's within original cwd
+            if (result.match) {
+              result.match.file = makeRelativePath(result.match.file);
+            }
+            if (result.before_context) {
+              result.before_context.forEach((ctx) => {
+                ctx.file = makeRelativePath(ctx.file);
+              });
+            }
+            if (result.after_context) {
+              result.after_context.forEach((ctx) => {
+                ctx.file = makeRelativePath(ctx.file);
+              });
+            }
+            results.push(result);
+            totalMatches++;
+            if (maxCount > 0 && totalMatches >= maxCount) {
+              return results;
+            }
+          }
         }
-      } catch (groupError) {
+      } catch {
         // If globby fails for this group, skip it
         continue;
       }
     }
   } catch (error) {
-    throw new Error(
-      `Error searching files: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    return {
+      error: `Error searching files: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    };
   }
 
   return results;
@@ -406,7 +428,7 @@ export const grep = tool({
     paths: z
       .union([z.string(), z.array(z.string())])
       .describe(
-        "File paths, directory paths, or glob patterns to search in (string or array of strings). Examples: 'src/', '**/*.ts', ['src/', 'tests/']",
+        "File paths, directory paths, or glob patterns to search in (string or array of strings). Examples: 'src/', '**/*.ts', ['src/', 'tests/']"
       ),
     ignoreCase: z
       .boolean()
@@ -430,7 +452,7 @@ export const grep = tool({
       .min(0)
       .optional()
       .describe(
-        "Number of context lines around match (overrides before/after)",
+        "Number of context lines around match (overrides before/after)"
       ),
     maxCount: z
       .number()
@@ -459,7 +481,7 @@ export const grep = tool({
       .boolean()
       .default(true)
       .describe(
-        "If no matches found in specified directories, search from current directory",
+        "If no matches found in specified directories, search from current directory"
       ),
   }),
   execute: async ({
@@ -477,38 +499,46 @@ export const grep = tool({
     useGitignore = true,
     fallbackToCurrentDir = true,
   }) => {
+    // Validate pattern early to catch invalid regex
+    const patternValidation = createPattern({
+      pattern,
+      ignoreCase,
+      fixedStrings,
+    });
+
+    if ("error" in patternValidation) {
+      return JSON.stringify({ error: patternValidation.error }, null, 2);
+    }
+
+    // Convert single path to array
+    const pathArray = Array.isArray(paths) ? paths : [paths];
+
+    // Create grep options
+    const options: GrepOptions = {
+      pattern,
+      ignoreCase,
+      fixedStrings,
+      invertMatch,
+      lineNumber,
+      beforeContext,
+      afterContext,
+      context,
+      maxCount,
+    };
+
     try {
-      // Validate pattern early to catch invalid regex
-      createPattern({
-        pattern,
-        ignoreCase,
-        fixedStrings,
-      });
-
-      // Convert single path to array
-      const pathArray = Array.isArray(paths) ? paths : [paths];
-
-      // Create grep options
-      const options: GrepOptions = {
-        pattern,
-        ignoreCase,
-        fixedStrings,
-        invertMatch,
-        lineNumber,
-        beforeContext,
-        afterContext,
-        context,
-        maxCount,
-      };
-
       // Search files using globby
       let results = await searchFiles(
         pathArray,
         options,
         filePattern,
         useGitignore,
-        !ignoreCase, // Use case-insensitive file patterns when ignoreCase is true
+        !ignoreCase // Use case-insensitive file patterns when ignoreCase is true
       );
+
+      if ("error" in results) {
+        return JSON.stringify({ error: results.error }, null, 2);
+      }
 
       // If no matches found and we searched in specific directories, try searching from current directory
       if (
@@ -538,8 +568,13 @@ export const grep = tool({
             options,
             filePattern,
             useGitignore,
-            !ignoreCase,
+            !ignoreCase
           );
+
+          if ("error" in fallbackResults) {
+            return JSON.stringify({ error: fallbackResults.error }, null, 2);
+          }
+
           results = fallbackResults;
         }
       }
@@ -569,14 +604,24 @@ export const grep = tool({
       const MAX_RESULTS = 50;
       if (formattedResults.length > MAX_RESULTS) {
         const truncatedResults = formattedResults.slice(0, MAX_RESULTS);
-        return `Found ${results.length} matches, showing first ${MAX_RESULTS}:\n\n${JSON.stringify(truncatedResults, null, 2)}`;
+        return `Found ${
+          results.length
+        } matches, showing first ${MAX_RESULTS}:\n\n${JSON.stringify(
+          truncatedResults,
+          null,
+          2
+        )}`;
       }
 
       return JSON.stringify(formattedResults, null, 2);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      throw new Error(`Grep search failed: ${errorMessage}`);
+      return JSON.stringify(
+        { error: `Grep search failed: ${errorMessage}` },
+        null,
+        2
+      );
     }
   },
 });
