@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { readdir, stat } from "fs/promises";
-import { resolve, dirname, basename, join, relative } from "path";
+import { resolve, dirname, basename } from "path";
 import walk from "ignore-walk";
 import prettyBytes from "pretty-bytes";
 
@@ -68,7 +68,7 @@ async function getIncludedPaths(
   } catch (error) {
     console.warn(
       `ignore-walk failed for ${dirPath}, falling back to all files:`,
-      error
+      (error as Error).message || String(error)
     );
     return await getAllPaths(dirPath);
   }
@@ -93,7 +93,7 @@ async function getAllPaths(dirPath: string): Promise<string[]> {
           await walkDir(fullPath, relPath);
         }
       }
-    } catch (error) {
+    } catch {
       // Skip directories we can't read
     }
   }
@@ -107,7 +107,30 @@ async function listDirectory(
   includeHidden: boolean,
   includeSize: boolean,
   respectGitignore: boolean
-) {
+): Promise<
+  | {
+      operation: string;
+      path: string;
+      count: number;
+      items: Array<{
+        name: string;
+        type: "file" | "directory";
+        size?: number;
+        hidden: boolean;
+        ignored?: boolean;
+      }>;
+      respectGitignore: boolean;
+      formatted: string;
+      warning?: string;
+    }
+  | {
+      error: true;
+      operation: string;
+      path: string;
+      message: string;
+      technicalError: string;
+    }
+> {
   try {
     // Get all entries from the directory
     const entries = await readdir(dirPath, { withFileTypes: true });
@@ -229,7 +252,13 @@ async function listDirectory(
     return result;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to list directory: ${errorMessage}`);
+    return {
+      error: true,
+      operation: "list",
+      path: dirPath,
+      message: `Failed to list directory: ${errorMessage}`,
+      technicalError: errorMessage,
+    };
   }
 }
 
@@ -282,7 +311,8 @@ async function buildTreeFromPaths(
 
     // Add to parent or root
     if (parentPath && parentPath !== "." && pathMap.has(parentPath)) {
-      const parent = pathMap.get(parentPath)!;
+      const parent = pathMap.get(parentPath);
+      if (!parent) continue;
       if (parent.children) {
         parent.children.push(entry);
       }
@@ -300,7 +330,25 @@ async function getDirectoryTree(
   includeHidden: boolean = false,
   includeSize: boolean = false,
   respectGitignore: boolean = true
-) {
+): Promise<
+  | {
+      operation: string;
+      path: string;
+      maxDepth: number | string;
+      includeHidden: boolean;
+      includeSize: boolean;
+      respectGitignore: boolean;
+      tree: TreeEntry[];
+      formatted: string;
+    }
+  | {
+      error: true;
+      operation: string;
+      path: string;
+      message: string;
+      technicalError: string;
+    }
+> {
   try {
     // Get included paths
     let includedPaths = await getIncludedPaths(dirPath, respectGitignore);
@@ -345,7 +393,13 @@ async function getDirectoryTree(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to build directory tree: ${errorMessage}`);
+    return {
+      error: true,
+      operation: "tree",
+      path: dirPath,
+      message: `Failed to build directory tree: ${errorMessage}`,
+      technicalError: errorMessage,
+    };
   }
 }
 
@@ -401,14 +455,6 @@ export const directory = tool({
       .boolean()
       .default(true)
       .describe("Whether to respect .gitignore files (default: true)"),
-
-    returnErrorObjects: z
-      .boolean()
-      .optional()
-      .default(false)
-      .describe(
-        "Return structured error objects instead of throwing exceptions (for LLM usage)"
-      ),
   }),
 
   execute: async ({
@@ -418,7 +464,6 @@ export const directory = tool({
     includeHidden = false,
     includeSize = false,
     respectGitignore = true,
-    returnErrorObjects = false,
   }) => {
     try {
       const workingPath = path || process.cwd();
@@ -426,7 +471,7 @@ export const directory = tool({
       // Validate action
       const validActions = ["list", "tree"];
       if (!validActions.includes(action)) {
-        const errorResponse = {
+        return {
           error: true,
           suggestion: `Invalid action '${action}'. Valid actions are: ${validActions.join(
             ", "
@@ -435,89 +480,58 @@ export const directory = tool({
           providedAction: action,
           message: "Invalid action provided. Please use 'list' or 'tree'.",
         };
-        if (returnErrorObjects) {
-          return errorResponse;
-        } else {
-          throw new Error(`Unknown action: ${action}`);
-        }
       }
 
       // Safety checks for potentially problematic operations
       if (maxDepth && maxDepth > 10) {
-        const errorResponse = {
+        return {
           error: true,
           suggestion: `maxDepth of ${maxDepth} is too large. Please use a value between 1-10 to prevent system resource issues.`,
           message: "maxDepth too large",
           providedMaxDepth: maxDepth,
           recommendedMaxDepth: Math.min(maxDepth, 5),
         };
-        if (returnErrorObjects) {
-          return errorResponse;
-        } else {
-          throw new Error(`maxDepth too large: ${maxDepth}`);
-        }
       }
 
-      try {
-        switch (action) {
-          case "list":
-            return await listDirectory(
-              workingPath,
-              includeHidden,
-              includeSize,
-              respectGitignore
-            );
-
-          case "tree":
-            return await getDirectoryTree(
-              workingPath,
-              maxDepth,
-              includeHidden,
-              includeSize,
-              respectGitignore
-            );
-
-          default:
-            return {
-              error: true,
-              suggestion: `Invalid action '${action}'. Valid actions are: list, tree`,
-              validActions: ["list", "tree"],
-              providedAction: action,
-              message: "Invalid action provided. Please use 'list' or 'tree'.",
-            };
-        }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-
-        const errorResponse = {
-          error: true,
-          operation: action,
-          path: workingPath,
-          message: `Unexpected error during ${action} operation: ${errorMessage}`,
-          technicalError: errorMessage,
-        };
-        if (returnErrorObjects) {
-          return errorResponse;
-        } else {
-          throw new Error(
-            `Unexpected error during ${action} operation: ${errorMessage}`
+      switch (action) {
+        case "list": {
+          const listResult = await listDirectory(
+            workingPath,
+            includeHidden,
+            includeSize,
+            respectGitignore
           );
+          return listResult;
         }
+
+        case "tree": {
+          const treeResult = await getDirectoryTree(
+            workingPath,
+            maxDepth,
+            includeHidden,
+            includeSize,
+            respectGitignore
+          );
+          return treeResult;
+        }
+
+        default:
+          return {
+            error: true,
+            suggestion: `Invalid action '${action}'. Valid actions are: list, tree`,
+            validActions: ["list", "tree"],
+            providedAction: action,
+            message: "Invalid action provided. Please use 'list' or 'tree'.",
+          };
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const errorResponse = {
+      return {
         error: true,
         message: `Directory tool error: ${errorMessage}`,
         technicalError: errorMessage,
       };
-      if (returnErrorObjects) {
-        return errorResponse;
-      } else {
-        throw new Error(`Directory tool error: ${errorMessage}`);
-      }
     }
   },
 });

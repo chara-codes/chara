@@ -142,7 +142,9 @@ describe("directory tool", () => {
       expect(result.formatted).toContain("small-file.txt (5 B)");
       expect(result.formatted).toContain("large-file.txt");
 
-      const smallFile = result.items.find((item: any) => item.name === "small-file.txt");
+      const smallFile = result.items.find(
+        (item: any) => item.name === "small-file.txt"
+      );
       expect(smallFile.size).toBe(5);
     });
 
@@ -235,7 +237,9 @@ describe("directory tool", () => {
       expect(dir1.type).toBe("directory");
       expect(dir1.children).toHaveLength(2);
 
-      const rootFile = result.tree.find((item: any) => item.name === "root-file.txt");
+      const rootFile = result.tree.find(
+        (item: any) => item.name === "root-file.txt"
+      );
       expect(rootFile).toBeDefined();
       expect(rootFile.type).toBe("file");
     });
@@ -258,7 +262,9 @@ describe("directory tool", () => {
       expect(level1).toBeDefined();
       expect(level1.children).toHaveLength(1);
 
-      const level2 = level1.children.find((item: any) => item.name === "level2");
+      const level2 = level1.children.find(
+        (item: any) => item.name === "level2"
+      );
       expect(level2).toBeDefined();
       expect(level2.children).toHaveLength(0); // Should be empty due to maxDepth
     });
@@ -329,7 +335,9 @@ describe("directory tool", () => {
         path: testFS.getPath(),
       });
 
-      const emptyDir = result.tree.find((item: any) => item.name === "empty-dir");
+      const emptyDir = result.tree.find(
+        (item: any) => item.name === "empty-dir"
+      );
       expect(emptyDir).toBeDefined();
       expect(emptyDir.type).toBe("directory");
       expect(emptyDir.children).toHaveLength(0);
@@ -362,41 +370,49 @@ describe("directory tool", () => {
   });
 
   describe("error handling", () => {
-    test("should throw error for unknown action", async () => {
-      await expect(
-        directory.execute({
-          action: "invalid-action",
-          path: testFS.getPath(),
-        })
-      ).rejects.toThrow("Unknown action: invalid-action");
+    test("should return error object for unknown action", async () => {
+      const result = await directory.execute({
+        action: "invalid-action",
+        path: testFS.getPath(),
+      });
+
+      expect(result.error).toBe(true);
+      expect(result.message).toContain("Invalid action");
+      expect(result.validActions).toEqual(["list", "tree"]);
+      expect(result.providedAction).toBe("invalid-action");
     });
 
     test("should handle non-existent directories gracefully", async () => {
-      await expect(
-        directory.execute({
-          action: "list",
-          path: "/non/existent/directory",
-        })
-      ).rejects.toThrow("Failed to list directory");
+      const result = await directory.execute({
+        action: "list",
+        path: "/non/existent/directory",
+      });
+
+      expect(result.error).toBe(true);
+      expect(result.operation).toBe("list");
+      expect(result.message).toContain("Failed to list directory");
+      expect(result.technicalError).toBeDefined();
     });
 
     test("should handle permission errors gracefully", async () => {
       // Create a file instead of directory to simulate permission error
       await testFS.createFile("not-a-directory", "content");
 
-      await expect(
-        directory.execute({
-          action: "list",
-          path: join(testFS.getPath(), "not-a-directory"),
-        })
-      ).rejects.toThrow();
+      const result = await directory.execute({
+        action: "list",
+        path: join(testFS.getPath(), "not-a-directory"),
+      });
+
+      expect(result.error).toBe(true);
+      expect(result.operation).toBe("list");
+      expect(result.message).toContain("Failed to list directory");
+      expect(result.technicalError).toBeDefined();
     });
 
-    test("should return error object when returnErrorObjects is true", async () => {
+    test("should always return error objects for invalid actions", async () => {
       const result = await directory.execute({
         action: "invalid-action",
         path: testFS.getPath(),
-        returnErrorObjects: true,
       });
 
       expect(result.error).toBe(true);
@@ -409,11 +425,12 @@ describe("directory tool", () => {
         action: "tree",
         path: testFS.getPath(),
         maxDepth: 15,
-        returnErrorObjects: true,
       });
 
       expect(result.error).toBe(true);
       expect(result.message).toContain("maxDepth too large");
+      expect(result.providedMaxDepth).toBe(15);
+      expect(result.recommendedMaxDepth).toBe(5);
     });
   });
 
@@ -505,17 +522,22 @@ describe("directory tool", () => {
 
   describe("tool metadata", () => {
     test("should have correct tool description", () => {
-      expect(directory.description).toContain("Directory listing and tree visualization");
+      expect(directory.description).toContain(
+        "Directory listing and tree visualization"
+      );
       expect(directory.description).toContain("ignore-walk package");
     });
 
     test("should have proper parameter validation", async () => {
-      // Test with missing action parameter
-      await expect(
-        directory.execute({
-          path: testFS.getPath(),
-        } as any)
-      ).rejects.toThrow();
+      // Test with missing action parameter - this should be caught by zod validation
+      // Since we're bypassing TypeScript with 'as any', the tool should handle gracefully
+      const result = await directory.execute({
+        path: testFS.getPath(),
+      } as any);
+
+      // The tool should return an error object for invalid parameters
+      expect(result.error).toBe(true);
+      expect(result.message).toBeDefined();
     });
   });
 
@@ -568,13 +590,14 @@ describe("directory tool", () => {
     });
 
     test("should handle complex gitignore patterns", async () => {
-      await testFS.createFile(".gitignore",
+      await testFS.createFile(
+        ".gitignore",
         "# Comments should be ignored\n" +
-        "*.log\n" +
-        "build/\n" +
-        "!build/index.html\n" +
-        "temp*.tmp\n" +
-        "**/*.cache\n"
+          "*.log\n" +
+          "build/\n" +
+          "!build/index.html\n" +
+          "temp*.tmp\n" +
+          "**/*.cache\n"
       );
 
       await testFS.createFile("app.js", "app");

@@ -306,12 +306,13 @@ describe("terminal tool", () => {
     ];
 
     for (const command of longRunningCommands) {
-      await expect(
-        terminal.execute({
-          command,
-          cd: testFS.getPath(),
-        })
-      ).rejects.toThrow(/long-running task.*runner tool/);
+      const result = await terminal.execute({
+        command,
+        cd: testFS.getPath(),
+      });
+
+      expect(result).toContain("appears to be a long-running task");
+      expect(result).toContain("runner tool instead");
     }
   });
 
