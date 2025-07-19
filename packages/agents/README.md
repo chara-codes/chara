@@ -183,7 +183,7 @@ The package includes a comprehensive set of tools for common AI agent tasks:
 - **terminal** - Execute shell commands with real-time output streaming and timeout protection
 - **grep** - Search file contents with regex patterns, context lines, and glob filtering
 - **find** - Find files by glob patterns with comprehensive filtering and .gitignore support
-- **runner** - Manage and diagnose development processes with HTTP testing and log capture
+- **dev-server** - Manage and diagnose development processes with HTTP testing and log capture
 - **examination** - Analyze code and project diagnostics with TypeScript, ESLint, Prettier, and Biome support
 
 ### Utility Tools
