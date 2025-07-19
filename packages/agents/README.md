@@ -188,7 +188,7 @@ The package includes a comprehensive set of tools for common AI agent tasks:
 
 ### Utility Tools
 
-- **fetch** - HTTP requests with automatic HTML-to-Markdown conversion and robots.txt respect
+- **fetch** - HTTP requests with automatic HTML-to-Markdown conversion
 - **thinking** - Structured engineering-focused problem-solving with sequential thoughts and branching
 
 ### Tool Usage Example
