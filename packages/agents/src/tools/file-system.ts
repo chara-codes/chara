@@ -403,14 +403,6 @@ export const fileSystem = tool({
       .describe(
         "Include project information from .chara.json in env operation"
       ),
-
-    returnErrorObjects: z
-      .boolean()
-      .optional()
-      .default(false)
-      .describe(
-        "Return structured error objects instead of throwing exceptions (for LLM usage)"
-      ),
   }),
 
   execute: async ({
@@ -422,7 +414,6 @@ export const fileSystem = tool({
     workingDir,
     includeSystem = true,
     includeProject = true,
-    returnErrorObjects = false,
   }) => {
     // Top-level safety wrapper to catch any overflow errors
     try {
@@ -431,7 +422,7 @@ export const fileSystem = tool({
       // Validate action and provide suggestions if invalid
       const validActions = ["stats", "info", "env"];
       if (!validActions.includes(action)) {
-        const errorResponse = {
+        return {
           error: true,
           suggestion: getActionSuggestion(action),
           validActions,
@@ -439,27 +430,17 @@ export const fileSystem = tool({
           message:
             "Invalid action provided. Please use one of the valid actions.",
         };
-        if (returnErrorObjects) {
-          return errorResponse;
-        } else {
-          throw new Error(`Unknown action: ${action}`);
-        }
       }
 
       // Safety checks for potentially problematic operations
       if (maxDepth && maxDepth > 10) {
-        const errorResponse = {
+        return {
           error: true,
           suggestion: `maxDepth of ${maxDepth} is too large. Please use a value between 1-10 to prevent system resource issues.`,
           message: "maxDepth too large",
           providedMaxDepth: maxDepth,
           recommendedMaxDepth: Math.min(maxDepth, 5),
         };
-        if (returnErrorObjects) {
-          return errorResponse;
-        } else {
-          throw new Error(`maxDepth too large: ${maxDepth}`);
-        }
       }
 
       try {
@@ -473,7 +454,16 @@ export const fileSystem = tool({
 
           case "info":
             if (!path) {
-              throw new Error("Path is required for info operation");
+              return {
+                error: true,
+                operation: "info",
+                message: "Path is required for info operation",
+                suggestion: `The "info" action requires a "path" parameter. Example: {"action": "info", "path": "/path/to/target"}`,
+                requiredParams: {
+                  action: "info",
+                  path: "string (file or directory path)",
+                },
+              };
             }
             return await getFileInfo(path);
 
@@ -500,7 +490,7 @@ export const fileSystem = tool({
 
         // Check if it's a parameter-related error and provide suggestions
         if (errorMessage.includes("Path is required")) {
-          const errorResponse = {
+          return {
             error: true,
             suggestion: `The "${action}" action requires a "path" parameter. Example: {"action": "${action}", "path": "/path/to/target"}`,
             message: `Missing required parameter for ${action} operation`,
@@ -509,27 +499,16 @@ export const fileSystem = tool({
               path: "string (file or directory path)",
             },
           };
-          if (returnErrorObjects) {
-            return errorResponse;
-          } else {
-            throw new Error(`Path is required for ${action} operation`);
-          }
         }
 
-        // Handle other errors based on returnErrorObjects flag
-        if (returnErrorObjects) {
-          return {
-            error: true,
-            operation: action,
-            message: `File system operation '${action}' failed: ${errorMessage}`,
-            suggestion: "Check the operation parameters and try again",
-            providedParams: { action, path },
-          };
-        } else {
-          throw new Error(
-            `File system operation '${action}' failed: ${errorMessage}`
-          );
-        }
+        // Handle other errors
+        return {
+          error: true,
+          operation: action,
+          message: `File system operation '${action}' failed: ${errorMessage}`,
+          suggestion: "Check the operation parameters and try again",
+          providedParams: { action, path },
+        };
       }
     } catch (topLevelError) {
       const errorMessage =
@@ -547,7 +526,7 @@ export const fileSystem = tool({
         errorMessage.includes("out of memory") ||
         errorMessage.includes("ENOMEM")
       ) {
-        const errorResponse = {
+        return {
           error: true,
           operation: action,
           message: `System resource limits exceeded during ${action} operation`,
@@ -563,17 +542,10 @@ export const fileSystem = tool({
           ],
           technicalError: errorMessage,
         };
-        if (returnErrorObjects) {
-          return errorResponse;
-        } else {
-          throw new Error(
-            `System resource limits exceeded during ${action} operation`
-          );
-        }
       }
 
       // Generic error fallback
-      const errorResponse = {
+      return {
         error: true,
         operation: action,
         message: `Unexpected error during ${action} operation: ${errorMessage}`,
@@ -582,13 +554,6 @@ export const fileSystem = tool({
         providedParams: { action, path },
         technicalError: errorMessage,
       };
-      if (returnErrorObjects) {
-        return errorResponse;
-      } else {
-        throw new Error(
-          `Unexpected error during ${action} operation: ${errorMessage}`
-        );
-      }
     }
   },
 });
@@ -716,7 +681,13 @@ async function getDirectoryStats(
     return result;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to collect directory statistics: ${errorMessage}`);
+    return {
+      error: true,
+      operation: "stats",
+      message: `Failed to collect directory statistics: ${errorMessage}`,
+      suggestion: "Check if the directory exists and you have read permissions",
+      providedParams: { dirPath, includeHidden, respectGitignore },
+    };
   }
 }
 
@@ -744,7 +715,13 @@ async function getFileInfo(filePath: string) {
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to get file info for ${filePath}: ${errorMessage}`);
+    return {
+      error: true,
+      operation: "info",
+      message: `Failed to get file info for ${filePath}: ${errorMessage}`,
+      suggestion: "Check if the file exists and you have read permissions",
+      providedParams: { filePath },
+    };
   }
 }
 
