@@ -1,5 +1,14 @@
 # @chara-codes/widget
 
+## 0.1.19
+
+### Patch Changes
+
+- 1095040: improve tools errors handling
+- Updated dependencies [1095040]
+  - @chara-codes/design-system@0.1.19
+  - @chara-codes/core@0.1.19
+
 ## 0.1.18
 
 ### Patch Changes

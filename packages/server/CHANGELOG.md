@@ -1,5 +1,13 @@
 # @chara-codes/server
 
+## 0.1.19
+
+### Patch Changes
+
+- 1095040: improve tools errors handling
+- Updated dependencies [1095040]
+  - @chara-codes/logger@0.1.19
+
 ## 0.1.18
 
 ### Patch Changes

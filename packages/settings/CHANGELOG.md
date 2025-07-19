@@ -1,5 +1,11 @@
 # @chara-codes/settings
 
+## 0.1.19
+
+### Patch Changes
+
+- 1095040: improve tools errors handling
+
 ## 0.1.18
 
 ### Patch Changes
