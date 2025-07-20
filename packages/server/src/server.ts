@@ -299,7 +299,7 @@ class ServerManager {
     const pathname = url.pathname;
 
     if (req.method === "GET" && pathname === this.options.mcp.sseEndpoint) {
-      logger.info("Received GET request to SSE endpoint");
+      logger.debug("Received GET request to SSE endpoint");
 
       const transport = new BunSSEServerTransport(
         this.options.mcp.messagesEndpoint
@@ -308,13 +308,13 @@ class ServerManager {
       this.mcpTransports[sessionId] = transport;
 
       transport.onclose = () => {
-        logger.info(`SSE transport closed for session ${sessionId}`);
+        logger.debug(`SSE transport closed for session ${sessionId}`);
         delete this.mcpTransports[sessionId];
       };
 
       if (this.mcpServerInstance) {
         await this.mcpServerInstance.connect(transport);
-        logger.info(`Established SSE stream with session ID: ${sessionId}`);
+        logger.debug(`Established SSE stream with session ID: ${sessionId}`);
       }
 
       return transport.createResponse();
@@ -324,7 +324,7 @@ class ServerManager {
       req.method === "POST" &&
       pathname === this.options.mcp.messagesEndpoint
     ) {
-      logger.info("Received POST request to messages endpoint");
+      logger.debug("Received POST request to messages endpoint");
       const query = parse(url.searchParams.toString());
       const sessionId = query.sessionId?.toString();
 
@@ -364,17 +364,17 @@ class ServerManager {
         },
       });
 
-      logger.server(
+      logger.debug(
         `MCP Server ready at: http://localhost:${this.mcpServer.port}/`
       );
-      logger.success("MCP Server handler initialized");
-      logger.info("Available MCP endpoints:");
-      logger.info(
+      logger.debug("MCP Server handler initialized");
+      logger.debug("Available MCP endpoints:");
+      logger.debug(
         `- SSE: ${cyan(
           `http://localhost:${this.mcpServer.port}${this.options.mcp.sseEndpoint}`
         )}`
       );
-      logger.info(
+      logger.debug(
         `- Messages: ${cyan(
           `http://localhost:${this.mcpServer.port}${this.options.mcp.messagesEndpoint}`
         )}`
@@ -445,23 +445,23 @@ class ServerManager {
       this.setupShutdownHandlers();
 
       // Log server information
-      logger.server(
+      logger.debug(
         `Main Server ready at: http://localhost:${this.mainServer.port}/`
       );
 
       if (this.options.websocket.enabled) {
-        logger.success("WebSocket handler initialized");
+        logger.debug("WebSocket handler initialized");
       }
 
-      logger.info("Available endpoints:");
-      logger.server(
+      logger.debug("Available endpoints:");
+      logger.debug(
         `- HTTP: ${cyan(
           `http://localhost:${this.mainServer.port}${this.options.trpc.endpoint}`
         )}`
       );
 
       if (this.options.websocket.enabled) {
-        logger.server(
+        logger.debug(
           `- WebSocket: ${cyan(
             `ws://localhost:${this.mainServer.port}${this.options.websocket.endpoint}`
           )}`
@@ -495,7 +495,7 @@ export async function startServer(options?: ServerOptions): Promise<{
   appRouter: AppRouter;
 }> {
   try {
-    logger.info("Starting Chara server...");
+    logger.debug("Starting Chara server...");
 
     // Merge provided options with defaults
     const finalOptions = mergeOptions(defaultOptions, options);
@@ -512,14 +512,14 @@ export async function startServer(options?: ServerOptions): Promise<{
     const manager = new ServerManager(finalOptions);
     await manager.start();
 
-    logger.success("Chara server started successfully!");
+    logger.debug("Chara server started successfully!");
 
     // Log configuration info
     if (finalOptions.websocket.enabled) {
-      logger.info("WebSocket support is enabled");
+      logger.debug("WebSocket support is enabled");
     }
     if (finalOptions.mcp.enabled) {
-      logger.info("MCP (Model Context Protocol) support is enabled");
+      logger.debug("MCP (Model Context Protocol) support is enabled");
     }
 
     return {

@@ -269,7 +269,7 @@ export async function stopTunnelClientAction(
           options.client.disconnect();
         }
       } else if (options.client) {
-        logger.warning(
+        logger.debug(
           "Client object provided but does not have a disconnect method"
         );
       }
@@ -299,7 +299,7 @@ export async function stopTunnelClientAction(
         throw error;
       }
     } else if (options.client) {
-      logger.warning(
+      logger.debug(
         "Client object provided but does not have a disconnect method"
       );
     }

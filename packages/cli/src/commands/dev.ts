@@ -29,6 +29,7 @@ interface ServerInfo {
 }
 
 function displayServerSummary(info: ServerInfo) {
+  console.clear();
   console.log("\n" + bold(green("🎉 Development environment ready!")));
 
   console.log("\n" + bold("🖥️  Running Servers:"));
