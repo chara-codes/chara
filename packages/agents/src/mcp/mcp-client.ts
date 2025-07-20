@@ -104,22 +104,24 @@ class MCPWrapper {
         );
 
         // Get sessionId
-        logger.info("📡 Getting sessionId...");
+        logger.debug("📡 Getting sessionId...");
         await this.getSessionId();
-        logger.info(`✅ Got sessionId: ${this.sessionId}`);
+        logger.debug(`✅ Got sessionId: ${this.sessionId}`);
 
         // Fetch all tools from MCP server
         logger.info("🔧 Fetching MCP tools...");
         const mcpTools = await this.fetchMCPTools();
-        logger.info(`📥 Fetched ${mcpTools.length} MCP tools`);
+        logger.debug(`📥 Fetched ${mcpTools.length} MCP tools`);
 
         // Convert to AI SDK format and cache
-        logger.info("🔄 Converting tools to AI SDK format...");
+        logger.debug("🔄 Converting tools to AI SDK format...");
         this.toolsCache = this.convertToAISDKTools(mcpTools);
 
         this.isInitialized = true;
         logger.info(
-          `✅ MCP client initialized with ${Object.keys(this.toolsCache).length} tools`
+          `✅ MCP client initialized with ${
+            Object.keys(this.toolsCache).length
+          } tools`
         );
         return; // Success - exit retry loop
       } catch (error) {
@@ -196,7 +198,7 @@ class MCPWrapper {
                 );
                 if (sessionIdMatch && sessionIdMatch[1]) {
                   this.sessionId = sessionIdMatch[1];
-                  logger.info("🆔 Got sessionId:", this.sessionId);
+                  logger.debug("🆔 Got sessionId:", this.sessionId);
                   clearTimeout(timeout);
                   reader.cancel();
                   resolve(this.sessionId);
@@ -251,7 +253,7 @@ class MCPWrapper {
           }
         );
 
-        logger.info(`📤 MCP tools request status: ${response.status}`);
+        logger.debug(`📤 MCP tools request status: ${response.status}`);
 
         if (response.status !== 202) {
           clearTimeout(timeout);
@@ -291,7 +293,7 @@ class MCPWrapper {
 
             for (const message of messages) {
               if (message.trim()) {
-                logger.info(
+                logger.debug(
                   "📡 Complete SSE message:",
                   message.substring(0, 150)
                 );
@@ -307,7 +309,7 @@ class MCPWrapper {
                       const jsonData = JSON.parse(data);
                       if (jsonData.result && jsonData.result.tools) {
                         const tools = jsonData.result.tools;
-                        logger.info(
+                        logger.debug(
                           `🎯 Got ${tools.length} tools from SSE stream`
                         );
 
@@ -317,7 +319,7 @@ class MCPWrapper {
                         return;
                       }
                     } catch (parseError) {
-                      logger.info(
+                      logger.debug(
                         "Could not parse SSE data as JSON, continuing..."
                       );
                     }
@@ -360,7 +362,7 @@ class MCPWrapper {
       });
     }
 
-    logger.info(
+    logger.debug(
       `Converted ${Object.keys(aiTools).length} MCP tools for AI SDK`
     );
     return aiTools;

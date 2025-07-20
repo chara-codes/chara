@@ -14,6 +14,130 @@ interface DevCommandArgs {
   trace?: boolean;
 }
 
+interface ServerInfo {
+  serverResult: any;
+  agentsResult: any;
+  serveStatic: any;
+  tunnel?: any;
+  tunnelClient?: any;
+  projectDir: string;
+  hasMcpServers: boolean;
+  clientsList: any[];
+  runnerStatus?: string;
+  runnerInfo?: any;
+  verbose?: boolean;
+}
+
+function displayServerSummary(info: ServerInfo) {
+  console.log("\n" + bold(green("🎉 Development environment ready!")));
+
+  console.log("\n" + bold("🖥️  Running Servers:"));
+  console.log(
+    `  • Backend Server:  ${cyan(`http://localhost:${info.serverResult.port}`)}`
+  );
+  console.log(
+    `  • Agents Server:   ${cyan(`http://localhost:${info.agentsResult.port}`)}`
+  );
+
+  // Dev Server (Runner) Information
+  const runnerStatus = info.runnerStatus || "inactive";
+  const statusColor = runnerStatus === "active" ? green : yellow;
+  const statusIcon = runnerStatus === "active" ? "🟢" : "🟡";
+  const statusText = statusColor(
+    runnerStatus.charAt(0).toUpperCase() + runnerStatus.slice(1)
+  );
+
+  if (info.runnerInfo && runnerStatus === "active") {
+    console.log(`  • Dev Server:      ${statusIcon} ${statusText}`);
+  } else {
+    console.log(
+      `  • Dev Server:      ${statusIcon} ${statusText} - Waiting for project...`
+    );
+  }
+
+  if (info.tunnel) {
+    console.log(
+      `  • Tunnel Server:   ${cyan("http://control.localhost:1337")}`
+    );
+  }
+
+  console.log("\n" + bold("📁 Project Configuration:"));
+  console.log(`  • Directory:       ${cyan(info.projectDir)}`);
+  console.log(
+    `  • MCP Servers:     ${
+      info.hasMcpServers ? green("Enabled") : yellow("Disabled")
+    }`
+  );
+
+  if (info.hasMcpServers && info.clientsList.length > 0) {
+    console.log(
+      `  • Active Clients:  ${info.clientsList
+        .map((client: any) => cyan(client.name || "Unknown"))
+        .join(", ")}`
+    );
+  }
+
+  if (info.tunnelClient) {
+    console.log("\n" + bold("🌐 Tunnel Configuration:"));
+    console.log(
+      `  • Domain:          ${cyan(`${info.tunnelClient.subdomain}:1337`)}`
+    );
+    console.log(`  • Control:         ${cyan("control.localhost:1337")}`);
+  }
+
+  if (info.runnerInfo) {
+    console.log("\n" + bold("⚡ Dev Server Details:"));
+    const statusIcon = runnerStatus === "active" ? "🟢" : "🟡";
+    const statusColor = runnerStatus === "active" ? green : yellow;
+    console.log(
+      `  • Status:          ${statusIcon} ${statusColor(
+        runnerStatus.charAt(0).toUpperCase() + runnerStatus.slice(1)
+      )}`
+    );
+    console.log(
+      `  • URL:             ${cyan(`http://localhost:${info.runnerInfo.port}`)}`
+    );
+    console.log(
+      `  • Command:         ${cyan(info.runnerInfo.command || "Unknown")}`
+    );
+    console.log(
+      `  • Working Dir:     ${cyan(info.runnerInfo.cwd || "Unknown")}`
+    );
+  }
+
+  if (info.verbose) {
+    console.log("\n" + bold("🔧 Additional Info:"));
+    console.log(
+      `  • API Endpoint:    ${cyan(
+        `http://localhost:${info.serverResult.port}/trpc`
+      )}`
+    );
+    console.log(
+      `  • WebSocket:       ${
+        info.hasMcpServers ? green("Enabled") : yellow("Disabled")
+      }`
+    );
+    console.log(`  • Runner:          ${green("Enabled")}`);
+  }
+
+  console.log("\n" + bold("🌟 Start Working with Chara Codes:"));
+  console.log(
+    `  • Web Interface:   ${bold(
+      cyan(`http://localhost:${info.serveStatic.port}`)
+    )}`
+  );
+
+  if (info.tunnelClient) {
+    console.log(
+      `  • Chara Widget:    ${bold(
+        cyan(`http://${info.tunnelClient.subdomain}:1337`)
+      )}`
+    );
+  }
+
+  console.log(`\n${cyan(`Press ${bold("Ctrl+C")} to stop all servers`)}\n`);
+}
+
 export const devCommand: CommandModule<
   Record<string, unknown>,
   DevCommandArgs
@@ -44,24 +168,48 @@ export const devCommand: CommandModule<
     intro(bold(cyan("\n🚀 Starting development with Chara Codes...\n")));
 
     try {
+      // Progress tracking
+      const steps = [
+        "Setting up logging",
+        "Preparing project directory",
+        "Checking configuration",
+        "Starting backend server",
+        "Starting agents server",
+        "Setting up web interface",
+        "Configuring tunnel",
+      ];
+      let currentStep = 0;
+
+      const showProgress = (message: string) => {
+        currentStep++;
+        if (!argv.verbose) {
+          logger.info(`${bold(`[${currentStep}/${steps.length}]`)} ${message}`);
+        }
+      };
+
       // Step 1: Setup logging
+      showProgress("Setting up logging");
       await ActionFactory.execute("setup-logging", {
         verbose: argv.verbose,
         trace: argv.trace,
       });
 
       // Step 2: Setup project directory
+      showProgress("Preparing project directory");
       const projectDir = await ActionFactory.execute("setup-project", {
         verbose: argv.verbose,
         projectDir: argv.projectDir,
       });
 
       // Step 3: Check if global config exists, if not run init
+      showProgress("Checking configuration");
       const globalConfigExists = await existsGlobalConfig();
       if (!globalConfigExists) {
-        logger.warning(
-          `No global configuration found. Running initialization...`
-        );
+        if (argv.verbose) {
+          logger.warning(
+            "No global configuration found. Running initialization..."
+          );
+        }
         await ActionFactory.execute("init", {
           verbose: argv.verbose,
         });
@@ -72,9 +220,11 @@ export const devCommand: CommandModule<
       try {
         globalConfig = await readGlobalConfig();
         if (!globalConfig.defaultModel) {
-          logger.warning(
-            `No default model found in global configuration. Setting up default model...`
-          );
+          if (argv.verbose) {
+            logger.warning(
+              "No default model found in global configuration. Setting up default model..."
+            );
+          }
 
           // We need to start a temporary server to get available models
           const tempServer = await ActionFactory.execute("start-agents", {
@@ -107,9 +257,11 @@ export const devCommand: CommandModule<
       // Step 5: Check if local/project config exists
       const localConfigPath = join(projectDir || process.cwd(), ".chara.json");
       if (!existsSync(localConfigPath)) {
-        logger.warning(
-          `No local configuration found. Initializing project configuration...`
-        );
+        if (argv.verbose) {
+          logger.warning(
+            "No local configuration found. Initializing project configuration..."
+          );
+        }
         await ActionFactory.execute("initialize-config", {
           verbose: argv.verbose,
           configFile: ".chara.json",
@@ -135,12 +287,13 @@ export const devCommand: CommandModule<
       }
 
       // Step 8: Start server with appropriate configuration
+      showProgress("Starting backend server");
       const serverResult = await ActionFactory.execute("start-server", {
         verbose: argv.verbose,
         port: 3030,
         mcpEnabled: hasMcpServers,
         websocketEnabled: hasMcpServers, // Only enable WebSocket if MCP is available
-        silent: false,
+        silent: !argv.verbose,
       });
 
       // Step 9: Connect to MCP servers if available
@@ -174,16 +327,18 @@ export const devCommand: CommandModule<
       }
 
       // Step 13: Start agents with appropriate configuration
+      showProgress("Starting agents server");
       const agentsResult = await ActionFactory.execute("start-agents", {
         verbose: argv.verbose,
         port: 3031,
         mcp: hasMcpServers,
         runner: true,
         websocket: true,
-        silent: false,
+        silent: !argv.verbose,
       });
 
       // Step 14: Start web applications that should connect to server and agents
+      showProgress("Setting up web interface");
       const pathToRoot = dirname(process.execPath);
       const indexWeb = Bun.file(`${pathToRoot}/web/index.html`);
       const indexWidget = Bun.file(`${pathToRoot}/widget/index.html`);
@@ -205,13 +360,17 @@ export const devCommand: CommandModule<
       });
 
       // Step 15: Run widget mode (tunnel server, tunnel client, event listener for the runner)
+      showProgress("Configuring tunnel");
       const pingControl = await ping.promise.probe("control.localhost");
       const pingChara = await ping.promise.probe("chara.localhost");
 
       let tunnelClient: any = null;
+      let tunnel: any = null;
+      let runnerStatus = "inactive";
+      let runnerInfo: any = null;
       if (pingChara.alive && pingControl.alive) {
         const { events } = agentsResult.server;
-        const tunnel = await ActionFactory.execute("start-tunnel-server", {
+        tunnel = await ActionFactory.execute("start-tunnel-server", {
           verbose: argv.verbose,
           port: 1337,
           domain: "localhost",
@@ -228,7 +387,12 @@ export const devCommand: CommandModule<
         events.on(
           "runner:status",
           async ({ proccesId, status, serverInfo }) => {
-            console.log(status);
+            runnerStatus = status;
+            runnerInfo = serverInfo;
+
+            if (argv.verbose) {
+              logger.debug(`Runner status: ${status}`);
+            }
             if (status === "active" && tunnel && !tunnelClient) {
               tunnelClient = await ActionFactory.execute(
                 "start-tunnel-client",
@@ -241,9 +405,21 @@ export const devCommand: CommandModule<
                   silent: true,
                 }
               );
-              logger.server(
-                `Tunnel client started on port http://${tunnelClient.subdomain}:1337`
-              );
+
+              // Display updated server summary with tunnel client info
+              displayServerSummary({
+                serverResult,
+                agentsResult,
+                serveStatic,
+                tunnel,
+                tunnelClient,
+                projectDir: projectDir || process.cwd(),
+                hasMcpServers,
+                clientsList,
+                runnerStatus,
+                runnerInfo,
+                verbose: argv.verbose,
+              });
             } else {
               if (tunnelClient) {
                 await ActionFactory.execute("stop-tunnel-client", {
@@ -251,90 +427,94 @@ export const devCommand: CommandModule<
                   force: true,
                   silent: true,
                 });
+                tunnelClient = null;
               }
             }
           }
         );
       } else {
-        logger.warning(
-          `Please add the following line to your ${bold("/etc/host")} file`
-        );
-        console.log(bold("\n127.0.0.1 control.localhost chara.localhost\n"));
+        if (argv.verbose) {
+          logger.warning(
+            "Local tunnel domains not configured. Add to /etc/hosts:"
+          );
+          console.log(bold("127.0.0.1 control.localhost chara.localhost"));
+        }
+        // Display initial server summary
+        displayServerSummary({
+          serverResult,
+          agentsResult,
+          serveStatic,
+          tunnel,
+          tunnelClient,
+          projectDir: projectDir || process.cwd(),
+          hasMcpServers,
+          clientsList,
+          runnerStatus,
+          runnerInfo,
+          verbose: argv.verbose,
+        });
       }
 
-      if (argv.verbose) {
-        logger.info(`\n${bold("🔧 Server Configuration:")}`);
-        logger.info(
-          `  • API endpoint: ${bold(
-            `http://localhost:${serverResult.port}/trpc`
-          )}`
-        );
-        logger.info(
-          `  • MCP enabled: ${hasMcpServers ? green("Yes") : yellow("No")}`
-        );
-        logger.info(`  • Runner enabled: ${green("Yes")}`);
-      }
+      // Display initial server summary
 
-      logger.info(
-        `  • Project directory: ${cyan(projectDir || process.cwd())}`
-      );
-
-      if (hasMcpServers && clientsList.length > 0) {
-        logger.info(
-          `  • Active MCP clients: ${clientsList
-            .map((client: any) => cyan(client.name || "Unknown"))
-            .join(", ")}`
-        );
-      }
-
-      // Print server information
-      logger.server(`${bold("🖥️  Running Servers:")}`);
-      logger.server(
-        `  • Backend Server: ${cyan(`http://localhost:${serverResult.port}`)}`
-      );
-      logger.server(
-        `  • Agents Server: ${cyan(`http://localhost:${agentsResult.port}`)}`
-      );
-      logger.server(
-        `  • Chara Codes Web: ${cyan(`http://localhost:${serveStatic.port}`)}`
-      );
-      if (tunnelClient) {
-        logger.server(
-          `Tunnel client started on port http://${tunnelClient.subdomain}:1337`
-        );
-      }
-
-      outro(
-        `${bold(green("🎉 Development environment ready!"))}. ${cyan(
-          `Press ${bold("Ctrl+C")} to stop`
-        )}`
-      );
       // Keep the process running
       process.on("SIGINT", async () => {
         console.log("\n\n🛑 Shutting down development environment...");
 
         try {
-          await ActionFactory.execute("stop-agents", {
-            verbose: argv.verbose,
-            server: agentsResult.server,
-            silent: true,
-          });
+          const shutdownTasks = [];
 
-          await ActionFactory.execute("stop-server", {
-            verbose: argv.verbose,
-            server: serverResult.server,
-            silent: true,
-          });
+          if (tunnelClient) {
+            shutdownTasks.push(
+              ActionFactory.execute("stop-tunnel-client", {
+                client: tunnelClient,
+                force: true,
+                silent: true,
+              })
+            );
+          }
 
-          console.log("✓ Serve static stopped successfully");
-          await ActionFactory.execute("stop-serve-static", {
-            verbose: argv.verbose,
-            server: serveStatic.server,
-            silent: true,
-          });
+          if (tunnel) {
+            shutdownTasks.push(
+              ActionFactory.execute("stop-tunnel-server", {
+                server: tunnel,
+                silent: true,
+              })
+            );
+          }
+
+          shutdownTasks.push(
+            ActionFactory.execute("stop-agents", {
+              verbose: argv.verbose,
+              server: agentsResult.server,
+              silent: true,
+            })
+          );
+
+          shutdownTasks.push(
+            ActionFactory.execute("stop-server", {
+              verbose: argv.verbose,
+              server: serverResult.server,
+              silent: true,
+            })
+          );
+
+          shutdownTasks.push(
+            ActionFactory.execute("stop-serve-static", {
+              verbose: argv.verbose,
+              server: serveStatic.server,
+              silent: true,
+            })
+          );
+
+          await Promise.all(shutdownTasks);
           console.log("✓ Development environment stopped successfully");
         } catch (error) {
-          logger.error("Error during shutdown:", error);
+          if (argv.verbose) {
+            logger.error("Error during shutdown:", error);
+          } else {
+            console.log("⚠️  Some services may not have stopped cleanly");
+          }
         }
 
         process.exit(0);
