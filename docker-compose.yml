@@ -21,8 +21,7 @@ services:
       - "--tracing=true"
     depends_on:
       - charatunnel
-      - charaserver
-      - charawidget
+      - charalanding
       # - charaweb
     ports:
       - "80:80"
