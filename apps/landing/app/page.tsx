@@ -14,8 +14,9 @@ import { FloatingElements } from "@/components/floating-elements";
 import { MagicButton } from "@/components/magic-button";
 import { GlowingCard } from "@/components/glowing-card";
 import { ParticleBackground } from "@/components/particle-background";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { useState } from "react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   const [copied, setCopied] = useState(false);
@@ -35,43 +36,7 @@ export default function Home() {
       <ParticleBackground />
 
       {/* Header */}
-      <header className="container mx-auto py-6 px-4 relative z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Image
-                src="/images/chara-logo.svg"
-                alt="CharaCodes Logo"
-                width={50}
-                height={50}
-                className="object-contain"
-              />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full animate-pulse"></div>
-            </div>
-            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-navy-800 to-purple-600 dark:from-purple-400 dark:to-purple-600">
-              CharaCodes
-            </span>
-          </div>
-          <div className="hidden md:flex items-center gap-6">
-            <a
-              href="#features"
-              className="text-navy-800 dark:text-purple-200 hover:text-purple-600 dark:hover:text-purple-400 transition font-medium relative group"
-            >
-              Features
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 group-hover:w-full transition-all duration-300"></span>
-            </a>
-            <a
-              href="#subscribe"
-              className="text-navy-800 dark:text-purple-200 hover:text-purple-600 dark:hover:text-purple-400 transition font-medium relative group"
-            >
-              Subscribe
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 group-hover:w-full transition-all duration-300"></span>
-            </a>
-            <ThemeToggle />
-            <MagicButton />
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <section className="relative flex flex-col items-center justify-center text-center px-4 py-16 md:py-28 overflow-hidden bg-white dark:bg-navy-950">
@@ -408,31 +373,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-navy-900 text-white py-8 border-t border-purple-800/30">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center gap-3 mb-6 md:mb-0">
-              <div className="relative">
-                <Image
-                  src="/images/chara-logo.svg"
-                  alt="CharaCodes Logo"
-                  width={40}
-                  height={40}
-                  className="object-contain"
-                />
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-              </div>
-              <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-amber-300">
-                CharaCodes
-              </span>
-            </div>
-
-            <div className="text-purple-300 text-sm">
-              © {new Date().getFullYear()} CharaCodes. Crafting code magic.
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }
