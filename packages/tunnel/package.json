@@ -19,7 +19,7 @@
     "tunnel": "./dist/tunnel"
   },
   "scripts": {
-    "bbuild": "bun build ./src/cli.ts --outfile ./dist/tunnel --compile",
+    "build": "bun build ./src/cli.ts --outfile ./dist/tunnel --compile",
     "d": "bun ./src/cli.ts",
     "start": "./dist/tunnel"
   },
