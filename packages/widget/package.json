@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/widget",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "description": "AI Widget component for embedding Chara AI coding assistant into web pages",
   "author": "Chara Team",
   "license": "Apache-2.0",

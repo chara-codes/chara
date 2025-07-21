@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/logger",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "description": "A flexible and customizable logging utility for Chara applications with advanced variable dumping capabilities",
   "keywords": [
     "logger",

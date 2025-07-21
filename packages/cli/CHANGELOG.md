@@ -1,5 +1,11 @@
 # chara
 
+## 0.1.20
+
+### Patch Changes
+
+- c547803: improve DX, cleanup the logs
+
 ## 0.1.19
 
 ### Patch Changes
