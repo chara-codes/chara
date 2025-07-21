@@ -42,6 +42,10 @@ export class OpenRouterProvider extends AbstractProvider {
 
     const openRouterProvider = createOpenRouter({
       apiKey: apiKey,
+      headers: {
+        "HTTP-Referer": "https://chara-ai.dev/",
+        "X-Title": "Chara Codes",
+      },
     });
 
     return (modelId: string) => {
