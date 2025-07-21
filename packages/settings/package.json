@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/settings",
-  "version": "0.1.18",
+  "version": "0.1.20",
   "description": "Utility to work with different type of settings - project settings, global settings",
   "main": "src/index.ts",
   "module": "src/index.ts",

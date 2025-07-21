@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/core",
-  "version": "0.1.18",
+  "version": "0.1.20",
   "description": "Core utilities and shared components for Chara frontend applications",
   "author": "Chara Team",
   "license": "Apache-2.0",

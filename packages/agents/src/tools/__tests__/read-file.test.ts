@@ -22,16 +22,16 @@ describe("readFile tool", () => {
       {
         path: join(testFS.getPath(), "test.txt").replace(
           process.cwd() + "/",
-          "",
+          ""
         ),
       },
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toBe(content);
+    expect(result).toEqual({ content });
   });
 
   test("should read empty file", async () => {
@@ -41,16 +41,16 @@ describe("readFile tool", () => {
       {
         path: join(testFS.getPath(), "empty.txt").replace(
           process.cwd() + "/",
-          "",
+          ""
         ),
       },
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toBe("");
+    expect(result).toEqual({ content: "" });
   });
 
   test("should read file with special characters", async () => {
@@ -61,16 +61,16 @@ describe("readFile tool", () => {
       {
         path: join(testFS.getPath(), "special.txt").replace(
           process.cwd() + "/",
-          "",
+          ""
         ),
       },
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toBe(content);
+    expect(result).toEqual({ content });
   });
 
   test("should read multiline file", async () => {
@@ -81,16 +81,16 @@ describe("readFile tool", () => {
       {
         path: join(testFS.getPath(), "multiline.txt").replace(
           process.cwd() + "/",
-          "",
+          ""
         ),
       },
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toBe(content);
+    expect(result).toEqual({ content });
   });
 
   test("should read JSON file", async () => {
@@ -101,22 +101,22 @@ describe("readFile tool", () => {
       {
         path: join(testFS.getPath(), "data.json").replace(
           process.cwd() + "/",
-          "",
+          ""
         ),
       },
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toBe(content);
+    expect(result).toEqual({ content });
   });
 
-  test("should return error message for non-existent file", async () => {
+  test("should return error object for non-existent file", async () => {
     const relativePath = join(testFS.getPath(), "does-not-exist.txt").replace(
       process.cwd() + "/",
-      "",
+      ""
     );
 
     const result = await readFile.execute(
@@ -124,18 +124,18 @@ describe("readFile tool", () => {
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toContain("Error:");
-    expect(result).toContain("not found");
+    expect(result).toHaveProperty("error");
+    expect((result as any).error).toContain("not found");
   });
 
-  test("should return error message when trying to read directory", async () => {
+  test("should return error object when trying to read directory", async () => {
     await testFS.createDir("test-dir");
     const relativePath = join(testFS.getPath(), "test-dir").replace(
       process.cwd() + "/",
-      "",
+      ""
     );
 
     const result = await readFile.execute(
@@ -143,11 +143,11 @@ describe("readFile tool", () => {
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toContain("Error:");
-    expect(result).toContain("is not a file");
+    expect(result).toHaveProperty("error");
+    expect((result as any).error).toContain("is not a file");
   });
 
   test("should read file with line range", async () => {
@@ -158,7 +158,7 @@ describe("readFile tool", () => {
       {
         path: join(testFS.getPath(), "multiline.txt").replace(
           process.cwd() + "/",
-          "",
+          ""
         ),
         start_line: 2,
         end_line: 4,
@@ -166,10 +166,10 @@ describe("readFile tool", () => {
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toBe("Line 2\nLine 3\nLine 4");
+    expect(result).toEqual({ content: "Line 2\nLine 3\nLine 4" });
   });
 
   test("should read from start_line to end of file when end_line not specified", async () => {
@@ -180,17 +180,17 @@ describe("readFile tool", () => {
       {
         path: join(testFS.getPath(), "multiline.txt").replace(
           process.cwd() + "/",
-          "",
+          ""
         ),
         start_line: 3,
       },
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toBe("Line 3\nLine 4\nLine 5");
+    expect(result).toEqual({ content: "Line 3\nLine 4\nLine 5" });
   });
 
   test("should handle edge cases with line ranges", async () => {
@@ -198,7 +198,7 @@ describe("readFile tool", () => {
     await testFS.createFile("short.txt", content);
     const relativePath = join(testFS.getPath(), "short.txt").replace(
       process.cwd() + "/",
-      "",
+      ""
     );
 
     // start_line beyond file length should return empty
@@ -210,9 +210,9 @@ describe("readFile tool", () => {
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
-    expect(result1).toBe("");
+    expect(result1).toEqual({ content: "" });
 
     // end_line beyond file length should read to end
     const result2 = await readFile.execute(
@@ -224,9 +224,9 @@ describe("readFile tool", () => {
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
-    expect(result2).toBe("Line 2\nLine 3");
+    expect(result2).toEqual({ content: "Line 2\nLine 3" });
 
     // single line read
     const result3 = await readFile.execute(
@@ -238,9 +238,9 @@ describe("readFile tool", () => {
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
-    expect(result3).toBe("Line 2");
+    expect(result3).toEqual({ content: "Line 2" });
   });
 
   test("should return outline for large files", async () => {
@@ -252,17 +252,20 @@ describe("readFile tool", () => {
       {
         path: join(testFS.getPath(), "large.txt").replace(
           process.cwd() + "/",
-          "",
+          ""
         ),
       },
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toContain("This file was too big to read all at once");
-    expect(result).toContain("you can call this tool again");
+    expect(result).toHaveProperty("content");
+    expect((result as any).content).toContain(
+      "This file was too big to read all at once"
+    );
+    expect((result as any).content).toContain("you can call this tool again");
   });
 
   test("should generate outline for code files", async () => {
@@ -283,82 +286,87 @@ const myVar = 42;
       {
         path: join(testFS.getPath(), "code.js").replace(
           process.cwd() + "/",
-          "",
+          ""
         ),
       },
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toContain("File outline:");
-    expect(result).toContain("hello [L");
-    expect(result).toContain("MyClass [L");
-    expect(result).toContain("myVar [L");
+    expect(result).toHaveProperty("content");
+    expect((result as any).content).toContain("File outline:");
+    expect((result as any).content).toContain("hello [L");
+    expect((result as any).content).toContain("MyClass [L");
+    expect((result as any).content).toContain("myVar [L");
   });
 
-  test("should reject absolute paths", async () => {
-    await expect(
-      readFile.execute(
-        { path: "/etc/passwd" },
-        {
-          toolCallId: "test",
-          messages: [],
-        },
-      ),
-    ).rejects.toThrow("absolute paths are not allowed");
+  test("should return error object for absolute paths", async () => {
+    const result = await readFile.execute(
+      { path: "/etc/passwd" },
+      {
+        toolCallId: "test",
+        messages: [],
+      }
+    );
+
+    expect(result).toHaveProperty("error");
+    expect((result as any).error).toContain("absolute paths are not allowed");
   });
 
-  test("should reject path traversal attempts", async () => {
-    await expect(
-      readFile.execute(
-        { path: "../../../etc/passwd" },
-        {
-          toolCallId: "test",
-          messages: [],
-        },
-      ),
-    ).rejects.toThrow("path traversal not allowed");
+  test("should return error object for path traversal attempts", async () => {
+    const result = await readFile.execute(
+      { path: "../../../etc/passwd" },
+      {
+        toolCallId: "test",
+        messages: [],
+      }
+    );
+
+    expect(result).toHaveProperty("error");
+    expect((result as any).error).toContain("path traversal not allowed");
   });
 
-  test("should reject excluded file patterns", async () => {
+  test("should return error object for excluded file patterns", async () => {
     await testFS.createDir("node_modules");
     await testFS.createFile("node_modules/package.json", "{}");
 
     const relativePath = join(
       testFS.getPath(),
-      "node_modules/package.json",
+      "node_modules/package.json"
     ).replace(process.cwd() + "/", "");
 
-    await expect(
-      readFile.execute(
-        { path: relativePath },
-        {
-          toolCallId: "test",
-          messages: [],
-        },
-      ),
-    ).rejects.toThrow("file_scan_exclusions");
+    const result = await readFile.execute(
+      { path: relativePath },
+      {
+        toolCallId: "test",
+        messages: [],
+      }
+    );
+
+    expect(result).toHaveProperty("error");
+    expect((result as any).error).toContain("file_scan_exclusions");
   });
 
-  test("should reject private file patterns", async () => {
+  test("should return error object for private file patterns", async () => {
     await testFS.createFile(".env", "SECRET=123");
 
     const relativePath = join(testFS.getPath(), ".env").replace(
       process.cwd() + "/",
-      "",
+      ""
     );
 
-    await expect(
-      readFile.execute(
-        { path: relativePath },
-        {
-          toolCallId: "test",
-          messages: [],
-        },
-      ),
-    ).rejects.toThrow("private_files");
+    const result = await readFile.execute(
+      { path: relativePath },
+      {
+        toolCallId: "test",
+        messages: [],
+      }
+    );
+
+    expect(result).toHaveProperty("error");
+    expect((result as any).error).toContain("private_files");
   });
 
   test("should preserve line endings", async () => {
@@ -369,16 +377,16 @@ const myVar = 42;
       {
         path: join(testFS.getPath(), "windows.txt").replace(
           process.cwd() + "/",
-          "",
+          ""
         ),
       },
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
 
-    expect(result).toBe(content);
+    expect(result).toEqual({ content });
   });
 
   test("should handle binary files gracefully", async () => {
@@ -388,7 +396,7 @@ const myVar = 42;
 
     const relativePath = join(testFS.getPath(), "binary.bin").replace(
       process.cwd() + "/",
-      "",
+      ""
     );
 
     // Should not throw, but might contain replacement characters
@@ -397,65 +405,70 @@ const myVar = 42;
       {
         toolCallId: "test",
         messages: [],
-      },
+      }
     );
-    expect(typeof result).toBe("string");
+
+    expect(result).toHaveProperty("content");
+    expect(typeof (result as any).content).toBe("string");
   });
 
-  test("should validate line number parameters", async () => {
+  test("should return error object for invalid line number parameters", async () => {
     const content = "Line 1\nLine 2\nLine 3";
     await testFS.createFile("test.txt", content);
     const relativePath = join(testFS.getPath(), "test.txt").replace(
       process.cwd() + "/",
-      "",
+      ""
     );
 
     // Should work with valid line numbers
-    await expect(
-      readFile.execute(
-        {
-          path: relativePath,
-          start_line: 1,
-          end_line: 2,
-        },
-        {
-          toolCallId: "test",
-          messages: [],
-        },
-      ),
-    ).resolves.toBe("Line 1\nLine 2");
+    const validResult = await readFile.execute(
+      {
+        path: relativePath,
+        start_line: 1,
+        end_line: 2,
+      },
+      {
+        toolCallId: "test",
+        messages: [],
+      }
+    );
+    expect(validResult).toEqual({ content: "Line 1\nLine 2" });
 
-    // Invalid line numbers should be handled gracefully by zod validation
-    await expect(
-      readFile.execute(
-        {
-          path: relativePath,
-          start_line: 0, // Invalid: less than 1
-        },
-        {
-          toolCallId: "test",
-          messages: [],
-        },
-      ),
-    ).rejects.toThrow();
+    // Invalid line numbers should return error objects
+    const invalidResult1 = await readFile.execute(
+      {
+        path: relativePath,
+        start_line: 0, // Invalid: less than 1
+      },
+      {
+        toolCallId: "test",
+        messages: [],
+      }
+    );
+    expect(invalidResult1).toHaveProperty("error");
+    expect((invalidResult1 as any).error).toContain(
+      "start_line must be a positive integer"
+    );
 
-    await expect(
-      readFile.execute(
-        {
-          path: relativePath,
-          start_line: -1, // Invalid: negative
-        },
-        {
-          toolCallId: "test",
-          messages: [],
-        },
-      ),
-    ).rejects.toThrow();
+    const invalidResult2 = await readFile.execute(
+      {
+        path: relativePath,
+        start_line: -1, // Invalid: negative
+      },
+      {
+        toolCallId: "test",
+        messages: [],
+      }
+    );
+    expect(invalidResult2).toHaveProperty("error");
+    expect((invalidResult2 as any).error).toContain(
+      "start_line must be a positive integer"
+    );
   });
 
   test("should have correct tool metadata", () => {
     expect(readFile.description).toContain(
-      "Reads the content of the given file",
+      "Reads the content of the given file"
     );
     expect(readFile.parameters).toBeDefined();
   });

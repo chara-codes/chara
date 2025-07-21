@@ -4,6 +4,12 @@ import { appEvents } from "../services/events";
 
 const COMMAND_OUTPUT_LIMIT = 16 * 1024; // 16KB limit
 
+interface TerminalResult {
+  success: boolean;
+  output?: string;
+  error?: string;
+}
+
 export const terminal = tool({
   description: `Executes a shell one-liner and returns its combined output.
   This tool launches a process in the user's shell, capturing both stdout and stderr streams—preserving their original write order—and returns them together in a single string.
@@ -17,7 +23,7 @@ export const terminal = tool({
   - Interactive commands requiring user input
   - Any process that runs indefinitely
 
-  This tool has a 5-minute timeout and is designed only for quick, finite operations like building, testing, installing packages, or running one-time scripts.
+  This tool has a configurable timeout (default 1 minute, maximum 10 minutes) and is designed only for quick, finite operations like building, testing, installing packages, or running one-time scripts.
   Each time this tool is used, it starts a new shell process—no previous state is preserved between runs.`,
   parameters: z.object({
     command: z.string().describe("The one-liner command to execute"),
@@ -26,8 +32,25 @@ export const terminal = tool({
       .describe(
         "Working directory for the command. This must be one of the root directories of the project"
       ),
+    timeout: z
+      .number()
+      .optional()
+      .describe(
+        "Timeout in seconds for command execution. Defaults to 60 seconds (1 minute). Must be between 1 and 600 seconds (10 minutes maximum). Commands that exceed this timeout will be terminated and return an error."
+      ),
   }),
-  execute: async ({ command, cd }, context) => {
+  execute: async (
+    { command, cd, timeout = 60 },
+    context
+  ): Promise<TerminalResult> => {
+    // Validate timeout parameter
+    if (timeout < 1 || timeout > 600) {
+      return {
+        success: false,
+        error:
+          "Timeout must be between 1 and 600 seconds (10 minutes maximum).",
+      };
+    }
     // Validate command to prevent long-running tasks
     const longRunningPatterns = [
       /\b(npm|yarn|pnpm|bun)\s+(run\s+)?(dev|start|serve)\b/,
@@ -43,11 +66,13 @@ export const terminal = tool({
     const trimmedCommand = command.trim();
     for (const pattern of longRunningPatterns) {
       if (pattern.test(trimmedCommand)) {
-        const result =
-          `Command "${command}" appears to be a long-running task (dev server, file watcher, etc.) which is not supported by this tool. ` +
-          `This tool is designed for quick, finite operations only. ` +
-          `If you need to start a development server, please use the runner tool instead to examine and manage running processes.`;
-        return result;
+        return {
+          success: false,
+          error:
+            `Command "${command}" appears to be a long-running task (dev server, file watcher, etc.) which is not supported by this tool. ` +
+            `This tool is designed for quick, finite operations only. ` +
+            `If you need to start a development server, please use the runner tool instead to examine and manage running processes.`,
+        };
       }
     }
 
@@ -82,11 +107,11 @@ export const terminal = tool({
       proc.stdin.end();
 
       // Stream output with timeout
-      const timeout = 300000;
+      const timeoutMs = timeout * 1000;
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(
-          () => reject(new Error("Command timed out after 300 seconds")),
-          timeout
+          () => reject(new Error(`Command timed out after ${timeout} seconds`)),
+          timeoutMs
         );
       });
 
@@ -177,33 +202,32 @@ export const terminal = tool({
       });
 
       // Process the output
-      const { processedContent, wasEmpty } = processContent(
+      const processedContent = processContent(
         combinedOutput,
         command,
         exitCode
       );
 
-      return processedContent;
+      return {
+        success: exitCode === 0,
+        output: processedContent,
+      };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `Failed to execute command "${command}": ${errorMessage}`
-      );
+      return {
+        success: false,
+        error: `Failed to execute command "${command}": ${errorMessage}`,
+      };
     }
   },
 });
-
-interface ProcessContentResult {
-  processedContent: string;
-  wasEmpty: boolean;
-}
 
 function processContent(
   content: string,
   command: string,
   exitCode: number | null
-): ProcessContentResult {
+): string {
   const shouldTruncate = content.length > COMMAND_OUTPUT_LIMIT;
 
   let processedContent = content;
@@ -236,32 +260,16 @@ function processContent(
   // Handle exit codes
   if (exitCode === 0) {
     if (isEmpty) {
-      return {
-        processedContent: "Command executed successfully.",
-        wasEmpty: true,
-      };
+      return "Command executed successfully.";
     }
-    return {
-      processedContent: formattedContent,
-      wasEmpty: false,
-    };
+    return formattedContent;
   }
 
   if (exitCode !== null) {
     if (isEmpty) {
-      return {
-        processedContent: `Command "${command}" failed with exit code ${exitCode}.`,
-        wasEmpty: true,
-      };
+      return `Command "${command}" failed with exit code ${exitCode}.`;
     }
-    return {
-      processedContent: `Command "${command}" failed with exit code ${exitCode}.\n\n${formattedContent}`,
-      wasEmpty: false,
-    };
+    return `Command "${command}" failed with exit code ${exitCode}.\n\n${formattedContent}`;
   }
-
-  return {
-    processedContent: `Command failed or was interrupted.\nPartial output captured:\n\n${formattedContent}`,
-    wasEmpty: isEmpty,
-  };
+  return `Command failed or was interrupted.\nPartial output captured:\n\n${formattedContent}`;
 }

@@ -19,8 +19,9 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("Hello World");
-    expect(result).toContain("```");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("Hello World");
+    expect(result.output).toContain("```");
   });
 
   test("should handle empty output with success exit code", async () => {
@@ -29,7 +30,8 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toBe("Command executed successfully.");
+    expect(result.success).toBe(true);
+    expect(result.output).toBe("Command executed successfully.");
   });
 
   test("should handle command failure", async () => {
@@ -38,8 +40,9 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("failed with exit code");
-    expect(result).toContain("false");
+    expect(result.success).toBe(false);
+    expect(result.output).toContain("failed with exit code");
+    expect(result.output).toContain("false");
   });
 
   test("should handle non-existent command", async () => {
@@ -48,8 +51,9 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("failed with exit code");
-    expect(result).toContain("nonexistent-command-xyz");
+    expect(result.success).toBe(false);
+    expect(result.output).toContain("failed with exit code");
+    expect(result.output).toContain("nonexistent-command-xyz");
   });
 
   test("should change to specified directory", async () => {
@@ -60,7 +64,8 @@ describe("terminal tool", () => {
       cd: testFS.getPath("subdir"),
     });
 
-    expect(result).toContain("subdir");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("subdir");
   });
 
   test("should handle file operations", async () => {
@@ -71,7 +76,8 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("test content");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("test content");
   });
 
   test("should handle stderr output", async () => {
@@ -83,8 +89,9 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("error message");
-    expect(result).toContain("failed with exit code 1");
+    expect(result.success).toBe(false);
+    expect(result.output).toContain("error message");
+    expect(result.output).toContain("failed with exit code 1");
   });
 
   test("should combine stdout and stderr", async () => {
@@ -96,8 +103,9 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("stdout");
-    expect(result).toContain("stderr");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("stdout");
+    expect(result.output).toContain("stderr");
   });
 
   test("should handle multiline output", async () => {
@@ -109,9 +117,10 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("Line 1");
-    expect(result).toContain("Line 2");
-    expect(result).toContain("Line 3");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("Line 1");
+    expect(result.output).toContain("Line 2");
+    expect(result.output).toContain("Line 3");
   });
 
   test("should handle commands with special characters", async () => {
@@ -125,7 +134,8 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("content with éñü");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("content with éñü");
   });
 
   test("should handle large output truncation", async () => {
@@ -138,8 +148,9 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("Command output too long");
-    expect(result.length).toBeLessThan(largeText.length + 1000); // Much smaller than original
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("Command output too long");
+    expect(result.output!.length).toBeLessThan(largeText.length + 1000); // Much smaller than original
   });
 
   test("should handle file listing", async () => {
@@ -152,9 +163,10 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("file1.txt");
-    expect(result).toContain("file2.txt");
-    expect(result).toContain("subdir");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("file1.txt");
+    expect(result.output).toContain("file2.txt");
+    expect(result.output).toContain("subdir");
   });
 
   test("should handle environment variables", async () => {
@@ -163,8 +175,9 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("```");
-    expect(result.length).toBeGreaterThan(10); // Should have some path content
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("```");
+    expect(result.output!.length).toBeGreaterThan(10); // Should have some path content
   });
 
   test("should handle command with pipes", async () => {
@@ -178,9 +191,10 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("1");
-    expect(result).toContain("2");
-    expect(result).toContain("3");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("1");
+    expect(result.output).toContain("2");
+    expect(result.output).toContain("3");
   });
 
   test("should handle command with redirection", async () => {
@@ -192,16 +206,18 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("test output");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("test output");
   });
 
-  test("should throw error for invalid directory", async () => {
-    await expect(
-      terminal.execute({
-        command: "echo test",
-        cd: "/nonexistent/directory/path",
-      })
-    ).rejects.toThrow("Failed to execute command");
+  test("should return error for invalid directory", async () => {
+    const result = await terminal.execute({
+      command: "echo test",
+      cd: "/nonexistent/directory/path",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Failed to execute command");
   });
 
   test("should handle concurrent command execution", async () => {
@@ -220,9 +236,12 @@ describe("terminal tool", () => {
       }),
     ]);
 
-    expect(result1).toContain("Command 1");
-    expect(result2).toContain("Command 2");
-    expect(result3).toContain("Command 3");
+    expect(result1.success).toBe(true);
+    expect(result1.output).toContain("Command 1");
+    expect(result2.success).toBe(true);
+    expect(result2.output).toContain("Command 2");
+    expect(result3.success).toBe(true);
+    expect(result3.output).toContain("Command 3");
   });
 
   test("should handle git commands", async () => {
@@ -237,7 +256,8 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("git"); // Should contain git-related output
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("git"); // Should contain git-related output
   });
 
   test("should handle file creation and verification", async () => {
@@ -249,7 +269,8 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("created content");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("created content");
     expect(await testFS.fileExists("created.txt")).toBe(true);
   });
 
@@ -264,7 +285,8 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("file exists");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("file exists");
   });
 
   test("should preserve output formatting", async () => {
@@ -276,8 +298,9 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("indented");
-    expect(result).toContain("normal");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("indented");
+    expect(result.output).toContain("normal");
     // Note: Some shells may trim leading whitespace, so we just verify the content is present
   });
 
@@ -288,7 +311,7 @@ describe("terminal tool", () => {
       "IMPORTANT: Do NOT use this tool for long-running tasks"
     );
     expect(terminal.description).toContain("Development servers");
-    expect(terminal.description).toContain("5-minute timeout");
+    expect(terminal.description).toContain("configurable timeout");
     expect(terminal.parameters).toBeDefined();
   });
 
@@ -306,12 +329,14 @@ describe("terminal tool", () => {
     ];
 
     for (const command of longRunningCommands) {
-      await expect(
-        terminal.execute({
-          command,
-          cd: testFS.getPath(),
-        })
-      ).rejects.toThrow(/long-running task.*runner tool/);
+      const result = await terminal.execute({
+        command,
+        cd: testFS.getPath(),
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("appears to be a long-running task");
+      expect(result.error).toContain("runner tool instead");
     }
   });
 
@@ -322,7 +347,8 @@ describe("terminal tool", () => {
     });
 
     // Empty command should either succeed or fail gracefully
-    expect(typeof result).toBe("string");
+    expect(typeof result).toBe("object");
+    expect(typeof result.success).toBe("boolean");
   });
 
   test("should handle command with quotes", async () => {
@@ -334,7 +360,8 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("Hello World");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("Hello World");
   });
 
   test("should handle unicode characters in output", async () => {
@@ -345,9 +372,10 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("测试");
-    expect(result).toContain("🚀");
-    expect(result).toContain("café");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("测试");
+    expect(result.output).toContain("🚀");
+    expect(result.output).toContain("café");
   });
 
   test("should handle commands with newlines in arguments", async () => {
@@ -359,8 +387,88 @@ describe("terminal tool", () => {
       cd: testFS.getPath(),
     });
 
-    expect(result).toContain("Multi");
-    expect(result).toContain("Line");
-    expect(result).toContain("Command");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("Multi");
+    expect(result.output).toContain("Line");
+    expect(result.output).toContain("Command");
+  });
+
+  test("should use default timeout of 300 seconds", async () => {
+    const result = await terminal.execute({
+      command: "echo 'test'",
+      cd: testFS.getPath(),
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("test");
+  });
+
+  test("should accept custom timeout parameter", async () => {
+    const result = await terminal.execute({
+      command: "echo 'test with timeout'",
+      cd: testFS.getPath(),
+      timeout: 10,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("test with timeout");
+  });
+
+  test("should return error for timeout less than 1 second", async () => {
+    const result = await terminal.execute({
+      command: "echo 'test'",
+      cd: testFS.getPath(),
+      timeout: 0,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Timeout must be between 1 and 600 seconds");
+  });
+
+  test("should return error for timeout greater than 600 seconds", async () => {
+    const result = await terminal.execute({
+      command: "echo 'test'",
+      cd: testFS.getPath(),
+      timeout: 601,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Timeout must be between 1 and 600 seconds");
+  });
+
+  test("should timeout after specified duration", async () => {
+    const result = await terminal.execute({
+      command: process.platform === "win32" ? "timeout /t 3" : "sleep 3",
+      cd: testFS.getPath(),
+      timeout: 1,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Command timed out after 1 seconds");
+  });
+
+  test("should accept maximum timeout of 600 seconds", async () => {
+    const result = await terminal.execute({
+      command: "echo 'max timeout test'",
+      cd: testFS.getPath(),
+      timeout: 600,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("max timeout test");
+  });
+
+  test("should handle timeout with partial output", async () => {
+    const result = await terminal.execute({
+      command:
+        process.platform === "win32"
+          ? "echo partial output && timeout /t 3"
+          : "echo 'partial output' && sleep 3",
+      cd: testFS.getPath(),
+      timeout: 1,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Command timed out after 1 seconds");
   });
 });

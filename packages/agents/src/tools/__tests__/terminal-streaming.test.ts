@@ -22,7 +22,8 @@ describe("terminal streaming", () => {
       cd: process.cwd(),
     });
 
-    expect(result).toContain("Hello World");
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("Hello World");
 
     // Check that we received streaming events
     const stdoutEvents = events.filter((e) => e.data?.type === "stdout");
@@ -96,14 +97,12 @@ describe("terminal streaming", () => {
   });
 
   it("should emit complete event with correct exit code for failing command", async () => {
-    try {
-      await terminal.execute({
-        command: "exit 1",
-        cd: process.cwd(),
-      });
-    } catch (error) {
-      // Command might throw or might not, depending on implementation
-    }
+    const result = await terminal.execute({
+      command: "exit 1",
+      cd: process.cwd(),
+    });
+
+    expect(result.success).toBe(false);
 
     const completeEvents = events.filter((e) => e.data?.type === "complete");
     expect(completeEvents.length).toBe(1);
@@ -126,7 +125,7 @@ describe("terminal streaming", () => {
 
     // Might have empty stdout/stderr events or no output events at all
     const outputEvents = events.filter(
-      (e) => e.data?.type === "stdout" || e.data?.type === "stderr",
+      (e) => e.data?.type === "stdout" || e.data?.type === "stderr"
     );
     // Just verify we don't crash - output events may or may not be present
   });
@@ -159,6 +158,8 @@ describe("terminal streaming", () => {
       cd: process.cwd(),
     });
 
+    expect(result.success).toBe(true);
+
     const stdoutEvents = events.filter((e) => e.data?.type === "stdout");
     const completeEvents = events.filter((e) => e.data?.type === "complete");
 
@@ -170,5 +171,52 @@ describe("terminal streaming", () => {
     expect(combinedOutput).toContain("Line 1");
     expect(combinedOutput).toContain("Line 2");
     expect(combinedOutput).toContain("Line 3");
+  });
+
+  it("should emit events with custom timeout parameter", async () => {
+    const result = await terminal.execute({
+      command: 'echo "Custom timeout test"',
+      cd: process.cwd(),
+      timeout: 10,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.output).toContain("Custom timeout test");
+
+    const stdoutEvents = events.filter((e) => e.data?.type === "stdout");
+    const completeEvents = events.filter((e) => e.data?.type === "complete");
+
+    expect(stdoutEvents.length).toBeGreaterThan(0);
+    expect(completeEvents.length).toBe(1);
+
+    // Verify events contain the correct command and timeout context
+    const stdoutEvent = stdoutEvents[0];
+    expect(stdoutEvent.data.command).toBe('echo "Custom timeout test"');
+
+    const completeEvent = completeEvents[0];
+    expect(completeEvent.data.exitCode).toBe(0);
+  });
+
+  it("should emit events when command times out", async () => {
+    const result = await terminal.execute({
+      command: process.platform === "win32" ? "timeout /t 3" : "sleep 3",
+      cd: process.cwd(),
+      timeout: 1,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("Command timed out after 1 seconds");
+
+    // Events may or may not be emitted depending on timing, but if they are,
+    // they should have the correct command context
+    const allEvents = events.filter((e) => e.name === "terminal");
+
+    // Verify that any events that were emitted have the correct context
+    for (const event of allEvents) {
+      expect(event.data.command).toBe(
+        process.platform === "win32" ? "timeout /t 3" : "sleep 3"
+      );
+      expect(event.data.cd).toBe(process.cwd());
+    }
   });
 });

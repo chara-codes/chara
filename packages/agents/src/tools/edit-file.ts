@@ -14,7 +14,7 @@ Before using this tool:
 1. Use the read_file tool to understand the file's contents and context
 
 2. Verify the directory path is correct (only applicable when creating new files):
-   - Use the list_directory tool to verify the parent directory exists and is the correct location`,
+   - Use the directory tool to verify the parent directory exists and is the correct location`,
 
   parameters: z.object({
     display_description: z.string().describe(
@@ -27,7 +27,7 @@ NEVER mention the file path in this description.
 <example>Fix API endpoint URLs</example>
 <example>Update copyright year in page_footer</example>
 
-Make sure to include this field before all the others in the input object so that we can display it immediately.`,
+Make sure to include this field before all the others in the input object so that we can display it immediately.`
     ),
 
     path: z.string().describe(
@@ -47,7 +47,7 @@ Notice how the file path starts with root-1. Without that, the path would be amb
 
 <example>
 frontend/db.js
-</example>`,
+</example>`
     ),
 
     mode: EditFileMode.describe(
@@ -56,14 +56,14 @@ frontend/db.js
 - 'create': Create a new file if it doesn't exist.
 - 'overwrite': Replace the entire contents of an existing file.
 
-When a file already exists or you just created it, prefer editing it as opposed to recreating it from scratch.`,
+When a file already exists or you just created it, prefer editing it as opposed to recreating it from scratch.`
     ),
 
     content: z
       .string()
       .optional()
       .describe(
-        "The new content for the file (required for 'create' and 'overwrite' modes)",
+        "The new content for the file (required for 'create' and 'overwrite' modes)"
       ),
 
     edits: z
@@ -73,7 +73,7 @@ When a file already exists or you just created it, prefer editing it as opposed 
             .string()
             .describe("Text to search for - must match exactly"),
           newText: z.string().describe("Text to replace with"),
-        }),
+        })
       )
       .optional()
       .describe("Array of edit operations to apply (required for 'edit' mode)"),
@@ -83,28 +83,52 @@ When a file already exists or you just created it, prefer editing it as opposed 
     try {
       // Validate inputs based on mode
       if (mode === "edit" && !edits) {
-        throw new Error("'edits' parameter is required for edit mode");
+        return {
+          status: "error",
+          message: "'edits' parameter is required for edit mode",
+          operation: mode,
+          path,
+        };
       }
 
       if ((mode === "create" || mode === "overwrite") && !content) {
-        throw new Error(
-          "'content' parameter is required for create and overwrite modes",
-        );
+        return {
+          status: "error",
+          message:
+            "'content' parameter is required for create and overwrite modes",
+          operation: mode,
+          path,
+        };
       }
 
       const fileExists = existsSync(path);
 
       // Validate file existence based on mode
       if (mode === "edit" && !fileExists) {
-        throw new Error(`Cannot edit file: ${path} does not exist`);
+        return {
+          status: "error",
+          message: `Cannot edit file: ${path} does not exist`,
+          operation: mode,
+          path,
+        };
       }
 
       if (mode === "create" && fileExists) {
-        throw new Error(`Cannot create file: ${path} already exists`);
+        return {
+          status: "error",
+          message: `Cannot create file: ${path} already exists`,
+          operation: mode,
+          path,
+        };
       }
 
       if (mode === "overwrite" && !fileExists) {
-        throw new Error(`Cannot overwrite file: ${path} does not exist`);
+        return {
+          status: "error",
+          message: `Cannot overwrite file: ${path} does not exist`,
+          operation: mode,
+          path,
+        };
       }
 
       let result: string;
@@ -154,16 +178,19 @@ When a file already exists or you just created it, prefer editing it as opposed 
               const success = tryFlexibleMatch(
                 modifiedContent,
                 oldText,
-                newText,
+                newText
               );
               if (success.matched) {
                 modifiedContent = success.content;
                 continue;
               }
 
-              throw new Error(
-                `Could not find exact match for edit:\n${oldText}\n\nIn file: ${path}`,
-              );
+              return {
+                status: "error",
+                message: `Could not find exact match for edit:\n${oldText}\n\nIn file: ${path}`,
+                operation: mode,
+                path,
+              };
             }
 
             modifiedContent = modifiedContent.replaceAll(oldText, newText);
@@ -195,7 +222,12 @@ When a file already exists or you just created it, prefer editing it as opposed 
         }
 
         default:
-          throw new Error(`Invalid mode: ${mode}`);
+          return {
+            status: "error",
+            message: `Invalid mode: ${mode}`,
+            operation: mode,
+            path,
+          };
       }
 
       return {
@@ -207,7 +239,9 @@ When a file already exists or you just created it, prefer editing it as opposed 
     } catch (error) {
       return {
         status: "error",
-        message: `Failed to ${mode} file: ${error instanceof Error ? error.message : String(error)}`,
+        message: `Failed to ${mode} file: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
         operation: mode,
         path,
       };
@@ -218,7 +252,7 @@ When a file already exists or you just created it, prefer editing it as opposed 
 function tryFlexibleMatch(
   content: string,
   oldText: string,
-  newText: string,
+  newText: string
 ): { matched: boolean; content: string } {
   const oldLines = oldText.split("\n");
   const contentLines = content.split("\n");

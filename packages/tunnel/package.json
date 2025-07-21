@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/tunnel",
-  "version": "0.1.18",
+  "version": "0.1.20",
   "description": "A lightweight tunneling service that exposes local development servers to the internet through custom subdomains",
   "keywords": [
     "tunnel",
@@ -19,7 +19,7 @@
     "tunnel": "./dist/tunnel"
   },
   "scripts": {
-    "bbuild": "bun build ./src/cli.ts --outfile ./dist/tunnel --compile",
+    "build": "bun build ./src/cli.ts --outfile ./dist/tunnel --compile",
     "d": "bun ./src/cli.ts",
     "start": "./dist/tunnel"
   },

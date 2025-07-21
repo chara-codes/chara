@@ -6,7 +6,7 @@ import { terminal } from "./terminal";
 import { grep } from "./grep";
 import { thinking } from "./thinking";
 import { fileSystem } from "./file-system";
-import { runner } from "./runner";
+import { devServer } from "./dev-server";
 import { examination } from "./examination";
 import { mkdir } from "./mkdir";
 import { directory } from "./directory";
@@ -25,7 +25,7 @@ export const chatToolsWriteMode = {
   fetch: fetchTool,
   terminal,
   thinking,
-  runner,
+  "dev-server": devServer,
   examination,
 };
 
@@ -38,7 +38,7 @@ export const chatToolsAskMode = {
   fetch: fetchTool,
   thinking,
   directory,
-  runner,
+  "dev-server": devServer,
   examination,
 };
 

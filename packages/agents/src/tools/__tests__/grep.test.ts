@@ -17,7 +17,7 @@ describe("grep tool", () => {
   test("should find simple text pattern", async () => {
     await testFS.createFile(
       "test.txt",
-      "Hello World\nThis is a test\nWorld peace",
+      "Hello World\nThis is a test\nWorld peace"
     );
 
     const result = await grep.execute(
@@ -25,7 +25,7 @@ describe("grep tool", () => {
         pattern: "World",
         paths: testFS.getPath("test.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -46,7 +46,7 @@ describe("grep tool", () => {
         paths: testFS.getPath("case.txt"),
         ignoreCase: true,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -64,7 +64,7 @@ describe("grep tool", () => {
         pattern: "test\\d+",
         paths: testFS.getPath("regex.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -82,7 +82,7 @@ describe("grep tool", () => {
         paths: testFS.getPath("fixed.txt"),
         fixedStrings: true,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -93,7 +93,7 @@ describe("grep tool", () => {
   test("should support invert matching", async () => {
     await testFS.createFile(
       "invert.txt",
-      "include this\nexclude this line\ninclude this too",
+      "include this\nexclude this line\ninclude this too"
     );
 
     const result = await grep.execute(
@@ -102,7 +102,7 @@ describe("grep tool", () => {
         paths: testFS.getPath("invert.txt"),
         invertMatch: true,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -114,7 +114,7 @@ describe("grep tool", () => {
   test("should show context lines", async () => {
     await testFS.createFile(
       "context.txt",
-      "line1\nline2\nmatch line\nline4\nline5",
+      "line1\nline2\nmatch line\nline4\nline5"
     );
 
     const result = await grep.execute(
@@ -124,7 +124,7 @@ describe("grep tool", () => {
         beforeContext: 1,
         afterContext: 1,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -139,7 +139,7 @@ describe("grep tool", () => {
   test("should use context parameter for both before and after", async () => {
     await testFS.createFile(
       "context2.txt",
-      "line1\nline2\nline3\nmatch line\nline5\nline6\nline7",
+      "line1\nline2\nline3\nmatch line\nline5\nline6\nline7"
     );
 
     const result = await grep.execute(
@@ -148,7 +148,7 @@ describe("grep tool", () => {
         paths: testFS.getPath("context2.txt"),
         context: 2,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -163,7 +163,7 @@ describe("grep tool", () => {
   test("should limit results with maxCount", async () => {
     await testFS.createFile(
       "limit.txt",
-      "match1\nmatch2\nmatch3\nmatch4\nmatch5",
+      "match1\nmatch2\nmatch3\nmatch4\nmatch5"
     );
 
     const result = await grep.execute(
@@ -172,7 +172,7 @@ describe("grep tool", () => {
         paths: testFS.getPath("limit.txt"),
         maxCount: 3,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -196,7 +196,7 @@ describe("grep tool", () => {
           testFS.getPath("file3.txt"),
         ],
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -220,7 +220,7 @@ describe("grep tool", () => {
         paths: testFS.getPath(),
         recursive: true,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -243,7 +243,7 @@ describe("grep tool", () => {
         paths: testFS.getPath(),
         filePattern: "*.txt",
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -262,7 +262,7 @@ describe("grep tool", () => {
         paths: testFS.getPath(),
         filePattern: "*.json",
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -281,7 +281,7 @@ describe("grep tool", () => {
         paths: testFS.getPath("nolines.txt"),
         lineNumber: false,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -297,7 +297,7 @@ describe("grep tool", () => {
         pattern: "anything",
         paths: testFS.getPath("empty.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     expect(result).toBe("No matches found");
@@ -309,7 +309,7 @@ describe("grep tool", () => {
         pattern: "test",
         paths: testFS.getPath("nonexistent.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     expect(result).toBe("No matches found");
@@ -318,7 +318,7 @@ describe("grep tool", () => {
   test("should handle special regex characters", async () => {
     await testFS.createFile(
       "special.txt",
-      "test.file\ntest*file\ntest[file]\ntest+file",
+      "test.file\ntest*file\ntest[file]\ntest+file"
     );
 
     const result = await grep.execute(
@@ -326,7 +326,7 @@ describe("grep tool", () => {
         pattern: "test\\.file",
         paths: testFS.getPath("special.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -337,7 +337,7 @@ describe("grep tool", () => {
   test("should handle unicode characters", async () => {
     await testFS.createFile(
       "unicode.txt",
-      "测试 content\ncafé file\n🚀 rocket",
+      "测试 content\ncafé file\n🚀 rocket"
     );
 
     const result = await grep.execute(
@@ -345,7 +345,7 @@ describe("grep tool", () => {
         pattern: "测试",
         paths: testFS.getPath("unicode.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -365,7 +365,7 @@ describe("grep tool", () => {
         pattern: "match",
         paths: testFS.getPath("large.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -377,15 +377,16 @@ describe("grep tool", () => {
   test("should handle invalid regex gracefully", async () => {
     await testFS.createFile("test.txt", "some content");
 
-    await expect(
-      grep.execute(
-        {
-          pattern: "[invalid",
-          paths: testFS.getPath("test.txt"),
-        } as any,
-        { toolCallId: "test", messages: [] },
-      ),
-    ).rejects.toThrow("Invalid regular expression");
+    const result = await grep.execute(
+      {
+        pattern: "[invalid",
+        paths: testFS.getPath("test.txt"),
+      } as any,
+      { toolCallId: "test", messages: [] }
+    );
+
+    const parsed = JSON.parse(result);
+    expect(parsed.error).toContain("Invalid regular expression");
   });
 
   test("should search in current directory when path is directory", async () => {
@@ -398,7 +399,7 @@ describe("grep tool", () => {
         paths: testFS.getPath(),
         recursive: false,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -416,7 +417,7 @@ describe("grep tool", () => {
         paths: [testFS.getPath("single.txt"), testFS.getPath("testdir")],
         recursive: true,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -435,7 +436,7 @@ describe("grep tool", () => {
         pattern: "match",
         paths: testFS.getPath("manymatches.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     expect(result).toContain("Found 100 matches, showing first 50");
@@ -447,7 +448,7 @@ describe("grep tool", () => {
   test("should handle multiline matches correctly", async () => {
     await testFS.createFile(
       "multiline.txt",
-      "line1\nmatch here\nline3\nanother match\nline5",
+      "line1\nmatch here\nline3\nanother match\nline5"
     );
 
     const result = await grep.execute(
@@ -455,7 +456,7 @@ describe("grep tool", () => {
         pattern: "match",
         paths: testFS.getPath("multiline.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -474,7 +475,7 @@ describe("grep tool", () => {
         pattern: "test",
         paths: testFS.getPath("positions.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -494,7 +495,7 @@ describe("grep tool", () => {
         filePattern: "*.txt",
         ignoreCase: true,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -503,7 +504,7 @@ describe("grep tool", () => {
 
     const files = parsed.map((p: any) => p.file);
     expect(
-      files.some((f: any) => f.includes("test.txt") || f.includes("Test.TXT")),
+      files.some((f: any) => f.includes("test.txt") || f.includes("Test.TXT"))
     ).toBe(true);
   });
 
@@ -516,7 +517,7 @@ describe("grep tool", () => {
         pattern: "test",
         paths: testFS.getPath("binary.bin"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -540,14 +541,14 @@ describe("grep tool", () => {
           pattern: "match",
           paths: testFS.getPath("concurrent1.txt"),
         } as any,
-        { toolCallId: "test", messages: [] },
+        { toolCallId: "test", messages: [] }
       ),
       grep.execute(
         {
           pattern: "match",
           paths: testFS.getPath("concurrent2.txt"),
         } as any,
-        { toolCallId: "test", messages: [] },
+        { toolCallId: "test", messages: [] }
       ),
     ]);
 
@@ -561,7 +562,7 @@ describe("grep tool", () => {
   test("should handle complex regex patterns", async () => {
     await testFS.createFile(
       "complex.txt",
-      "email@domain.com\nuser@test.org\ninvalid-email",
+      "email@domain.com\nuser@test.org\ninvalid-email"
     );
 
     const result = await grep.execute(
@@ -569,7 +570,7 @@ describe("grep tool", () => {
         pattern: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
         paths: testFS.getPath("complex.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -581,7 +582,7 @@ describe("grep tool", () => {
   test("should handle word boundary patterns", async () => {
     await testFS.createFile(
       "boundaries.txt",
-      "test\ntesting\ntest123\nmy test",
+      "test\ntesting\ntest123\nmy test"
     );
 
     const result = await grep.execute(
@@ -589,7 +590,7 @@ describe("grep tool", () => {
         pattern: "\\btest\\b",
         paths: testFS.getPath("boundaries.txt"),
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     const parsed = JSON.parse(result);
@@ -607,7 +608,7 @@ describe("grep tool", () => {
         paths: testFS.getPath(),
         fallbackToCurrentDir: false,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     expect(result).toBe("No matches found");
@@ -621,7 +622,7 @@ describe("grep tool", () => {
         paths: "nonexistent-directory",
         maxCount: 1,
       } as any,
-      { toolCallId: "test", messages: [] },
+      { toolCallId: "test", messages: [] }
     );
 
     // Since this is a real directory search and not a temp directory,

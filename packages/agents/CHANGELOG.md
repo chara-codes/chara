@@ -1,5 +1,23 @@
 # @chara-codes/agents
 
+## 0.1.20
+
+### Patch Changes
+
+- c547803: improve DX, cleanup the logs
+- Updated dependencies [c547803]
+  - @chara-codes/settings@0.1.20
+  - @chara-codes/logger@0.1.20
+
+## 0.1.19
+
+### Patch Changes
+
+- 1095040: improve tools errors handling
+- Updated dependencies [1095040]
+  - @chara-codes/settings@0.1.19
+  - @chara-codes/logger@0.1.19
+
 ## 0.1.18
 
 ### Patch Changes

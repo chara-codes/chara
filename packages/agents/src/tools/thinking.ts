@@ -174,12 +174,12 @@ Engineering best practices:
     thought: z
       .string()
       .describe(
-        "Your current engineering thinking step - should include technical analysis, design considerations, trade-off evaluations, risk assessments, or solution validation using engineering principles",
+        "Your current engineering thinking step - should include technical analysis, design considerations, trade-off evaluations, risk assessments, or solution validation using engineering principles"
       ),
     nextThoughtNeeded: z
       .boolean()
       .describe(
-        "Whether another thought step is needed to complete the engineering analysis and solution design",
+        "Whether another thought step is needed to complete the engineering analysis and solution design"
       ),
     thoughtNumber: z
       .number()
@@ -191,13 +191,13 @@ Engineering best practices:
       .int()
       .min(1)
       .describe(
-        "Current estimate of total thoughts needed (can be adjusted up or down)",
+        "Current estimate of total thoughts needed (can be adjusted up or down)"
       ),
     isRevision: z
       .boolean()
       .optional()
       .describe(
-        "Whether this thought revises previous technical analysis or design decisions based on new engineering insights",
+        "Whether this thought revises previous technical analysis or design decisions based on new engineering insights"
       ),
     revisesThought: z
       .number()
@@ -205,7 +205,7 @@ Engineering best practices:
       .min(1)
       .optional()
       .describe(
-        "Which engineering analysis or design decision is being reconsidered (required if isRevision is true)",
+        "Which engineering analysis or design decision is being reconsidered (required if isRevision is true)"
       ),
     branchFromThought: z
       .number()
@@ -213,19 +213,19 @@ Engineering best practices:
       .min(1)
       .optional()
       .describe(
-        "If branching to explore an alternative technical approach or design solution, which thought number is the branching point",
+        "If branching to explore an alternative technical approach or design solution, which thought number is the branching point"
       ),
     branchId: z
       .string()
       .optional()
       .describe(
-        "Unique identifier for this branch (required if branchFromThought is specified)",
+        "Unique identifier for this branch (required if branchFromThought is specified)"
       ),
     needsMoreThoughts: z
       .boolean()
       .optional()
       .describe(
-        "If reaching the estimated end but realizing more engineering analysis or design work is needed",
+        "If reaching the estimated end but realizing more engineering analysis or design work is needed"
       ),
   }),
   execute: async ({
@@ -241,23 +241,31 @@ Engineering best practices:
   }) => {
     // Validation
     if (isRevision && !revisesThought) {
-      throw new Error("revisesThought is required when isRevision is true");
+      return {
+        error: "revisesThought is required when isRevision is true",
+        success: false,
+      };
     }
 
     if (branchFromThought && !branchId) {
-      throw new Error(
-        "branchId is required when branchFromThought is specified",
-      );
+      return {
+        error: "branchId is required when branchFromThought is specified",
+        success: false,
+      };
     }
 
     if (revisesThought && revisesThought >= thoughtNumber) {
-      throw new Error("revisesThought must be less than current thoughtNumber");
+      return {
+        error: "revisesThought must be less than current thoughtNumber",
+        success: false,
+      };
     }
 
     if (branchFromThought && branchFromThought >= thoughtNumber) {
-      throw new Error(
-        "branchFromThought must be less than current thoughtNumber",
-      );
+      return {
+        error: "branchFromThought must be less than current thoughtNumber",
+        success: false,
+      };
     }
 
     const thoughtData: ThoughtData = {

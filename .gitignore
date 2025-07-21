@@ -15,6 +15,7 @@ certs/
 traefik/
 deploy.log
 tmp
+config.json
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 

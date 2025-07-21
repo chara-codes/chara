@@ -383,7 +383,15 @@ async function findInDirectory(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    throw new Error(`Find operation failed: ${errorMessage}`);
+    return {
+      error: true,
+      operation: "find",
+      message: `Find operation failed: ${errorMessage}`,
+      suggestion:
+        "Check the pattern and path parameters, then try again with simpler values",
+      providedParams: { pattern, excludePatterns },
+      technicalError: errorMessage,
+    };
   }
 }
 
@@ -441,14 +449,6 @@ export const find = tool({
       .boolean()
       .default(true)
       .describe("Whether to respect .gitignore files (default: true)"),
-
-    returnErrorObjects: z
-      .boolean()
-      .optional()
-      .default(false)
-      .describe(
-        "Return structured error objects instead of throwing exceptions (for LLM usage)"
-      ),
   }),
 
   execute: async ({
@@ -457,7 +457,6 @@ export const find = tool({
     excludePatterns = [],
     includeHidden = false,
     respectGitignore = true,
-    returnErrorObjects = false,
   }) => {
     try {
       const searchPath = path || process.cwd();
@@ -472,18 +471,13 @@ export const find = tool({
         if (wildcardCount <= 6 && segments.length <= 4) {
           // Pattern is safe, continue
         } else if (wildcardCount > 15 || segments.length > 8) {
-          const errorResponse = {
+          return {
             error: true,
             suggestion: `Pattern "${pattern}" is too complex (${wildcardCount} wildcards, ${segments.length} segments). Try "**/*${segments[0]}*" or use separate searches.`,
             message: "Pattern too complex",
             providedPattern: pattern,
             simplifiedSuggestion: `**/*${segments[0]}*`,
           };
-          if (returnErrorObjects) {
-            return errorResponse;
-          } else {
-            throw new Error(`Pattern too complex: ${pattern}`);
-          }
         }
       }
 
@@ -507,7 +501,7 @@ export const find = tool({
         errorMessage.includes("out of memory") ||
         errorMessage.includes("ENOMEM")
       ) {
-        const errorResponse = {
+        return {
           error: true,
           operation: "find",
           message: "System resource limits exceeded during find operation",
@@ -523,18 +517,11 @@ export const find = tool({
           ],
           technicalError: errorMessage,
         };
-        if (returnErrorObjects) {
-          return errorResponse;
-        } else {
-          throw new Error(
-            "System resource limits exceeded during find operation"
-          );
-        }
       }
 
       // Pattern timeout error
       if (errorMessage.includes("Pattern search timeout")) {
-        const errorResponse = {
+        return {
           error: true,
           operation: "find",
           message: `Find operation timed out with pattern "${pattern}"`,
@@ -543,15 +530,10 @@ export const find = tool({
           providedParams: { path, pattern, excludePatterns },
           tip: "Complex patterns or large directories can cause timeouts",
         };
-        if (returnErrorObjects) {
-          return errorResponse;
-        } else {
-          throw new Error(`Find operation timed out with pattern "${pattern}"`);
-        }
       }
 
       // Generic error fallback
-      const errorResponse = {
+      return {
         error: true,
         operation: "find",
         message: `Find operation failed: ${errorMessage}`,
@@ -560,11 +542,6 @@ export const find = tool({
         providedParams: { path, pattern, excludePatterns },
         technicalError: errorMessage,
       };
-      if (returnErrorObjects) {
-        return errorResponse;
-      } else {
-        throw new Error(`Find operation failed: ${errorMessage}`);
-      }
     }
   },
 });

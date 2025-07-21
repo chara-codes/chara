@@ -25,7 +25,7 @@ export const ActionFactory = {
     name: string,
     options: T = {} as T
   ): Promise<any> {
-    logger.info("Execute action:", name);
+    logger.debug("Execute action:", name);
     const action = ActionFactory.get(name);
     if (!action) {
       throw new Error(`Action "${name}" not found`);

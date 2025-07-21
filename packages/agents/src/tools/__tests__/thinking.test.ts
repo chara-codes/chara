@@ -168,59 +168,67 @@ describe("thinking tool", () => {
   });
 
   test("should validate revision parameters correctly", async () => {
-    await expect(
-      thinking.execute({
-        thought: "This is a revision",
-        nextThoughtNeeded: true,
-        thoughtNumber: 2,
-        totalThoughts: 3,
-        isRevision: true,
-        // Missing revisesThought parameter
-      }),
-    ).rejects.toThrow("revisesThought is required when isRevision is true");
+    const result = await thinking.execute({
+      thought: "This is a revision",
+      nextThoughtNeeded: true,
+      thoughtNumber: 2,
+      totalThoughts: 3,
+      isRevision: true,
+      // Missing revisesThought parameter
+    });
+
+    expect(result).toEqual({
+      error: "revisesThought is required when isRevision is true",
+      success: false,
+    });
   });
 
   test("should validate branch parameters correctly", async () => {
-    await expect(
-      thinking.execute({
-        thought: "This is a branch",
-        nextThoughtNeeded: true,
-        thoughtNumber: 2,
-        totalThoughts: 3,
-        branchFromThought: 1,
-        // Missing branchId parameter
-      }),
-    ).rejects.toThrow(
-      "branchId is required when branchFromThought is specified",
-    );
+    const result = await thinking.execute({
+      thought: "This is a branch",
+      nextThoughtNeeded: true,
+      thoughtNumber: 2,
+      totalThoughts: 3,
+      branchFromThought: 1,
+      // Missing branchId parameter
+    });
+
+    expect(result).toEqual({
+      error: "branchId is required when branchFromThought is specified",
+      success: false,
+    });
   });
 
   test("should validate revisesThought number correctly", async () => {
-    await expect(
-      thinking.execute({
-        thought: "Invalid revision",
-        nextThoughtNeeded: true,
-        thoughtNumber: 2,
-        totalThoughts: 3,
-        isRevision: true,
-        revisesThought: 3, // Cannot revise a future thought
-      }),
-    ).rejects.toThrow("revisesThought must be less than current thoughtNumber");
+    const result = await thinking.execute({
+      thought: "Invalid revision",
+      nextThoughtNeeded: true,
+      thoughtNumber: 2,
+      totalThoughts: 3,
+      isRevision: true,
+      revisesThought: 3, // Cannot revise a future thought
+    });
+
+    expect(result).toEqual({
+      error: "revisesThought must be less than current thoughtNumber",
+      success: false,
+    });
   });
 
   test("should validate branchFromThought number correctly", async () => {
-    await expect(
-      thinking.execute({
-        thought: "Invalid branch",
-        nextThoughtNeeded: true,
-        thoughtNumber: 2,
-        totalThoughts: 3,
-        branchFromThought: 2, // Cannot branch from same thought
-        branchId: "test-branch",
-      }),
-    ).rejects.toThrow(
-      "branchFromThought must be less than current thoughtNumber",
-    );
+    const result = await thinking.execute({
+      thought: "Invalid branch",
+      nextThoughtNeeded: true,
+      thoughtNumber: 2,
+      totalThoughts: 3,
+      branchFromThought: 2, // Cannot branch from same thought
+      branchId: "test-branch",
+    });
+
+    expect(result).toEqual({
+      error: "branchFromThought must be less than current thoughtNumber",
+      success: false,
+    });
   });
 
   test("should maintain state across multiple thoughts", async () => {
@@ -298,12 +306,12 @@ describe("thinking tool", () => {
 
   test("should have correct tool metadata", () => {
     expect(thinking.description).toContain(
-      "engineering-focused problem-solving",
+      "engineering-focused problem-solving"
     );
     expect(thinking.description).toContain("sequential thoughts");
     expect(thinking.description).toContain("complex technical problems");
     expect(thinking.description).toContain(
-      "systematic engineering methodologies",
+      "systematic engineering methodologies"
     );
     expect(thinking.parameters).toBeDefined();
   });
@@ -336,7 +344,7 @@ describe("thinking tool", () => {
     expect(result).toContain('"totalThoughts": 1');
     expect(result).toContain('"nextThoughtNeeded": false');
     expect(result).toContain(
-      '"currentThought": "Test thought for JSON output"',
+      '"currentThought": "Test thought for JSON output"'
     );
   });
 
@@ -352,14 +360,14 @@ describe("thinking tool", () => {
 
     expect(result).toContain("思考: 这是一个测试 🤔 → solution");
     expect(result).toContain(
-      '"currentThought": "思考: 这是一个测试 🤔 → solution"',
+      '"currentThought": "思考: 这是一个测试 🤔 → solution"'
     );
   });
 
   test("should handle very long thoughts", async () => {
     const longThought =
       "This is a very long thought that spans multiple lines and contains a lot of detailed analysis. ".repeat(
-        10,
+        10
       );
 
     const result = await thinking.execute({
@@ -455,10 +463,10 @@ describe("thinking tool", () => {
 
   test("should validate engineering methodology in descriptions", () => {
     expect(thinking.description).toContain(
-      "systematic engineering methodologies",
+      "systematic engineering methodologies"
     );
     expect(thinking.description).toContain(
-      "scalability, maintainability, performance",
+      "scalability, maintainability, performance"
     );
     expect(thinking.description).toContain("system architecture");
     expect(thinking.description).toContain("testing strategy");

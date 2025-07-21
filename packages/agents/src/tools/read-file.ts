@@ -15,6 +15,16 @@ interface FileOutlineItem {
   endLine?: number;
 }
 
+interface ErrorResult {
+  error: string;
+}
+
+interface SuccessResult {
+  content: string;
+}
+
+type ReadFileResult = ErrorResult | SuccessResult;
+
 // Security settings - these would ideally come from configuration
 const EXCLUDED_PATTERNS = [
   "**/node_modules/**",
@@ -52,7 +62,7 @@ const ReadFileInput = z.object({
         "- directory2\n\n" +
         "If you want to access `file.txt` in `directory1`, you should use the path `directory1/file.txt`.\n" +
         "If you want to access `file.txt` in `directory2`, you should use the path `directory2/file.txt`.\n" +
-        "</example>",
+        "</example>"
     ),
   start_line: z
     .number()
@@ -66,7 +76,7 @@ const ReadFileInput = z.object({
     .min(1)
     .optional()
     .describe(
-      "Optional line number to end reading on (1-based index, inclusive)",
+      "Optional line number to end reading on (1-based index, inclusive)"
     ),
 });
 
@@ -233,10 +243,10 @@ export const readFile = tool({
 
   parameters: ReadFileInput,
 
-  execute: async ({ path, start_line, end_line }) => {
-    // Manual input validation - these are validation errors that should throw
+  execute: async ({ path, start_line, end_line }): Promise<ReadFileResult> => {
+    // Manual input validation
     if (!path || typeof path !== "string") {
-      throw new Error("Path is required and must be a string");
+      return { error: "Path is required and must be a string" };
     }
 
     if (
@@ -245,7 +255,7 @@ export const readFile = tool({
         start_line < 1 ||
         !Number.isInteger(start_line))
     ) {
-      throw new Error("start_line must be a positive integer");
+      return { error: "start_line must be a positive integer" };
     }
 
     if (
@@ -254,18 +264,18 @@ export const readFile = tool({
         end_line < 1 ||
         !Number.isInteger(end_line))
     ) {
-      throw new Error("end_line must be a positive integer");
+      return { error: "end_line must be a positive integer" };
     }
 
-    // Validate and resolve path - security/permission errors should throw
+    // Validate and resolve path
     const pathValidation = validatePath(path);
     if (!pathValidation.isValid) {
-      throw new Error(pathValidation.error || "Invalid path");
+      return { error: pathValidation.error || "Invalid path" };
     }
 
     const resolvedPath = pathValidation.resolvedPath;
     if (!resolvedPath) {
-      throw new Error("Could not resolve path");
+      return { error: "Could not resolve path" };
     }
 
     try {
@@ -273,7 +283,7 @@ export const readFile = tool({
       const stats = await stat(resolvedPath);
 
       if (!stats.isFile()) {
-        return `Error: ${path} is not a file`;
+        return { error: `${path} is not a file` };
       }
 
       // Read file content
@@ -291,13 +301,13 @@ export const readFile = tool({
         // Ensure at least one line is returned
         const actualEndIdx = Math.max(startIdx + 1, endIdx);
 
-        return lines.slice(startIdx, actualEndIdx).join("\n");
+        return { content: lines.slice(startIdx, actualEndIdx).join("\n") };
       }
 
       // Check file size and decide whether to return content or outline
       if (content.length > AUTO_OUTLINE_SIZE) {
         const outline = generateFileOutline(content);
-        return `This file was too big to read all at once.
+        const outlineContent = `This file was too big to read all at once.
 
 Here is an outline of its symbols:
 
@@ -306,30 +316,35 @@ ${outline}
 Using the line numbers in this outline, you can call this tool again
 while specifying the start_line and end_line fields to see the
 implementations of symbols in the outline.`;
+        return { content: outlineContent };
       }
 
-      return content;
+      return { content };
     } catch (error) {
       if (error instanceof Error) {
         const nodeError = error as NodeJS.ErrnoException;
         if (nodeError.code === "ENOENT") {
-          return `Error: ${path} not found`;
+          return { error: `${path} not found` };
         }
         if (nodeError.code === "EACCES") {
-          return `Error: Permission denied reading ${path}`;
+          return { error: `Permission denied reading ${path}` };
         }
         if (nodeError.code === "EISDIR") {
-          return `Error: ${path} is a directory, not a file`;
+          return { error: `${path} is a directory, not a file` };
         }
         // Handle our custom validation errors
         if (
           error.message.includes("Cannot read file because") ||
           error.message.includes("not found in project")
         ) {
-          return `Error: ${error.message}`;
+          return { error: error.message };
         }
       }
-      return `Error: Failed to read ${path}: ${error instanceof Error ? error.message : String(error)}`;
+      return {
+        error: `Failed to read ${path}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      };
     }
   },
 });

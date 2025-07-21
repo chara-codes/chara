@@ -9,7 +9,7 @@ import { fileSystem } from "./file-system";
 import { find } from "./find";
 import { directory } from "./directory";
 import { mkdir } from "./mkdir";
-import { runner } from "./runner";
+import { devServer } from "./dev-server";
 import { examination } from "./examination";
 
 // Legacy imports for backward compatibility
@@ -37,7 +37,7 @@ export const modernTools = {
   terminal: terminal,
   grep: grep,
   thinking: thinking,
-  runner: runner,
+  "dev-server": devServer,
   examination: examination,
 };
 
@@ -54,6 +54,6 @@ export const tools = {
   terminal: terminal,
   grep: grep,
   thinking: thinking,
-  runner: runner,
+  "dev-server": devServer,
   examination: examination,
 };
