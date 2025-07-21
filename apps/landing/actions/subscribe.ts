@@ -1,28 +1,35 @@
-"use server"
+"use server";
+
+import Airtable from "airtable";
 
 export async function subscribeToUpdates(email: string) {
-  // Simulate a delay to mimic API call
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-
   try {
-    // In a real application, you would:
-    // 1. Validate the email
-    // 2. Store it in a database or send it to a service like Mailchimp
-    // 3. Handle errors appropriately
+    // Configure Airtable
+    const base = new Airtable({
+      apiKey: process.env.AIRTABLE_API_KEY,
+    }).base(process.env.AIRTABLE_BASE_ID!);
 
-    // For now, we'll just simulate a successful subscription
-    console.log(`Subscribed email: ${email}`)
+    // Save email to Airtable
+    await base(process.env.AIRTABLE_TABLE_NAME!).create([
+      {
+        fields: {
+          Email: email,
+        },
+      },
+    ]);
+
+    console.log(`Subscribed email: ${email}`);
 
     return {
       success: true,
       message: "Successfully subscribed to updates!",
-    }
+    };
   } catch (error) {
-    console.error("Error subscribing:", error)
+    console.error("Error subscribing:", error);
 
     return {
       success: false,
       message: "Failed to subscribe. Please try again later.",
-    }
+    };
   }
 }
