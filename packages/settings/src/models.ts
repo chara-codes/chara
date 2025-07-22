@@ -1,7 +1,7 @@
 import {
+  existsGlobalConfig,
   readGlobalConfig,
   updateGlobalConfig,
-  existsGlobalConfig,
 } from "./global-config";
 
 export interface ModelConfig {
@@ -140,12 +140,21 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
   },
   // OpenRouter
   {
+    id: "x-ai/grok-4",
+    name: "xAI: Grok 4",
+    provider: "openrouter",
+    contextSize: 256000,
+    hasTools: true,
+    recommended: false,
+    approved: true,
+  },
+  {
     id: "moonshotai/kimi-k2",
     name: "MoonshotAI: Kimi K2",
     provider: "openrouter",
     contextSize: 131000,
     hasTools: true,
-    recommended: false,
+    recommended: true,
     approved: true,
   },
   {
