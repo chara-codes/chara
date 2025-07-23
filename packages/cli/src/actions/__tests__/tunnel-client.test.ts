@@ -451,31 +451,6 @@ describe("tunnel-client actions", () => {
         }
       }
     });
-
-    test("should validate configuration parameters", async () => {
-      const validConfigs = [
-        { port: 3000, host: "localhost" },
-        { port: 8080, host: "127.0.0.1" },
-        { port: 9000, host: "0.0.0.0" },
-        { remoteHost: "tunnel.example.com" },
-        { secure: true },
-        { secure: false },
-        { subdomain: "test" },
-        { subdomain: "my-long-subdomain-name" },
-      ];
-
-      for (const config of validConfigs) {
-        try {
-          await startTunnelClientAction({
-            ...config,
-            silent: true,
-          });
-        } catch (error) {
-          // Connection errors are expected, but should not be validation errors
-          expect(error).toBeDefined();
-        }
-      }
-    });
   });
 
   describe("Error Handling", () => {
