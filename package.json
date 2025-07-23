@@ -11,8 +11,9 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "clean": "rm -rf node_modules packages/*/node_modules packages/*/*/node_modules bun.lock packages/*/bun.lock",
-    "test": "turbo run test"
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "rm -rf node_modules packages/*/node_modules packages/*/*/node_modules bun.lock packages/*/bun.lock"
   },
   "devDependencies": {
     "@types/bun": "^1.2.18",
