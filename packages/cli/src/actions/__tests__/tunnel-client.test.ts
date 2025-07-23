@@ -32,7 +32,7 @@ mock.module("../utils/prompts", () => ({
   spinner: mockSpinner,
 }));
 
-describe.skip("tunnel-client actions", () => {
+describe("tunnel-client actions", () => {
   beforeEach(() => {
     // Clear all mocks
     mockLogger.debug.mockClear();
