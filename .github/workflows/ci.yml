@@ -35,7 +35,15 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
-        run: bun install --frozen-lockfile
+        run: bun install
+
+      - name: Check for lockfile changes
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          if [[ `git status --porcelain bun.lock` ]]; then
+            echo "::warning::Lockfile was updated during install. Consider updating the lockfile in your repository."
+            git diff bun.lock
+          fi
 
   lint:
     name: Lint

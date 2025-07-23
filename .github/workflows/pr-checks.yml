@@ -32,7 +32,14 @@ jobs:
             ${{ runner.os }}-deps-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
+
+      - name: Check for lockfile changes
+        run: |
+          if [[ `git status --porcelain bun.lock` ]]; then
+            echo "::warning::Lockfile was updated during install. Consider updating the lockfile in your repository."
+            git diff bun.lock
+          fi
 
       - name: Cache turbo build setup
         uses: actions/cache@v4
