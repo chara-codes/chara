@@ -224,9 +224,9 @@ describe("Action Registry", () => {
 
     test("should handle action failures with error logging", async () => {
       await expect(
-        ActionFactory.execute<InitActionOptions>("init", {
+        ActionFactory.execute("init", {
           shouldFail: true,
-        })
+        } as any)
       ).rejects.toThrow("Init action failed");
 
       // Should log error due to withErrorHandling enhancer
@@ -239,9 +239,9 @@ describe("Action Registry", () => {
   describe("Action Enhancer Integration", () => {
     test("should apply error handling enhancer", async () => {
       await expect(
-        ActionFactory.execute<ResetActionOptions>("reset", {
+        ActionFactory.execute("reset", {
           shouldFail: true,
-        })
+        } as any)
       ).rejects.toThrow("Reset action failed");
 
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -274,10 +274,10 @@ describe("Action Registry", () => {
     test("should apply enhancers in correct composition order", async () => {
       // The enhancers should be applied as: withErrorHandling -> withLogging -> action
       await expect(
-        ActionFactory.execute<InitActionOptions>("init", {
+        ActionFactory.execute("init", {
           shouldFail: true,
           verbose: true,
-        })
+        } as any)
       ).rejects.toThrow("Init action failed");
 
       // Should log start due to withLogging
