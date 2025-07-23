@@ -420,7 +420,7 @@ For detailed guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 - [ ] Enhanced collaboration features
 - [ ] Advanced code analysis
 - [ ] Plugin system for extensions
-- [ ] Mobile app support
+- [ ] Browser exxtension
 
 ## License
 
