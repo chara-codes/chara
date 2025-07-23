@@ -10,7 +10,7 @@
  * Uses Bun's native test API with mocked dependencies.
  * Run with: bun test
  */
-import { describe, test, expect, mock, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { defaultModelCommand } from "../default-model";
 
 // Mock the logger
@@ -454,7 +454,7 @@ describe("Default Model Command", () => {
       mockActionFactory.execute.mockImplementation(
         () =>
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout")), 100)
+            setTimeout(() => reject(new Error("Timeout")), 5)
           )
       );
 

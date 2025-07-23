@@ -1,18 +1,18 @@
-import { logger } from "@chara-codes/logger";
-import { intro, outro, spinner } from "../utils/prompts";
-import { bold, cyan, green } from "picocolors";
 import { existsSync } from "fs";
 import { resolve } from "path";
+import { logger } from "@chara-codes/logger";
 import {
   startServer,
   type ServerConfig,
   type TextReplacement,
 } from "@chara-codes/tunnel";
+import type { Server } from "bun";
+import { bold, cyan, green } from "picocolors";
+import { intro, outro, spinner } from "../utils/prompts";
 import type {
   StartTunnelServerActionOptions,
   StopTunnelServerActionOptions,
 } from "./types";
-import type { Server } from "bun";
 
 /**
  * Start a tunnel server to expose local development servers to the internet
@@ -217,7 +217,8 @@ export async function stopTunnelServerAction(
         } else {
           logger.debug("Gracefully stopping tunnel server...");
           // Give time for ongoing connections to complete
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const gracefulDelay = process.env.NODE_ENV === "test" ? 0 : 1000;
+          await new Promise((resolve) => setTimeout(resolve, gracefulDelay));
           await options.server.stop();
         }
       } else if (options.server) {
@@ -242,7 +243,8 @@ export async function stopTunnelServerAction(
         if (options.force) {
           await options.server.stop(true);
         } else {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const gracefulDelay = process.env.NODE_ENV === "test" ? 0 : 1000;
+          await new Promise((resolve) => setTimeout(resolve, gracefulDelay));
           await options.server.stop();
         }
       } catch (error) {

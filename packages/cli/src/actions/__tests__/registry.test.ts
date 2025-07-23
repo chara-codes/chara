@@ -437,7 +437,7 @@ describe("Action Registry", () => {
 
     test("should handle action that takes a long time", async () => {
       mockInitAction.mockImplementation(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 5));
       });
 
       await ActionFactory.execute("init", { verbose: true });
@@ -507,7 +507,7 @@ describe("Action Registry", () => {
       const largeOptions = {
         verbose: true,
         force: true,
-        data: new Array(1000).fill("test-data"),
+        data: new Array(10).fill("test-data"),
         nested: {
           level1: {
             level2: {

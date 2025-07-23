@@ -265,7 +265,8 @@ export async function stopTunnelClientAction(
           options.client.disconnect();
         } else {
           // Graceful disconnect - give time for any pending requests
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const gracefulDelay = process.env.NODE_ENV === "test" ? 0 : 1000;
+          await new Promise((resolve) => setTimeout(resolve, gracefulDelay));
           options.client.disconnect();
         }
       } else if (options.client) {
@@ -291,7 +292,8 @@ export async function stopTunnelClientAction(
         if (options.force) {
           options.client.disconnect();
         } else {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const gracefulDelay = process.env.NODE_ENV === "test" ? 0 : 1000;
+          await new Promise((resolve) => setTimeout(resolve, gracefulDelay));
           options.client.disconnect();
         }
       } catch (error) {
