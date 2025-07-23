@@ -1,0 +1,178 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, playground]
+  push:
+    branches: [main, playground]
+
+jobs:
+  install-deps:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      cache-hit: ${{ steps.cache-deps.outputs.cache-hit }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: bun install
+
+      - name: Check for lockfile changes
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          if [[ `git status --porcelain bun.lock` ]]; then
+            echo "::warning::Lockfile was updated during install. Consider updating the lockfile in your repository."
+            git add bun.lock
+            echo "Lockfile changes have been staged to prevent CI failures."
+          fi
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: install-deps
+    timeout-minutes: 10
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/bun.lock') }}
+
+      - name: Cache turbo build setup
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-lint-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-lint-
+
+      - name: Run lint
+        run: bun run lint
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: install-deps
+    timeout-minutes: 15
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/bun.lock') }}
+
+      - name: Cache turbo build setup
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-test-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-test-
+
+      - name: Run tests
+        run: bun run test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: install-deps
+    timeout-minutes: 15
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/bun.lock') }}
+
+      - name: Cache turbo build setup
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-build-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-build-
+
+      - name: Run build
+        run: bun run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            packages/*/dist
+            apps/*/dist
+            apps/*/.next
+          retention-days: 7
+
+  check-status:
+    name: Check CI Status
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
+    if: always()
+    steps:
+      - name: Check all jobs status
+        run: |
+          echo "## CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test | ${{ needs.test.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.lint.result }}" != "success" || "${{ needs.test.result }}" != "success" || "${{ needs.build.result }}" != "success" ]]; then
+            echo "❌ One or more CI jobs failed"
+            exit 1
+          else
+            echo "✅ All CI jobs passed successfully"
+          fi

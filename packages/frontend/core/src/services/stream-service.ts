@@ -216,7 +216,7 @@ export async function processChatStream(
             }
 
             case "tool_call_delta": {
-              const { toolCallId, argsTextDelta } = parsedPart.value;
+              const { toolCallId } = parsedPart.value;
               const pending = pendingToolCalls.get(toolCallId);
               if (pending) {
                 pending.status = "in-progress";
@@ -332,7 +332,7 @@ export async function processChatStream(
               );
 
               let errorHandled = false;
-              for (const [toolCallId, pending] of pendingToolCalls.entries()) {
+              for (const [, pending] of pendingToolCalls.entries()) {
                 if (pending.status === "in-progress") {
                   if (
                     pending.name === "edit-file" ||
@@ -366,12 +366,10 @@ export async function processChatStream(
 
             case "data": {
               const data = parsedPart.value;
-              if (Array.isArray(data)) {
-                for (const _dataItem of data) {
-                  const structuredUpdate: Partial<Message> = {};
-                  if (Object.keys(structuredUpdate).length > 0) {
-                    callbacks.onStructuredData(structuredUpdate);
-                  }
+              if (Array.isArray(data) && data.length > 0) {
+                const structuredUpdate: Partial<Message> = {};
+                if (Object.keys(structuredUpdate).length > 0) {
+                  callbacks.onStructuredData(structuredUpdate);
                 }
               }
               break;

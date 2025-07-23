@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
-import { RunnerService } from "../runner";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { appEvents } from "../events";
+import { RunnerService } from "../runner";
 
 // Simple test implementation that doesn't require mocking Bun.spawn
 describe("RunnerService", () => {
@@ -180,7 +180,7 @@ describe("RunnerService", () => {
         expect(statusEvents.length).toBeGreaterThan(0);
 
         const startedEvents = events.filter(
-          (e) => e.event === "runner:started",
+          (e) => e.event === "runner:started"
         );
         expect(startedEvents.length).toBe(1);
         expect(startedEvents[0].data.processId).toBe(processId);
@@ -355,7 +355,7 @@ describe("RunnerService", () => {
 
         // Check that restart event was emitted
         const restartEvents = events.filter(
-          (e) => e.event === "runner:restarted",
+          (e) => e.event === "runner:restarted"
         );
         expect(restartEvents.length).toBeGreaterThan(0);
         expect(restartEvents[0].data.processId).toBe(processId);
@@ -380,7 +380,7 @@ describe("RunnerService", () => {
 
         // Check that restart event was emitted with new command
         const restartEvents = events.filter(
-          (e) => e.event === "runner:restarted",
+          (e) => e.event === "runner:restarted"
         );
         expect(restartEvents.length).toBeGreaterThan(0);
         expect(restartEvents[0].data.processId).toBe(processId);
@@ -409,7 +409,7 @@ describe("RunnerService", () => {
 
         // Check that update event was emitted
         const updateEvents = events.filter(
-          (e) => e.event === "runner:info-updated",
+          (e) => e.event === "runner:info-updated"
         );
         expect(updateEvents.length).toBeGreaterThan(0);
         expect(updateEvents[0].data.processId).toBe(processId);
@@ -435,12 +435,12 @@ describe("RunnerService", () => {
 
         // Check that update event was emitted
         const updateEvents = events.filter(
-          (e) => e.event === "runner:info-updated",
+          (e) => e.event === "runner:info-updated"
         );
         expect(updateEvents.length).toBeGreaterThan(0);
         expect(updateEvents[0].data.processId).toBe(processId);
         expect(updateEvents[0].data.updates.serverUrl).toBe(
-          "http://localhost:3000",
+          "http://localhost:3000"
         );
       } catch (error) {
         console.warn("Skipping update URL test:", error);
@@ -465,13 +465,13 @@ describe("RunnerService", () => {
 
         // Check that update event was emitted
         const updateEvents = events.filter(
-          (e) => e.event === "runner:info-updated",
+          (e) => e.event === "runner:info-updated"
         );
         expect(updateEvents.length).toBeGreaterThan(0);
         expect(updateEvents[0].data.processId).toBe(processId);
         expect(updateEvents[0].data.updates.name).toBe("my-server");
         expect(updateEvents[0].data.updates.serverUrl).toBe(
-          "https://localhost:8080",
+          "https://localhost:8080"
         );
       } catch (error) {
         console.warn("Skipping update both test:", error);
@@ -501,7 +501,7 @@ describe("RunnerService", () => {
 
         // Check that get-status event was emitted
         const getStatusEvents = events.filter(
-          (e) => e.event === "runner:get-status",
+          (e) => e.event === "runner:get-status"
         );
         expect(getStatusEvents.length).toBe(1);
         expect(getStatusEvents[0].data.processId).toBe(processId);
@@ -510,7 +510,7 @@ describe("RunnerService", () => {
         const statusEvents = events.filter((e) => e.event === "runner:status");
         expect(statusEvents.length).toBeGreaterThan(0);
         const statusEvent = statusEvents.find(
-          (e) => e.data.processId === processId,
+          (e) => e.data.processId === processId
         );
         expect(statusEvent).toBeDefined();
         expect(statusEvent?.data.serverInfo.name).toBe("echo-process");
@@ -539,7 +539,7 @@ describe("RunnerService", () => {
 
         // Check that get-status event was emitted
         const getStatusEvents = events.filter(
-          (e) => e.event === "runner:get-status",
+          (e) => e.event === "runner:get-status"
         );
         expect(getStatusEvents.length).toBe(1);
         expect(getStatusEvents[0].data.processId).toBeUndefined();
@@ -573,7 +573,7 @@ describe("RunnerService", () => {
 
         // Check that restart event was emitted
         const restartRequestEvents = events.filter(
-          (e) => e.event === "runner:restart",
+          (e) => e.event === "runner:restart"
         );
         expect(restartRequestEvents.length).toBe(1);
         expect(restartRequestEvents[0].data.processId).toBe(processId);
@@ -581,11 +581,11 @@ describe("RunnerService", () => {
 
         // Check that runner:restarted event was emitted
         const restartedEvents = events.filter(
-          (e) => e.event === "runner:restarted",
+          (e) => e.event === "runner:restarted"
         );
         expect(restartedEvents.length).toBeGreaterThan(0);
         const restartedEvent = restartedEvents.find(
-          (e) => e.data.processId === processId,
+          (e) => e.data.processId === processId
         );
         expect(restartedEvent).toBeDefined();
         expect(restartedEvent?.data.oldCommand).toBe("echo test1");
@@ -616,7 +616,7 @@ describe("RunnerService", () => {
 
         // Check that restart event was emitted
         const restartRequestEvents = events.filter(
-          (e) => e.event === "runner:restart",
+          (e) => e.event === "runner:restart"
         );
         expect(restartRequestEvents.length).toBe(1);
         expect(restartRequestEvents[0].data.processId).toBe(processId);
@@ -624,11 +624,11 @@ describe("RunnerService", () => {
 
         // Check that runner:restarted event was emitted
         const restartedEvents = events.filter(
-          (e) => e.event === "runner:restarted",
+          (e) => e.event === "runner:restarted"
         );
         expect(restartedEvents.length).toBeGreaterThan(0);
         const restartedEvent = restartedEvents.find(
-          (e) => e.data.processId === processId,
+          (e) => e.data.processId === processId
         );
         expect(restartedEvent).toBeDefined();
         expect(restartedEvent?.data.oldCommand).toBe("echo test");
@@ -638,7 +638,7 @@ describe("RunnerService", () => {
       }
     });
 
-    it.skip("should emit error for failed restart requests", async () => {
+    it("should emit error for failed restart requests", async () => {
       // Clear events
       events = [];
 
@@ -650,14 +650,16 @@ describe("RunnerService", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Check that restart event was emitted
-      const restartRequestEvents = events.filter((e) => e.event === "restart");
+      const restartRequestEvents = events.filter(
+        (e) => e.event === "runner:restart"
+      );
       expect(restartRequestEvents.length).toBe(1);
 
       // Check that error event was emitted
       const errorEvents = events.filter((e) => e.event === "runner:error");
       expect(errorEvents.length).toBeGreaterThan(0);
       const errorEvent = errorEvents.find(
-        (e) => e.data.processId === "non-existent-id",
+        (e) => e.data.processId === "non-existent-id1"
       );
       expect(errorEvent).toBeDefined();
       expect(errorEvent?.data.error).toBe("Failed to restart process");

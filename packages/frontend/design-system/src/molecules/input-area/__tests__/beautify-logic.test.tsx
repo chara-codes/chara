@@ -1,4 +1,4 @@
-import { describe, it, expect, mock, beforeEach, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 // Mock the beautify function and stream service
 const mockBeautifyPrompt = mock(() => {});
@@ -18,7 +18,7 @@ mock.module("../../../../store/chat-store", () => ({
       beautifyPromptStream: mockBeautifyPromptStream,
       messages: [],
       model: "gpt-4",
-    }),
+    })
   ),
 }));
 
@@ -30,7 +30,7 @@ mock.module("../../../../store/ui-store", () => ({
         { id: "select-element", enabled: true, tooltip: "Select element" },
         { id: "upload-file", enabled: true, tooltip: "Upload file" },
       ],
-    }),
+    })
   ),
 }));
 
@@ -66,13 +66,13 @@ describe("Beautify Logic Tests", () => {
       const onError = mock(() => {});
 
       mockBeautifyPromptStream.mockImplementation(
-        (message, onDelta, onComp, onErr) => {
+        (message, onDelta, onComp, _onErr) => {
           // Simulate streaming
           onDelta("Test ");
           onDelta("message ");
           onDelta("for beautification.");
           onComp("Test message for beautification.");
-        },
+        }
       );
 
       mockBeautifyPromptStream(testMessage, onTextDelta, onComplete, onError);
@@ -81,14 +81,14 @@ describe("Beautify Logic Tests", () => {
         testMessage,
         onTextDelta,
         onComplete,
-        onError,
+        onError
       );
       expect(onTextDelta).toHaveBeenCalledTimes(3);
       expect(onTextDelta).toHaveBeenCalledWith("Test ");
       expect(onTextDelta).toHaveBeenCalledWith("message ");
       expect(onTextDelta).toHaveBeenCalledWith("for beautification.");
       expect(onComplete).toHaveBeenCalledWith(
-        "Test message for beautification.",
+        "Test message for beautification."
       );
     });
 
@@ -104,10 +104,10 @@ describe("Beautify Logic Tests", () => {
           if (callbacks.onCompletion) {
             callbacks.onCompletion({ finishReason: "stop" });
           }
-        },
+        }
       );
 
-      mockBeautifyPrompt.mockImplementation(async (message) => {
+      mockBeautifyPrompt.mockImplementation(async (_message) => {
         // This would use the actual implementation that calls stream service
         return beautifiedResult;
       });
@@ -126,11 +126,11 @@ describe("Beautify Logic Tests", () => {
           expect(payload.messages).toBeDefined();
           expect(payload.model).toBeDefined();
           expect(
-            payload.messages[payload.messages.length - 1].content,
+            payload.messages[payload.messages.length - 1].content
           ).toContain(testMessage);
 
           callbacks.onTextDelta("Beautified text");
-        },
+        }
       );
 
       mockBeautifyPrompt.mockImplementation(async () => {
@@ -149,7 +149,7 @@ describe("Beautify Logic Tests", () => {
       mockBeautifyPrompt.mockRejectedValue(error);
 
       await expect(mockBeautifyPrompt(testMessage)).rejects.toThrow(
-        "Beautify API failed",
+        "Beautify API failed"
       );
     });
 
@@ -163,7 +163,7 @@ describe("Beautify Logic Tests", () => {
       mockBeautifyPromptStream.mockImplementation(
         (message, onDelta, onComp, onErr) => {
           onErr(error);
-        },
+        }
       );
 
       mockBeautifyPromptStream(testMessage, onTextDelta, onComplete, onError);
@@ -190,9 +190,9 @@ describe("Beautify Logic Tests", () => {
       const onError = mock(() => {});
 
       mockBeautifyPromptStream.mockImplementation(
-        (message, onDelta, onComp, onErr) => {
+        (message, onDelta, onComp, _onErr) => {
           onComp(message); // Return original empty message
-        },
+        }
       );
 
       mockBeautifyPromptStream(emptyMessage, onTextDelta, onComplete, onError);
@@ -208,7 +208,7 @@ describe("Beautify Logic Tests", () => {
       const beautifiedLongMessage =
         "This is a very long message that should trigger the beautify functionality when the user types more than ten characters.";
       mockBeautifyPrompt.mockImplementation(() =>
-        Promise.resolve(beautifiedLongMessage),
+        Promise.resolve(beautifiedLongMessage)
       );
 
       const result = await mockBeautifyPrompt(longMessage);
@@ -261,7 +261,7 @@ describe("Beautify Logic Tests", () => {
 
     const beautifyAction = (
       state: BeautifyState,
-      beautifiedText: string,
+      beautifiedText: string
     ): BeautifyState => ({
       ...state,
       originalText: state.message,
@@ -327,7 +327,7 @@ describe("Beautify Logic Tests", () => {
   describe("error handling logic", () => {
     const handleBeautifyError = (
       originalMessage: string,
-      error: Error,
+      error: Error
     ): { message: string; error: string } => {
       console.error("Failed to beautify text:", error);
       return {
@@ -355,7 +355,7 @@ describe("Beautify Logic Tests", () => {
 
       expect(consoleSpy).toHaveBeenCalledWith(
         "Failed to beautify text:",
-        error,
+        error
       );
       consoleSpy.mockRestore();
     });
@@ -363,7 +363,6 @@ describe("Beautify Logic Tests", () => {
 
   describe("stream service integration", () => {
     it("should handle stream text deltas correctly", async () => {
-      const testMessage = "test message";
       let accumulatedText = "";
 
       const simulateStreamCallback = (delta: string) => {
@@ -445,7 +444,7 @@ describe("Beautify Logic Tests", () => {
 
   describe("async beautify workflow", () => {
     const simulateBeautifyWorkflow = async (
-      message: string,
+      message: string
     ): Promise<{ success: boolean; result: string; error?: string }> => {
       try {
         if (!message.trim()) {
@@ -464,7 +463,7 @@ describe("Beautify Logic Tests", () => {
     };
 
     const simulateStreamingBeautifyWorkflow = (
-      message: string,
+      message: string
     ): Promise<{ success: boolean; result: string; error?: string }> => {
       return new Promise((resolve) => {
         if (!message.trim()) {
@@ -472,12 +471,10 @@ describe("Beautify Logic Tests", () => {
           return;
         }
 
-        let streamedText = "";
-
         mockBeautifyPromptStream(
           message,
-          (delta: string) => {
-            streamedText += delta;
+          (_delta: string) => {
+            // Accumulate delta for streaming
           },
           (finalText: string) => {
             resolve({ success: true, result: finalText });
@@ -488,13 +485,13 @@ describe("Beautify Logic Tests", () => {
               result: message,
               error: error.message,
             });
-          },
+          }
         );
       });
     };
 
     it("should complete successful beautify workflow", async () => {
-      const originalMessage = "test message for beautification";
+      const originalMessage = "test message";
       const beautifiedMessage = "Test message for beautification.";
       mockBeautifyPrompt.mockResolvedValue(beautifiedMessage);
 
@@ -528,7 +525,7 @@ describe("Beautify Logic Tests", () => {
 
     it("should handle stream service timeout scenarios", async () => {
       mockBeautifyPrompt.mockRejectedValue(
-        new Error("Beautify request timed out"),
+        new Error("Beautify request timed out")
       );
 
       const result = await simulateBeautifyWorkflow("test message");
@@ -542,13 +539,13 @@ describe("Beautify Logic Tests", () => {
       const beautifiedMessage = "Test message for beautification.";
 
       mockBeautifyPromptStream.mockImplementation(
-        (message, onDelta, onComplete, onError) => {
+        (message, onDelta, onComplete, _onError) => {
           // Simulate streaming
           onDelta("Test ");
           onDelta("message ");
           onDelta("for beautification.");
           onComplete(beautifiedMessage);
-        },
+        }
       );
 
       const result = await simulateStreamingBeautifyWorkflow(originalMessage);
@@ -565,7 +562,7 @@ describe("Beautify Logic Tests", () => {
       mockBeautifyPromptStream.mockImplementation(
         (message, onDelta, onComplete, onError) => {
           onError(error);
-        },
+        }
       );
 
       const result = await simulateStreamingBeautifyWorkflow(originalMessage);
@@ -635,7 +632,7 @@ describe("Beautify Logic Tests", () => {
 
       expect(updates[0]).toBe(""); // Starts empty
       expect(updates[updates.length - 1]).toBe(
-        "Please make this text much better.",
+        "Please make this text much better."
       );
       expect(updates.length).toBe(7); // Initial + 6 chunks
     });
@@ -680,7 +677,7 @@ describe("Beautify Logic Tests", () => {
 
         const calculatedHeight = Math.min(
           baseHeight + (lines - 1) * lineHeight,
-          maxHeight,
+          maxHeight
         );
         return {
           height: calculatedHeight,
@@ -748,7 +745,7 @@ describe("Beautify Logic Tests", () => {
       // During streaming
       expect(interactionStates.canSend(true, "some text")).toBe(false);
       expect(interactionStates.canBeautify(true, "some longer text")).toBe(
-        false,
+        false
       );
       expect(interactionStates.canUndo(false, true)).toBe(false);
       expect(interactionStates.canAddContext(true)).toBe(false);
@@ -778,7 +775,7 @@ describe("Beautify Logic Tests", () => {
 
       expect(handleStreamInterruption("timeout").shouldRevert).toBe(true);
       expect(handleStreamInterruption("network").errorMessage).toBe(
-        "Network error",
+        "Network error"
       );
       expect(handleStreamInterruption("abort").shouldRevert).toBe(true);
     });

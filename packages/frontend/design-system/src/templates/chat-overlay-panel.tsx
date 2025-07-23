@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useEffect, useCallback } from "react";
-import styled from "styled-components";
-import { theme } from "../theme/theme";
-import { ChatIcon } from "../atoms/icons";
 import {
   useRunnerConnect,
   useRunnerConnection,
   useUIStore,
 } from "@chara-codes/core";
+import React, { useCallback, useEffect } from "react";
+import styled from "styled-components";
+import { ChatIcon } from "../atoms/icons";
 import ResizeHandle from "../atoms/resize-handle";
 import { ChatInterface } from "../templates";
+import { theme } from "../theme/theme";
 
 const Backdrop = styled.div<{ isOpen: boolean }>`
   position: fixed;
@@ -221,12 +221,12 @@ export const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
     (newWidth: number) => {
       setIsResizing(true);
       setChatOverlayWidth(newWidth);
-      // @ts-ignore
+      // @ts-expect-error - window.resizeTimeout is not in Window type definition
       if (window.resizeTimeout) {
-        // @ts-ignore
+        // @ts-expect-error - window.resizeTimeout is not in Window type definition
         clearTimeout(window.resizeTimeout);
       }
-      // @ts-ignore
+      // @ts-expect-error - window.resizeTimeout is not in Window type definition
       window.resizeTimeout = setTimeout(() => {
         setIsResizing(false);
       }, 100) as unknown as number;
