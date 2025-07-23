@@ -1,7 +1,7 @@
+import { mkdirSync, rmSync, writeFileSync } from "fs";
+import { join } from "path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { serveStaticAction, stopStaticAction } from "../serve-static";
-import { writeFileSync, mkdirSync, rmSync } from "fs";
-import { join } from "path";
 
 // Mock dependencies
 const mockLogger = {
@@ -313,11 +313,6 @@ describe("serve-static action", () => {
           verbose: false,
         })
       ).rejects.toThrow("Directory does not exist");
-    });
-
-    test.skip("should throw error for port already in use", async () => {
-      // This test is flaky due to timing issues with port binding
-      // Skip for now - the functionality works but is hard to test reliably
     });
 
     test("should set debug logging when verbose is true", async () => {

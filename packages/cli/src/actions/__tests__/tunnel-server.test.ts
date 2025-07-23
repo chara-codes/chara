@@ -1,16 +1,17 @@
+import { mkdirSync, rmSync, writeFileSync } from "fs";
+import { join } from "path";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import {
   startTunnelServerAction,
   stopTunnelServerAction,
 } from "../tunnel-server";
-import { writeFileSync, mkdirSync, rmSync } from "fs";
-import { join } from "path";
 
 // Mock dependencies
 const mockLogger = {
   debug: mock(() => {}),
   info: mock(() => {}),
   warn: mock(() => {}),
+  warning: mock(() => {}),
   error: mock(() => {}),
   setLevel: mock(() => {}),
 };
@@ -460,7 +461,7 @@ describe("tunnel-server action", () => {
   });
 
   describe("Error Handling", () => {
-    test.skip("should handle server that doesn't have stop method", async () => {
+    test("should handle server that doesn't have stop method", async () => {
       const mockServer = {};
 
       await expect(

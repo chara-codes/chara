@@ -491,6 +491,7 @@ describe("Beautify Logic Tests", () => {
     };
 
     it("should complete successful beautify workflow", async () => {
+      const originalMessage = "test message";
       const beautifiedMessage = "Test message for beautification.";
       mockBeautifyPrompt.mockResolvedValue(beautifiedMessage);
 
