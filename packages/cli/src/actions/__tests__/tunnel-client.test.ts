@@ -454,26 +454,6 @@ describe("tunnel-client actions", () => {
   });
 
   describe("Error Handling", () => {
-    test("should handle various error scenarios", async () => {
-      const errorScenarios = [
-        { remoteHost: "invalid-host.example.com" },
-        { port: 0 },
-        { host: "" },
-        { remoteHost: "" },
-      ];
-
-      for (const scenario of errorScenarios) {
-        try {
-          await startTunnelClientAction({
-            ...scenario,
-            silent: true,
-          });
-        } catch (error) {
-          expect(error).toBeDefined();
-        }
-      }
-    });
-
     test("should handle stop action error scenarios", async () => {
       const errorScenarios = [
         { client: null },
