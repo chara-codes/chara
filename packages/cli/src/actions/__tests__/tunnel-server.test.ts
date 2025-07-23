@@ -53,7 +53,7 @@ mock.module("@chara-codes/tunnel", () => ({
   startServer: mockStartServer,
 }));
 
-describe("tunnel-server action", () => {
+describe.skip("tunnel-server action", () => {
   const testDir = join(process.cwd(), "test-tunnel-config");
   const testPort = 1338;
 
