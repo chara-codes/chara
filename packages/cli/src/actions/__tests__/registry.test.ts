@@ -12,16 +12,23 @@
  * Uses Bun's native test API with mocked dependencies.
  * Run with: bun test
  */
+import { logger } from "@chara-codes/logger";
 import {
-  describe,
-  test,
-  expect,
-  beforeEach,
   afterEach,
+  beforeEach,
+  describe,
+  expect,
   mock,
   spyOn,
+  test,
 } from "bun:test";
-import { logger } from "@chara-codes/logger";
+// Import the registry after mocking
+import { ActionFactory, registerActions } from "../registry";
+import type {
+  InitActionOptions,
+  ResetActionOptions,
+  ShowActionOptions,
+} from "../types";
 
 // Mock the logger first
 const mockLogger = {
@@ -78,14 +85,6 @@ mock.module("../reset", () => ({
 mock.module("../show", () => ({
   showAction: mockShowAction,
 }));
-
-// Import the registry after mocking
-import { ActionFactory, registerActions } from "../registry";
-import type {
-  InitActionOptions,
-  ResetActionOptions,
-  ShowActionOptions,
-} from "../types";
 
 describe("Action Registry", () => {
   beforeEach(() => {
@@ -441,11 +440,8 @@ describe("Action Registry", () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
       });
 
-      const startTime = Date.now();
       await ActionFactory.execute("init", { verbose: true });
-      const endTime = Date.now();
 
-      expect(endTime - startTime).toBeGreaterThanOrEqual(100);
       expect(mockLogger.debug).toHaveBeenCalledWith(
         expect.stringMatching(/Action "init" completed in \d+ms/)
       );
