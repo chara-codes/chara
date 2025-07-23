@@ -4,6 +4,7 @@
 
 # Chara Codes
 
+[![CI](https://github.com/chara-codes/chara/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chara-codes/chara/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/@chara-codes%2Fcli.svg)](https://badge.fury.io/js/@chara-codes%2Fcli)
 [![npm downloads](https://img.shields.io/npm/dm/@chara-codes%2Fcli.svg)](https://www.npmjs.com/package/@chara-codes%2Fcli)
 
