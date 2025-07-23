@@ -165,10 +165,6 @@ const CommandPrompt = styled.div`
   font-size: 12px;
 `;
 
-const WorkingDirectory = styled.span`
-  color: #60a5fa;
-`;
-
 const CommandText = styled.span`
   color: #e5e7eb;
   word-break: break-all;

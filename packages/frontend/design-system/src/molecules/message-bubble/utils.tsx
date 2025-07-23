@@ -1,5 +1,5 @@
-import type React from "react";
 import type { ContextItem, ToolCall, ToolResult } from "@chara-codes/core";
+import type React from "react";
 import { ContextPreview } from "../context-preview";
 
 export const getPreviewContent = (item: ContextItem): React.ReactNode => {
@@ -73,18 +73,11 @@ export const getPreviewContent = (item: ContextItem): React.ReactNode => {
   }
 };
 
-// Helper function to format file size
-const formatFileSize = (bytes: number): string => {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1048576).toFixed(1)} MB`;
-};
-
 // Tool call utility functions
 export const createToolCall = (
   name: string,
   arguments_: Record<string, unknown>,
-  status: ToolCall["status"] = "pending",
+  status: ToolCall["status"] = "pending"
 ): ToolCall => ({
   id: `tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
   name,
@@ -96,7 +89,7 @@ export const createToolCall = (
 export const createToolResult = (
   content?: string,
   data?: unknown,
-  error?: string,
+  error?: string
 ): ToolResult => ({
   content,
   data,
@@ -104,7 +97,7 @@ export const createToolResult = (
 });
 
 export const formatToolCallArguments = (
-  args: Record<string, unknown>,
+  args: Record<string, unknown>
 ): string => {
   try {
     return JSON.stringify(args, null, 2);

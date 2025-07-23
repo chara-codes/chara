@@ -53,7 +53,7 @@ export default function HomePage() {
 
 export const CodePreview: React.FC<CodePreviewProps> = ({
   code = defaultCode,
-  language = "typescript",
+  language: _language = "typescript",
   isLoading = false,
 }) => {
   if (isLoading) {

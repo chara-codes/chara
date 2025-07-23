@@ -1,8 +1,8 @@
 import styled from "styled-components";
-import { theme, Theme } from "../../theme";
-import { ThinkingIcon } from "../../atoms/icons/thinking-icon";
-import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
 import { CloseIcon } from "../../atoms/icons/close-icon";
+import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
+import { ThinkingIcon } from "../../atoms/icons/thinking-icon";
+import { Theme } from "../../theme";
 
 // Main container styles
 export const BubbleContainer = styled.div<{ isUser: boolean; theme: Theme }>`
@@ -117,9 +117,8 @@ export const MessageContent = styled.div<{ theme: Theme }>`
 
   /* Inline code styling */
   code:not(pre code) {
-    font-family:
-      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-      "Courier New", monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      "Liberation Mono", "Courier New", monospace;
     background-color: ${({ theme }) => theme.colors.highlight};
     color: ${({ theme }) => theme.colors.error};
     padding: 0.2em 0.4em;
@@ -167,9 +166,8 @@ export const MessageContent = styled.div<{ theme: Theme }>`
     white-space: inherit;
     border: none;
     border-radius: 0;
-    font-family:
-      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-      "Courier New", monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      "Liberation Mono", "Courier New", monospace;
   }
 
   /* Highlight.js specific overrides */

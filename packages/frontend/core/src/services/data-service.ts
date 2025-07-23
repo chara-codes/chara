@@ -1,6 +1,6 @@
 // Import the mock data at the top of the file
 import { mockChats, mockModels } from "../data";
-import type { Chat, FileNode, Model } from "../types";
+import type { Chat, Model } from "../types";
 import { getVanillaTrpcClient } from "./trpc";
 
 export function convertServerChatToFrontendChat(serverChat: ServerChat): Chat {
@@ -20,11 +20,6 @@ interface ServerChat {
   parentId: number | null;
 }
 
-interface ChatListResponse {
-  chats: ServerChat[];
-  hasMore: boolean;
-}
-
 interface ModelsResponse {
   models: Model[];
   recentModels: string[];
@@ -36,7 +31,7 @@ interface ChatsWithPagination {
 }
 
 // Update the fetchChats function to use tRPC getChatList route
-export async function fetchChats(options?: {
+export async function fetchChats(_options?: {
   limit?: number;
   offset?: number;
   parentId?: number | null;

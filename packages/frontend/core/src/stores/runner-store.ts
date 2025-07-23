@@ -64,14 +64,14 @@ interface RunnerState {
   setConnectionState: (
     isConnected: boolean,
     isConnecting: boolean,
-    error?: string,
+    error?: string
   ) => void;
   setReconnectAttempts: (attempts: number) => void;
   updateProcess: (processId: string, updates: Partial<RunnerProcess>) => void;
   addOutput: (
     processId: string,
     type: "stdout" | "stderr",
-    content: string,
+    content: string
   ) => void;
 }
 
@@ -124,7 +124,7 @@ export const useRunnerStore = create<RunnerState>()(
             });
           },
 
-          onConnectionError: (error) => {
+          onConnectionError: (_error) => {
             set({
               isConnected: false,
               isConnecting: false,
@@ -293,16 +293,13 @@ export const useRunnerStore = create<RunnerState>()(
 
       clearAllOutput: () => {
         set((state) => ({
-          processes: Object.keys(state.processes).reduce(
-            (acc, processId) => {
-              acc[processId] = {
-                ...state.processes[processId],
-                output: [],
-              };
-              return acc;
-            },
-            {} as Record<string, RunnerProcess>,
-          ),
+          processes: Object.keys(state.processes).reduce((acc, processId) => {
+            acc[processId] = {
+              ...state.processes[processId],
+              output: [],
+            };
+            return acc;
+          }, {} as Record<string, RunnerProcess>),
         }));
       },
 
@@ -317,7 +314,7 @@ export const useRunnerStore = create<RunnerState>()(
       setTerminalHeight: (height) => {
         const constrainedHeight = Math.max(
           TERMINAL_HEIGHT_CONSTRAINTS.MIN,
-          Math.min(height, TERMINAL_HEIGHT_CONSTRAINTS.MAX),
+          Math.min(height, TERMINAL_HEIGHT_CONSTRAINTS.MAX)
         );
         set({ terminalHeight: constrainedHeight });
       },
@@ -405,8 +402,8 @@ export const useRunnerStore = create<RunnerState>()(
     }),
     {
       name: "runner-store",
-    },
-  ),
+    }
+  )
 );
 
 // Selector hooks for common use cases

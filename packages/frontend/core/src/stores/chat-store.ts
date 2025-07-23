@@ -10,10 +10,11 @@ import {
   fetchChats,
   processChatStream,
   resetToCommit,
+  saveMessage,
   type StreamCallbacks,
   type StreamRequestPayload,
-  saveMessage,
-} from "../services"; // Import the new service
+} from "../services";
+// Import the new service
 import type {
   Chat,
   ChatMode,
@@ -425,8 +426,8 @@ export const useChatStore = create<ChatState>()(
                     };
                   });
                 },
-                onStructuredData: (data) => {
-                  updateAIMessageInStore((msg) => {
+                onStructuredData: (_data) => {
+                  updateAIMessageInStore((_msg) => {
                     const newPartial: Partial<Message> = {};
                     return newPartial;
                   });
@@ -740,7 +741,7 @@ export const useChatStore = create<ChatState>()(
               try {
                 const parsed = JSON.parse(msg.message);
                 message = Array.isArray(parsed) ? parsed[0].text : parsed;
-              } catch (_e) {
+              } catch {
                 message = msg.message;
               }
 

@@ -469,12 +469,12 @@ function calculateDiffStats(
 const DiffBlock: React.FC<DiffBlockProps> = memo(
   ({
     toolCall,
-    toolCallId,
+    toolCallId: _toolCallId,
     isVisible = true,
     streamingSpeed = 20,
     showLineNumbers = false,
     maxHeight = 300,
-    diffMode = "split",
+    diffMode: _diffMode = "split",
   }) => {
     // Initialize hooks first to avoid conditional hook calls
     const [displayedNewContent, setDisplayedNewContent] = useState("");

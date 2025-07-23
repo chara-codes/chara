@@ -1,5 +1,5 @@
-import { type Theme, theme } from "../../theme";
 import styled from "styled-components";
+import { type Theme } from "../../theme";
 
 // Footer container
 export const FooterContainer = styled.footer`
