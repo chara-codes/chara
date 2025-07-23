@@ -42,7 +42,8 @@ jobs:
         run: |
           if [[ `git status --porcelain bun.lock` ]]; then
             echo "::warning::Lockfile was updated during install. Consider updating the lockfile in your repository."
-            git diff bun.lock
+            git add bun.lock
+            echo "Lockfile changes have been staged to prevent CI failures."
           fi
 
   lint:

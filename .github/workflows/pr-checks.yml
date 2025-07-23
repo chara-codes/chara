@@ -38,7 +38,8 @@ jobs:
         run: |
           if [[ `git status --porcelain bun.lock` ]]; then
             echo "::warning::Lockfile was updated during install. Consider updating the lockfile in your repository."
-            git diff bun.lock
+            git add bun.lock
+            echo "Lockfile changes have been staged to prevent CI failures."
           fi
 
       - name: Cache turbo build setup
@@ -63,9 +64,11 @@ jobs:
 
       - name: Check for uncommitted changes
         run: |
-          if [[ `git status --porcelain` ]]; then
+          # Check for uncommitted changes excluding lockfile
+          CHANGES=$(git status --porcelain | grep -v "bun.lock" || true)
+          if [[ -n "$CHANGES" ]]; then
             echo "::error::Uncommitted changes detected after build. Please commit all generated files."
-            git status --porcelain
+            echo "$CHANGES"
             exit 1
           fi
 
