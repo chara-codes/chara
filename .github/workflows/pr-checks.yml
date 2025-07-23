@@ -64,8 +64,8 @@ jobs:
 
       - name: Check for uncommitted changes
         run: |
-          # Check for uncommitted changes excluding lockfile
-          CHANGES=$(git status --porcelain | grep -v "bun.lock" || true)
+          # Check for uncommitted changes excluding lockfile and test cleanup files
+          CHANGES=$(git status --porcelain | grep -v "bun.lock" | grep -v "test-tunnel-config/" || true)
           if [[ -n "$CHANGES" ]]; then
             echo "::error::Uncommitted changes detected after build. Please commit all generated files."
             echo "$CHANGES"

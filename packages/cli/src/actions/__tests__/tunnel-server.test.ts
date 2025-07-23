@@ -1,6 +1,14 @@
-import { mkdirSync, rmSync, writeFileSync } from "fs";
+import * as fs from "fs";
 import { join } from "path";
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  mock,
+  spyOn,
+  test,
+} from "bun:test";
 import {
   startTunnelServerAction,
   stopTunnelServerAction,
@@ -49,6 +57,9 @@ describe("tunnel-server action", () => {
   const testDir = join(process.cwd(), "test-tunnel-config");
   const testPort = 1338;
 
+  let existsSyncSpy: ReturnType<typeof spyOn>;
+  let bunFileSpy: ReturnType<typeof spyOn>;
+
   beforeEach(() => {
     // Clear all mocks
     mockLogger.debug.mockClear();
@@ -70,53 +81,56 @@ describe("tunnel-server action", () => {
       hostname: "localhost",
     }));
 
-    // Create test directory with sample config
-    try {
-      mkdirSync(testDir, { recursive: true });
+    // Setup filesystem spies
+    existsSyncSpy = spyOn(fs, "existsSync").mockImplementation(() => true);
 
-      // Create config file with replacements
-      writeFileSync(
-        join(testDir, "tunnel-config.json"),
-        JSON.stringify({
-          replacements: [
-            {
-              pattern: "</body>",
-              replacement:
-                "<script>console.log('Tunnel injected');</script></body>",
-            },
-            {
-              pattern: "<title>(.*?)</title>",
-              replacement: "<title>$1 [Tunnel]</title>",
-            },
-          ],
-        })
-      );
+    bunFileSpy = spyOn(Bun, "file").mockImplementation((path: string) => {
+      const pathStr = path.toString();
 
-      // Create invalid config file
-      writeFileSync(
-        join(testDir, "invalid-config.json"),
-        "invalid json content"
-      );
+      if (pathStr.includes("tunnel-config.json")) {
+        return {
+          json: () =>
+            Promise.resolve({
+              replacements: [
+                {
+                  pattern: "</body>",
+                  replacement:
+                    "<script>console.log('Tunnel injected');</script></body>",
+                },
+                {
+                  pattern: "<title>(.*?)</title>",
+                  replacement: "<title>$1 [Tunnel]</title>",
+                },
+              ],
+            }),
+        } as any;
+      }
 
-      // Create config file without replacements
-      writeFileSync(
-        join(testDir, "no-replacements.json"),
-        JSON.stringify({
-          other: "data",
-        })
-      );
-    } catch (error) {
-      console.error("Error setting up test directory:", error);
-    }
+      if (pathStr.includes("invalid-config.json")) {
+        return {
+          json: () => Promise.reject(new Error("Unexpected token in JSON")),
+        } as any;
+      }
+
+      if (pathStr.includes("no-replacements.json")) {
+        return {
+          json: () =>
+            Promise.resolve({
+              other: "data",
+            }),
+        } as any;
+      }
+
+      return {
+        json: () => Promise.resolve({}),
+      } as any;
+    });
   });
 
   afterEach(async () => {
-    // Clean up test directory
-    try {
-      rmSync(testDir, { recursive: true, force: true });
-    } catch (error) {
-      console.error("Error cleaning up test directory:", error);
-    }
+    // Restore spies
+    existsSyncSpy?.mockRestore();
+    bunFileSpy?.mockRestore();
   });
 
   describe("startTunnelServerAction", () => {
@@ -263,6 +277,11 @@ describe("tunnel-server action", () => {
     test("should throw error for non-existent config file", async () => {
       const configFile = join(testDir, "non-existent.json");
 
+      // Mock file as non-existent
+      existsSyncSpy.mockImplementation((path: string) => {
+        return !path.toString().includes("non-existent.json");
+      });
+
       await expect(
         startTunnelServerAction({
           port: testPort + 5,
@@ -275,6 +294,19 @@ describe("tunnel-server action", () => {
 
     test("should throw error for invalid config file", async () => {
       const configFile = join(testDir, "invalid-config.json");
+
+      // Ensure file exists but has invalid content
+      existsSyncSpy.mockImplementation(() => true);
+      bunFileSpy.mockImplementation((path: string) => {
+        if (path.toString().includes("invalid-config.json")) {
+          return {
+            json: () => Promise.reject(new Error("Unexpected token in JSON")),
+          } as any;
+        }
+        return {
+          json: () => Promise.resolve({}),
+        } as any;
+      });
 
       await expect(
         startTunnelServerAction({
