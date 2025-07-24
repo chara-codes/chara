@@ -81,8 +81,31 @@ When a file already exists or you just created it, prefer editing it as opposed 
 
   execute: async ({ display_description, path, mode, content, edits }) => {
     try {
+      // Parse edits if it's a JSON string
+      let parsedEdits: Array<{ oldText: string; newText: string }> | undefined;
+      if (edits) {
+        if (typeof edits === "string") {
+          try {
+            parsedEdits = JSON.parse(edits);
+          } catch (parseError) {
+            return {
+              status: "error",
+              message: `Invalid JSON in edits parameter: ${
+                parseError instanceof Error
+                  ? parseError.message
+                  : String(parseError)
+              }`,
+              operation: mode,
+              path,
+            };
+          }
+        } else {
+          parsedEdits = edits;
+        }
+      }
+
       // Validate inputs based on mode
-      if (mode === "edit" && !edits) {
+      if (mode === "edit" && !parsedEdits) {
         return {
           status: "error",
           message: "'edits' parameter is required for edit mode",
@@ -170,7 +193,7 @@ When a file already exists or you just created it, prefer editing it as opposed 
           let modifiedContent = originalContent;
 
           // Apply edits sequentially
-          for (const edit of edits!) {
+          for (const edit of parsedEdits!) {
             const { oldText, newText } = edit;
 
             if (!modifiedContent.includes(oldText)) {
