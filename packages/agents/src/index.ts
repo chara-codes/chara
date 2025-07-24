@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { LogLevel, logger } from "@chara-codes/logger";
+import { logger, LogLevel } from "@chara-codes/logger";
 import type { ServerWebSocket } from "bun";
 import { initAgent } from "./agents";
 import {
@@ -12,12 +12,11 @@ import {
   providersController,
   statusController,
 } from "./controllers";
-import { mcpWrapper } from "./mcp/mcp-client";
+import { closeMcpClients, initializeMcpTools } from "./mcp/mcp-servers";
+import { initialize } from "./providers/";
 import { appEvents } from "./services/events";
 import { runnerService } from "./services/runner";
-import { tools as localTools } from "./tools/";
 import { logWithPreset } from "./utils";
-import { initialize } from "./providers/";
 
 export { beautifyAgent } from "./agents/beautify-agent";
 // Export agents for programmatic use
@@ -25,11 +24,11 @@ export { chatAgent, cleanMessages } from "./agents/chat-agent";
 export { gitAgent } from "./agents/git-agent";
 export { initAgent } from "./agents/init-agent";
 // Export providers for external use
-export { providersRegistry, initialize } from "./providers/";
-// Export tools for external use
-export { tools } from "./tools/";
+export { initialize, providersRegistry } from "./providers/";
 // Export git service for external use
 export { isoGitService } from "./services/isogit";
+// Export tools for external use
+export { tools } from "./tools/";
 
 // Store connected WebSocket clients
 const wsClients = new Set<ServerWebSocket<unknown>>();
@@ -65,13 +64,6 @@ export interface StartServerOptions {
   port?: number;
   /** Log level for the server */
   logLevel?: LogLevel;
-  /** MCP (Model Context Protocol) configuration */
-  mcp?: {
-    /** Whether to enable MCP initialization */
-    enabled?: boolean;
-    /** Whether to initialize MCP synchronously (blocks server start) */
-    initializeSync?: boolean;
-  };
   /** WebSocket configuration */
   websocket?: {
     /** Whether to enable WebSocket server */
@@ -240,12 +232,16 @@ export async function startServer(
     charaConfigFile = ".chara.json",
     port = 3031,
     logLevel = LogLevel.INFO,
-    mcp = { enabled: true, initializeSync: false },
     websocket = { enabled: true, endpoint: "/ws" },
     runner = { enabled: true },
   } = options;
 
   logger.setLevel(logLevel);
+
+  const configFile = Bun.file(charaConfigFile);
+  const charaConfig = (await configFile.exists())
+    ? await configFile.json()
+    : {};
 
   // Set up WebSocket broadcasting for runner events (only if WebSocket is enabled)
   let broadcastToClients: ((eventName: string, data: any) => void) | undefined;
@@ -275,9 +271,6 @@ export async function startServer(
 
   // Initialize runner service if enabled
   if (runner.enabled) {
-    const configFile = Bun.file(charaConfigFile);
-    const charaConfig = await configFile.json();
-
     appEvents.on("runner:status", (status) => {
       logger.dumpDebug(status);
     });
@@ -292,64 +285,31 @@ export async function startServer(
     }
   }
 
-  // Initialize MCP if enabled
-  if (mcp.enabled) {
-    logger.debug("🚀 Starting server initialization...");
+  // --- MCP Initialization ---
+  // Initialize controllers with empty tools first
+  chatController.setTools({});
+  initAgent.setTools({});
 
-    const localCount = Object.keys(localTools).length;
-
-    if (mcp.initializeSync) {
-      logger.debug("🔧 Starting MCP client initialization (sync)...");
-      try {
-        await mcpWrapper.initialize();
-        const mcpTools = mcpWrapper.getToolsSync();
-        const mcpCount = Object.keys(mcpTools).length;
-        logger.debug(
-          `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${
-            localCount + mcpCount
-          } total`
-        );
-      } catch (error: any) {
-        logger.warning(
-          "⚠️ MCP initialization failed, continuing with local tools only:",
-          error.message
-        );
-      }
-    } else {
-      logger.debug("🔧 Starting MCP client initialization in background...");
-
-      // Initialize MCP in background - don't await it
-      mcpWrapper.initializeInBackground();
-
-      // Show initial tool status
+  // Asynchronously initialize MCP tools and update controllers when done
+  const initializeMcpInBackground = async () => {
+    if (charaConfig.mcpServers) {
+      logger.info("🚀 Initializing MCP tools in background...");
+      const mcpTools = await initializeMcpTools(charaConfig.mcpServers);
+      const mcpCount = Object.keys(mcpTools).length;
       logger.debug(
-        `📦 Starting with ${localCount} local tools (MCP loading in background)`
+        `✅ MCP background initialization complete! Loaded ${mcpCount} tools.`
       );
-
-      // Log when MCP is fully ready (don't wait for it)
-      mcpWrapper
-        .initialize()
-        .then(() => {
-          const mcpTools = mcpWrapper.getToolsSync();
-          const mcpCount = Object.keys(mcpTools).length;
-          logger.debug(
-            `✅ MCP initialization complete! Now using ${localCount} local + ${mcpCount} MCP tools = ${
-              localCount + mcpCount
-            } total`
-          );
-        })
-        .catch((error: any) => {
-          logger.warning(
-            "⚠️ MCP initialization failed, continuing with local tools only:",
-            error.message
-          );
-        });
+      chatController.setTools(mcpTools);
+      initAgent.setTools(mcpTools);
+    } else {
+      logger.debug(
+        "📦 mcpServers not found in config file, skipping MCP initialization."
+      );
     }
-  } else {
-    logger.debug("🚀 Starting server initialization...");
-    const localCount = Object.keys(localTools).length;
-    logger.debug(`📦 Starting with ${localCount} local tools (MCP disabled)`);
-  }
+  };
+
+  // Start initialization without awaiting it
+  initializeMcpInBackground();
 
   // Create server configuration
   const serverConfig = createServerConfig({
@@ -378,18 +338,13 @@ export async function startServer(
     logger.debug("🏃 Runner service initialized");
   }
 
-  if (mcp.enabled) {
-    logger.debug(
-      `🔧 MCP service ${
-        mcp.initializeSync ? "initialized" : "initializing in background"
-      }`
-    );
+  if (charaConfig.mcpServers) {
+    logger.debug(`🔧 MCP service initializing in background...`);
   }
 
-  // Log configuration summary
   logger.info("📋 Server configuration:");
   logger.info(`   Port: ${server.port}`);
-  logger.info(`   MCP: ${mcp.enabled ? "enabled" : "disabled"}`);
+  logger.info(`   MCP: ${charaConfig.mcpServers ? "enabled" : "disabled"}`);
   logger.info(`   WebSocket: ${websocket.enabled ? "enabled" : "disabled"}`);
   logger.info(`   Runner: ${runner.enabled ? "enabled" : "disabled"}`);
 
@@ -423,9 +378,9 @@ export async function startServer(
       }
 
       // Stop MCP if enabled
-      if (mcp.enabled) {
+      if (charaConfig.mcpServers) {
         logger.debug("🛑 Stopping MCP services...");
-        // MCP wrapper cleanup would go here if available
+        await closeMcpClients();
       }
 
       // Stop the server
@@ -434,9 +389,6 @@ export async function startServer(
     },
 
     async restart(services = ["mcp", "runner"]) {
-      const configFile = Bun.file(charaConfigFile);
-      const charaConfig = await configFile.json();
-
       logger.debug("🔄 Restarting services:", services);
 
       if (services.includes("runner") && runner.enabled) {
@@ -456,14 +408,10 @@ export async function startServer(
         }
       }
 
-      if (services.includes("mcp") && mcp.enabled) {
+      if (services.includes("mcp") && charaConfig.mcpServers) {
         logger.debug("🔄 Restarting MCP service...");
-        try {
-          await mcpWrapper.initialize();
-          logger.debug("✅ MCP service restarted successfully");
-        } catch (error: any) {
-          logger.error("❌ Failed to restart MCP service:", error);
-        }
+        // Don't await this so it doesn't block
+        initializeMcpInBackground();
       }
 
       logger.debug("✅ Service restart complete");
@@ -488,11 +436,7 @@ if (import.meta.main) {
   let serverInstance: ServerInstance;
 
   try {
-    serverInstance = await startServer({
-      mcp: {
-        enabled: false,
-      },
-    });
+    serverInstance = await startServer({});
 
     // Handle graceful shutdown
     process.on("SIGINT", async () => {

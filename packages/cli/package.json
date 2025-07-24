@@ -20,7 +20,7 @@
     "dev": "bun ./src/index.ts dev --projectDir ./demo-project/",
     "d": "bun ./src/index.ts",
     "start": "./dist/chara",
-    "tests": "bun test",
+    "tests": "NODE_ENV=test bun test",
     "prepack": "./scripts/prebuild.sh",
     "version:patch": "node scripts/bump-version.js patch",
     "version:minor": "node scripts/bump-version.js minor",

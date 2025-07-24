@@ -1,10 +1,13 @@
 import { logger } from "@chara-codes/logger";
-import { type CoreMessage, createDataStreamResponse } from "ai";
+import { createDataStreamResponse, type CoreMessage } from "ai";
 import { chatAgent } from "../agents/chat-agent";
 import { gitAgent } from "../agents/git-agent";
 import { isoGitService } from "../services/isogit";
 import { trpc } from "../services/trpc";
+import { chatToolsAskMode, chatToolsWriteMode } from "../tools/chat-tools";
 import { mapMessages } from "../utils";
+
+let mcpTools: Record<string, any> = {};
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +16,9 @@ const CORS_HEADERS = {
 };
 
 export const chatController = {
+  setTools: (newTools: Record<string, any>) => {
+    mcpTools = newTools;
+  },
   OPTIONS: () => new Response("", { headers: CORS_HEADERS }),
   POST: async (req: Request) => {
     const data = await req.json();
@@ -36,6 +42,12 @@ export const chatController = {
         commit: commit?.oid,
       });
     }
+
+    // Combine agent-specific tools with the general MCP tools
+    const localChatTools =
+      mode === "write" ? chatToolsWriteMode : chatToolsAskMode;
+    const allTools = { ...localChatTools, ...mcpTools };
+
     return createDataStreamResponse({
       headers: { ...CORS_HEADERS, "accept-encoding": "" },
       execute: async (dataStream) => {
@@ -44,6 +56,7 @@ export const chatController = {
           messages: mapMessages(messages),
           mode: mode === "write" ? "write" : "ask",
           workingDir: process.cwd(),
+          tools: allTools,
           onFinish: async () => {
             if (mode === "write") {
               const commitMessage = await gitAgent({

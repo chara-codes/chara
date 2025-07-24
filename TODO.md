@@ -19,7 +19,7 @@ Web
 
 Agents
 [x] Tools for communication with cli
-[x] Debug MCP errors (mcp-client.ts)
+[ ] Debug MCP errors (mcp-servers.ts)
 [ ] Add google ai support
 [ ] Add deepseek support
 

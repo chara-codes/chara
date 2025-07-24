@@ -1,9 +1,8 @@
 import { logger } from "@chara-codes/logger";
-import { type CoreMessage, streamText } from "ai";
-import { mcpWrapper } from "../mcp/mcp-client";
+import { streamText, type CoreMessage } from "ai";
+import { chatPrompt } from "../prompts/chat";
 import { providersRegistry } from "../providers";
 import { chatToolsAskMode, chatToolsWriteMode } from "../tools/chat-tools";
-import { chatPrompt } from "../prompts/chat";
 
 /**
  * Cleans messages by removing toolCall tags like [toolCall:call_id,tool-name]
@@ -54,12 +53,14 @@ export const chatAgent = async (
     messages,
     mode,
     workingDir = process.cwd(),
+    tools = {},
     onFinish,
   }: {
     model: string;
     messages: CoreMessage[];
     mode: "write" | "ask";
     workingDir: string;
+    tools?: Record<string, any>;
     onFinish: (result: any) => {};
   },
   options: { headers?: Record<string, string> } = {}
@@ -68,17 +69,8 @@ export const chatAgent = async (
     model.split(":::");
   const aiModel = await providersRegistry.getModel(providerName, modelName);
 
-  // Always start with local tools
-  const mcpTools = mcpWrapper.getToolsSync();
-  const chatTools = mode === "write" ? chatToolsWriteMode : chatToolsAskMode;
-  const allTools = { ...chatTools, ...mcpTools };
-
-  const localCount = Object.keys(chatTools).length;
-  const mcpCount = Object.keys(mcpTools).length;
-  const total = Object.keys(allTools).length;
-  logger.debug(
-    `🔧 Using ${total} tools: ${localCount} local + ${mcpCount} MCP`
-  );
+  const total = Object.keys(tools).length;
+  logger.debug(`🔧 Using ${total} tools provided by the controller.`);
 
   // Clean messages before sending to AI model to remove any toolCall tags
   // that might interfere with model responses or cause confusion
@@ -88,11 +80,11 @@ export const chatAgent = async (
     ...options,
     system: chatPrompt({
       hasTools: !!total,
-      hasTool: (toolName: string) => Object.keys(allTools).includes(toolName),
+      hasTool: (toolName: string) => Object.keys(tools).includes(toolName),
       mode,
       workingDir,
     }),
-    tools: allTools,
+    tools: tools,
     model: aiModel,
     temperature: 0.5,
     toolCallStreaming: true,

@@ -1,7 +1,7 @@
-import { tool } from "ai";
 import { existsSync } from "fs";
 import { mkdir, readFile, writeFile } from "fs/promises";
 import { dirname } from "path";
+import { tool } from "ai";
 import z from "zod";
 
 const EditFileMode = z.enum(["edit", "create", "overwrite"]);
@@ -11,7 +11,7 @@ export const editFile = tool({
 
 Before using this tool:
 
-1. Use the read_file tool to understand the file's contents and context
+1. Use the read_file tool to understand the file's contents and context (not applicable when creating new files)
 
 2. Verify the directory path is correct (only applicable when creating new files):
    - Use the directory tool to verify the parent directory exists and is the correct location`,
