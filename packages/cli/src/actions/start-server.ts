@@ -10,8 +10,6 @@ import type { StartServerActionOptions } from "./types";
  *
  * @param options Configuration options for the server
  * @param options.port Port to start server on (default: 3030)
- * @param options.mcpEnabled Enable Model Context Protocol support
- * @param options.websocketEnabled Enable WebSocket support
  * @param options.silent Suppress UI output for programmatic use
  * @param options.verbose Enable detailed logging
  *
@@ -22,8 +20,6 @@ import type { StartServerActionOptions } from "./types";
  * // Start server with custom configuration
  * const { server, port } = await startServerAction({
  *   port: 3030,
- *   mcpEnabled: true,
- *   websocketEnabled: true,
  *   verbose: true
  * });
  * ```
@@ -66,42 +62,17 @@ export async function startServerAction(
     const port = options.port || 3030;
     logger.debug("Starting server on port:", port);
 
-    // Log enabled features
-    const enabledFeatures = [];
-    if (options.mcpEnabled) enabledFeatures.push("MCP");
-    if (options.websocketEnabled) enabledFeatures.push("WebSocket");
-
-    if (enabledFeatures.length > 0 && options.verbose) {
-      logger.debug(`Enabled features: ${enabledFeatures.join(", ")}`);
-    }
-
     serverResult = await startServer({
-      port,
-      host: options.host || "localhost",
-      mcp: {
-        enabled: options.mcpEnabled ?? false,
-        transport: options.mcpTransport || "stdio",
-      },
-      websocket: {
-        enabled: options.websocketEnabled ?? false,
-        path: options.websocketPath || "/ws",
-      },
-      cors: {
-        enabled: options.corsEnabled ?? true,
-        origin: options.corsOrigin || "*",
+      server: {
+        port,
       },
       logging: {
-        enabled: options.loggingEnabled ?? true,
-        level: options.verbose ? "debug" : "info",
+        requests: options.verbose,
       },
     });
 
     if (!options.silent) {
-      const statusMessage =
-        enabledFeatures.length > 0
-          ? `Server started on port ${port} with ${enabledFeatures.join(", ")}`
-          : `Server started on port ${port}`;
-      s.stop(statusMessage);
+      s.stop(`Server started on port ${port}`);
     }
 
     logger.debug(`Server successfully started on port ${port}`);

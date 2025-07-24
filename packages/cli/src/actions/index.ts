@@ -14,10 +14,6 @@ export {
 export { setupLoggingAction } from "./setup-logging";
 export { setupProjectAction } from "./setup-project";
 export { loadConfigAction } from "./load-config";
-export { connectMcpAction } from "./connect-mcp";
-export { connectEventsAction } from "./connect-events";
-export { initApiAction } from "./init-api";
-export { initMcpClientAction } from "./init-mcp-client";
 export { initializeConfigAction } from "./initialize-config";
 export {
   compose,
@@ -44,10 +40,6 @@ export type {
   SetupLoggingActionOptions,
   SetupProjectActionOptions,
   LoadConfigActionOptions,
-  ConnectMcpActionOptions,
-  ConnectEventsActionOptions,
-  InitApiActionOptions,
-  InitMcpClientActionOptions,
   InitializeConfigActionOptions,
   InitActionOptions,
   ResetActionOptions,

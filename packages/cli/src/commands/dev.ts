@@ -6,7 +6,7 @@ import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
 import { bold, cyan, green, yellow } from "picocolors";
 import type { CommandModule } from "yargs";
 import { ActionFactory } from "../actions";
-import { intro, outro } from "../utils/prompts";
+import { intro } from "../utils/prompts";
 
 interface DevCommandArgs {
   projectDir?: string;
@@ -21,8 +21,6 @@ interface ServerInfo {
   tunnel?: any;
   tunnelClient?: any;
   projectDir: string;
-  hasMcpServers: boolean;
-  clientsList: any[];
   runnerStatus?: string;
   runnerInfo?: any;
   verbose?: boolean;
@@ -64,19 +62,6 @@ function displayServerSummary(info: ServerInfo) {
 
   console.log("\n" + bold("📁 Project Configuration:"));
   console.log(`  • Directory:       ${cyan(info.projectDir)}`);
-  console.log(
-    `  • MCP Servers:     ${
-      info.hasMcpServers ? green("Enabled") : yellow("Disabled")
-    }`
-  );
-
-  if (info.hasMcpServers && info.clientsList.length > 0) {
-    console.log(
-      `  • Active Clients:  ${info.clientsList
-        .map((client: any) => cyan(client.name || "Unknown"))
-        .join(", ")}`
-    );
-  }
 
   if (info.tunnelClient) {
     console.log("\n" + bold("🌐 Tunnel Configuration:"));
@@ -112,11 +97,6 @@ function displayServerSummary(info: ServerInfo) {
       `  • API Endpoint:    ${cyan(
         `http://localhost:${info.serverResult.port}/trpc`
       )}`
-    );
-    console.log(
-      `  • WebSocket:       ${
-        info.hasMcpServers ? green("Enabled") : yellow("Disabled")
-      }`
     );
     console.log(`  • Runner:          ${green("Enabled")}`);
   }
@@ -232,8 +212,6 @@ export const devCommand: CommandModule<
             verbose: argv.verbose,
             silent: true,
             port: 3031,
-            mcpEnabled: false,
-            websocketEnabled: false,
           });
 
           try {
@@ -269,76 +247,25 @@ export const devCommand: CommandModule<
         });
       }
 
-      // Step 6: Load local configuration
-      const config = await ActionFactory.execute("load-config", {
-        verbose: argv.verbose,
-      });
-
-      // Step 7: Check if local config has MCP servers
-      const hasMcpServers =
-        config?.mcpServers && Object.keys(config.mcpServers).length > 0;
-
-      if (argv.verbose) {
-        logger.debug(`MCP servers available: ${hasMcpServers ? "Yes" : "No"}`);
-        if (hasMcpServers) {
-          logger.debug(
-            `MCP servers: ${Object.keys(config.mcpServers).join(", ")}`
-          );
-        }
-      }
-
-      // Step 8: Start server with appropriate configuration
+      // Step 6: Start server with appropriate configuration
       showProgress("Starting backend server");
       const serverResult = await ActionFactory.execute("start-server", {
         verbose: argv.verbose,
         port: 3030,
-        mcpEnabled: hasMcpServers,
-        websocketEnabled: hasMcpServers, // Only enable WebSocket if MCP is available
         silent: !argv.verbose,
       });
 
-      // Step 9: Connect to MCP servers if available
-      let clientsList: any[] = [];
-      if (hasMcpServers) {
-        clientsList = await ActionFactory.execute("connect-mcp", {
-          verbose: argv.verbose,
-          mcpServers: config.mcpServers,
-        });
-      }
-
-      // Step 10: Connect to server events via WebSocket (if enabled)
-      if (hasMcpServers) {
-        await ActionFactory.execute("connect-events", {
-          verbose: argv.verbose,
-        });
-      }
-
-      // Step 11: Initialize API client
-      if (hasMcpServers) {
-        await ActionFactory.execute("init-api", {
-          verbose: argv.verbose,
-        });
-      }
-
-      // Step 12: Initialize MCP client (if MCP servers are available)
-      if (hasMcpServers) {
-        await ActionFactory.execute("init-mcp-client", {
-          verbose: argv.verbose,
-        });
-      }
-
-      // Step 13: Start agents with appropriate configuration
+      // Step 7: Start agents with appropriate configuration
       showProgress("Starting agents server");
       const agentsResult = await ActionFactory.execute("start-agents", {
         verbose: argv.verbose,
         port: 3031,
-        mcp: hasMcpServers,
         runner: true,
         websocket: true,
         silent: !argv.verbose,
       });
 
-      // Step 14: Start web applications that should connect to server and agents
+      // Step 8: Start web applications that should connect to server and agents
       showProgress("Setting up web interface");
       const pathToRoot = dirname(process.execPath);
       const indexWeb = Bun.file(`${pathToRoot}/web/index.html`);
@@ -360,7 +287,7 @@ export const devCommand: CommandModule<
         silent: true,
       });
 
-      // Step 15: Run widget mode (tunnel server, tunnel client, event listener for the runner)
+      // Step 9: Run widget mode (tunnel server, tunnel client, event listener for the runner)
       showProgress("Configuring tunnel");
       const pingControl = await ping.promise.probe("control.localhost");
       const pingChara = await ping.promise.probe("chara.localhost");
@@ -415,8 +342,6 @@ export const devCommand: CommandModule<
                 tunnel,
                 tunnelClient,
                 projectDir: projectDir || process.cwd(),
-                hasMcpServers,
-                clientsList,
                 runnerStatus,
                 runnerInfo,
                 verbose: argv.verbose,
@@ -448,8 +373,6 @@ export const devCommand: CommandModule<
           tunnel,
           tunnelClient,
           projectDir: projectDir || process.cwd(),
-          hasMcpServers,
-          clientsList,
           runnerStatus,
           runnerInfo,
           verbose: argv.verbose,

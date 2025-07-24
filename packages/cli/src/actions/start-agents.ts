@@ -93,7 +93,6 @@ export async function startAgentsAction(
 
     server = await startServer({
       port,
-      mcp: { enabled: options.mcp ?? false },
       runner: { enabled: options.runner ?? false },
       websocket: { enabled: options.websocket ?? false },
     });
