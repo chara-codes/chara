@@ -4,6 +4,8 @@ import { initPrompt } from "../prompts/init";
 import { providersRegistry } from "../providers";
 import { initTools } from "../tools/init-tools";
 
+let tools: Record<string, any> = { ...initTools };
+
 export const initAgent = async (
   {
     model,
@@ -25,16 +27,18 @@ export const initAgent = async (
     ...options,
     system: initPrompt({
       workingDir: cwd,
-      hasTools: !!Object.keys(initTools).length,
-      hasTool: (name: string) => Object.keys(initTools).includes(name),
+      hasTools: !!Object.keys(tools).length,
+      hasTool: (name: string) => Object.keys(tools).includes(name),
     }),
-    tools: {
-      ...initTools,
-    },
+    tools,
     model: aiModel,
     toolCallStreaming: true,
     experimental_continueSteps: true,
     maxSteps: 50,
     prompt: "Analyze the project and save configuration to .chara.json",
   });
+};
+
+initAgent.setTools = (newTools: Record<string, any>) => {
+  tools = { ...initTools, ...newTools };
 };

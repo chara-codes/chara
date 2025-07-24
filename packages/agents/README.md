@@ -76,9 +76,9 @@ for await (const chunk of response.fullStream) {
 ```typescript
 import { startServer } from '@chara-codes/agents';
 
+// Server reads .chara.json for MCP, runner, and other configurations
 const server = await startServer({
   port: 3031,
-  mcp: { enabled: true },
   websocket: { enabled: true },
   runner: { enabled: true }
 });
@@ -285,19 +285,31 @@ appEvents.emit('runner:restart', {
 
 ## Model Context Protocol (MCP)
 
-Integration with external MCP servers for extended functionality:
+Integration with external MCP servers for extended functionality is configured via your project's `.chara.json` file.
 
 ### MCP Configuration
 
-```typescript
-import { startServer } from '@chara-codes/agents';
+Add an `mcpServers` object to your `.chara.json` file. The server will automatically detect and connect to the configured servers upon start.
 
-const server = await startServer({
-  mcp: {
-    enabled: true,
-    initializeSync: false // Initialize in background
+**Example `.chara.json` with MCP servers:**
+```json
+{
+  "dev": "npm run dev",
+  "mcpServers": {
+    "file-system-tools": {
+      "command": "npx",
+      "args": ["-y", "@model-protocol/server-filesystem", "./"],
+      "enabled": true
+    },
+    "another-remote-server": {
+      "url": "https://example.com/mcp-sse-endpoint",
+      "enabled": true,
+      "headers": {
+        "x-api-key": "your-secret-key"
+      }
+    }
   }
-});
+}
 ```
 
 ### MCP Tools
