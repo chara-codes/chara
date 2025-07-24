@@ -1,5 +1,11 @@
 # @chara-codes/server
 
+## 0.1.21
+
+### Patch Changes
+
+- 070a6dd: Fix issue with MCP integration
+
 ## 0.1.20
 
 ### Patch Changes

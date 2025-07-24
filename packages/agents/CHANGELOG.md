@@ -1,5 +1,13 @@
 # @chara-codes/agents
 
+## 0.1.21
+
+### Patch Changes
+
+- 070a6dd: Fix issue with MCP integration
+- Updated dependencies [070a6dd]
+  - @chara-codes/settings@0.1.21
+
 ## 0.1.20
 
 ### Patch Changes
