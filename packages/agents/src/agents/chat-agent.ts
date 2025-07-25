@@ -1,5 +1,11 @@
 import { logger } from "@chara-codes/logger";
-import { streamText, type CoreMessage } from "ai";
+import {
+  generateObject,
+  NoSuchToolError,
+  smoothStream,
+  streamText,
+  type CoreMessage,
+} from "ai";
 import { chatPrompt } from "../prompts/chat";
 import { providersRegistry } from "../providers";
 import { chatToolsAskMode, chatToolsWriteMode } from "../tools/chat-tools";
@@ -86,10 +92,41 @@ export const chatAgent = async (
     }),
     tools: tools,
     model: aiModel,
-    temperature: 0.5,
+    temperature: 0.3,
     toolCallStreaming: true,
     experimental_continueSteps: true,
+    experimental_repairToolCall: async ({
+      toolCall,
+      tools,
+      parameterSchema,
+      error,
+    }) => {
+      if (NoSuchToolError.isInstance(error)) {
+        return null; // do not attempt to fix invalid tool names
+      }
+
+      const tool = tools[toolCall.toolName as keyof typeof tools];
+
+      const { object: repairedArgs } = await generateObject({
+        model: aiModel,
+        schema: tool.parameters,
+        prompt: [
+          `The model tried to call the tool "${toolCall.toolName}"` +
+            ` with the following arguments:`,
+          JSON.stringify(toolCall.args),
+          `The tool accepts the following schema:`,
+          JSON.stringify(parameterSchema(toolCall)),
+          "Please fix the arguments.",
+        ].join("\n"),
+      });
+
+      return { ...toolCall, args: JSON.stringify(repairedArgs) };
+    },
     maxSteps: 99,
+    experimental_transform: smoothStream({
+      delayInMs: 20, // optional: defaults to 10ms
+      chunking: "line", // optional: defaults to 'word'
+    }),
     messages: cleanedMessages,
     onFinish: (result) => {
       onFinish(result);
