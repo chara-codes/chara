@@ -1,26 +1,26 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import type { ToolCall } from "@chara-codes/core";
+import { useCallback, useState } from "react";
 import type React from "react";
 import { getToolIcon } from "../../atoms/icons";
-import {
-  ToolCallsContainer,
-  ToolCallName,
-  ToolCallStatus,
-  ToolCallArguments,
-  ToolCallArgumentsLabel,
-  ToolCallArgumentsContent,
-  ToolCallResult,
-  ToolCallResultLabel,
-  ToolCallResultContent,
-  ToolCallItemHeader,
-  ToolCallToggle,
-} from "./styles";
 import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
 // Import specialized tool components for enhanced display
 import { TerminalToolBlock } from "../tools";
 import { DiffBlock } from "../tools/diff-block";
-import type { ToolCall } from "@chara-codes/core";
+import {
+  ToolCallArguments,
+  ToolCallArgumentsContent,
+  ToolCallArgumentsLabel,
+  ToolCallItemHeader,
+  ToolCallName,
+  ToolCallResult,
+  ToolCallResultContent,
+  ToolCallResultLabel,
+  ToolCallsContainer,
+  ToolCallStatus,
+  ToolCallToggle,
+} from "./styles";
 
 interface ToolCallComponentProps {
   toolCall: ToolCall;
@@ -60,14 +60,14 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
   }
 
   // Edit file tool calls: Show diff view with before/after comparison
-  if (toolCallType === "edit-file") {
+  if (toolCallType === "edit-file" || toolCallType === "write-file") {
     return (
       <DiffBlock
         toolCall={toolCall}
         toolCallId={toolCallId}
         isVisible={true}
         showLineNumbers={true}
-        maxHeight={500}
+        maxHeight={300}
       />
     );
   }

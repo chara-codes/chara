@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { editFile } from "../edit-file";
 import { createTestFS } from "./test-utils";
 
@@ -18,9 +18,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("simple.txt", originalContent);
 
     const result = await editFile.execute({
-      display_description: "Replace World with Universe",
       path: filePath,
-      mode: "edit",
       edits: [{ oldText: "World", newText: "Universe" }],
     });
 
@@ -36,9 +34,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("multiple.txt", originalContent);
 
     const result = await editFile.execute({
-      display_description: "Replace World with Universe and test with example",
       path: filePath,
-      mode: "edit",
       edits: [
         { oldText: "World", newText: "Universe" },
         { oldText: "test", newText: "example" },
@@ -58,9 +54,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("multiline.js", originalContent);
 
     const result = await editFile.execute({
-      display_description: "Update function implementation",
       path: filePath,
-      mode: "edit",
       edits: [
         {
           oldText:
@@ -84,9 +78,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("indented.js", originalContent);
 
     const result = await editFile.execute({
-      display_description: "Update console message",
       path: filePath,
-      mode: "edit",
       edits: [
         {
           oldText: "console.log('hello');",
@@ -107,9 +99,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("whitespace.js", originalContent);
 
     const result = await editFile.execute({
-      display_description: "Update condition and function call",
       path: filePath,
-      mode: "edit",
       edits: [
         {
           oldText: "if (condition) {\n  doSomething();\n}",
@@ -128,9 +118,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("diff.txt", originalContent);
 
     const result = await editFile.execute({
-      display_description: "Modify line 2",
       path: filePath,
-      mode: "edit",
       edits: [{ oldText: "Line 2", newText: "Modified Line 2" }],
     });
 
@@ -143,9 +131,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("nomatch.txt", originalContent);
 
     const result = await editFile.execute({
-      display_description: "Try to replace non-existent text",
       path: filePath,
-      mode: "edit",
       edits: [{ oldText: "Non-existent text", newText: "Replacement" }],
     });
 
@@ -159,9 +145,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("empty.txt", "");
 
     const result = await editFile.execute({
-      display_description: "Try to edit empty file",
       path: filePath,
-      mode: "edit",
       edits: [{ oldText: "anything", newText: "something" }],
     });
 
@@ -176,15 +160,12 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("noedits.txt", originalContent);
 
     const result = await editFile.execute({
-      display_description: "No edits to perform",
       path: filePath,
-      mode: "edit",
       edits: [],
-    });
+    } as any);
 
-    expect(result.status).toBe("success");
-    expect(result.message).toContain("No changes made");
-    expect(await testFS.readFile("noedits.txt")).toBe(originalContent);
+    expect(result.status).toBe("error");
+    expect(result.message).toContain("'edits' parameter is required");
   });
 
   test("should handle line ending normalization", async () => {
@@ -192,9 +173,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("windows.txt", originalContent);
 
     const result = await editFile.execute({
-      display_description: "Modify line with Windows line endings",
       path: filePath,
-      mode: "edit",
       edits: [{ oldText: "Line 2", newText: "Modified Line 2" }],
     });
 
@@ -208,9 +187,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("special.txt", originalContent);
 
     const result = await editFile.execute({
-      display_description: "Replace special characters",
       path: filePath,
-      mode: "edit",
       edits: [{ oldText: "éñü 🚀", newText: "abc 123" }],
     });
 
@@ -228,9 +205,7 @@ describe("editFile tool", () => {
     );
 
     const result = await editFile.execute({
-      display_description: "Replace entire file content",
       path: filePath,
-      mode: "edit",
       edits: [{ oldText: originalContent, newText: "Brand new content" }],
     });
 
@@ -246,9 +221,7 @@ describe("editFile tool", () => {
     );
 
     const result = await editFile.execute({
-      display_description: "Add content to empty section",
       path: filePath,
-      mode: "edit",
       edits: [{ oldText: "\n\n", newText: "\nMiddle content\n" }],
     });
 
@@ -264,9 +237,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("nested.js", originalContent);
 
     const result = await editFile.execute({
-      display_description: "Update nested function logic",
       path: filePath,
-      mode: "edit",
       edits: [
         {
           oldText: "if (true) {\n        oldFunction();\n      }",
@@ -287,9 +258,7 @@ describe("editFile tool", () => {
     const nonExistentPath = testFS.getPath("does-not-exist.txt");
 
     const result = await editFile.execute({
-      display_description: "Try to edit non-existent file",
       path: nonExistentPath,
-      mode: "edit",
       edits: [{ oldText: "anything", newText: "something" }],
     });
 
@@ -304,9 +273,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("overlap.txt", originalContent);
 
     const result = await editFile.execute({
-      display_description: "Replace multiple overlapping parts",
       path: filePath,
-      mode: "edit",
       edits: [
         { oldText: "abc", newText: "xyz" },
         { oldText: "def", newText: "uvw" },
@@ -318,9 +285,7 @@ describe("editFile tool", () => {
   });
 
   test("should have correct tool metadata", () => {
-    expect(editFile.description).toContain(
-      "creating a new file or editing an existing file"
-    );
+    expect(editFile.description).toContain("making edits to existing files");
     expect(editFile.parameters).toBeDefined();
   });
 
@@ -330,9 +295,7 @@ describe("editFile tool", () => {
     const filePath = await testFS.createFile("large.txt", largeContent);
 
     const result = await editFile.execute({
-      display_description: "Replace target line in large file",
       path: filePath,
-      mode: "edit",
       edits: [{ oldText: "TARGET LINE", newText: "MODIFIED LINE" }],
     });
 
@@ -342,78 +305,12 @@ describe("editFile tool", () => {
     expect(newContent).not.toContain("TARGET LINE");
   });
 
-  test("should create new file", async () => {
-    const filePath = testFS.getPath("new-file.txt");
-    const content = "This is a new file";
-
-    const result = await editFile.execute({
-      display_description: "Create a new file",
-      path: filePath,
-      mode: "create",
-      content,
-    });
-
-    expect(result.status).toBe("success");
-    expect(result.message).toContain("Created file");
-    expect(await testFS.readFile("new-file.txt")).toBe(content);
-  });
-
-  test("should overwrite existing file", async () => {
-    const originalContent = "Original content";
-    const newContent = "Completely new content";
-    const filePath = await testFS.createFile("overwrite.txt", originalContent);
-
-    const result = await editFile.execute({
-      display_description: "Overwrite file with new content",
-      path: filePath,
-      mode: "overwrite",
-      content: newContent,
-    });
-
-    expect(result.status).toBe("success");
-    expect(result.message).toContain("Overwrote file");
-    expect(await testFS.readFile("overwrite.txt")).toBe(newContent);
-  });
-
-  test("should fail to create file that already exists", async () => {
-    const filePath = await testFS.createFile("exists.txt", "content");
-
-    const result = await editFile.execute({
-      display_description: "Try to create existing file",
-      path: filePath,
-      mode: "create",
-      content: "new content",
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("already exists");
-    expect(result.operation).toBe("create");
-    expect(result.path).toBe(filePath);
-  });
-
-  test("should fail to overwrite non-existent file", async () => {
-    const filePath = testFS.getPath("does-not-exist.txt");
-
-    const result = await editFile.execute({
-      display_description: "Try to overwrite non-existent file",
-      path: filePath,
-      mode: "overwrite",
-      content: "content",
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("does not exist");
-    expect(result.operation).toBe("overwrite");
-    expect(result.path).toBe(filePath);
-  });
-
-  test("should require edits parameter for edit mode", async () => {
+  test("should require edits parameter", async () => {
     const filePath = await testFS.createFile("test.txt", "content");
 
     const result = await editFile.execute({
-      display_description: "Edit without providing edits",
       path: filePath,
-      mode: "edit",
+      edits: [],
     });
 
     expect(result.status).toBe("error");
@@ -422,28 +319,12 @@ describe("editFile tool", () => {
     expect(result.path).toBe(filePath);
   });
 
-  test("should require content parameter for create mode", async () => {
-    const filePath = testFS.getPath("new.txt");
-
-    const result = await editFile.execute({
-      display_description: "Create without providing content",
-      path: filePath,
-      mode: "create",
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("'content' parameter is required");
-    expect(result.operation).toBe("create");
-    expect(result.path).toBe(filePath);
-  });
-
   test("should return error object with correct structure for validation failures", async () => {
-    const filePath = testFS.getPath("test.txt");
+    const filePath = testFS.getPath("non-existent.txt");
 
     const result = await editFile.execute({
-      display_description: "Test validation error structure",
       path: filePath,
-      mode: "edit",
+      edits: [{ oldText: "test", newText: "new" }],
     });
 
     expect(result).toHaveProperty("status", "error");
@@ -451,52 +332,23 @@ describe("editFile tool", () => {
     expect(result).toHaveProperty("operation", "edit");
     expect(result).toHaveProperty("path", filePath);
     expect(typeof result.message).toBe("string");
-  });
-
-  test("should return error for invalid mode", async () => {
-    const filePath = await testFS.createFile("test.txt", "content");
-
-    const result = await editFile.execute({
-      display_description: "Test invalid mode",
-      path: filePath,
-      mode: "invalid" as any,
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("Invalid mode");
-    expect(result.operation).toBe("invalid");
+    expect(result.message).toContain("does not exist");
   });
 
   test("should handle error cases with proper error object structure", async () => {
-    // Test multiple error scenarios to ensure consistent error object structure
-    const scenarios = [
-      {
-        name: "missing edits parameter",
-        params: {
-          display_description: "Test missing edits",
-          path: await testFS.createFile("test1.txt", "content"),
-          mode: "edit" as const,
-        },
-        expectedError: "'edits' parameter is required",
-      },
-      {
-        name: "missing content parameter",
-        params: {
-          display_description: "Test missing content",
-          path: testFS.getPath("new.txt"),
-          mode: "create" as const,
-        },
-        expectedError: "'content' parameter is required",
-      },
-    ];
+    // Test error scenarios to ensure consistent error object structure
+    const nonExistentPath = testFS.getPath("non-existent.txt");
 
-    for (const scenario of scenarios) {
-      const result = await editFile.execute(scenario.params);
-      expect(result.status).toBe("error");
-      expect(result.message).toContain(scenario.expectedError);
-      expect(result.operation).toBe(scenario.params.mode);
-      expect(result.path).toBe(scenario.params.path);
-    }
+    const result = await editFile.execute({
+      path: nonExistentPath,
+      edits: [{ oldText: "test", newText: "new" }],
+    });
+
+    expect(result.status).toBe("error");
+    expect(result.message).toContain("does not exist");
+    expect(result.operation).toBe("edit");
+    expect(result.path).toBe(nonExistentPath);
+    expect(typeof result.message).toBe("string");
   });
 
   test("should provide helpful error messages for LLM agents", async () => {
@@ -506,9 +358,7 @@ describe("editFile tool", () => {
     );
 
     const result = await editFile.execute({
-      display_description: "Test descriptive error for agents",
       path: filePath,
-      mode: "edit",
       edits: [{ oldText: "non-existent text", newText: "replacement" }],
     });
 

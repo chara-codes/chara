@@ -1,16 +1,17 @@
-import { readFile } from "./read-file";
+import { devServer } from "./dev-server";
+import { directory } from "./directory";
 import { editFile } from "./edit-file";
-import { moveFile } from "./move-file";
+import { examination } from "./examination";
 import { fetchTool } from "./fetch";
-import { terminal } from "./terminal";
-import { grep } from "./grep";
-import { thinking } from "./thinking";
 import { fileSystem } from "./file-system";
 import { find } from "./find";
-import { directory } from "./directory";
+import { grep } from "./grep";
 import { mkdir } from "./mkdir";
-import { devServer } from "./dev-server";
-import { examination } from "./examination";
+import { moveFile } from "./move-file";
+import { readFile } from "./read-file";
+import { terminal } from "./terminal";
+import { thinking } from "./thinking";
+import { writeFile } from "./write-file";
 
 // Legacy imports for backward compatibility
 
@@ -28,6 +29,7 @@ export { directory };
 export const modernTools = {
   "read-file": readFile,
   "edit-file": editFile,
+  "write-file": writeFile,
   "move-file": moveFile,
   "file-system": fileSystem,
   find: find,
@@ -45,6 +47,7 @@ export const modernTools = {
 export const tools = {
   "read-file": readFile,
   "edit-file": editFile,
+  "write-file": writeFile,
   "move-file": moveFile,
   "file-system": fileSystem, // Unified file system tool
   find: find,

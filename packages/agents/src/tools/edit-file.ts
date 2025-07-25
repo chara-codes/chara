@@ -1,70 +1,31 @@
 import { existsSync } from "fs";
-import { mkdir, readFile, writeFile } from "fs/promises";
-import { dirname } from "path";
+import { readFile, writeFile } from "fs/promises";
 import { tool } from "ai";
 import z from "zod";
 
-const EditFileMode = z.enum(["edit", "create", "overwrite"]);
-
 export const editFile = tool({
-  description: `This is a tool for creating a new file or editing an existing file. For moving or renaming files, you should generally use the terminal tool with the 'mv' command instead.
+  description: `This is a tool for making edits to existing files. For creating new files or completely overwriting files, use the write_file tool instead. For moving or renaming files, use the terminal tool with the 'mv' command.
 
 Before using this tool:
 
-1. Use the read_file tool to understand the file's contents and context (not applicable when creating new files)
-
-2. Verify the directory path is correct (only applicable when creating new files):
-   - Use the directory tool to verify the parent directory exists and is the correct location`,
+1. Use the read_file tool to understand the file's contents and context
+2. Ensure the file exists - this tool only works with existing files`,
 
   parameters: z.object({
-    display_description: z.string().describe(
-      `A one-line, user-friendly markdown description of the edit. This will be shown in the UI and also passed to another model to perform the edit.
-
-Be terse, but also descriptive in what you want to achieve with this edit. Avoid generic instructions.
-
-NEVER mention the file path in this description.
-
-<example>Fix API endpoint URLs</example>
-<example>Update copyright year in page_footer</example>
-
-Make sure to include this field before all the others in the input object so that we can display it immediately.`
-    ),
-
     path: z.string().describe(
-      `The full path of the file to create or modify in the project.
+      `The relative path of the file to edit in the project.
 
-WARNING: When specifying which file path need changing, you MUST start each path with one of the project's root directories.
-
-The following examples assume we have two root directories in the project:
-- backend
-- frontend
+WARNING: When specifying which file path need changing, you MUST
+start each path with one of the project's root directories.
 
 <example>
 backend/src/main.rs
-
-Notice how the file path starts with root-1. Without that, the path would be ambiguous and the call would fail!
 </example>
 
 <example>
 frontend/db.js
 </example>`
     ),
-
-    mode: EditFileMode.describe(
-      `The mode of operation on the file. Possible values:
-- 'edit': Make granular edits to an existing file.
-- 'create': Create a new file if it doesn't exist.
-- 'overwrite': Replace the entire contents of an existing file.
-
-When a file already exists or you just created it, prefer editing it as opposed to recreating it from scratch.`
-    ),
-
-    content: z
-      .string()
-      .optional()
-      .describe(
-        "The new content for the file (required for 'create' and 'overwrite' modes)"
-      ),
 
     edits: z
       .array(
@@ -75,197 +36,110 @@ When a file already exists or you just created it, prefer editing it as opposed 
           newText: z.string().describe("Text to replace with"),
         })
       )
-      .optional()
-      .describe("Array of edit operations to apply (required for 'edit' mode)"),
+      .describe("Array of edit operations to apply to the file"),
   }),
 
-  execute: async ({ display_description, path, mode, content, edits }) => {
+  execute: async ({ path, edits }) => {
     try {
       // Parse edits if it's a JSON string
-      let parsedEdits: Array<{ oldText: string; newText: string }> | undefined;
-      if (edits) {
-        if (typeof edits === "string") {
-          try {
-            parsedEdits = JSON.parse(edits);
-          } catch (parseError) {
-            return {
-              status: "error",
-              message: `Invalid JSON in edits parameter: ${
-                parseError instanceof Error
-                  ? parseError.message
-                  : String(parseError)
-              }`,
-              operation: mode,
-              path,
-            };
-          }
-        } else {
-          parsedEdits = edits;
+      let parsedEdits: Array<{ oldText: string; newText: string }>;
+      if (typeof edits === "string") {
+        try {
+          parsedEdits = JSON.parse(edits);
+        } catch (parseError) {
+          return {
+            status: "error",
+            message: `Invalid JSON in edits parameter: ${
+              parseError instanceof Error
+                ? parseError.message
+                : String(parseError)
+            }`,
+            operation: "edit",
+            path,
+          };
         }
+      } else {
+        parsedEdits = edits!;
       }
 
-      // Validate inputs based on mode
-      if (mode === "edit" && !parsedEdits) {
-        return {
-          status: "error",
-          message: "'edits' parameter is required for edit mode",
-          operation: mode,
-          path,
-        };
-      }
-
-      if ((mode === "create" || mode === "overwrite") && !content) {
+      // Validate that edits are provided
+      if (!parsedEdits || parsedEdits.length === 0) {
         return {
           status: "error",
           message:
-            "'content' parameter is required for create and overwrite modes",
-          operation: mode,
+            "'edits' parameter is required and must contain at least one edit",
+          operation: "edit",
           path,
         };
       }
 
       const fileExists = existsSync(path);
 
-      // Validate file existence based on mode
-      if (mode === "edit" && !fileExists) {
+      // Validate file exists
+      if (!fileExists) {
         return {
           status: "error",
-          message: `Cannot edit file: ${path} does not exist`,
-          operation: mode,
+          message: `Cannot edit file: ${path} does not exist. Use write_file tool to create new files.`,
+          operation: "edit",
           path,
         };
       }
 
-      if (mode === "create" && fileExists) {
-        return {
-          status: "error",
-          message: `Cannot create file: ${path} already exists`,
-          operation: mode,
-          path,
-        };
-      }
+      const originalContent = await readFile(path, "utf8");
+      let modifiedContent = originalContent;
 
-      if (mode === "overwrite" && !fileExists) {
-        return {
-          status: "error",
-          message: `Cannot overwrite file: ${path} does not exist`,
-          operation: mode,
-          path,
-        };
-      }
+      // Apply edits sequentially
+      for (const edit of parsedEdits) {
+        const { oldText, newText } = edit;
 
-      let result: string;
-      let operation: string;
-
-      switch (mode) {
-        case "create": {
-          // Ensure parent directory exists
-          const parentDir = dirname(path);
-          if (!existsSync(parentDir)) {
-            await mkdir(parentDir, { recursive: true });
+        if (!modifiedContent.includes(oldText)) {
+          // Try line-by-line matching with normalized whitespace
+          const success = tryFlexibleMatch(modifiedContent, oldText, newText);
+          if (success.matched) {
+            modifiedContent = success.content;
+            continue;
           }
 
-          await writeFile(path, content!, "utf8");
-          result = `Created file ${path}`;
-          operation = "created";
-          break;
-        }
-
-        case "overwrite": {
-          const originalContent = await readFile(path, "utf8");
-          await writeFile(path, content!, "utf8");
-
-          const diff = createDiff(originalContent, content!);
-          result = `Overwrote file ${path}`;
-          operation = "overwritten";
-
-          return {
-            status: "success",
-            message: result,
-            operation,
-            path,
-            diff: diff || "File completely replaced",
-          };
-        }
-
-        case "edit": {
-          const originalContent = await readFile(path, "utf8");
-          let modifiedContent = originalContent;
-
-          // Apply edits sequentially
-          for (const edit of parsedEdits!) {
-            const { oldText, newText } = edit;
-
-            if (!modifiedContent.includes(oldText)) {
-              // Try line-by-line matching with normalized whitespace
-              const success = tryFlexibleMatch(
-                modifiedContent,
-                oldText,
-                newText
-              );
-              if (success.matched) {
-                modifiedContent = success.content;
-                continue;
-              }
-
-              return {
-                status: "error",
-                message: `Could not find exact match for edit:\n${oldText}\n\nIn file: ${path}`,
-                operation: mode,
-                path,
-              };
-            }
-
-            modifiedContent = modifiedContent.replaceAll(oldText, newText);
-          }
-
-          if (modifiedContent === originalContent) {
-            return {
-              status: "success",
-              message: `No changes made to ${path}`,
-              operation: "no-change",
-              path,
-              diff: "No changes",
-            };
-          }
-
-          await writeFile(path, modifiedContent, "utf8");
-
-          const diff = createDiff(originalContent, modifiedContent);
-          result = `Successfully edited ${path}`;
-          operation = "edited";
-
-          return {
-            status: "success",
-            message: result,
-            operation,
-            path,
-            diff: diff || "Changes applied",
-          };
-        }
-
-        default:
           return {
             status: "error",
-            message: `Invalid mode: ${mode}`,
-            operation: mode,
+            message: `Could not find exact match for edit:\n${oldText}\n\nIn file: ${path}`,
+            operation: "edit",
             path,
           };
+        }
+
+        modifiedContent = modifiedContent.replaceAll(oldText, newText);
       }
+
+      if (modifiedContent === originalContent) {
+        return {
+          status: "success",
+          message: `No changes made to ${path}`,
+          operation: "no-change",
+          path,
+          diff: "No changes",
+        };
+      }
+
+      await writeFile(path, modifiedContent, "utf8");
+
+      const diff = createDiff(originalContent, modifiedContent);
+      const result = `Successfully edited ${path}`;
 
       return {
         status: "success",
         message: result,
-        operation,
+        operation: "edited",
         path,
+        diff: diff || "Changes applied",
       };
     } catch (error) {
       return {
         status: "error",
-        message: `Failed to ${mode} file: ${
+        message: `Failed to edit file: ${
           error instanceof Error ? error.message : String(error)
         }`,
-        operation: mode,
+        operation: "edit",
         path,
       };
     }

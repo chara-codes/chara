@@ -1,21 +1,23 @@
-import { readFile } from "./read-file";
-import { editFile } from "./edit-file";
-import { moveFile } from "./move-file";
-import { fetchTool } from "./fetch";
-import { terminal } from "./terminal";
-import { grep } from "./grep";
-import { thinking } from "./thinking";
-import { fileSystem } from "./file-system";
 import { devServer } from "./dev-server";
-import { examination } from "./examination";
-import { mkdir } from "./mkdir";
 import { directory } from "./directory";
+import { editFile } from "./edit-file";
+import { examination } from "./examination";
+import { fetchTool } from "./fetch";
+import { fileSystem } from "./file-system";
 import { find } from "./find";
+import { grep } from "./grep";
+import { mkdir } from "./mkdir";
+import { moveFile } from "./move-file";
+import { readFile } from "./read-file";
+import { terminal } from "./terminal";
+import { thinking } from "./thinking";
+import { writeFile } from "./write-file";
 
 // Tools for write mode - all tools available for interactive development
 export const chatToolsWriteMode = {
   "read-file": readFile,
   "edit-file": editFile,
+  "write-file": writeFile,
   "file-system": fileSystem,
   "move-file": moveFile,
   mkdir,
