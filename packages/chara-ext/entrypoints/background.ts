@@ -1,36 +1,52 @@
 export default defineBackground(() => {
   console.log("Hello background!", { id: browser.runtime.id });
 
+  // (browser.action ?? browser.browserAction).onClicked.addListener(
+  //   async (tab) => {
+  //     console.log("Active Tab", tab);
+
+  //     if (tab.id && tab.url) {
+  //       const res = await browser.scripting.executeScript({
+  //         target: { tabId: tab.id },
+  //         files: ["/content-scripts/content.js"],
+  //       });
+  //       console.log("result", res);
+  //     }
+  //   }
+  // );
+
   // Handle extension icon click to open side panel
-  chrome.action.onClicked.addListener(async (tab: chrome.tabs.Tab) => {
-    if (!tab.id) return;
+  (browser.action ?? browser.browserAction).onClicked.addListener(
+    async (tab) => {
+      console.log("Ololo");
+      if (!tab.id) return;
 
-    try {
-      // Check if side panel API is available (Chrome 114+)
-      if (chrome.sidePanel) {
-        // Open the side panel
-        await chrome.sidePanel.open({ tabId: tab.id });
-      } else {
-        // Fallback: inject content script to show side panel
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: () => {
-            // Check if side panel already exists
-            const existingPanel = document.querySelector(
-              "#chara-extension-sidepanel",
-            ) as HTMLElement | null;
+      try {
+        // Check if side panel API is available (Chrome 114+)
+        if (browser.sidePanel) {
+          // Open the side panel
+          await browser.sidePanel.open({ tabId: tab.id });
+        } else {
+          // Fallback: inject content script to show side panel
+          await browser.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+              // Check if side panel already exists
+              const existingPanel = document.querySelector(
+                "#chara-extension-sidepanel"
+              ) as HTMLElement | null;
 
-            if (existingPanel) {
-              // Toggle visibility
-              const isHidden = existingPanel.style.display === "none";
-              existingPanel.style.display = isHidden ? "block" : "none";
-              return;
-            }
+              if (existingPanel) {
+                // Toggle visibility
+                const isHidden = existingPanel.style.display === "none";
+                existingPanel.style.display = isHidden ? "block" : "none";
+                return;
+              }
 
-            // Create and inject side panel
-            const panel = document.createElement("div");
-            panel.id = "chara-extension-sidepanel";
-            panel.style.cssText = `
+              // Create and inject side panel
+              const panel = document.createElement("div");
+              panel.id = "chara-extension-sidepanel";
+              panel.style.cssText = `
               position: fixed;
               top: 0;
               right: 0;
@@ -44,47 +60,44 @@ export default defineBackground(() => {
               transition: transform 0.3s ease-in-out;
             `;
 
-            // Create iframe to load side panel content
-            const iframe = document.createElement("iframe");
-            iframe.src = chrome.runtime.getURL("sidepanel/index.html");
-            iframe.style.cssText = `
+              // Create iframe to load side panel content
+              const iframe = document.createElement("iframe");
+              iframe.src = chrome.runtime.getURL("sidepanel/index.html");
+              iframe.style.cssText = `
               width: 100%;
               height: 100%;
               border: none;
             `;
 
-            panel.appendChild(iframe);
-            document.body.appendChild(panel);
+              panel.appendChild(iframe);
+              document.body.appendChild(panel);
 
-            // Animate panel in
-            setTimeout(() => {
-              panel.style.transform = "translateX(0)";
-            }, 10);
+              // Animate panel in
+              setTimeout(() => {
+                panel.style.transform = "translateX(0)";
+              }, 10);
 
-            // Handle close button (will be handled by iframe content)
-            window.addEventListener("message", (event: MessageEvent) => {
-              if (event.data.action === "closeSidePanel") {
-                panel.style.transform = "translateX(100%)";
-                setTimeout(() => {
-                  panel.remove();
-                }, 300);
-              }
-            });
-          },
-        });
+              // Handle close button (will be handled by iframe content)
+              window.addEventListener("message", (event: MessageEvent) => {
+                if (event.data.action === "closeSidePanel") {
+                  panel.style.transform = "translateX(100%)";
+                  setTimeout(() => {
+                    panel.remove();
+                  }, 300);
+                }
+              });
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Error opening side panel:", error);
       }
-    } catch (error) {
-      console.error("Error opening side panel:", error);
     }
-  });
+  );
 
   // Handle messages from content scripts and side panel
-  chrome.runtime.onMessage.addListener(
-    (
-      message: any,
-      _sender: chrome.runtime.MessageSender,
-      _sendResponse: (response?: any) => void,
-    ) => {
+  browser.runtime.onMessage.addListener(
+    (message: any, _sender: any, _sendResponse: (response?: any) => void) => {
       if (message.action === "toggleSidePanel") {
         // Forward message to active tab
         chrome.tabs.query(
@@ -93,16 +106,16 @@ export default defineBackground(() => {
             if (tabs[0]?.id) {
               chrome.tabs.sendMessage(tabs[0].id, message);
             }
-          },
+          }
         );
       }
 
       return true;
-    },
+    }
   );
 
   // Set up side panel (if API is available)
-  if (chrome.sidePanel) {
-    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+  if (browser.sidePanel) {
+    browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
   }
 });
