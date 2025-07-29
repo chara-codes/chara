@@ -62,7 +62,7 @@ export default defineBackground(() => {
 
               // Create iframe to load side panel content
               const iframe = document.createElement("iframe");
-              iframe.src = chrome.runtime.getURL("sidepanel/index.html");
+              iframe.src = browser.runtime.getURL("sidepanel/index.html");
               iframe.style.cssText = `
               width: 100%;
               height: 100%;
@@ -100,16 +100,12 @@ export default defineBackground(() => {
     (message: any, _sender: any, _sendResponse: (response?: any) => void) => {
       if (message.action === "toggleSidePanel") {
         // Forward message to active tab
-        chrome.tabs.query(
-          { active: true, currentWindow: true },
-          (tabs: chrome.tabs.Tab[]) => {
-            if (tabs[0]?.id) {
-              chrome.tabs.sendMessage(tabs[0].id, message);
-            }
+        browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]?.id) {
+            browser.tabs.sendMessage(tabs[0].id, message);
           }
-        );
+        });
       }
-
       return true;
     }
   );
