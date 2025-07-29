@@ -23,6 +23,10 @@ export { beautifyAgent } from "./agents/beautify-agent";
 export { chatAgent, cleanMessages } from "./agents/chat-agent";
 export { gitAgent } from "./agents/git-agent";
 export { initAgent } from "./agents/init-agent";
+export {
+  suggestionAgent,
+  parseSuggestionsFromResponse,
+} from "./agents/suggestion-agent";
 // Export providers for external use
 export { initialize, providersRegistry } from "./providers/";
 // Export git service for external use

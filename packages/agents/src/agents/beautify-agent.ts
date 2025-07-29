@@ -1,5 +1,5 @@
 import { logger } from "@chara-codes/logger";
-import { type CoreMessage, streamText } from "ai";
+import { streamText, type CoreMessage } from "ai";
 import { providersRegistry } from "../providers";
 
 export const beautifyAgent = async (
@@ -30,14 +30,5 @@ export const beautifyAgent = async (
     onError: (err) => {
       logger.dump(err);
     },
-    // experimental_telemetry: {
-    //   isEnabled: true,
-    //   tracer: getTracer(),
-    //   metadata: {
-    //     agent: "beautify",
-    //     provider: providerName,
-    //     model: modelName,
-    //   },
-    // },
   });
 };
