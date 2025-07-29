@@ -1,0 +1,10 @@
+[test]
+# Test timeout configuration
+timeout = 10000
+
+# Coverage configuration
+coverage = false
+
+[install]
+# Faster installs for development
+frozenLockfile = false
