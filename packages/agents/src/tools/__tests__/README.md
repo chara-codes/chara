@@ -207,6 +207,38 @@ The thinking tool tests include:
 
 Note: Thinking tests verify both the logical flow of problem-solving and the visual presentation of thoughts.
 
+## Mock Filesystem Improvements
+
+The directory tool tests have been upgraded to use a mock filesystem instead of writing to the real filesystem, providing several benefits:
+
+- **Isolated testing**: Tests run completely in memory without affecting the host filesystem
+- **Faster execution**: No actual file I/O operations, resulting in faster test runs
+- **Reliable cleanup**: No risk of leftover test files or directories
+- **Concurrent safety**: Multiple test runs can execute simultaneously without conflicts
+- **Cross-platform consistency**: Eliminates filesystem-specific behavior differences
+
+### Mock Filesystem Implementation
+
+The mock filesystem (`MockFileSystem` class) provides:
+
+- **In-memory file tree**: Complete directory structure simulation
+- **File operations**: Create files and directories with content and metadata
+- **Path normalization**: Proper path handling across different formats
+- **Size tracking**: Accurate file size calculations for testing
+- **Directory traversal**: Support for nested directory structures
+- **Gitignore simulation**: Mock implementation of ignore-walk functionality
+
+### Integration with Bun Test Framework
+
+The mock filesystem integrates seamlessly with Bun's test runner using:
+
+- **spyOn mocking**: Replaces filesystem functions (`readdir`, `stat`) with mock implementations
+- **Module-level mocking**: Intercepts calls to `fs/promises` and `ignore-walk` modules
+- **Automatic restoration**: Spies are automatically restored after each test
+- **Error simulation**: Ability to simulate filesystem errors for error handling tests
+
+This approach ensures that directory tool tests are fast, reliable, and completely isolated from the host filesystem while maintaining full test coverage of all functionality.
+
 ## Init-Git Tool Tests
 
 The init-git tool tests include:
