@@ -1,5 +1,5 @@
 import { logger } from "@chara-codes/logger";
-import { streamText, type CoreMessage } from "ai";
+import { generateText, type CoreMessage } from "ai";
 import { suggestionPrompt } from "../prompts/suggestion";
 import { providersRegistry } from "../providers";
 import { chatToolsAskMode } from "../tools/chat-tools";
@@ -19,11 +19,13 @@ export const suggestionAgent = async (
     messages,
     workingDir = process.cwd(),
     maxSuggestions = 10,
+    tools = {},
   }: {
     model: string;
     messages: CoreMessage[];
     workingDir?: string;
     maxSuggestions?: number;
+    tools?: Record<string, unknown>;
   },
   options: { headers?: Record<string, string> } = {}
 ) => {
@@ -31,21 +33,27 @@ export const suggestionAgent = async (
     model.split(":::");
   const aiModel = await providersRegistry.getModel(providerName, modelName);
 
+  // Combine built-in tools with external MCP tools
+  const allTools = { ...chatToolsAskMode, ...tools };
+  const totalTools = Object.keys(allTools).length;
+
   logger.debug(
     `🔍 Generating suggestions for working directory: ${workingDir}`
   );
+  logger.debug(
+    `🔧 Using ${totalTools} tools (${Object.keys(tools).length} external)`
+  );
 
-  return streamText({
+  return generateText({
     ...options,
     model: aiModel,
     system: suggestionPrompt({
       workingDir,
-      hasTools: true,
+      hasTools: totalTools > 0,
       maxSuggestions,
     }),
-    tools: chatToolsAskMode,
+    tools: allTools,
     temperature: 0.3,
-    toolCallStreaming: true,
     experimental_continueSteps: true,
     maxSteps: 10,
     messages,

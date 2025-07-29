@@ -11,6 +11,7 @@ import {
   modelsController,
   providersController,
   statusController,
+  suggestController,
 } from "./controllers";
 import { closeMcpClients, initializeMcpTools } from "./mcp/mcp-servers";
 import { initialize } from "./providers/";
@@ -139,6 +140,7 @@ function createServerConfig(config: {
     routes: {
       // Static routes
       "/api/chat": chatController,
+      "/api/suggest": suggestController,
       "/api/status": statusController.getStatus,
       "/api/models": modelsController.getModels,
       "/api/providers": providersController.list,
@@ -292,6 +294,7 @@ export async function startServer(
   // --- MCP Initialization ---
   // Initialize controllers with empty tools first
   chatController.setTools({});
+  suggestController.setTools({});
   initAgent.setTools({});
 
   // Asynchronously initialize MCP tools and update controllers when done
@@ -304,6 +307,7 @@ export async function startServer(
         `✅ MCP background initialization complete! Loaded ${mcpCount} tools.`
       );
       chatController.setTools(mcpTools);
+      suggestController.setTools(mcpTools);
       initAgent.setTools(mcpTools);
     } else {
       logger.debug(
