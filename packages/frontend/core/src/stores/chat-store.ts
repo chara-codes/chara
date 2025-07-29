@@ -8,6 +8,8 @@ import {
   deleteMessages,
   fetchChatHistory,
   fetchChats,
+  getFirstMessage,
+  getSuggestedPrompts,
   processChatStream,
   resetToCommit,
   saveMessage,
@@ -71,7 +73,7 @@ interface ChatState {
     toolCalls?: any
   ) => Promise<void>;
   loadChatHistory: (chatId: string) => Promise<void>;
-  getSuggestedPrompts: () => string[];
+  getSuggestedPrompts: () => Promise<string[]>;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -796,19 +798,76 @@ export const useChatStore = create<ChatState>()(
           }
         },
 
-        getSuggestedPrompts: () => {
-          return [
-            "Help me brainstorm ideas for a new mobile app that helps people track their daily habits",
-            "How do I implement a debounce function in JavaScript?",
-            "Write a professional email to request a meeting with a potential client",
-            "Explain the concept of React hooks and how they improve component development",
-            "Give me feedback on my website design and suggest improvements",
-            "What are the best practices for optimizing database queries?",
-            "Help me debug this code that's causing a memory leak in my Node.js application",
-            "Create a plan for launching a new product in the next quarter",
-            "Summarize this article about artificial intelligence trends",
-            "Compare and contrast microservices vs monolithic architecture",
-          ];
+        getSuggestedPrompts: async () => {
+          try {
+            const { chats, model } = get();
+
+            // Extract first messages from previous chats
+            const previousMessages: Array<{ role: string; content: string }> =
+              [];
+
+            for (const chat of chats.slice(0, 10)) {
+              // Limit to 10 most recent chats
+              try {
+                const firstMessage = await getFirstMessage(chat.id);
+                if (firstMessage) {
+                  previousMessages.push({
+                    role: firstMessage.role,
+                    content: firstMessage.message,
+                  });
+                }
+              } catch (error) {
+                console.warn(
+                  `Failed to fetch history for chat ${chat.id}:`,
+                  error
+                );
+              }
+            }
+
+            // If no previous messages, add a default context message
+            if (previousMessages.length === 0) {
+              previousMessages.push({
+                role: "user",
+                content:
+                  "I need suggestions for what to work on next in my project.",
+              });
+            }
+
+            const suggestions = await getSuggestedPrompts(
+              model,
+              previousMessages,
+              10
+            );
+
+            return suggestions.length > 0
+              ? suggestions
+              : [
+                  "Help me brainstorm ideas for a new mobile app that helps people track their daily habits",
+                  "How do I implement a debounce function in JavaScript?",
+                  "Write a professional email to request a meeting with a potential client",
+                  "Explain the concept of React hooks and how they improve component development",
+                  "Give me feedback on my website design and suggest improvements",
+                  "What are the best practices for optimizing database queries?",
+                  "Help me debug this code that's causing a memory leak in my Node.js application",
+                  "Create a plan for launching a new product in the next quarter",
+                  "Summarize this article about artificial intelligence trends",
+                  "Compare and contrast microservices vs monolithic architecture",
+                ];
+          } catch (error) {
+            console.error("Error getting suggested prompts:", error);
+            return [
+              "Help me brainstorm ideas for a new mobile app that helps people track their daily habits",
+              "How do I implement a debounce function in JavaScript?",
+              "Write a professional email to request a meeting with a potential client",
+              "Explain the concept of React hooks and how they improve component development",
+              "Give me feedback on my website design and suggest improvements",
+              "What are the best practices for optimizing database queries?",
+              "Help me debug this code that's causing a memory leak in my Node.js application",
+              "Create a plan for launching a new product in the next quarter",
+              "Summarize this article about artificial intelligence trends",
+              "Compare and contrast microservices vs monolithic architecture",
+            ];
+          }
         },
       }),
       {

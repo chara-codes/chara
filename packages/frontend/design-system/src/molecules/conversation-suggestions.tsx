@@ -168,12 +168,31 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([]);
+  const [isLoadingPrompts, setIsLoadingPrompts] = useState(true);
 
   // Get suggested prompts from chat store
   const getSuggestedPrompts = useChatStore(
     (state) => (state as any).getSuggestedPrompts
   );
-  const suggestedPrompts = getSuggestedPrompts();
+
+  // Load suggested prompts on component mount
+  useEffect(() => {
+    const loadPrompts = async () => {
+      setIsLoadingPrompts(true);
+      try {
+        const prompts = await getSuggestedPrompts();
+        setSuggestedPrompts(prompts);
+      } catch (error) {
+        console.error("Failed to load suggested prompts:", error);
+        setSuggestedPrompts([]);
+      } finally {
+        setIsLoadingPrompts(false);
+      }
+    };
+
+    loadPrompts();
+  }, [getSuggestedPrompts]);
 
   const checkScrollability = useCallback(() => {
     const el = scrollRef.current;
@@ -241,14 +260,20 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
           </LeftScrollButton>
         )}
         <ScrollContainer ref={scrollRef}>
-          {suggestedPrompts.map((prompt, index) => (
-            <PromptBlockComponent
-              // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-              key={index}
-              text={prompt}
-              onClick={() => onSelectSuggestion(prompt)}
-            />
-          ))}
+          {isLoadingPrompts ? (
+            <div style={{ padding: "16px", color: "#666" }}>
+              Loading suggestions...
+            </div>
+          ) : (
+            suggestedPrompts.map((prompt, index) => (
+              <PromptBlockComponent
+                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                key={index}
+                text={prompt}
+                onClick={() => onSelectSuggestion(prompt)}
+              />
+            ))
+          )}
         </ScrollContainer>
         {canScrollRight && (
           <RightScrollButton

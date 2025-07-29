@@ -197,6 +197,7 @@ export async function fetchChatHistory(
   options?: {
     lastMessageId?: string | null;
     limit?: number;
+    firstMessageOnly?: boolean;
   }
 ): Promise<{
   chatId: string;
@@ -216,7 +217,7 @@ export async function fetchChatHistory(
     const result = await client.chat.getHistory.query({
       chatId: parseInt(chatId),
       lastMessageId: options?.lastMessageId,
-      limit: options?.limit,
+      limit: options?.firstMessageOnly ? 1 : options?.limit,
     });
 
     return {
@@ -262,5 +263,68 @@ export async function resetToCommit(commit: string): Promise<{
   } catch (error) {
     console.error("Error resetting to commit:", error);
     throw error;
+  }
+}
+
+// Function to get suggested prompts
+export async function getSuggestedPrompts(
+  model: string,
+  previousMessages: Array<{ role: string; content: string }>,
+  maxSuggestions: number = 10
+): Promise<string[]> {
+  const agentsUrl = import.meta.env?.VITE_AGENTS_BASE_URL
+    ? `${import.meta.env.VITE_AGENTS_BASE_URL}api/suggest`
+    : "http://localhost:3031/api/suggest";
+
+  try {
+    const response = await fetch(
+      `${agentsUrl}?maxSuggestions=${maxSuggestions}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: previousMessages,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || `Failed to get suggestions: ${response.status}`
+      );
+    }
+
+    const result = await response.json();
+    console.log(
+      `Successfully fetched ${result.suggestions.length} suggestions`
+    );
+    return result.suggestions || [];
+  } catch (error) {
+    console.error("Error getting suggested prompts:", error);
+    return [];
+  }
+}
+
+// Helper function to get just the first message from a chat
+export async function getFirstMessage(chatId: string): Promise<{
+  id: string;
+  message: string;
+  role: string;
+  timestamp: number;
+  context?: any;
+  toolCalls?: Record<string, any>;
+  commit?: string;
+} | null> {
+  try {
+    const result = await fetchChatHistory(chatId, { firstMessageOnly: true });
+    return result.history.length > 0 ? result.history[0] : null;
+  } catch (error) {
+    console.error("Error fetching first message:", error);
+    return null;
   }
 }

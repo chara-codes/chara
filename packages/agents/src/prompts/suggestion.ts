@@ -60,6 +60,8 @@ Always gather sufficient context through tool usage before generating suggestion
 
 ## Response Format
 
+IMPORTANT: Respond ONLY with the list of prompt suggestions. Do NOT include any introductory text, analysis, explanations, or commentary about the project. Start immediately with the first suggestion.
+
 Format your response with each suggestion separated by <---> on its own line. Each suggestion should be a clear, actionable prompt that a developer could use immediately.
 
 Each suggestion should:
@@ -84,5 +86,7 @@ Optimize the database queries in the product listing feature to improve page loa
 
 Add TypeScript interfaces for the API response objects to improve type safety
 
-Focus on generating suggestions that feel like they come from an experienced developer who has actually looked at the codebase and understands the current development needs.`;
+Focus on generating suggestions that feel like they come from an experienced developer who has actually looked at the codebase and understands the current development needs.
+
+REMEMBER: No introductory text - respond with ONLY the prompt suggestions list.`;
 };

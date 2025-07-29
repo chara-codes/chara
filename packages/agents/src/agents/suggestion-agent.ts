@@ -56,7 +56,14 @@ export const suggestionAgent = async (
     temperature: 0.3,
     experimental_continueSteps: true,
     maxSteps: 10,
-    messages,
+    messages: [
+      {
+        ...messages,
+        role: "user",
+        content:
+          "Suggest a list of prompts, use previous messages as reference",
+      },
+    ],
     onError: (err) => {
       logger.dump(err);
     },
