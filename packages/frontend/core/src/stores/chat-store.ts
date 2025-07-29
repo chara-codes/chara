@@ -71,6 +71,7 @@ interface ChatState {
     toolCalls?: any
   ) => Promise<void>;
   loadChatHistory: (chatId: string) => Promise<void>;
+  getSuggestedPrompts: () => string[];
 }
 
 export const useChatStore = create<ChatState>()(
@@ -768,10 +769,10 @@ export const useChatStore = create<ChatState>()(
               }
 
               if (msg.toolCalls) {
-                messageObj.toolCalls = JSON.parse(msg.toolCalls) as Record<
-                  string,
-                  ToolCall
-                >;
+                messageObj.toolCalls =
+                  typeof msg.toolCalls === "string"
+                    ? (JSON.parse(msg.toolCalls) as Record<string, ToolCall>)
+                    : (msg.toolCalls as Record<string, ToolCall>);
               }
 
               return messageObj;
@@ -793,6 +794,21 @@ export const useChatStore = create<ChatState>()(
             set({ isLoading: false });
             throw error;
           }
+        },
+
+        getSuggestedPrompts: () => {
+          return [
+            "Help me brainstorm ideas for a new mobile app that helps people track their daily habits",
+            "How do I implement a debounce function in JavaScript?",
+            "Write a professional email to request a meeting with a potential client",
+            "Explain the concept of React hooks and how they improve component development",
+            "Give me feedback on my website design and suggest improvements",
+            "What are the best practices for optimizing database queries?",
+            "Help me debug this code that's causing a memory leak in my Node.js application",
+            "Create a plan for launching a new product in the next quarter",
+            "Summarize this article about artificial intelligence trends",
+            "Compare and contrast microservices vs monolithic architecture",
+          ];
         },
       }),
       {

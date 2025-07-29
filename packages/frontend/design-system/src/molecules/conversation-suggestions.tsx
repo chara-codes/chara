@@ -1,10 +1,11 @@
 "use client";
 
-import type React from "react";
-import { useRef, useState, useEffect, useCallback } from "react";
-import styled from "styled-components";
-import type { Theme } from "@/theme";
+import { useChatStore } from "@chara-codes/core";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import styled from "styled-components";
+import type { Theme } from "../../theme";
 
 interface PromptBlockProps {
   text: string;
@@ -73,10 +74,9 @@ const ScrollContainer = styled.div`
 const PromptBlock = styled.div`
   display: flex;
   align-items: center;
-  min-width: fit-content;
-  max-width: 220px; /* Increased max width */
-  height: 36px;
-  padding: 0 16px;
+  width: 240px; /* Fixed width for 30-40 characters */
+  height: 32px; /* Slightly reduced height for better proportions */
+  padding: 0 12px; /* Reduced padding for more compact look */
   margin-right: 8px;
   background-color: ${({ theme }) =>
     (theme as Theme).colors.backgroundSecondary};
@@ -98,7 +98,7 @@ const PromptBlock = styled.div`
 `;
 
 const PromptText = styled.span`
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   color: ${({ theme }) => (theme as Theme).colors.text};
   white-space: nowrap;
@@ -169,33 +169,11 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // Define conversation prompts
-  const prompts = [
-    "Help me brainstorm ideas for...",
-    "How do I implement...",
-    "Write a professional email about...",
-    "Explain the concept of...",
-    "Give me feedback on...",
-    "What are the best practices for...",
-    "Help me debug this code...",
-    "Create a plan for...",
-    "Summarize this article...",
-    "Compare and contrast...",
-  ];
-
-  // Define full prompts that will be sent when a block is clicked
-  const fullPrompts = [
-    "Help me brainstorm ideas for a new mobile app that helps people track their daily habits.",
-    "How do I implement a debounce function in JavaScript?",
-    "Write a professional email to request a meeting with a potential client.",
-    "Explain the concept of React hooks and how they improve component development.",
-    "Give me feedback on my website design and suggest improvements.",
-    "What are the best practices for optimizing database queries?",
-    "Help me debug this code that's causing a memory leak in my Node.js application.",
-    "Create a plan for launching a new product in the next quarter.",
-    "Summarize this article about artificial intelligence trends.",
-    "Compare and contrast microservices vs monolithic architecture.",
-  ];
+  // Get suggested prompts from chat store
+  const getSuggestedPrompts = useChatStore(
+    (state) => (state as any).getSuggestedPrompts
+  );
+  const suggestedPrompts = getSuggestedPrompts();
 
   const checkScrollability = useCallback(() => {
     const el = scrollRef.current;
@@ -207,7 +185,7 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
 
       setCanScrollLeft(currentScrollLeft > tolerance);
       setCanScrollRight(
-        currentScrollLeft < currentScrollWidth - currentClientWidth - tolerance,
+        currentScrollLeft < currentScrollWidth - currentClientWidth - tolerance
       );
     } else {
       setCanScrollLeft(false);
@@ -238,7 +216,7 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
       window.removeEventListener("resize", debouncedCheck);
       resizeObserver.disconnect();
     };
-  }, [checkScrollability, prompts]); // Re-check if prompts change
+  }, [checkScrollability, suggestedPrompts]); // Re-check if prompts change
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -263,12 +241,12 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
           </LeftScrollButton>
         )}
         <ScrollContainer ref={scrollRef}>
-          {prompts.map((prompt, index) => (
+          {suggestedPrompts.map((prompt, index) => (
             <PromptBlockComponent
               // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
               key={index}
               text={prompt}
-              onClick={() => onSelectSuggestion(fullPrompts[index])}
+              onClick={() => onSelectSuggestion(prompt)}
             />
           ))}
         </ScrollContainer>
