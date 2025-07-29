@@ -4,6 +4,7 @@ import type { Chat } from "@chara-codes/core";
 import { useNavigateToHistory } from "@chara-codes/core";
 import type React from "react";
 import styled from "styled-components";
+import { formatRelativeTime } from "../utils";
 
 interface RecentHistoryProps {
   chats: Chat[];
@@ -97,7 +98,7 @@ const RecentHistory: React.FC<RecentHistoryProps> = ({
       {chats.map((chat) => (
         <ChatItem key={chat.id} onClick={() => onSelectChat(chat.id)}>
           <ChatTitle>{chat.title}</ChatTitle>
-          <ChatTimestamp>{chat.timestamp}</ChatTimestamp>
+          <ChatTimestamp>{formatRelativeTime(chat.timestamp)}</ChatTimestamp>
         </ChatItem>
       ))}
     </Container>

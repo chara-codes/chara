@@ -1,11 +1,12 @@
 "use client";
 
+import type { Chat } from "@chara-codes/core";
+import { format, isValid } from "date-fns"; // Added isValid import
 import type React from "react";
 import { useState } from "react";
 import styled from "styled-components";
-import { format, isValid } from "date-fns"; // Added isValid import
-import type { Chat } from "@chara-codes/core";
 import { TrashIcon } from "../atoms/icons";
+import { formatChatTime } from "../utils";
 
 interface ChatHistoryProps {
   chats: Chat[];
@@ -276,25 +277,6 @@ const groupChatsByDate = (chats: Chat[]) => {
     yesterday: yesterdayChats,
     older: olderChats,
   };
-};
-
-// Helper function to format chat time with error handling
-const formatChatTime = (timestamp: string | number | Date) => {
-  try {
-    // Handle different timestamp formats
-    const date =
-      timestamp instanceof Date ? timestamp : new Date(timestamp || Date.now());
-
-    // Check if the date is valid before formatting
-    if (!isValid(date)) {
-      return "Unknown time";
-    }
-
-    return format(date, "h:mm a");
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return "Unknown time";
-  }
 };
 
 // Helper function to get chat preview

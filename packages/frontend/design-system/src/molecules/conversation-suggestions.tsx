@@ -248,43 +248,42 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
   };
 
   return (
-    <SuggestionsContainer>
-      <SuggestionsTitle>Try asking...</SuggestionsTitle>
-      <ScrollWrapper>
-        {canScrollLeft && (
-          <LeftScrollButton
-            onClick={() => scroll("left")}
-            aria-label="Scroll left"
-          >
-            <ChevronLeft />
-          </LeftScrollButton>
-        )}
-        <ScrollContainer ref={scrollRef}>
-          {isLoadingPrompts ? (
-            <div style={{ padding: "16px", color: "#666" }}>
-              Loading suggestions...
-            </div>
-          ) : (
-            suggestedPrompts.map((prompt, index) => (
-              <PromptBlockComponent
-                // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                key={index}
-                text={prompt}
-                onClick={() => onSelectSuggestion(prompt)}
-              />
-            ))
-          )}
-        </ScrollContainer>
-        {canScrollRight && (
-          <RightScrollButton
-            onClick={() => scroll("right")}
-            aria-label="Scroll right"
-          >
-            <ChevronRight />
-          </RightScrollButton>
-        )}
-      </ScrollWrapper>
-    </SuggestionsContainer>
+    <>
+      {" "}
+      {!isLoadingPrompts && (
+        <SuggestionsContainer>
+          <SuggestionsTitle>Try asking...</SuggestionsTitle>
+          <ScrollWrapper>
+            {canScrollLeft && (
+              <LeftScrollButton
+                onClick={() => scroll("left")}
+                aria-label="Scroll left"
+              >
+                <ChevronLeft />
+              </LeftScrollButton>
+            )}
+            <ScrollContainer ref={scrollRef}>
+              {suggestedPrompts.map((prompt, index) => (
+                <PromptBlockComponent
+                  // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                  key={index}
+                  text={prompt}
+                  onClick={() => onSelectSuggestion(prompt)}
+                />
+              ))}
+            </ScrollContainer>
+            {canScrollRight && (
+              <RightScrollButton
+                onClick={() => scroll("right")}
+                aria-label="Scroll right"
+              >
+                <ChevronRight />
+              </RightScrollButton>
+            )}
+          </ScrollWrapper>
+        </SuggestionsContainer>
+      )}
+    </>
   );
 };
 
