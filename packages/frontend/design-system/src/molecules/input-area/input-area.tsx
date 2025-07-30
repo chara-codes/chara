@@ -141,14 +141,24 @@ const InputArea: React.FC<InputAreaProps> = ({
     adjustTextareaHeight();
   }, [adjustTextareaHeight]);
 
-  // Handle initialMessage prop
+  // Track if user has edited the message to prevent overriding user input
+  const userHasEditedRef = useRef(false);
+  const lastInitialMessageRef = useRef<string | undefined>(undefined);
+
+  // Handle initialMessage prop - only apply if it's new and user hasn't edited
   useEffect(() => {
-    if (initialMessage !== undefined && initialMessage !== message) {
+    if (
+      initialMessage &&
+      initialMessage !== lastInitialMessageRef.current &&
+      !userHasEditedRef.current
+    ) {
       setMessage(initialMessage);
       setIsBeautified(false);
+      lastInitialMessageRef.current = initialMessage;
+      userHasEditedRef.current = false; // Reset edit flag for new suggestion
       setTimeout(adjustTextareaHeight, 0);
     }
-  }, [initialMessage, message, adjustTextareaHeight]);
+  }, [initialMessage, adjustTextareaHeight]);
 
   const beautifyText = useCallback(() => {
     if (!message.trim()) return;
@@ -204,6 +214,7 @@ const InputArea: React.FC<InputAreaProps> = ({
       onSendMessage(message);
       setMessage("");
       setIsBeautified(false);
+      userHasEditedRef.current = false; // Reset edit flag after sending
       // Reset textarea height after clearing message
       setTimeout(adjustTextareaHeight, 0);
     }
@@ -310,6 +321,7 @@ const InputArea: React.FC<InputAreaProps> = ({
             value={message}
             onChange={(e) => {
               setMessage(e.target.value);
+              userHasEditedRef.current = true; // Mark that user has edited
               adjustTextareaHeight();
             }}
             onKeyDown={handleKeyDown}
