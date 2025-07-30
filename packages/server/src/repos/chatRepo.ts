@@ -316,6 +316,95 @@ export async function updateMessage({
   }
 }
 
+/** Get the first message from the most recent chats. */
+export async function getFirstMessageFromRecentChats(options?: {
+  chatLimit?: number;
+}) {
+  const { chatLimit = 10 } = options || {};
+
+  try {
+    // Get the most recent chats
+    const recentChats = await db
+      .select({
+        id: chats.id,
+        title: chats.title,
+        createdAt: chats.createdAt,
+        updatedAt: chats.updatedAt,
+      })
+      .from(chats)
+      .orderBy(sql`${chats.updatedAt} DESC`)
+      .limit(chatLimit);
+
+    if (recentChats.length === 0) {
+      return [];
+    }
+
+    const chatIds = recentChats.map((chat) => chat.id);
+
+    // Get the first message from each chat
+    const firstMessages = [];
+
+    for (const chatId of chatIds) {
+      const [firstMessage] = await db
+        .select({
+          chatId: messages.chatId,
+          id: messages.id,
+          content: messages.content,
+          role: messages.role,
+          createdAt: messages.createdAt,
+          context: messages.context,
+          toolCalls: messages.toolCalls,
+          commit: messages.commit,
+        })
+        .from(messages)
+        .where(eq(messages.chatId, chatId))
+        .orderBy(sql`${messages.id} ASC`)
+        .limit(1);
+
+      if (firstMessage) {
+        firstMessages.push(firstMessage);
+      }
+    }
+
+    // Combine chat info with first message
+    const result = recentChats.map((chat) => {
+      const firstMessage = firstMessages.find((msg) => msg.chatId === chat.id);
+
+      return {
+        chat: {
+          id: chat.id,
+          title: chat.title,
+          createdAt: chat.createdAt,
+          updatedAt: chat.updatedAt,
+        },
+        firstMessage: firstMessage
+          ? {
+              id: firstMessage.id,
+              content: firstMessage.content,
+              role: firstMessage.role,
+              timestamp:
+                firstMessage.createdAt instanceof Date
+                  ? firstMessage.createdAt.getTime()
+                  : firstMessage.createdAt,
+              context: firstMessage.context
+                ? JSON.parse(firstMessage.context as string)
+                : undefined,
+              commit: firstMessage.commit,
+              toolCalls: firstMessage.toolCalls
+                ? JSON.parse(firstMessage.toolCalls as string)
+                : undefined,
+            }
+          : null,
+      };
+    });
+
+    return result;
+  } catch (err) {
+    logger.error(JSON.stringify(err), "getFirstMessageFromRecentChats failed");
+    throw err;
+  }
+}
+
 /** Delete all messages in a chat after a specific message ID. */
 export async function deleteMessages({
   chatId,

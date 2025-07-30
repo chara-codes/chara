@@ -310,6 +310,59 @@ export async function getSuggestedPrompts(
   }
 }
 
+// Function to get first messages from recent chats
+export async function fetchFirstMessageFromRecentChats(options?: {
+  chatLimit?: number;
+}): Promise<
+  Array<{
+    chat: {
+      id: string;
+      title: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+    firstMessage: {
+      id: string;
+      content: string;
+      role: string;
+      timestamp: number;
+      context?: any;
+      commit?: string;
+      toolCalls?: any;
+    } | null;
+  }>
+> {
+  try {
+    const client = getVanillaTrpcClient();
+    const result = await client.chat.getFirstMessageFromRecentChats.query({
+      chatLimit: options?.chatLimit,
+    });
+
+    return result.map((item) => ({
+      chat: {
+        id: item.chat.id.toString(),
+        title: item.chat.title,
+        createdAt: new Date(item.chat.createdAt).toISOString(),
+        updatedAt: new Date(item.chat.updatedAt).toISOString(),
+      },
+      firstMessage: item.firstMessage
+        ? {
+            id: item.firstMessage.id.toString(),
+            content: item.firstMessage.content,
+            role: item.firstMessage.role,
+            timestamp: item.firstMessage.timestamp,
+            context: item.firstMessage.context,
+            commit: item.firstMessage.commit,
+            toolCalls: item.firstMessage.toolCalls,
+          }
+        : null,
+    }));
+  } catch (error) {
+    console.error("Error fetching first messages from recent chats:", error);
+    return [];
+  }
+}
+
 // Helper function to get just the first message from a chat
 export async function getFirstMessage(chatId: string): Promise<{
   id: string;

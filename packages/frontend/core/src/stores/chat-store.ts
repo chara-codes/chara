@@ -8,7 +8,7 @@ import {
   deleteMessages,
   fetchChatHistory,
   fetchChats,
-  getFirstMessage,
+  fetchFirstMessageFromRecentChats,
   getSuggestedPrompts,
   processChatStream,
   resetToCommit,
@@ -28,6 +28,21 @@ import type {
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [];
+
+// Predefined prompts for immediate display while loading
+// Note: These prompts are also used in conversation-suggestions.tsx as placeholder content
+export const PREDEFINED_PROMPTS = [
+  "Help me brainstorm ideas for a new mobile app that helps people track their daily habits",
+  "How do I implement a debounce function in JavaScript?",
+  "Write a professional email to request a meeting with a potential client",
+  "Explain the concept of React hooks and how they improve component development",
+  "Give me feedback on my website design and suggest improvements",
+  "What are the best practices for optimizing database queries?",
+  "Help me debug this code that's causing a memory leak in my Node.js application",
+  "Create a plan for launching a new product in the next quarter",
+  "Summarize this article about artificial intelligence trends",
+  "Compare and contrast microservices vs monolithic architecture",
+];
 
 interface ChatState {
   // Chat data
@@ -800,27 +815,23 @@ export const useChatStore = create<ChatState>()(
 
         getSuggestedPrompts: async () => {
           try {
-            const { chats, model } = get();
+            const { model } = get();
 
-            // Extract first messages from previous chats
+            // Extract first messages from recent chats using the new method
+            const recentChatsWithFirstMessages =
+              await fetchFirstMessageFromRecentChats({
+                chatLimit: 10,
+              });
+
             const previousMessages: Array<{ role: string; content: string }> =
               [];
 
-            for (const chat of chats.slice(0, 10)) {
-              // Limit to 10 most recent chats
-              try {
-                const firstMessage = await getFirstMessage(chat.id);
-                if (firstMessage) {
-                  previousMessages.push({
-                    role: firstMessage.role,
-                    content: firstMessage.message,
-                  });
-                }
-              } catch (error) {
-                console.warn(
-                  `Failed to fetch history for chat ${chat.id}:`,
-                  error
-                );
+            for (const { firstMessage } of recentChatsWithFirstMessages) {
+              if (firstMessage) {
+                previousMessages.push({
+                  role: firstMessage.role,
+                  content: firstMessage.content,
+                });
               }
             }
 
@@ -839,34 +850,10 @@ export const useChatStore = create<ChatState>()(
               10
             );
 
-            return suggestions.length > 0
-              ? suggestions
-              : [
-                  "Help me brainstorm ideas for a new mobile app that helps people track their daily habits",
-                  "How do I implement a debounce function in JavaScript?",
-                  "Write a professional email to request a meeting with a potential client",
-                  "Explain the concept of React hooks and how they improve component development",
-                  "Give me feedback on my website design and suggest improvements",
-                  "What are the best practices for optimizing database queries?",
-                  "Help me debug this code that's causing a memory leak in my Node.js application",
-                  "Create a plan for launching a new product in the next quarter",
-                  "Summarize this article about artificial intelligence trends",
-                  "Compare and contrast microservices vs monolithic architecture",
-                ];
+            return suggestions.length > 0 ? suggestions : PREDEFINED_PROMPTS;
           } catch (error) {
             console.error("Error getting suggested prompts:", error);
-            return [
-              "Help me brainstorm ideas for a new mobile app that helps people track their daily habits",
-              "How do I implement a debounce function in JavaScript?",
-              "Write a professional email to request a meeting with a potential client",
-              "Explain the concept of React hooks and how they improve component development",
-              "Give me feedback on my website design and suggest improvements",
-              "What are the best practices for optimizing database queries?",
-              "Help me debug this code that's causing a memory leak in my Node.js application",
-              "Create a plan for launching a new product in the next quarter",
-              "Summarize this article about artificial intelligence trends",
-              "Compare and contrast microservices vs monolithic architecture",
-            ];
+            return PREDEFINED_PROMPTS;
           }
         },
       }),

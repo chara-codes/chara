@@ -2,11 +2,12 @@ import { logger } from "@chara-codes/logger";
 import { z } from "zod";
 import {
   createChat,
+  deleteMessages,
   getChatList,
+  getFirstMessageFromRecentChats,
   getHistory,
   saveMessage,
   updateMessage,
-  deleteMessages,
 } from "../../repos/chatRepo.ts";
 import { publicProcedure, router } from "../trpc";
 
@@ -66,6 +67,28 @@ export const chatRouter = router({
         };
       } catch (err) {
         logger.error(JSON.stringify(err), "getChatList endpoint failed");
+        throw err;
+      }
+    }),
+
+  getFirstMessageFromRecentChats: publicProcedure
+    .input(
+      z.object({
+        chatLimit: z.number().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const result = await getFirstMessageFromRecentChats({
+          chatLimit: input.chatLimit,
+        });
+
+        return result;
+      } catch (err) {
+        logger.error(
+          JSON.stringify(err),
+          "getFirstMessageFromRecentChats endpoint failed"
+        );
         throw err;
       }
     }),
