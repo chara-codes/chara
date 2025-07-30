@@ -4,8 +4,6 @@ import {
   parseSuggestionsFromResponse,
   suggestionAgent,
 } from "../agents/suggestion-agent";
-import { isoGitService } from "../services/isogit";
-import { trpc } from "../services/trpc";
 import { mapMessages } from "../utils";
 
 let mcpTools: Record<string, unknown> = {};
