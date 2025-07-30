@@ -1,36 +1,41 @@
 "use client";
 
+import {
+  readFileContent,
+  useChatStore,
+  useRunnerProcesses,
+  useUIStore,
+  type InputAreaProps,
+} from "@chara-codes/core";
 import type React from "react";
-import { useState, useRef, useCallback, useEffect } from "react";
-import DropdownMenu from "../dropdown-menu";
-import FileInput from "../file-input";
+import { useCallback, useEffect, useRef, useState } from "react";
+import styled from "styled-components";
+import IconButton from "../../atoms/icon-button";
 import {
-  InputContainer,
-  InputWrapper,
-  InputControls,
-  ButtonsRow,
-  SendButton,
-  LoaderContainer,
-  Loader,
-  StyledInput,
-} from "./styles";
-import {
-  PlusIcon,
+  BeautifyIcon,
   ClipIcon,
+  PlusIcon,
   PointerIcon,
   SendIcon,
   StopIcon,
-  BeautifyIcon,
   UndoIcon,
 } from "../../atoms/input-icons";
-import IconButton from "../../atoms/icon-button";
 import Tooltip from "../../atoms/tooltip";
 import { useElementSelector } from "../../hooks";
-import { createDropdownItems } from "./dropdown-items";
-import styled from "styled-components";
+import DropdownMenu from "../dropdown-menu";
+import FileInput from "../file-input";
 import AnimatedButton from "./animated-button";
-import { readFileContent, useRunnerProcesses, useUIStore } from "@chara-codes/core";
-import { type InputAreaProps, useChatStore } from "@chara-codes/core";
+import { createDropdownItems } from "./dropdown-items";
+import {
+  ButtonsRow,
+  InputContainer,
+  InputControls,
+  InputWrapper,
+  Loader,
+  LoaderContainer,
+  SendButton,
+  StyledInput,
+} from "./styles";
 
 const RoundedIconButton = styled(IconButton)`
   border-radius: 8px;
@@ -62,9 +67,7 @@ const LoadingLine = styled.div`
     transparent
   );
   background-size: 200% 100%;
-  animation:
-    shimmer 2s infinite linear,
-    pulse 1.5s infinite ease-in-out;
+  animation: shimmer 2s infinite linear, pulse 1.5s infinite ease-in-out;
   box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
 
   @keyframes shimmer {
@@ -96,11 +99,12 @@ const InputArea: React.FC<InputAreaProps> = ({
   isLoading = false,
   onStopResponse = () => {},
   buttonConfig, // Prop for button config
+  initialMessage,
 }) => {
   // Use the context-aware hook to get buttonConfig from the store
   const storeButtonConfig = useUIStore((state) => state.inputButtonConfig);
   const beautifyPromptStream = useChatStore(
-    (state) => state.beautifyPromptStream,
+    (state) => state.beautifyPromptStream
   );
 
   // If buttonConfig prop is provided, it overrides the store's config.
@@ -136,6 +140,15 @@ const InputArea: React.FC<InputAreaProps> = ({
   useEffect(() => {
     adjustTextareaHeight();
   }, [adjustTextareaHeight]);
+
+  // Handle initialMessage prop
+  useEffect(() => {
+    if (initialMessage !== undefined && initialMessage !== message) {
+      setMessage(initialMessage);
+      setIsBeautified(false);
+      setTimeout(adjustTextareaHeight, 0);
+    }
+  }, [initialMessage, message, adjustTextareaHeight]);
 
   const beautifyText = useCallback(() => {
     if (!message.trim()) return;
@@ -177,7 +190,7 @@ const InputArea: React.FC<InputAreaProps> = ({
         // Revert to original text on error
         setMessage(currentMessage);
         setIsBeautifyLoading(false);
-      },
+      }
     );
   }, [message, beautifyPromptStream]);
 
@@ -249,7 +262,7 @@ const InputArea: React.FC<InputAreaProps> = ({
     startElementSelection,
     triggerFileUpload,
     onAddContext,
-    runnerProcesses,
+    runnerProcesses
   );
 
   const handleDropdownSelect = (item: {

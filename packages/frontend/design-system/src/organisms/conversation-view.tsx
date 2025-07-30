@@ -1,16 +1,16 @@
 "use client";
 
+import { useChatStore } from "@chara-codes/core";
 import type React from "react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import styled from "styled-components";
+import { CharaLogo } from "../atoms/chara-logo";
+import ConversationSuggestions from "../molecules/conversation-suggestions";
+import Footer from "../molecules/footer/index";
+import InputArea from "../molecules/input-area";
 import ChatMessages from "./chat-messages";
 import ContextPanel from "./context-panel";
 import RecentHistory from "./recent-history";
-import InputArea from "../molecules/input-area";
-import Footer from "../molecules/footer/index";
-import ConversationSuggestions from "../molecules/conversation-suggestions";
-import { useChatStore } from "@chara-codes/core";
-import { CharaLogo } from "../atoms/chara-logo";
 
 const ChatContent = styled.div`
   flex: 1;
@@ -83,6 +83,9 @@ const ConversationView: React.FC = () => {
   const chats = useChatStore((state) => state.chats);
   const isResponding = useChatStore((state) => state.isResponding);
 
+  // Local state for input message
+  const [inputMessage, setInputMessage] = useState("");
+
   // Get store actions using getState to avoid subscription issues
   const chatStore = useChatStore.getState();
 
@@ -90,16 +93,14 @@ const ConversationView: React.FC = () => {
   const handleSendMessage = useCallback(
     (content: string) => {
       chatStore.sendMessage(content);
+      setInputMessage(""); // Clear input after sending
     },
     [chatStore]
   );
 
-  const handleSelectSuggestion = useCallback(
-    (suggestion: string) => {
-      chatStore.sendMessage(suggestion);
-    },
-    [chatStore]
-  );
+  const handleSelectSuggestion = useCallback((suggestion: string) => {
+    setInputMessage(suggestion);
+  }, []);
 
   const handleSelectChat = useCallback(
     async (chatId: string) => {
@@ -177,6 +178,7 @@ const ConversationView: React.FC = () => {
         onAddContext={handleAddContextItem}
         isResponding={isResponding}
         onStopResponse={handleStopResponse}
+        initialMessage={inputMessage}
       />
       <Footer />
     </ConversationContainer>
