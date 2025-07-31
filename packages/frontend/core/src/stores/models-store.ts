@@ -1,6 +1,6 @@
 import { create } from "zustand";
+import { fetchModels } from "../services";
 import type { Model } from "../types";
-import { fetchModels } from '../services';
 
 // Fallback data in case fetch fails
 const fallbackModels: Model[] = [
@@ -26,7 +26,17 @@ export const useModelsStore = create<ModelsState>()((set) => ({
   initializeStore: async () => {
     set({ isLoading: true, loadError: null });
     try {
-      const { models } = await fetchModels();
+      console.log("Models Store: Starting models fetch...");
+
+      // Add timeout to models fetch
+      const fetchPromise = fetchModels();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Models fetch timeout")), 10000)
+      );
+
+      const { models } = await Promise.race([fetchPromise, timeoutPromise]);
+      console.log("Models Store: Models fetched successfully");
+
       set({
         models: models.length > 0 ? models : fallbackModels,
         recentModels: ["claude-3.7-sonnet"],

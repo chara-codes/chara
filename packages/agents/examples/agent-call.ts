@@ -1,5 +1,5 @@
-import { chatAgent } from "../src/agents/chat-agent";
 import type { CoreMessage } from "ai";
+import { chatAgentSimple } from "../src/agents/chat-agent";
 
 /**
  * Example 1: Basic usage with default OpenAI model
@@ -9,7 +9,7 @@ async function basicExample() {
     { role: "user", content: "Hello, how are you today?" },
   ];
 
-  const result = chatAgent({
+  const result = await chatAgentSimple({
     model: "ollama:::qwen3", // or just "gpt-4o-mini" since openai is default
     messages,
   });
@@ -28,7 +28,7 @@ async function differentProviderExample() {
     { role: "user", content: "Tell me a joke about programming" },
   ];
 
-  const result = await chatAgent({
+  const result = await chatAgentSimple({
     model: "ollama:::qwen3", // Different provider
     messages,
   });
@@ -56,7 +56,7 @@ async function conversationExample() {
     },
   ];
 
-  const result = await chatAgent({
+  const result = await chatAgentSimple({
     model: "openai:::gpt-4o",
     messages,
   });
@@ -77,7 +77,7 @@ async function errorHandlingExample() {
       { role: "user", content: "Help me solve this math problem: 2 + 2" },
     ];
 
-    const result = await chatAgent({
+    const result = await chatAgentSimple({
       model: "invalid-provider:::invalid-model",
       messages,
     });
@@ -96,7 +96,7 @@ async function systemMessageExample() {
     { role: "user", content: "Explain quantum computing in simple terms" },
   ];
 
-  const result = await chatAgent({
+  const result = await chatAgentSimple({
     model: "openai:::gpt-4o-mini",
     messages,
   });
@@ -117,7 +117,7 @@ async function customStreamingExample() {
     },
   ];
 
-  const result = await chatAgent({
+  const result = await chatAgentSimple({
     model: "openai:::gpt-4o",
     messages,
   });

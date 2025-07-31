@@ -4,19 +4,18 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import {
+  chatService,
   createChat,
   deleteMessages,
   fetchChatHistory,
   fetchChats,
   fetchFirstMessageFromRecentChats,
   getSuggestedPrompts,
-  processChatStream,
   resetToCommit,
   saveMessage,
-  type StreamCallbacks,
-  type StreamRequestPayload,
+  webSocketService,
+  type WebSocketChatCallbacks,
 } from "../services";
-// Import the new service
 import type {
   Chat,
   ChatMode,
@@ -25,6 +24,7 @@ import type {
   MessageContent,
   ToolCall,
 } from "../types";
+import { THINKING_TAG_REGEX } from "../utils";
 
 // Fallback data in case fetch fails
 const fallbackChats: Chat[] = [];
@@ -58,13 +58,33 @@ interface ChatState {
   isThinking: boolean;
   isLoading: boolean;
   loadError: string | null;
-  abortController: AbortController | null; // For stopping fetch requests
+  wsConnected: boolean;
+  wsReconnecting: boolean;
+  wsError: string | null;
+
+  // Message queue for offline scenarios
+  messageQueue: Array<{
+    chatId: number;
+    content: string;
+    timestamp: number;
+  }>;
 
   // Actions
   initializeStore: () => Promise<void>;
+  connectWebSocket: () => Promise<void>;
+  disconnectWebSocket: () => void;
+  retryConnection: () => Promise<void>;
+  processMessageQueue: () => Promise<void>;
   setActiveChat: (chatId: string | null) => Promise<void>;
   createNewChat: () => void;
-  sendMessage: (content: string) => Promise<void>; // Now async
+  sendMessage: (content: string) => Promise<void>;
+  createChatCallbacks: (
+    chatId: number,
+    aiMessageId?: string,
+    currentActiveChatId?: string | null,
+    savedUserMessageId?: string,
+    assistantMessageSaved?: boolean
+  ) => WebSocketChatCallbacks;
   setIsResponding: (isResponding: boolean) => void;
   setIsThinking: (isThinking: boolean) => void;
   stopResponse: () => void;
@@ -106,33 +126,214 @@ export const useChatStore = create<ChatState>()(
         isThinking: false,
         isLoading: true,
         loadError: null,
-        abortController: null,
+        wsConnected: false,
+        wsReconnecting: false,
+        wsError: null,
+        messageQueue: [],
+
+        connectWebSocket: async () => {
+          try {
+            console.log("Chat Store: Connecting to WebSocket service...");
+            set({ wsReconnecting: true, wsError: null });
+
+            await chatService.connect();
+            console.log("Chat Store: WebSocket service connected");
+
+            // Subscribe to connection status changes from shared service
+            const unsubscribe = webSocketService.onStatusChange((status) => {
+              console.log("Chat Store: WebSocket status changed:", status);
+              set({
+                wsConnected: status.connected,
+                wsReconnecting: status.reconnecting,
+                wsError: status.error,
+              });
+            });
+
+            // Store unsubscribe function for cleanup
+            (get() as any).statusUnsubscribe = unsubscribe;
+
+            // Process any queued messages after successful connection
+            await get().processMessageQueue();
+
+            console.log("Chat Store: WebSocket connection setup complete");
+          } catch (error) {
+            console.error("Failed to connect to WebSocket:", error);
+            const errorMessage =
+              error instanceof Error ? error.message : "Connection failed";
+            set({
+              wsConnected: false,
+              wsReconnecting: false,
+              wsError: errorMessage,
+            });
+            throw error;
+          }
+        },
+
+        disconnectWebSocket: () => {
+          // Cleanup status subscription
+          const state = get() as any;
+          if (state.statusUnsubscribe) {
+            state.statusUnsubscribe();
+            delete state.statusUnsubscribe;
+          }
+
+          chatService.disconnect();
+          set({
+            wsConnected: false,
+            wsReconnecting: false,
+            wsError: null,
+          });
+        },
+
+        retryConnection: async () => {
+          console.log("Chat Store: Retrying WebSocket connection...");
+          try {
+            await chatService.reconnect();
+          } catch (error) {
+            console.error("Chat Store: Retry connection failed:", error);
+            // Don't throw here, let the user try again
+          }
+        },
+
+        processMessageQueue: async () => {
+          const { messageQueue, wsConnected } = get();
+
+          if (!wsConnected || messageQueue.length === 0) {
+            return;
+          }
+
+          console.log(
+            `Chat Store: Processing ${messageQueue.length} queued messages`
+          );
+
+          // Process messages in order
+          for (const queuedMessage of messageQueue) {
+            try {
+              // Re-send the message via WebSocket
+              chatService.sendMessage({
+                chatId: queuedMessage.chatId,
+                model: get().model,
+                messages: [
+                  {
+                    role: "user",
+                    content: queuedMessage.content,
+                  },
+                ],
+                mode:
+                  get().mode === "none"
+                    ? "write"
+                    : (get().mode as "write" | "ask"),
+              });
+            } catch (error) {
+              console.error("Failed to process queued message:", error);
+              // Don't break the loop, try the next message
+            }
+          }
+
+          // Clear the queue after processing
+          set({ messageQueue: [] });
+        },
 
         initializeStore: async () => {
+          console.log("Chat Store: Starting initialization...");
           set({ isLoading: true, loadError: null });
+
+          let wsConnectionFailed = false;
+
+          // Connect to WebSocket first with timeout - but don't block initialization
           try {
-            const chats = await fetchChats();
+            console.log("Chat Store: Starting WebSocket connection...");
+
+            // Add timeout to WebSocket connection
+            const connectPromise = get().connectWebSocket();
+            const timeoutPromise = new Promise<never>((_, reject) =>
+              setTimeout(
+                () => reject(new Error("WebSocket connection timeout")),
+                5000 // Reduced timeout to 5 seconds
+              )
+            );
+
+            await Promise.race([connectPromise, timeoutPromise]);
+            console.log("Chat Store: WebSocket connected successfully");
+          } catch (error) {
+            wsConnectionFailed = true;
+            console.warn(
+              "Chat Store: WebSocket connection failed during initialization, continuing without real-time features:",
+              error
+            );
+            // Set WebSocket state to failed but continue initialization
+            set({
+              wsConnected: false,
+              wsReconnecting: false,
+              wsError:
+                error instanceof Error ? error.message : "Connection failed",
+            });
+          }
+
+          // Always proceed with chat data loading regardless of WebSocket status
+          try {
+            console.log("Chat Store: Fetching chats...");
+
+            // Add timeout to fetch as well
+            const fetchPromise = fetchChats();
+            const fetchTimeoutPromise = new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("Fetch chats timeout")), 8000)
+            );
+
+            const chats = await Promise.race([
+              fetchPromise,
+              fetchTimeoutPromise,
+            ]);
+            console.log(
+              "Chat Store: Chats fetched successfully, count:",
+              chats.length
+            );
+
             set({
               chats: chats.length > 0 ? chats : fallbackChats,
               isLoading: false,
             });
+
+            // If WebSocket failed but data loaded successfully, show warning
+            if (wsConnectionFailed) {
+              set({
+                loadError: "Real-time features unavailable - using cached data",
+              });
+            }
           } catch (error) {
-            console.error("Failed to initialize store:", error);
+            console.error("Chat Store: Failed to fetch chats:", error);
+            const errorMessage =
+              error instanceof Error ? error.message : "Failed to load data";
+
             set({
               chats: fallbackChats,
               isLoading: false,
-              loadError:
-                error instanceof Error ? error.message : "Failed to load data",
+              loadError: wsConnectionFailed
+                ? `Connection and data loading failed: ${errorMessage}`
+                : errorMessage,
             });
           }
+
+          console.log("Chat Store: Initialization complete");
         },
 
         setActiveChat: async (chatId) => {
           get().stopResponse(); // Stop any ongoing response when switching chats
+
+          // Unsubscribe from previous chat if any
+          const currentActiveChat = get().activeChat;
+          if (currentActiveChat) {
+            chatService.unsubscribeFromChat(parseInt(currentActiveChat));
+          }
+
           set({ activeChat: chatId, isLoading: true });
 
           if (chatId) {
             try {
+              // Subscribe to new chat
+              const numericChatId = parseInt(chatId);
+              chatService.subscribeToChat(numericChatId, {});
+
               // Load chat history from server
               await get().loadChatHistory(chatId);
             } catch (error) {
@@ -148,6 +349,13 @@ export const useChatStore = create<ChatState>()(
 
         createNewChat: () => {
           get().stopResponse(); // Stop any ongoing response
+
+          // Unsubscribe from current chat
+          const currentActiveChat = get().activeChat;
+          if (currentActiveChat) {
+            chatService.unsubscribeFromChat(parseInt(currentActiveChat));
+          }
+
           set({
             activeChat: null,
             messages: [],
@@ -158,25 +366,36 @@ export const useChatStore = create<ChatState>()(
 
         sendMessage: async (content) => {
           const state = get();
-          const { activeChat, chats, messages, contextItems, model, mode } =
-            state;
+          const {
+            activeChat,
+            chats,
+            messages,
+            contextItems,
+            model,
+            mode,
+            wsConnected,
+          } = state;
 
-          // Abort any existing request
-          if (state.abortController) {
-            state.abortController.abort();
+          // Check WebSocket connection and attempt to connect if needed
+          if (!wsConnected) {
+            try {
+              await get().connectWebSocket();
+            } catch (error) {
+              console.error(
+                "Failed to establish WebSocket connection for message sending:",
+                error
+              );
+              // Continue with local message handling, queue the message for later
+            }
           }
-          const newAbortController = new AbortController();
+
           set({
-            abortController: newAbortController,
             isResponding: true,
             isThinking: false,
           });
 
           // Create a deep copy of the messages array to avoid mutation issues
           const updatedMessages = [...messages];
-
-          // Update pending diffs in the last AI message to "kept"
-          // No longer need to process fileDiffs since they're removed
 
           // Create message content - automatically include context if available
           const messageContent: MessageContent[] = [
@@ -226,12 +445,16 @@ export const useChatStore = create<ChatState>()(
           };
 
           let currentActiveChatId = activeChat;
+          let numericChatId: number;
+
           if (!currentActiveChatId) {
             try {
               const title =
                 content.slice(0, 30) + (content.length > 30 ? "..." : "");
               const newChat = await createChat(title);
               currentActiveChatId = newChat.id;
+              numericChatId = parseInt(newChat.id);
+
               updates.activeChat = newChat.id;
               updates.chats = [
                 {
@@ -240,11 +463,19 @@ export const useChatStore = create<ChatState>()(
                 },
                 ...chats,
               ];
+
+              // Subscribe to the new chat
+              chatService.subscribeToChat(
+                numericChatId,
+                get().createChatCallbacks(numericChatId)
+              );
             } catch (error) {
               console.error("Failed to create chat:", error);
               // Fallback to local chat creation
               const newChatId = `chat-${Date.now()}`;
               currentActiveChatId = newChatId;
+              numericChatId = parseInt(newChatId);
+
               updates.activeChat = newChatId;
               updates.chats = [
                 {
@@ -262,8 +493,15 @@ export const useChatStore = create<ChatState>()(
                 },
                 ...chats,
               ];
+
+              // Subscribe to the new chat
+              chatService.subscribeToChat(
+                numericChatId,
+                get().createChatCallbacks(numericChatId)
+              );
             }
           } else {
+            numericChatId = parseInt(currentActiveChatId);
             updates.chats = chats.map((chat) =>
               chat.id === currentActiveChatId
                 ? { ...chat, messages: updatedMessages }
@@ -312,7 +550,7 @@ export const useChatStore = create<ChatState>()(
           }
 
           const aiMessageId = `${Date.now().toString()}-ai`;
-          let assistantMessageSaved = false; // Flag to prevent duplicate saves
+          const assistantMessageSaved = false; // Flag to prevent duplicate saves
           const initialAiMessage: Message = {
             id: aiMessageId,
             content: "",
@@ -327,7 +565,7 @@ export const useChatStore = create<ChatState>()(
 
           // Add placeholder for AI's response
           set((currentState) => {
-            const finalActiveChatId = currentState.activeChat; // Re-fetch activeChat in case it was set above
+            const finalActiveChatId = currentState.activeChat;
             return {
               messages: [...currentState.messages, initialAiMessage],
               chats: currentState.chats.map((chat) =>
@@ -338,39 +576,147 @@ export const useChatStore = create<ChatState>()(
             };
           });
 
-          const agentBaseUrl =
-            import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/"; // Default to local agent
-          const apiUrl = `${agentBaseUrl}api/chat`;
+          // Update chat callbacks to handle this specific message
+          chatService.updateChatCallbacks(
+            numericChatId,
+            get().createChatCallbacks(
+              numericChatId,
+              aiMessageId,
+              currentActiveChatId,
+              savedUserMessageId,
+              assistantMessageSaved
+            )
+          );
 
-          const agentPayload: StreamRequestPayload = {
-            messages: updatedMessages.map((m) => ({
-              // Send current message history
-              role: m.isUser ? "user" : "assistant",
-              content: Array.isArray(m.content)
-                ? m.content
-                : [{ type: "text", text: m.content }],
-              // Include tool calls in message history
-              toolCalls: m.toolCalls
-                ? Object.values(m.toolCalls).map((tc) => ({
-                    id: tc.id,
-                    type: "function",
-                    function: {
-                      name: tc.name,
-                      arguments: JSON.stringify(tc.arguments),
-                    },
-                  }))
-                : undefined,
-            })),
-            model: model, // Send selected model
-            chatId: currentActiveChatId,
-            userMessageId: savedUserMessageId,
-            // You might need to send contextItems, mode, etc., depending on agent's API
-            // context_items: contextItems.map(item => ({ name: item.name, type: item.type, data: item.data })),
-          };
+          // Send message via WebSocket or queue if offline
+          const currentState = get();
+          if (currentState.wsConnected) {
+            try {
+              chatService.sendMessage({
+                chatId: numericChatId,
+                model,
+                messages: updatedMessages.map((m) => ({
+                  role: m.isUser ? "user" : "assistant",
+                  content: Array.isArray(m.content)
+                    ? m.content
+                    : [{ type: "text", text: m.content }],
+                  toolCalls: m.toolCalls
+                    ? Object.values(m.toolCalls).map((tc) => ({
+                        id: tc.id,
+                        type: "function",
+                        function: {
+                          name: tc.name,
+                          arguments: JSON.stringify(tc.arguments),
+                        },
+                      }))
+                    : undefined,
+                })),
+                userMessageId: savedUserMessageId,
+                mode: mode === "none" ? "write" : mode,
+              });
+            } catch (error) {
+              console.error("Failed to send WebSocket message:", error);
 
+              // Queue the message for retry when connection is restored
+              set((state) => ({
+                messageQueue: [
+                  ...state.messageQueue,
+                  {
+                    chatId: numericChatId,
+                    content:
+                      typeof content === "string"
+                        ? content
+                        : JSON.stringify(content),
+                    timestamp: Date.now(),
+                  },
+                ],
+                isResponding: false,
+                isThinking: false,
+              }));
+
+              // Update AI message with offline status
+              set((currentState) => {
+                const currentMsgs = [...currentState.messages];
+                const aiMsgIdx = currentMsgs.findIndex(
+                  (m) => m.id === aiMessageId
+                );
+                if (aiMsgIdx !== -1) {
+                  currentMsgs[aiMsgIdx] = {
+                    ...currentMsgs[aiMsgIdx],
+                    content: `Message queued for delivery when connection is restored. Error: ${
+                      error instanceof Error
+                        ? error.message
+                        : "Connection failed"
+                    }`,
+                  };
+                }
+                return {
+                  messages: currentMsgs,
+                  chats: currentState.chats.map((c) =>
+                    c.id === currentState.activeChat
+                      ? { ...c, messages: currentMsgs }
+                      : c
+                  ),
+                };
+              });
+            }
+          } else {
+            // WebSocket not connected, queue the message
+            console.log("WebSocket not connected, queueing message");
+            set((state) => ({
+              messageQueue: [
+                ...state.messageQueue,
+                {
+                  chatId: numericChatId,
+                  content:
+                    typeof content === "string"
+                      ? content
+                      : JSON.stringify(content),
+                  timestamp: Date.now(),
+                },
+              ],
+              isResponding: false,
+              isThinking: false,
+            }));
+
+            // Update AI message with queued status
+            set((currentState) => {
+              const currentMsgs = [...currentState.messages];
+              const aiMsgIdx = currentMsgs.findIndex(
+                (m) => m.id === aiMessageId
+              );
+              if (aiMsgIdx !== -1) {
+                currentMsgs[aiMsgIdx] = {
+                  ...currentMsgs[aiMsgIdx],
+                  content:
+                    "Message queued for delivery when connection is restored.",
+                };
+              }
+              return {
+                messages: currentMsgs,
+                chats: currentState.chats.map((c) =>
+                  c.id === currentState.activeChat
+                    ? { ...c, messages: currentMsgs }
+                    : c
+                ),
+              };
+            });
+          }
+        },
+
+        // Helper method to create chat callbacks
+        createChatCallbacks: (
+          chatId: number,
+          aiMessageId?: string,
+          currentActiveChatId?: string | null,
+          _savedUserMessageId?: string,
+          assistantMessageSaved?: boolean
+        ): WebSocketChatCallbacks => {
           const updateAIMessageInStore = (
             updater: (currentAIMsg: Message) => Partial<Message>
           ) => {
+            if (!aiMessageId) return;
+
             set((currentState) => {
               const finalActiveChatId = currentState.activeChat;
               const currentMsgs = [...currentState.messages];
@@ -396,165 +742,273 @@ export const useChatStore = create<ChatState>()(
             });
           };
 
-          try {
-            await processChatStream(
-              apiUrl,
-              agentPayload,
-              {
-                onTextDelta: (delta) => {
+          const processTextWithThinkingTags = (text: string) => {
+            const thinkingTagRegex = new RegExp(
+              THINKING_TAG_REGEX.source,
+              THINKING_TAG_REGEX.flags
+            );
+            let isThinking = false;
+            let currentIndex = 0;
+            let match: RegExpExecArray | null;
+            const partialTagRegex = /<\/?think(?:ing)?(?:\s[^>]*)?$/i;
+            const partialMatch = partialTagRegex.exec(text);
+            let textToProcess = text;
+            if (partialMatch) {
+              textToProcess = text.slice(0, partialMatch.index);
+            }
+
+            match = thinkingTagRegex.exec(textToProcess);
+            while (match !== null) {
+              if (match.index > currentIndex) {
+                const beforeTag = textToProcess.slice(
+                  currentIndex,
+                  match.index
+                );
+                if (beforeTag) {
+                  if (isThinking) {
+                    updateAIMessageInStore((msg) => ({
+                      thinkingContent: (msg.thinkingContent || "") + beforeTag,
+                      isThinking: true,
+                    }));
+                    set({ isThinking: true });
+                  } else {
+                    updateAIMessageInStore((msg) => ({
+                      content: (msg.content || "") + beforeTag,
+                      isThinking: false,
+                    }));
+                    set({ isThinking: false });
+                  }
+                }
+              }
+
+              const tagContent = match[0].toLowerCase().trim();
+              if (
+                tagContent.startsWith("<think>") ||
+                tagContent.startsWith("<thinking>") ||
+                tagContent.startsWith("<think ") ||
+                tagContent.startsWith("<thinking ")
+              ) {
+                isThinking = true;
+              } else if (
+                tagContent.startsWith("</think>") ||
+                tagContent.startsWith("</thinking>") ||
+                tagContent.startsWith("</think") ||
+                tagContent.startsWith("</thinking")
+              ) {
+                isThinking = false;
+              }
+              currentIndex = match.index + match[0].length;
+              match = thinkingTagRegex.exec(textToProcess);
+            }
+
+            if (currentIndex < textToProcess.length) {
+              const remainingText = textToProcess.slice(currentIndex);
+              if (remainingText) {
+                if (isThinking) {
                   updateAIMessageInStore((msg) => ({
-                    content: (msg.content || "") + delta,
-                    isThinking: false,
-                  }));
-                  set({ isThinking: false });
-                },
-                onThinkingDelta: (delta) => {
-                  updateAIMessageInStore((msg) => ({
-                    thinkingContent: (msg.thinkingContent || "") + delta,
+                    thinkingContent:
+                      (msg.thinkingContent || "") + remainingText,
                     isThinking: true,
                   }));
                   set({ isThinking: true });
-                },
-                onToolCall: (toolCall) => {
-                  console.log("Store: Tool Call received", toolCall);
-
-                  const incomingToolCall = toolCall as ToolCall;
-
-                  updateAIMessageInStore((msg) => {
-                    const existingToolCalls =
-                      msg.toolCalls || ({} as Record<string, ToolCall>);
-                    console.log("Store: Current tool calls", existingToolCalls);
-
-                    // Create new Record with updated tool call
-                    const updatedToolCalls = { ...existingToolCalls };
-                    const existingToolCall =
-                      updatedToolCalls[incomingToolCall.id];
-
-                    console.log("Store: Existing tool call", existingToolCall);
-
-                    updatedToolCalls[incomingToolCall.id] = incomingToolCall;
-                    console.log("Store: Updated tool calls", updatedToolCalls);
-
-                    return {
-                      toolCalls: updatedToolCalls,
-                      content: existingToolCall
-                        ? msg.content // Don't append if updating existing
-                        : (msg.content || "") +
-                          `[toolCall:${incomingToolCall.id},${incomingToolCall.name}]`,
-                    };
-                  });
-                },
-                onStructuredData: (_data) => {
-                  updateAIMessageInStore((_msg) => {
-                    const newPartial: Partial<Message> = {};
-                    return newPartial;
-                  });
-                },
-                onStreamError: (errorMsg) => {
+                } else {
                   updateAIMessageInStore((msg) => ({
-                    content: `${
-                      msg.content || ""
-                    }\n\nStream Error: ${errorMsg}`,
-                  }));
-                  set({
-                    isResponding: false,
+                    content: (msg.content || "") + remainingText,
                     isThinking: false,
-                    abortController: null,
-                  }); // Stop on stream error
-                },
-                onStreamClose: (aborted) => {
-                  if (aborted) {
-                    updateAIMessageInStore((msg) => ({
-                      content: `${
-                        msg.content || ""
-                      }\n(Response cancelled by user)`,
-                    }));
-                  }
+                  }));
                   set({ isThinking: false });
-                  // Final state update handled in finally block of sendMessage
-                },
-                onCompletion: async (data) => {
-                  console.log("Chat Store: Stream completed", data);
-                  // Handle completion with usage statistics
-                  // data contains: finishReason, usage (promptTokens, completionTokens), isContinued
+                }
+              }
+            }
+          };
 
-                  // Save assistant message to database if we have an active chat (only once)
-                  if (
-                    currentActiveChatId &&
-                    !assistantMessageSaved &&
-                    data.finishReason === "stop"
-                  ) {
-                    assistantMessageSaved = true; // Set flag to prevent duplicate saves
-                    try {
-                      const currentState = get();
-                      const aiMessage = currentState.messages.find(
-                        (m) => m.id === aiMessageId
-                      );
-                      if (aiMessage) {
-                        const savedMessage = await saveMessage(
-                          currentActiveChatId,
-                          aiMessage.content as string,
-                          "assistant",
-                          undefined,
-                          aiMessage.toolCalls
-                        );
+          return {
+            onChatStatus: (status) => {
+              console.log(`Chat ${chatId} status:`, status);
+              if (status.status === "in_progress") {
+                set({ isResponding: true, wsError: null });
+              } else if (
+                status.status === "completed" ||
+                status.status === "error"
+              ) {
+                set({ isResponding: false, isThinking: false });
+                if (status.status === "error" && status.error) {
+                  set({ wsError: status.error });
+                }
+              }
+            },
+            onTextDelta: (delta) => {
+              processTextWithThinkingTags(delta);
+            },
+            onThinkingDelta: (delta) => {
+              updateAIMessageInStore((msg) => ({
+                thinkingContent: (msg.thinkingContent || "") + delta,
+                isThinking: true,
+              }));
+              set({ isThinking: true });
+            },
+            onToolCall: (toolCall) => {
+              console.log("Store: Tool Call received", toolCall);
 
-                        // Update the assistant message with the saved ID
-                        const updatedMessageId = savedMessage.id;
-                        set((currentState) => {
-                          const updatedMessages = currentState.messages.map(
-                            (msg) =>
-                              msg.id === aiMessageId
-                                ? { ...msg, id: updatedMessageId }
-                                : msg
-                          );
-                          return {
-                            messages: updatedMessages,
-                            chats: currentState.chats.map((chat) =>
-                              chat.id === currentActiveChatId
-                                ? { ...chat, messages: updatedMessages }
-                                : chat
-                            ),
-                          };
-                        });
-                      }
-                    } catch (error) {
-                      console.error("Failed to save assistant message:", error);
-                      // Continue with the flow even if saving fails
-                    }
+              const incomingToolCall = toolCall as ToolCall;
+
+              updateAIMessageInStore((msg) => {
+                const existingToolCalls =
+                  msg.toolCalls || ({} as Record<string, ToolCall>);
+
+                // Create new Record with updated tool call
+                const updatedToolCalls = { ...existingToolCalls };
+                const existingToolCall = updatedToolCalls[incomingToolCall.id];
+
+                updatedToolCalls[incomingToolCall.id] = incomingToolCall;
+
+                // Generate content based on tool call status
+                let toolContent = "";
+                if (!existingToolCall) {
+                  // New tool call - add the required tag format
+                  toolContent = `[toolCall:${incomingToolCall.id},${incomingToolCall.name}]`;
+                  console.log("Store: Adding new tool call tag:", toolContent);
+                  if (incomingToolCall.status === "in-progress") {
+                    toolContent += `\n🔧 Using ${incomingToolCall.name}...`;
                   }
-                },
-              },
-              newAbortController.signal,
-              mode
-            );
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-          } catch (error: any) {
-            // Catch errors from processChatStream if it throws directly (should be rare)
-            console.error(
-              "Chat Store: Error calling processChatStream:",
-              error
-            );
-            updateAIMessageInStore((msg) => ({
-              content: `${msg.content || ""}\n\nError: ${
-                error.message || "Failed to process response."
-              }`,
-            }));
-          } finally {
-            // Ensure isResponding and isThinking are set to false and controller is cleared
-            if (
-              get().isResponding ||
-              get().abortController ||
-              get().isThinking
-            ) {
-              // Check if not already set by onStreamError
+                } else if (incomingToolCall.status === "success") {
+                  // Tool completed successfully
+                  const resultMessage =
+                    incomingToolCall.result?.content ||
+                    `✅ ${incomingToolCall.name} completed successfully`;
+                  toolContent = `\n${resultMessage}`;
+                  console.log(
+                    "Store: Tool call success, adding result:",
+                    toolContent
+                  );
+                } else if (incomingToolCall.status === "error") {
+                  // Tool failed
+                  const errorMessage =
+                    incomingToolCall.result?.error ||
+                    `❌ ${incomingToolCall.name} failed`;
+                  toolContent = `\n${errorMessage}`;
+                  console.log(
+                    "Store: Tool call error, adding error:",
+                    toolContent
+                  );
+                }
+
+                const newContent = existingToolCall
+                  ? (msg.content || "") + toolContent // Update with result
+                  : (msg.content || "") + toolContent;
+
+                console.log("Store: Updated message content:", newContent);
+
+                return {
+                  toolCalls: updatedToolCalls,
+                  content: newContent,
+                };
+              });
+            },
+            onChatComplete: async (data) => {
+              console.log("Chat Store: WebSocket chat completed", data);
+
+              // Save assistant message to database if we have an active chat (only once)
+              if (
+                currentActiveChatId &&
+                !assistantMessageSaved &&
+                aiMessageId
+              ) {
+                assistantMessageSaved = true; // Set flag to prevent duplicate saves
+                try {
+                  const currentState = get();
+                  const aiMessage = currentState.messages.find(
+                    (m) => m.id === aiMessageId
+                  );
+                  if (aiMessage) {
+                    const savedMessage = await saveMessage(
+                      currentActiveChatId,
+                      aiMessage.content as string,
+                      "assistant",
+                      undefined,
+                      aiMessage.toolCalls
+                    );
+
+                    // Update the assistant message with the saved ID
+                    const updatedMessageId = savedMessage.id;
+                    set((currentState) => {
+                      const updatedMessages = currentState.messages.map((msg) =>
+                        msg.id === aiMessageId
+                          ? { ...msg, id: updatedMessageId }
+                          : msg
+                      );
+                      return {
+                        messages: updatedMessages,
+                        chats: currentState.chats.map((chat) =>
+                          chat.id === currentActiveChatId
+                            ? { ...chat, messages: updatedMessages }
+                            : chat
+                        ),
+                      };
+                    });
+                  }
+                } catch (error) {
+                  console.error("Failed to save assistant message:", error);
+                  // Continue with the flow even if saving fails
+                }
+              }
+
+              set({ isResponding: false, isThinking: false });
+            },
+            onChatError: (error, code) => {
+              console.error(`Chat ${chatId} error:`, error, code);
+
+              updateAIMessageInStore((msg) => ({
+                content: `${msg.content || ""}\n\nError: ${error}`,
+              }));
+
+              set({ isResponding: false, isThinking: false });
+            },
+            onConnectionOpen: () => {
+              console.log("Chat Store: WebSocket connection opened");
               set({
+                wsConnected: true,
+                wsReconnecting: false,
+                wsError: null,
+              });
+
+              // Process any queued messages
+              get()
+                .processMessageQueue()
+                .catch((error) => {
+                  console.error("Failed to process message queue:", error);
+                });
+            },
+            onConnectionClose: (wasClean) => {
+              console.log("Chat Store: WebSocket connection closed", {
+                wasClean,
+              });
+              set({
+                wsConnected: false,
+                wsReconnecting: false,
                 isResponding: false,
                 isThinking: false,
-                abortController: null,
               });
-            }
-          }
+
+              if (!wasClean) {
+                // Set reconnecting state and attempt to reconnect
+                set({ wsReconnecting: true });
+                setTimeout(() => {
+                  get().retryConnection();
+                }, 2000);
+              }
+            },
+            onConnectionError: (error) => {
+              console.error("Chat Store: WebSocket connection error:", error);
+              set({
+                wsConnected: false,
+                wsReconnecting: false,
+                wsError: "Connection error occurred",
+                isResponding: false,
+                isThinking: false,
+              });
+            },
+          };
         },
 
         setIsResponding: (isResponding) => {
@@ -566,11 +1020,31 @@ export const useChatStore = create<ChatState>()(
         },
 
         stopResponse: () => {
-          if (get().abortController) {
-            get().abortController?.abort();
-          } else {
-            set({ isResponding: false, isThinking: false });
+          const activeChat = get().activeChat;
+          if (activeChat && get().wsConnected) {
+            const numericChatId = parseInt(activeChat);
+            try {
+              // Send cancel message to abort chat agent execution
+              chatService.cancelMessage(numericChatId);
+            } catch (error) {
+              console.error("Failed to cancel response:", error);
+
+              // Fallback: unsubscribe and resubscribe to stop the response
+              try {
+                chatService.unsubscribeFromChat(numericChatId);
+                chatService.subscribeToChat(
+                  numericChatId,
+                  get().createChatCallbacks(numericChatId)
+                );
+              } catch (fallbackError) {
+                console.error(
+                  "Failed to stop response via fallback:",
+                  fallbackError
+                );
+              }
+            }
           }
+          set({ isResponding: false, isThinking: false });
         },
 
         addContextItem: (item) => {
@@ -592,6 +1066,7 @@ export const useChatStore = create<ChatState>()(
         clearContextItems: () => set({ contextItems: [] }),
         setMode: (mode) => set({ mode }),
         setModel: (model) => set({ model }),
+
         deleteMessage: async (messageId) => {
           const state = useChatStore.getState();
           if (!state.activeChat) return;
@@ -629,21 +1104,20 @@ export const useChatStore = create<ChatState>()(
 
         beautifyPromptStream: async (
           currentPrompt,
-          onTextDelta,
+          _onTextDelta,
           onComplete,
           onError
         ) => {
+          // For beautify, we might still use HTTP since it's a simple one-off request
+          // Or we could implement it via WebSocket if the backend supports it
           const state = get();
           if (!currentPrompt.trim()) {
             onComplete(currentPrompt);
             return;
           }
 
-          const abortController = new AbortController();
-          const timeoutId = setTimeout(() => {
-            abortController.abort();
-          }, 30000); // 30 second timeout
-
+          // For now, keeping the existing HTTP implementation for beautify
+          // This could be migrated to WebSocket later if needed
           try {
             const agentBaseUrl =
               import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
@@ -655,7 +1129,7 @@ export const useChatStore = create<ChatState>()(
               content: message.content,
             }));
 
-            const payload: StreamRequestPayload = {
+            const payload = {
               messages: [
                 ...recentMessages,
                 {
@@ -667,70 +1141,29 @@ export const useChatStore = create<ChatState>()(
               chatId: String(state.activeChat),
             };
 
-            let beautifiedText = "";
-            let streamError: string | null = null;
+            const response = await fetch(apiUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
 
-            const callbacks: StreamCallbacks = {
-              onTextDelta: (delta: string) => {
-                beautifiedText += delta;
-                onTextDelta(delta);
-              },
-              onThinkingDelta: () => {
-                // Ignore thinking content for beautification
-              },
-              onToolCall: () => {
-                // Not expected for beautification
-              },
-              onStructuredData: () => {
-                // Not expected for beautification
-              },
-              onStreamError: (error: string) => {
-                streamError = error;
-              },
-              onStreamClose: (aborted: boolean) => {
-                if (aborted && !abortController.signal.aborted) {
-                  streamError = "Stream was unexpectedly closed";
-                }
-              },
-              onCompletion: () => {
-                // Stream completed successfully
-                const result = beautifiedText.trim() || currentPrompt;
-                onComplete(result);
-              },
-            };
-
-            await processChatStream(
-              apiUrl,
-              payload,
-              callbacks,
-              abortController.signal
-            );
-
-            // Check for errors after stream completion
-            if (streamError) {
-              throw new Error(`Beautify stream error: ${streamError}`);
+            if (!response.ok) {
+              throw new Error(`Beautify request failed: ${response.status}`);
             }
 
-            if (abortController.signal.aborted) {
-              throw new Error("Beautify request timed out");
-            }
+            const result = await response.text();
+            onComplete(result.trim() || currentPrompt);
           } catch (error) {
             console.error("Failed to beautify prompt:", error);
-
-            // Handle errors appropriately
-            if (error instanceof Error && error.name === "AbortError") {
-              onError(new Error("Beautify request timed out"));
-            } else {
-              onError(
-                new Error(
-                  error instanceof Error
-                    ? `Failed to beautify text: ${error.message}`
-                    : "Failed to beautify text"
-                )
-              );
-            }
-          } finally {
-            clearTimeout(timeoutId);
+            onError(
+              new Error(
+                error instanceof Error
+                  ? `Failed to beautify text: ${error.message}`
+                  : "Failed to beautify text"
+              )
+            );
           }
         },
 
@@ -858,11 +1291,13 @@ export const useChatStore = create<ChatState>()(
         },
       }),
       {
-        name: "ai-chat-storage-v2", // Consider versioning storage name if state shape changes significantly
+        name: "ai-chat-storage-v3", // Updated version for WebSocket migration
         partialize: (state) => ({
           chats: state.chats,
-          model: state.model,
+          activeChat: state.activeChat,
+          contextItems: state.contextItems,
           mode: state.mode,
+          model: state.model,
         }),
       }
     )

@@ -1,28 +1,27 @@
 "use client";
 
+import type { Theme } from "@/theme";
+import {
+  Screen,
+  useChatStore,
+  useModelsStore,
+  useNavigateToConversation,
+  useRoutingStore,
+  useRunnerConnect,
+  useRunnerConnection,
+} from "@chara-codes/core";
+import type { ButtonConfig } from "@chara-codes/core";
 import type React from "react";
-import { useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
+import DebugPanel from "../molecules/debug-panel";
 import Header from "../molecules/header";
+import AddEditTechStackView from "../organisms/add-edit-tech-stack-view";
 import ConversationView from "../organisms/conversation-view";
 import HistoryView from "../organisms/history-view";
 import SettingsView from "../organisms/settings-view";
 import TechStacksView from "../organisms/tech-stacks-view";
 import TerminalView from "../organisms/terminal-view";
-import AddEditTechStackView from "../organisms/add-edit-tech-stack-view";
-import {
-  useChatStore,
-  useRunnerConnect,
-  useRunnerConnection,
-} from "@chara-codes/core";
-import { useModelsStore } from "@chara-codes/core";
-import {
-  useRoutingStore,
-  Screen,
-  useNavigateToConversation,
-} from "@chara-codes/core";
-import type { Theme } from "@/theme";
-import type { ButtonConfig } from "@chara-codes/core";
 
 const Container = styled.div`
   all: revert;
@@ -99,6 +98,15 @@ interface ChatInterfaceProps {
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
+  // Debug state
+  const [debugInfo, setDebugInfo] = useState({
+    chatStoreInitialized: false,
+    modelsStoreInitialized: false,
+    chatStoreError: null as string | null,
+    modelsStoreError: null as string | null,
+  });
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+
   // Get store initialization functions
   const initializeChatStore = useChatStore((state) => state.initializeStore);
   const initializeModelsStore = useModelsStore(
@@ -153,8 +161,45 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
   // Initialize stores when component mounts
   useEffect(() => {
-    initializeChatStore();
-    initializeModelsStore();
+    const initializeStores = async () => {
+      console.log("ChatInterface: Starting store initialization...");
+
+      // Initialize chat store
+      try {
+        console.log("ChatInterface: Initializing chat store...");
+        await initializeChatStore();
+        setDebugInfo((prev) => ({ ...prev, chatStoreInitialized: true }));
+        console.log("ChatInterface: Chat store initialized successfully");
+      } catch (error) {
+        const errorMsg =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error(
+          "ChatInterface: Chat store initialization failed:",
+          error
+        );
+        setDebugInfo((prev) => ({ ...prev, chatStoreError: errorMsg }));
+      }
+
+      // Initialize models store
+      try {
+        console.log("ChatInterface: Initializing models store...");
+        await initializeModelsStore();
+        setDebugInfo((prev) => ({ ...prev, modelsStoreInitialized: true }));
+        console.log("ChatInterface: Models store initialized successfully");
+      } catch (error) {
+        const errorMsg =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error(
+          "ChatInterface: Models store initialization failed:",
+          error
+        );
+        setDebugInfo((prev) => ({ ...prev, modelsStoreError: errorMsg }));
+      }
+
+      console.log("ChatInterface: Store initialization complete");
+    };
+
+    initializeStores();
   }, [initializeChatStore, initializeModelsStore]);
 
   // Handle new thread navigation
@@ -167,40 +212,62 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const isLoading = isChatsLoading || isModelsLoading;
   const hasError = chatsLoadError || modelsLoadError;
 
-  // Update the error message section to include a debug button
-  if (hasError) {
+  // Show error with options to continue or debug
+  if (
+    hasError &&
+    !debugInfo.chatStoreInitialized &&
+    !debugInfo.modelsStoreInitialized
+  ) {
     return (
       <Container>
-        <Header title="Error" />
+        <Header title="Connection Issues" />
         <Content>
           <ErrorMessage>
-            <h3>Error Loading Data</h3>
+            <h3>Unable to Load Data</h3>
             <p>
               {chatsLoadError || modelsLoadError}
               <br />
-              Using fallback data instead. Some features may be limited.
+              This might be due to network issues or the backend server being
+              unavailable.
             </p>
-            <DebugButton
-              onClick={() => {
-                console.log("Debug info:");
-                console.log("- Window location:", window.location.href);
-                console.log("- Base URL:", document.baseURI);
-                alert("Debug info logged to console");
-              }}
-            >
-              Debug Info
-            </DebugButton>
-            {typeof window !== "undefined" &&
-              window.location.hostname === "localhost" && (
-                <DebugButton
-                  onClick={() => {
-                    console.log("Forced reload");
-                    window.location.reload();
-                  }}
-                >
-                  Force Reload
-                </DebugButton>
-              )}
+            <div style={{ marginTop: "16px" }}>
+              <DebugButton
+                onClick={() => {
+                  console.log("Debug info:");
+                  console.log("- Window location:", window.location.href);
+                  console.log("- Base URL:", document.baseURI);
+                  console.log("- Chat store error:", debugInfo.chatStoreError);
+                  console.log(
+                    "- Models store error:",
+                    debugInfo.modelsStoreError
+                  );
+                  console.log("- Runner connected:", isConnected);
+                  alert("Debug info logged to console");
+                }}
+              >
+                Debug Info
+              </DebugButton>
+              <DebugButton
+                onClick={() => {
+                  // Retry initialization
+                  initializeChatStore().catch(console.error);
+                  initializeModelsStore().catch(console.error);
+                }}
+              >
+                Retry Connection
+              </DebugButton>
+              {typeof window !== "undefined" &&
+                window.location.hostname === "localhost" && (
+                  <DebugButton
+                    onClick={() => {
+                      console.log("Forced reload");
+                      window.location.reload();
+                    }}
+                  >
+                    Force Reload
+                  </DebugButton>
+                )}
+            </div>
           </ErrorMessage>
         </Content>
       </Container>
@@ -212,8 +279,72 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       <Container>
         <Header title="Loading..." />
         <Content>
-          <LoadingIndicator>Loading data...</LoadingIndicator>
+          <LoadingIndicator>
+            Loading data...
+            <div style={{ fontSize: "12px", marginTop: "10px", opacity: 0.7 }}>
+              Chat Store:{" "}
+              {debugInfo.chatStoreInitialized
+                ? "✓ Ready"
+                : isChatsLoading
+                ? "⏳ Loading..."
+                : "❌ Failed"}
+              {debugInfo.chatStoreError && ` (${debugInfo.chatStoreError})`}
+              <br />
+              Models Store:{" "}
+              {debugInfo.modelsStoreInitialized
+                ? "✓ Ready"
+                : isModelsLoading
+                ? "⏳ Loading..."
+                : "❌ Failed"}
+              {debugInfo.modelsStoreError && ` (${debugInfo.modelsStoreError})`}
+              <br />
+              Runner:{" "}
+              {isConnected
+                ? "✓ Connected"
+                : isConnecting
+                ? "⏳ Connecting..."
+                : "❌ Disconnected"}
+              <br />
+              <br />
+              {(isChatsLoading || isModelsLoading) && (
+                <span style={{ color: "#666" }}>
+                  This may take a few moments on first load...
+                </span>
+              )}
+              <br />
+              <DebugButton
+                onClick={async () => {
+                  console.log("🧪 Running WebSocket debug test...");
+                  try {
+                    // Import test dynamically
+                    const { quickConnectionTest } = await import(
+                      "@chara-codes/core"
+                    );
+                    const result = await quickConnectionTest();
+                    console.log("Test result:", result);
+                    alert(
+                      `WebSocket test ${
+                        result ? "passed" : "failed"
+                      }. Check console for details.`
+                    );
+                  } catch (error) {
+                    console.error("Debug test failed:", error);
+                    alert("Debug test failed. Check console for details.");
+                  }
+                }}
+              >
+                Test Connection
+              </DebugButton>
+              <DebugButton onClick={() => setShowDebugPanel(true)}>
+                Debug Panel
+              </DebugButton>
+            </div>
+          </LoadingIndicator>
         </Content>
+        <DebugPanel
+          visible={showDebugPanel}
+          onClose={() => setShowDebugPanel(false)}
+        />
       </Container>
     );
   }
@@ -256,6 +387,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     <Container>
       <Header />
       <Content>{renderCurrentScreen()}</Content>
+      <DebugPanel
+        visible={showDebugPanel}
+        onClose={() => setShowDebugPanel(false)}
+      />
     </Container>
   );
 };

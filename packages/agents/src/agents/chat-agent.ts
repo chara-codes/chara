@@ -67,9 +67,9 @@ export const chatAgent = async (
     mode: "write" | "ask";
     workingDir: string;
     tools?: Record<string, any>;
-    onFinish: (result: any) => {};
+    onFinish: (result: any) => void;
   },
-  options: { headers?: Record<string, string> } = {}
+  options: { headers?: Record<string, string>; abortSignal?: AbortSignal } = {}
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");
@@ -95,6 +95,7 @@ export const chatAgent = async (
     temperature: 0.3,
     toolCallStreaming: true,
     experimental_continueSteps: true,
+    abortSignal: options.abortSignal,
     experimental_repairToolCall: async ({
       toolCall,
       tools,
@@ -132,4 +133,39 @@ export const chatAgent = async (
       onFinish(result);
     },
   });
+};
+
+/**
+ * Backward-compatible wrapper for chatAgent for use in examples
+ * This provides default values for the new required parameters
+ */
+export const chatAgentSimple = async (
+  {
+    model,
+    messages,
+    mode = "ask",
+    workingDir = process.cwd(),
+    tools = {},
+  }: {
+    model: string;
+    messages: CoreMessage[];
+    mode?: "write" | "ask";
+    workingDir?: string;
+    tools?: Record<string, any>;
+  },
+  options: { headers?: Record<string, string>; abortSignal?: AbortSignal } = {}
+) => {
+  return chatAgent(
+    {
+      model,
+      messages,
+      mode,
+      workingDir,
+      tools,
+      onFinish: () => {
+        // No-op for backward compatibility
+      },
+    },
+    options
+  );
 };

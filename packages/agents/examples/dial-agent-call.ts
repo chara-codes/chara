@@ -1,7 +1,7 @@
-import { chatAgent } from "../src/agents/chat-agent";
 import { logger } from "@chara-codes/logger";
 import type { CoreMessage } from "ai";
-import { hasProvider, fetchModels } from "../src/providers";
+import { chatAgentSimple } from "../src/agents/chat-agent";
+import { fetchModels, hasProvider } from "../src/providers";
 
 /**
  * Example demonstrating how to use the chatAgent with DIAL provider
@@ -84,7 +84,7 @@ async function runBasicExample(modelId: string) {
     },
   ];
 
-  const result = await chatAgent({
+  const result = await chatAgentSimple({
     model: `dial:::${modelId}`, // Format: provider:::modelId
     messages,
   });
@@ -119,7 +119,7 @@ async function runConversationExample(modelId: string) {
     },
   ];
 
-  const result = await chatAgent({
+  const result = await chatAgentSimple({
     model: `dial:::${modelId}`,
     messages,
   });
@@ -147,7 +147,7 @@ async function runThinkingExample(modelId: string) {
     },
   ];
 
-  const result = await chatAgent({
+  const result = await chatAgentSimple({
     model: `dial:::${modelId}`,
     messages,
   });

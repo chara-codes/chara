@@ -3,6 +3,7 @@ export * from "./connected-app-preview";
 export * from "./code-preview";
 export * from "./command-terminal";
 export * from "./confirm-dialog";
+export * from "./connection-status";
 export * from "./context-item";
 export * from "./context-tooltip";
 export * from "./conversation-suggestions";
