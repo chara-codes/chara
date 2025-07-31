@@ -82,9 +82,10 @@ export class ChatService {
                 name: parsedChunk.toolName,
                 arguments: parsedChunk.args || {},
                 status:
-                  parsedChunk.result?.status === "success"
-                    ? "success"
-                    : "error",
+                  parsedChunk.result?.error ||
+                  parsedChunk.result?.status === "error"
+                    ? "error"
+                    : "success",
                 result: {
                   content: parsedChunk.result?.message || "",
                   data: parsedChunk.result,

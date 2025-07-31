@@ -6,6 +6,7 @@ import {
   useChatStore,
   useModelsStore,
   useNavigateToConversation,
+  useNavigateToNewThread,
   useRoutingStore,
   useRunnerConnect,
   useRunnerConnection,
@@ -148,7 +149,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       } catch (error) {
         console.error("Failed to load chat:", error);
         // Continue with navigation even if loading fails
-        navigateToConversation();
+        useNavigateToNewThread();
       }
     },
     [chatStore, navigateToConversation]
@@ -280,7 +281,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         <Header title="Loading..." />
         <Content>
           <LoadingIndicator>
-            Loading data...
+            <div>Loading data...</div>
             <div style={{ fontSize: "12px", marginTop: "10px", opacity: 0.7 }}>
               Chat Store:{" "}
               {debugInfo.chatStoreInitialized
