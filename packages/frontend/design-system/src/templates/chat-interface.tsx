@@ -307,17 +307,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               <br />
               <br />
               {(isChatsLoading || isModelsLoading) && (
-                <span style={{ color: "#666" }}>
-                  This may take a few moments on first load...
-                </span>
+                <span>This may take a few moments on first load...</span>
               )}
             </div>
           </LoadingIndicator>
         </Content>
-        <DebugPanel
-          visible={showDebugPanel}
-          onClose={() => setShowDebugPanel(false)}
-        />
       </Container>
     );
   }
