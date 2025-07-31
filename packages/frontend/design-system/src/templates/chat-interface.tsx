@@ -281,7 +281,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         <Header title="Loading..." />
         <Content>
           <LoadingIndicator>
-            <div>Loading data...</div>
             <div style={{ fontSize: "12px", marginTop: "10px", opacity: 0.7 }}>
               Chat Store:{" "}
               {debugInfo.chatStoreInitialized
@@ -312,33 +311,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                   This may take a few moments on first load...
                 </span>
               )}
-              <br />
-              <DebugButton
-                onClick={async () => {
-                  console.log("🧪 Running WebSocket debug test...");
-                  try {
-                    // Import test dynamically
-                    const { quickConnectionTest } = await import(
-                      "@chara-codes/core"
-                    );
-                    const result = await quickConnectionTest();
-                    console.log("Test result:", result);
-                    alert(
-                      `WebSocket test ${
-                        result ? "passed" : "failed"
-                      }. Check console for details.`
-                    );
-                  } catch (error) {
-                    console.error("Debug test failed:", error);
-                    alert("Debug test failed. Check console for details.");
-                  }
-                }}
-              >
-                Test Connection
-              </DebugButton>
-              <DebugButton onClick={() => setShowDebugPanel(true)}>
-                Debug Panel
-              </DebugButton>
             </div>
           </LoadingIndicator>
         </Content>

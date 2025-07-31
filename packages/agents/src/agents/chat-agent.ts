@@ -124,10 +124,6 @@ export const chatAgent = async (
       return { ...toolCall, args: JSON.stringify(repairedArgs) };
     },
     maxSteps: 99,
-    experimental_transform: smoothStream({
-      delayInMs: 20, // optional: defaults to 10ms
-      chunking: "line", // optional: defaults to 'word'
-    }),
     messages: cleanedMessages,
     onFinish: (result) => {
       onFinish(result);

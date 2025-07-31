@@ -1,28 +1,28 @@
 "use client";
 
+import { useChatStore, useModelsStore } from "@chara-codes/core";
 import type React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDownIcon, SearchIcon, StarIcon } from "../../atoms/icons";
 import {
-  FooterContainer,
-  ModeSelector,
-  ModeButton,
-  ModelSelectorContainer,
-  ModelSelectorButton,
   DropdownContainer,
-  SearchContainer,
-  SearchInput,
-  SearchIconWrapper,
+  FooterContainer,
+  ModeButton,
+  ModelInfo,
+  ModelOption,
+  ModelOptionContent,
+  ModelSelectorButton,
+  ModelSelectorContainer,
+  ModeSelector,
+  NoResults,
   ProviderGroup,
   ProviderHeader,
-  ModelOption,
-  NoResults,
-  ModelInfo,
+  SearchContainer,
+  SearchIconWrapper,
+  SearchInput,
   SourceBadge,
-  ModelOptionContent,
 } from "./styles";
 import { getModelSourceType } from "./utils";
-import { useChatStore, useModelsStore } from "@chara-codes/core";
 
 /**
  * Footer component with mode selector and model selector

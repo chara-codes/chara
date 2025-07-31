@@ -1,25 +1,27 @@
 "use client";
 
-import type React from "react";
-import styled from "styled-components";
-import { useCallback } from "react";
+import type { Theme } from "@/theme";
 import {
-  HistoryIcon,
-  SettingsIcon,
-  PlusIcon,
-  LayersIcon, // Import the LayersIcon
-  TerminalIcon, // Import the TerminalIcon
-} from "../atoms/icons";
-import {
+  Screen,
+  useCurrentScreen,
   useNavigateToHistory,
-  useNavigateToSettings,
   useNavigateToNewThread,
+  useNavigateToSettings,
   useNavigateToTechStacks, // Import the new navigation hook
   useNavigateToTerminal, // Import the terminal navigation hook
-  useCurrentScreen,
-  Screen,
 } from "@chara-codes/core";
-import type { Theme } from "@/theme";
+import type React from "react";
+import { useCallback } from "react";
+import styled from "styled-components";
+import {
+  HistoryIcon,
+  LayersIcon, // Import the LayersIcon
+  PlusIcon,
+  SettingsIcon,
+  TerminalIcon, // Import the TerminalIcon
+} from "../atoms/icons";
+import { ConnectionStatusIndicator } from "./connection-status.js";
+
 // Define Theme interface locally to avoid dependency issues
 
 interface HeaderProps {
@@ -64,9 +66,7 @@ const HeaderButton = styled.button<{ $active?: boolean }>`
       ? (theme as Theme).colors.primary
       : (theme as Theme).colors.textSecondary};
   cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 
   &:hover {
     background-color: ${({ theme }) =>
@@ -162,6 +162,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
         >
           <SettingsIcon size={16} />
         </HeaderButton>
+        <ConnectionStatusIndicator />
       </HeaderActions>
     </HeaderContainer>
   );

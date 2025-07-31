@@ -867,26 +867,13 @@ export const useChatStore = create<ChatState>()(
                 if (!existingToolCall) {
                   // New tool call - add the required tag format
                   toolContent = `[toolCall:${incomingToolCall.id},${incomingToolCall.name}]`;
-                  console.log("Store: Adding new tool call tag:", toolContent);
-                  if (incomingToolCall.status === "in-progress") {
-                    toolContent += `\n🔧 Using ${incomingToolCall.name}...`;
-                  }
                 } else if (incomingToolCall.status === "success") {
                   // Tool completed successfully
-                  const resultMessage =
-                    incomingToolCall.result?.content ||
-                    `✅ ${incomingToolCall.name} completed successfully`;
-                  toolContent = `\n${resultMessage}`;
                   console.log(
                     "Store: Tool call success, adding result:",
                     toolContent
                   );
                 } else if (incomingToolCall.status === "error") {
-                  // Tool failed
-                  const errorMessage =
-                    incomingToolCall.result?.error ||
-                    `❌ ${incomingToolCall.name} failed`;
-                  toolContent = `\n${errorMessage}`;
                   console.log(
                     "Store: Tool call error, adding error:",
                     toolContent
