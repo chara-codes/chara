@@ -14,14 +14,18 @@ import {
 } from "./controllers";
 import { closeMcpClients, initializeMcpTools } from "./mcp/mcp-servers";
 import { initialize } from "./providers/";
+import { chatService } from "./services/chat";
 import { appEvents } from "./services/events";
 import { runnerService } from "./services/runner";
-import { webSocketChatService } from "./services/websocket-chat";
 import { logWithPreset } from "./utils";
 
 export { beautifyAgent } from "./agents/beautify-agent";
 // Export agents for programmatic use
-export { chatAgent, cleanMessages } from "./agents/chat-agent";
+export {
+  chatAgent,
+  cleanMessages,
+  type ChatAgentCallbacks,
+} from "./agents/chat-agent";
 export { gitAgent } from "./agents/git-agent";
 export { initAgent } from "./agents/init-agent";
 export {
@@ -180,16 +184,8 @@ function createServerConfig(config: {
           logger.debug("WebSocket message received:", data);
 
           // Handle chat events
-          if (data.event === "chat:send") {
-            webSocketChatService.handleChatSend(data.data);
-          } else if (data.event === "chat:cancel") {
-            webSocketChatService.handleChatCancel(data.data);
-          } else if (data.event === "chat:subscribe") {
-            webSocketChatService.subscribeToChat(data.data.chatId, ws);
-          } else if (data.event === "chat:unsubscribe") {
-            webSocketChatService.unsubscribeFromChat(data.data.chatId, ws);
-          } else if (data.event === "chat:unsubscribe-all") {
-            webSocketChatService.unsubscribeFromAllChats(ws);
+          if (data.event && data.event.startsWith("chat:")) {
+            chatService.handleEvent(data.event, data.data, ws);
           }
           // Handle runner commands from client (only if runner is enabled)
           else if (
@@ -217,7 +213,7 @@ function createServerConfig(config: {
       close(ws: any) {
         wsClients.delete(ws);
         // Clean up any chat subscriptions associated with this WebSocket
-        webSocketChatService.cleanupClientSubscriptions(ws);
+        chatService.cleanupClientSubscriptions(ws);
         logger.debug(
           `WebSocket client disconnected. Total clients: ${wsClients.size}`
         );
@@ -306,7 +302,7 @@ export async function startServer(
 
   // --- MCP Initialization ---
   // Initialize controllers and services with empty tools first
-  webSocketChatService.setTools({});
+  chatService.setTools({});
   suggestController.setTools({});
   initAgent.setTools({});
 
@@ -319,7 +315,7 @@ export async function startServer(
       logger.debug(
         `✅ MCP background initialization complete! Loaded ${mcpCount} tools.`
       );
-      webSocketChatService.setTools(mcpTools);
+      chatService.setTools(mcpTools);
       suggestController.setTools(mcpTools);
       initAgent.setTools(mcpTools);
     } else {
@@ -405,7 +401,7 @@ export async function startServer(
       }
 
       // Stop WebSocket chat service
-      webSocketChatService.destroy();
+      chatService.destroy();
 
       // Stop the server
       server.stop(true);

@@ -469,10 +469,10 @@ export function ConnectionStatusIndicator({
   };
 
   const getTooltipText = () => {
-    if (status.connected) return "WebSocket connected";
+    if (status.connected) return "Connected";
     if (status.reconnecting)
       return `Reconnecting... (attempt ${status.reconnectAttempts})`;
-    return "WebSocket disconnected";
+    return "Disconnected";
   };
 
   const formatLastConnected = () => {

@@ -2,13 +2,19 @@ import { logger } from "@chara-codes/logger";
 import {
   generateObject,
   NoSuchToolError,
-  smoothStream,
   streamText,
   type CoreMessage,
+  type StepResult,
 } from "ai";
 import { chatPrompt } from "../prompts/chat";
 import { providersRegistry } from "../providers";
-import { chatToolsAskMode, chatToolsWriteMode } from "../tools/chat-tools";
+
+export interface ChatAgentCallbacks {
+  onChunk?: (chunk: any) => void | Promise<void>;
+  onError?: (error: any) => void | Promise<void>;
+  onFinish?: (result: any) => void | Promise<void>;
+  onStepFinish?: (step: StepResult<any>) => void | Promise<void>;
+}
 
 /**
  * Cleans messages by removing toolCall tags like [toolCall:call_id,tool-name]
@@ -46,6 +52,31 @@ export const cleanMessages = (messages: CoreMessage[]): CoreMessage[] => {
   });
 };
 
+const repairToolCall =
+  (aiModel: any) =>
+  async ({ toolCall, tools, parameterSchema, error }: any) => {
+    if (NoSuchToolError.isInstance(error)) {
+      return null; // do not attempt to fix invalid tool names
+    }
+
+    const tool = tools[toolCall.toolName as keyof typeof tools];
+
+    const { object: repairedArgs } = await generateObject({
+      model: aiModel,
+      schema: tool.parameters,
+      prompt: [
+        `The model tried to call the tool "${toolCall.toolName}"` +
+          ` with the following arguments:`,
+        JSON.stringify(toolCall.args),
+        `The tool accepts the following schema:`,
+        JSON.stringify(parameterSchema(toolCall)),
+        "Please fix the arguments.",
+      ].join("\n"),
+    });
+
+    return { ...toolCall, args: JSON.stringify(repairedArgs) };
+  };
+
 /**
  * Main chat agent function that processes messages and returns a streaming response
  *
@@ -60,14 +91,14 @@ export const chatAgent = async (
     mode,
     workingDir = process.cwd(),
     tools = {},
-    onFinish,
+    callbacks,
   }: {
     model: string;
     messages: CoreMessage[];
     mode: "write" | "ask";
     workingDir: string;
     tools?: Record<string, any>;
-    onFinish: (result: any) => void;
+    callbacks: ChatAgentCallbacks;
   },
   options: { headers?: Record<string, string>; abortSignal?: AbortSignal } = {}
 ) => {
@@ -81,7 +112,12 @@ export const chatAgent = async (
   // Clean messages before sending to AI model to remove any toolCall tags
   // that might interfere with model responses or cause confusion
   const cleanedMessages = cleanMessages(messages);
-
+  const {
+    onFinish = null,
+    onChunk = null,
+    onError = null,
+    onStepFinish = null,
+  } = callbacks;
   return streamText({
     ...options,
     system: chatPrompt({
@@ -96,37 +132,28 @@ export const chatAgent = async (
     toolCallStreaming: true,
     experimental_continueSteps: true,
     abortSignal: options.abortSignal,
-    experimental_repairToolCall: async ({
-      toolCall,
-      tools,
-      parameterSchema,
-      error,
-    }) => {
-      if (NoSuchToolError.isInstance(error)) {
-        return null; // do not attempt to fix invalid tool names
-      }
-
-      const tool = tools[toolCall.toolName as keyof typeof tools];
-
-      const { object: repairedArgs } = await generateObject({
-        model: aiModel,
-        schema: tool.parameters,
-        prompt: [
-          `The model tried to call the tool "${toolCall.toolName}"` +
-            ` with the following arguments:`,
-          JSON.stringify(toolCall.args),
-          `The tool accepts the following schema:`,
-          JSON.stringify(parameterSchema(toolCall)),
-          "Please fix the arguments.",
-        ].join("\n"),
-      });
-
-      return { ...toolCall, args: JSON.stringify(repairedArgs) };
-    },
+    experimental_repairToolCall: repairToolCall(aiModel),
     maxSteps: 99,
     messages: cleanedMessages,
     onFinish: (result) => {
-      onFinish(result);
+      if (onFinish) {
+        onFinish(result);
+      }
+    },
+    onChunk: (chunk) => {
+      if (onChunk) {
+        onChunk(chunk);
+      }
+    },
+    onError: (error) => {
+      if (onError) {
+        onError(error);
+      }
+    },
+    onStepFinish: (result) => {
+      if (onStepFinish) {
+        onStepFinish(result);
+      }
     },
   });
 };
@@ -158,9 +185,7 @@ export const chatAgentSimple = async (
       mode,
       workingDir,
       tools,
-      onFinish: () => {
-        // No-op for backward compatibility
-      },
+      callbacks: {},
     },
     options
   );

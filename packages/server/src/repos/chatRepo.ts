@@ -405,6 +405,52 @@ export async function getFirstMessageFromRecentChats(options?: {
   }
 }
 
+/** Update a chat with new values. */
+export async function updateChat({
+  chatId,
+  title,
+  status,
+}: {
+  chatId: number;
+  title?: string;
+  status?: "idle" | "in_progress" | "completed" | "error";
+}) {
+  try {
+    const updateValues: any = {};
+
+    if (title !== undefined) updateValues.title = title;
+    if (status !== undefined) updateValues.status = status;
+
+    if (Object.keys(updateValues).length === 0) {
+      throw new Error("No fields to update");
+    }
+
+    updateValues.updatedAt = sql`CURRENT_TIMESTAMP`;
+
+    const [updatedChat] = await db
+      .update(chats)
+      .set(updateValues)
+      .where(eq(chats.id, chatId))
+      .returning({
+        id: chats.id,
+        title: chats.title,
+        createdAt: chats.createdAt,
+        updatedAt: chats.updatedAt,
+        parentId: chats.parentId,
+        status: chats.status,
+      });
+
+    if (!updatedChat) {
+      throw new Error(`Chat with ID ${chatId} not found`);
+    }
+
+    return updatedChat;
+  } catch (err) {
+    logger.error(JSON.stringify(err), "updateChat failed");
+    throw err;
+  }
+}
+
 /** Delete all messages in a chat after a specific message ID. */
 export async function deleteMessages({
   chatId,

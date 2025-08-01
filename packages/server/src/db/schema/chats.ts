@@ -1,10 +1,10 @@
 import { sql } from "drizzle-orm";
 import {
-  type AnySQLiteColumn,
   index,
   int,
   sqliteTable,
   text,
+  type AnySQLiteColumn,
 } from "drizzle-orm/sqlite-core";
 
 /**
@@ -36,6 +36,12 @@ export const chats = sqliteTable(
     parentId: int().references((): AnySQLiteColumn => chats.id, {
       onDelete: "cascade",
     }),
+
+    /** Current status of the chat conversation */
+    status: text()
+      .notNull()
+      .default("idle")
+      .$type<"idle" | "in_progress" | "completed" | "error">(),
   },
   (table) => ({
     parentIdx: index("idx_chats_parent_id").on(table.parentId),

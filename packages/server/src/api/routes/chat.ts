@@ -7,6 +7,7 @@ import {
   getFirstMessageFromRecentChats,
   getHistory,
   saveMessage,
+  updateChat,
   updateMessage,
 } from "../../repos/chatRepo.ts";
 import { publicProcedure, router } from "../trpc";
@@ -106,6 +107,31 @@ export const chatRouter = router({
         return chat;
       } catch (err) {
         logger.error(JSON.stringify(err), "createChat endpoint failed");
+        throw err;
+      }
+    }),
+
+  updateChat: publicProcedure
+    .input(
+      z.object({
+        chatId: z.number(),
+        title: z.string().optional(),
+        status: z
+          .enum(["idle", "in_progress", "completed", "error"])
+          .optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const chat = await updateChat({
+          chatId: input.chatId,
+          title: input.title,
+          status: input.status,
+        });
+
+        return chat;
+      } catch (err) {
+        logger.error(JSON.stringify(err), "updateChat endpoint failed");
         throw err;
       }
     }),
