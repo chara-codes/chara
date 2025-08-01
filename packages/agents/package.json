@@ -10,8 +10,7 @@
     "test": "bun test .",
     "test:watch": "bun test --watch .",
     "test:coverage": "bun test --coverage .",
-    "test:clean": "rm -rf test-temp tmp && bun test .",
-    "test:performance": "bun test --timeout=30000 src/**/*performance*.test.ts"
+    "test:clean": "rm -rf test-temp tmp && bun test ."
   },
   "devDependencies": {
     "@ai-sdk/provider": "^1.1.3",
