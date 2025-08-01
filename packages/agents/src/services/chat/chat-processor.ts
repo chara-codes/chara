@@ -10,6 +10,15 @@ import { statusManager } from "./status-manager";
 import { subscriptionManager } from "./subscription-manager";
 import type { ChatSendEvent } from "./types";
 
+export interface ToolCall {
+  id: string;
+  name: string;
+  arguments: Record<string, unknown>;
+  status: "pending" | "in-progress" | "success" | "error";
+  result?: any;
+  timestamp?: string;
+}
+
 export class ChatProcessor {
   // Map of chatId to AbortController for cancelling ongoing requests
   private chatAbortControllers = new Map<number, AbortController>();
@@ -19,8 +28,115 @@ export class ChatProcessor {
     this.mcpTools = tools;
   }
 
+  private async updateAssistantMessage(
+    assistantMessageId: number | null,
+    content: string,
+    toolCalls: Record<string, ToolCall>
+  ): Promise<void> {
+    if (!assistantMessageId) return;
+
+    try {
+      await trpc.chat.updateMessage.mutate({
+        messageId: assistantMessageId,
+        content,
+        toolCalls: Object.keys(toolCalls).length > 0 ? toolCalls : undefined,
+      });
+    } catch (error) {
+      logger.error("Failed to update assistant message:", error);
+    }
+  }
+
+  private async handleCancellation(
+    chatId: number,
+    assistantMessageId: number | null,
+    accumulatedContent: string,
+    toolCalls: Record<string, ToolCall>
+  ): Promise<void> {
+    logger.info(`Chat ${chatId} was cancelled`);
+
+    // Add cancellation message to content
+    const finalContent = accumulatedContent + "\n\n(Canceled by user)";
+
+    // Update message with cancellation info
+    await this.updateAssistantMessage(
+      assistantMessageId,
+      finalContent,
+      toolCalls
+    );
+
+    // Update status and broadcast
+    const completedStatus = statusManager.updateChatStatus(chatId, {
+      status: "completed",
+      completedAt: Date.now(),
+    });
+
+    subscriptionManager.broadcastToChat(chatId, {
+      event: "chat:status",
+      data: completedStatus,
+    });
+
+    await chatHooksManager.onChatCancel(chatId);
+  }
+
+  private handleToolCall(
+    chunk: any,
+    toolCalls: Record<string, ToolCall>,
+    accumulatedContent: string
+  ): string {
+    // Add tool call to collection
+    const toolCall: ToolCall = {
+      id: chunk.toolCallId,
+      name: chunk.toolName,
+      arguments: chunk.args,
+      status: "pending",
+      timestamp: new Date().toISOString(),
+    };
+    toolCalls[chunk.toolCallId] = toolCall;
+
+    // Add tool call tag to accumulated content
+    const toolCallTag = `[toolCall:${chunk.toolCallId},${chunk.toolName}]`;
+    return accumulatedContent + toolCallTag;
+  }
+
+  private handleToolResult(
+    chunk: any,
+    toolCalls: Record<string, ToolCall>,
+    accumulatedContent: string
+  ): string {
+    // Update tool call status and result
+    if (toolCalls[chunk.toolCallId]) {
+      toolCalls[chunk.toolCallId].status = chunk.isError ? "error" : "success";
+      toolCalls[chunk.toolCallId].result = chunk.result;
+
+      // Add error information to content if tool call failed
+      if (chunk.isError) {
+        const errorInfo = `\n[Error in ${toolCalls[chunk.toolCallId].name}: ${
+          chunk.result?.error || "Unknown error"
+        }]`;
+        return accumulatedContent + errorInfo;
+      }
+    }
+    return accumulatedContent;
+  }
+
+  private updateStatusAndBroadcast(
+    chatId: number,
+    status: any,
+    event: string = "chat:status"
+  ): void {
+    subscriptionManager.broadcastToChat(chatId, {
+      event,
+      data: status,
+    });
+  }
+
   async handleChatSend(data: ChatSendEvent["data"]): Promise<void> {
     const { chatId, model, messages, userMessageId, mode } = data;
+
+    // Track assistant message and accumulated content
+    let assistantMessageId: number | null = null;
+    let accumulatedContent = "";
+    const toolCalls: Record<string, ToolCall> = {};
 
     // Check if chat is already in progress
     if (statusManager.isChatInProgress(chatId)) {
@@ -79,6 +195,18 @@ export class ChatProcessor {
         );
       }
 
+      // Create assistant message for the response
+      try {
+        const assistantMessage = await trpc.chat.saveMessage.mutate({
+          chatId,
+          role: "assistant",
+          content: "",
+        });
+        assistantMessageId = assistantMessage.id;
+      } catch (error) {
+        logger.error("Failed to create assistant message:", error);
+      }
+
       // Combine agent-specific tools with MCP tools
       const localChatTools =
         mode === "write" ? chatToolsWriteMode : chatToolsAskMode;
@@ -99,7 +227,13 @@ export class ChatProcessor {
                 stepType: stepResult.stepType,
                 toolCalls: stepResult.toolCalls?.length || 0,
               });
-              logger.dumpDebug(stepResult);
+
+              // Update assistant message with current content and tool calls
+              await this.updateAssistantMessage(
+                assistantMessageId,
+                accumulatedContent,
+                toolCalls
+              );
             },
             onFinish: async () => {
               if (mode === "write") {
@@ -146,6 +280,9 @@ export class ChatProcessor {
           }
           // Handle different chunk types
           if (chunk.type === "text-delta") {
+            // Accumulate content for message updates
+            accumulatedContent += chunk.textDelta;
+
             // Broadcast text chunks to subscribers
             subscriptionManager.broadcastToChat(chatId, {
               event: "chat:chunk",
@@ -156,6 +293,12 @@ export class ChatProcessor {
               },
             });
           } else if (chunk.type === "tool-call") {
+            accumulatedContent = this.handleToolCall(
+              chunk,
+              toolCalls,
+              accumulatedContent
+            );
+
             subscriptionManager.broadcastToChat(chatId, {
               event: "chat:chunk",
               data: {
@@ -165,6 +308,12 @@ export class ChatProcessor {
               },
             });
           } else if (chunk.type === "tool-result") {
+            accumulatedContent = this.handleToolResult(
+              chunk,
+              toolCalls,
+              accumulatedContent
+            );
+
             subscriptionManager.broadcastToChat(chatId, {
               event: "chat:chunk",
               data: {
@@ -178,18 +327,12 @@ export class ChatProcessor {
       } catch (streamError) {
         // Check if this was an abort error
         if (abortController.signal.aborted) {
-          logger.info(`Stream for chat ${chatId} was cancelled`);
-          const completedStatus = statusManager.updateChatStatus(chatId, {
-            status: "completed",
-            completedAt: Date.now(),
-          });
-
-          subscriptionManager.broadcastToChat(chatId, {
-            event: "chat:status",
-            data: completedStatus,
-          });
-
-          await chatHooksManager.onChatCancel(chatId);
+          await this.handleCancellation(
+            chatId,
+            assistantMessageId,
+            accumulatedContent,
+            toolCalls
+          );
           return;
         }
 
@@ -214,10 +357,14 @@ export class ChatProcessor {
           completedAt: Date.now(),
         });
 
-        subscriptionManager.broadcastToChat(chatId, {
-          event: "chat:status",
-          data: completedStatus,
-        });
+        this.updateStatusAndBroadcast(chatId, completedStatus);
+
+        // Final update to assistant message with complete content and tool calls
+        await this.updateAssistantMessage(
+          assistantMessageId,
+          accumulatedContent,
+          toolCalls
+        );
 
         // Trigger completion hook
         await chatHooksManager.onChatComplete(chatId, "", result.usage);
@@ -225,18 +372,12 @@ export class ChatProcessor {
     } catch (error) {
       // Check if this was a cancellation
       if (abortController.signal.aborted) {
-        logger.info(`Chat ${chatId} was cancelled`);
-        const completedStatus = statusManager.updateChatStatus(chatId, {
-          status: "completed",
-          completedAt: Date.now(),
-        });
-
-        subscriptionManager.broadcastToChat(chatId, {
-          event: "chat:status",
-          data: completedStatus,
-        });
-
-        await chatHooksManager.onChatCancel(chatId);
+        await this.handleCancellation(
+          chatId,
+          assistantMessageId,
+          accumulatedContent,
+          toolCalls
+        );
         return;
       }
 
@@ -258,6 +399,9 @@ export class ChatProcessor {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
 
+      // Add error information to content
+      accumulatedContent += `\n\n[Chat Error: ${errorMessage}]`;
+
       subscriptionManager.broadcastToChat(chatId, {
         event: "chat:error",
         data: {
@@ -274,10 +418,14 @@ export class ChatProcessor {
         completedAt: Date.now(),
       });
 
-      subscriptionManager.broadcastToChat(chatId, {
-        event: "chat:status",
-        data: errorStatus,
-      });
+      this.updateStatusAndBroadcast(chatId, errorStatus);
+
+      // Final update to assistant message with accumulated content and tool calls even on error
+      await this.updateAssistantMessage(
+        assistantMessageId,
+        accumulatedContent,
+        toolCalls
+      );
 
       // Trigger error hook
       await chatHooksManager.onChatError(chatId, errorMessage);

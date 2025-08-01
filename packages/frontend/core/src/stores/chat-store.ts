@@ -511,7 +511,7 @@ export const useChatStore = create<ChatState>()(
           set(updates);
 
           // Save user message to database and update ID if successful
-          let savedUserMessageId: string | undefined = undefined;
+          let savedUserMessageId: string | undefined;
           if (currentActiveChatId) {
             try {
               const savedMessage = await saveMessage(
@@ -894,52 +894,6 @@ export const useChatStore = create<ChatState>()(
             },
             onChatComplete: async (data) => {
               console.log("Chat Store: WebSocket chat completed", data);
-
-              // Save assistant message to database if we have an active chat (only once)
-              if (
-                currentActiveChatId &&
-                !assistantMessageSaved &&
-                aiMessageId
-              ) {
-                assistantMessageSaved = true; // Set flag to prevent duplicate saves
-                try {
-                  const currentState = get();
-                  const aiMessage = currentState.messages.find(
-                    (m) => m.id === aiMessageId
-                  );
-                  if (aiMessage) {
-                    const savedMessage = await saveMessage(
-                      currentActiveChatId,
-                      aiMessage.content as string,
-                      "assistant",
-                      undefined,
-                      aiMessage.toolCalls
-                    );
-
-                    // Update the assistant message with the saved ID
-                    const updatedMessageId = savedMessage.id;
-                    set((currentState) => {
-                      const updatedMessages = currentState.messages.map((msg) =>
-                        msg.id === aiMessageId
-                          ? { ...msg, id: updatedMessageId }
-                          : msg
-                      );
-                      return {
-                        messages: updatedMessages,
-                        chats: currentState.chats.map((chat) =>
-                          chat.id === currentActiveChatId
-                            ? { ...chat, messages: updatedMessages }
-                            : chat
-                        ),
-                      };
-                    });
-                  }
-                } catch (error) {
-                  console.error("Failed to save assistant message:", error);
-                  // Continue with the flow even if saving fails
-                }
-              }
-
               set({ isResponding: false, isThinking: false });
             },
             onChatError: (error, code) => {

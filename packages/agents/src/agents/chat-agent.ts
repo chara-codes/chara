@@ -2,6 +2,7 @@ import { logger } from "@chara-codes/logger";
 import {
   generateObject,
   NoSuchToolError,
+  smoothStream,
   streamText,
   type CoreMessage,
   type StepResult,
@@ -133,6 +134,10 @@ export const chatAgent = async (
     experimental_continueSteps: true,
     abortSignal: options.abortSignal,
     experimental_repairToolCall: repairToolCall(aiModel),
+    experimental_transform: smoothStream({
+      delayInMs: 20, // optional: defaults to 10ms
+      chunking: "line", // optional: defaults to 'word'
+    }),
     maxSteps: 99,
     messages: cleanedMessages,
     onFinish: (result) => {
