@@ -294,6 +294,38 @@ export const useChatStore = create<ChatState>()(
               isLoading: false,
             });
 
+            // Load messages for persisted activeChat if it exists
+            const currentState = get();
+            if (currentState.activeChat) {
+              console.log(
+                "Chat Store: Found persisted activeChat, loading messages for:",
+                currentState.activeChat
+              );
+              try {
+                // Subscribe to WebSocket for the persisted activeChat (if WebSocket is connected)
+                if (currentState.wsConnected) {
+                  const numericChatId = parseInt(currentState.activeChat);
+                  chatService.subscribeToChat(numericChatId, {});
+                  console.log(
+                    "Chat Store: Subscribed to WebSocket for persisted activeChat:",
+                    numericChatId
+                  );
+                }
+
+                // Load chat history from database
+                await get().loadChatHistory(currentState.activeChat);
+                console.log(
+                  "Chat Store: Messages loaded for persisted activeChat"
+                );
+              } catch (error) {
+                console.error(
+                  "Chat Store: Failed to load messages for persisted activeChat:",
+                  error
+                );
+                // Continue without failing the entire initialization
+              }
+            }
+
             // If WebSocket failed but data loaded successfully, show warning
             if (wsConnectionFailed) {
               set({
