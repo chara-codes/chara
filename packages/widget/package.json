@@ -9,7 +9,7 @@
   "types": "src/index.tsx",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "ddev": "vite",
     "build": "vite build --base=/widget/",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "build:check": "bun run typecheck && vite build",

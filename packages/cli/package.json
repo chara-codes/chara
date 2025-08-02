@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "bun build ./src/index.ts --outfile ./dist/chara --compile",
-    "dev": "bun ./src/index.ts dev --projectDir ./demo-project/",
+    "ddev": "bun ./src/index.ts dev --projectDir ./demo-project/",
     "d": "bun ./src/index.ts",
     "demo:ui": "bun ./src/ui/demo.ts",
     "start": "./dist/chara",
