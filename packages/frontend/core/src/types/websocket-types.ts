@@ -26,16 +26,19 @@ export interface ChatServiceCallbacks {
   onChatStatus?: (data: ChatStatus) => void;
   onChatChunk?: (data: {
     chatId: number;
+    assistantMessageId: number | null;
     chunk: string;
     type: "text" | "tool-call" | "tool-result";
   }) => void;
   onChatComplete?: (data: {
     chatId: number;
+    assistantMessageId: number | null;
     fullResponse: string;
     usage?: Record<string, unknown>;
   }) => void;
   onChatError?: (data: {
     chatId: number;
+    assistantMessageId: number | null;
     error: string;
     code?: string;
   }) => void;

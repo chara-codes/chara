@@ -11,15 +11,20 @@ export interface WebSocketChatCallbacks {
     status: string;
     error?: string;
   }) => void;
-  onTextDelta?: (delta: string) => void;
-  onThinkingDelta?: (delta: string) => void;
-  onToolCall?: (toolCall: ToolCall) => void;
+  onTextDelta?: (delta: string, assistantMessageId?: number | null) => void;
+  onThinkingDelta?: (delta: string, assistantMessageId?: number | null) => void;
+  onToolCall?: (toolCall: ToolCall, assistantMessageId?: number | null) => void;
   onChatComplete?: (data: {
     chatId: number;
     fullResponse: string;
     usage?: Record<string, unknown>;
+    assistantMessageId?: number | null;
   }) => void;
-  onChatError?: (error: string, code?: string) => void;
+  onChatError?: (
+    error: string,
+    code?: string,
+    assistantMessageId?: number | null
+  ) => void;
   onConnectionOpen?: () => void;
   onConnectionClose?: (wasClean: boolean) => void;
   onConnectionError?: (error: Event) => void;
@@ -50,7 +55,7 @@ export class ChatService {
 
         if (data.type === "text") {
           if (callbacks.onTextDelta) {
-            callbacks.onTextDelta(data.chunk);
+            callbacks.onTextDelta(data.chunk, data.assistantMessageId);
           }
         } else if (data.type === "tool-call") {
           try {
@@ -66,7 +71,7 @@ export class ChatService {
               };
               console.log("WebSocket: Parsed tool call:", toolCall);
               if (callbacks.onToolCall) {
-                callbacks.onToolCall(toolCall);
+                callbacks.onToolCall(toolCall, data.assistantMessageId);
               }
             }
           } catch (error) {
@@ -98,7 +103,7 @@ export class ChatService {
               };
               console.log("WebSocket: Parsed tool result:", toolResult);
               if (callbacks.onToolCall) {
-                callbacks.onToolCall(toolResult);
+                callbacks.onToolCall(toolResult, data.assistantMessageId);
               }
             }
           } catch (error) {
@@ -109,13 +114,16 @@ export class ChatService {
       onChatComplete: (data) => {
         const callbacks = this.activeChatCallbacks.get(data.chatId);
         if (callbacks?.onChatComplete) {
-          callbacks.onChatComplete(data);
+          callbacks.onChatComplete({
+            ...data,
+            assistantMessageId: data.assistantMessageId,
+          });
         }
       },
       onChatError: (data) => {
         const callbacks = this.activeChatCallbacks.get(data.chatId);
         if (callbacks?.onChatError) {
-          callbacks.onChatError(data.error, data.code);
+          callbacks.onChatError(data.error, data.code, data.assistantMessageId);
         }
       },
       onConnectionOpen: () => {

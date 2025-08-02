@@ -99,18 +99,19 @@ export class ChatProcessor {
   }
 
   private handleToolResult(
-    chunk: any,
+    chunk: { toolCallId: string; isError?: boolean; result?: any },
     toolCalls: Record<string, ToolCall>,
     accumulatedContent: string
   ): string {
     // Update tool call status and result
-    if (toolCalls[chunk.toolCallId]) {
-      toolCalls[chunk.toolCallId].status = chunk.isError ? "error" : "success";
-      toolCalls[chunk.toolCallId].result = chunk.result;
+    const toolCall = toolCalls[chunk.toolCallId];
+    if (toolCall) {
+      toolCall.status = chunk.isError ? "error" : "success";
+      toolCall.result = chunk.result;
 
       // Add error information to content if tool call failed
       if (chunk.isError) {
-        const errorInfo = `\n[Error in ${toolCalls[chunk.toolCallId].name}: ${
+        const errorInfo = `\n[Error in ${toolCall.name}: ${
           chunk.result?.error || "Unknown error"
         }]`;
         return accumulatedContent + errorInfo;
@@ -125,7 +126,7 @@ export class ChatProcessor {
     event: string = "chat:status"
   ): void {
     subscriptionManager.broadcastToChat(chatId, {
-      event,
+      event: event as any,
       data: status,
     });
   }
@@ -144,6 +145,7 @@ export class ChatProcessor {
         event: "chat:error",
         data: {
           chatId,
+          assistantMessageId: null,
           error: "Chat is already in progress",
           code: "CHAT_IN_PROGRESS",
         },
@@ -258,6 +260,7 @@ export class ChatProcessor {
                 event: "chat:error",
                 data: {
                   chatId,
+                  assistantMessageId,
                   error: error.message,
                   code: "CHAT_AGENT_ERROR",
                 },
@@ -288,6 +291,7 @@ export class ChatProcessor {
               event: "chat:chunk",
               data: {
                 chatId,
+                assistantMessageId,
                 chunk: chunk.textDelta,
                 type: "text",
               },
@@ -303,6 +307,7 @@ export class ChatProcessor {
               event: "chat:chunk",
               data: {
                 chatId,
+                assistantMessageId,
                 chunk: JSON.stringify(chunk),
                 type: "tool-call",
               },
@@ -318,6 +323,7 @@ export class ChatProcessor {
               event: "chat:chunk",
               data: {
                 chatId,
+                assistantMessageId,
                 chunk: JSON.stringify(chunk),
                 type: "tool-result",
               },
@@ -347,6 +353,7 @@ export class ChatProcessor {
           event: "chat:complete",
           data: {
             chatId,
+            assistantMessageId,
             usage: result.usage,
           },
         });
@@ -406,6 +413,7 @@ export class ChatProcessor {
         event: "chat:error",
         data: {
           chatId,
+          assistantMessageId,
           error: errorMessage,
           code: "CHAT_ERROR",
         },

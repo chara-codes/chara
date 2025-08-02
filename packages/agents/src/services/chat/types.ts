@@ -66,6 +66,7 @@ export interface ChatChunkEvent {
   event: "chat:chunk";
   data: {
     chatId: number;
+    assistantMessageId: number | null;
     chunk: string;
     type: "text" | "tool-call" | "tool-result";
   };
@@ -75,6 +76,7 @@ export interface ChatCompleteEvent {
   event: "chat:complete";
   data: {
     chatId: number;
+    assistantMessageId: number | null;
     usage?: unknown;
   };
 }
@@ -83,6 +85,7 @@ export interface ChatErrorEvent {
   event: "chat:error";
   data: {
     chatId: number;
+    assistantMessageId: number | null;
     error: string;
     code?: string;
   };

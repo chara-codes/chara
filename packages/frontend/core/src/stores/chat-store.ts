@@ -581,10 +581,11 @@ export const useChatStore = create<ChatState>()(
             }
           }
 
-          const aiMessageId = `${Date.now().toString()}-ai`;
+          let aiMessageId: string | null = null; // Will be set when server provides assistantMessageId
           const assistantMessageSaved = false; // Flag to prevent duplicate saves
+          const tempAiMessageId = `${Date.now().toString()}-ai-temp`;
           const initialAiMessage: Message = {
-            id: aiMessageId,
+            id: tempAiMessageId,
             content: "",
             isUser: false,
             timestamp: new Date().toLocaleTimeString([], {
@@ -608,12 +609,12 @@ export const useChatStore = create<ChatState>()(
             };
           });
 
-          // Update chat callbacks to handle this specific message
+          // Initial callbacks with temp ID, will be updated when server provides real ID
           chatService.updateChatCallbacks(
             numericChatId,
             get().createChatCallbacks(
               numericChatId,
-              aiMessageId,
+              tempAiMessageId,
               currentActiveChatId,
               savedUserMessageId,
               assistantMessageSaved
@@ -670,7 +671,7 @@ export const useChatStore = create<ChatState>()(
               set((currentState) => {
                 const currentMsgs = [...currentState.messages];
                 const aiMsgIdx = currentMsgs.findIndex(
-                  (m) => m.id === aiMessageId
+                  (m) => m.id === tempAiMessageId
                 );
                 if (aiMsgIdx !== -1) {
                   currentMsgs[aiMsgIdx] = {
@@ -715,7 +716,7 @@ export const useChatStore = create<ChatState>()(
             set((currentState) => {
               const currentMsgs = [...currentState.messages];
               const aiMsgIdx = currentMsgs.findIndex(
-                (m) => m.id === aiMessageId
+                (m) => m.id === tempAiMessageId
               );
               if (aiMsgIdx !== -1) {
                 currentMsgs[aiMsgIdx] = {
@@ -744,16 +745,51 @@ export const useChatStore = create<ChatState>()(
           _savedUserMessageId?: string,
           assistantMessageSaved?: boolean
         ): WebSocketChatCallbacks => {
+          // Helper to migrate temp message ID to server-provided ID
+          const migrateToServerMessageId = (
+            serverAssistantMessageId: number | null
+          ): string | null => {
+            if (!serverAssistantMessageId || aiMessageId)
+              return aiMessageId || null;
+
+            const serverMsgId = serverAssistantMessageId.toString();
+            set((currentState) => {
+              const finalActiveChatId = currentState.activeChat;
+              const currentMsgs = [...currentState.messages];
+              const tempMsgIdx = currentMsgs.findIndex((m) =>
+                m.id.endsWith("-ai-temp")
+              );
+              if (tempMsgIdx !== -1) {
+                currentMsgs[tempMsgIdx] = {
+                  ...currentMsgs[tempMsgIdx],
+                  id: serverMsgId,
+                };
+                aiMessageId = serverMsgId;
+              }
+              return {
+                messages: currentMsgs,
+                chats: currentState.chats.map((c) =>
+                  c.id === finalActiveChatId
+                    ? { ...c, messages: currentMsgs }
+                    : c
+                ),
+              };
+            });
+            return serverMsgId;
+          };
+
           const updateAIMessageInStore = (
-            updater: (currentAIMsg: Message) => Partial<Message>
+            updater: (currentAIMsg: Message) => Partial<Message>,
+            messageId?: string
           ) => {
-            if (!aiMessageId) return;
+            const targetMessageId = messageId || aiMessageId;
+            if (!targetMessageId) return;
 
             set((currentState) => {
               const finalActiveChatId = currentState.activeChat;
               const currentMsgs = [...currentState.messages];
               const aiMsgIdx = currentMsgs.findIndex(
-                (m) => m.id === aiMessageId
+                (m) => m.id === targetMessageId
               );
               if (aiMsgIdx === -1) return {};
 
@@ -869,18 +905,21 @@ export const useChatStore = create<ChatState>()(
                 }
               }
             },
-            onTextDelta: (delta) => {
+            onTextDelta: (delta, serverAssistantMessageId) => {
+              migrateToServerMessageId(serverAssistantMessageId);
               processTextWithThinkingTags(delta);
             },
-            onThinkingDelta: (delta) => {
+            onThinkingDelta: (delta, serverAssistantMessageId) => {
+              migrateToServerMessageId(serverAssistantMessageId);
               updateAIMessageInStore((msg) => ({
                 thinkingContent: (msg.thinkingContent || "") + delta,
                 isThinking: true,
               }));
               set({ isThinking: true });
             },
-            onToolCall: (toolCall) => {
+            onToolCall: (toolCall, serverAssistantMessageId) => {
               console.log("Store: Tool Call received", toolCall);
+              migrateToServerMessageId(serverAssistantMessageId);
 
               const incomingToolCall = toolCall as ToolCall;
 
@@ -926,10 +965,12 @@ export const useChatStore = create<ChatState>()(
             },
             onChatComplete: async (data) => {
               console.log("Chat Store: WebSocket chat completed", data);
+              migrateToServerMessageId(data.assistantMessageId);
               set({ isResponding: false, isThinking: false });
             },
-            onChatError: (error, code) => {
+            onChatError: (error, code, serverAssistantMessageId) => {
               console.error(`Chat ${chatId} error:`, error, code);
+              migrateToServerMessageId(serverAssistantMessageId);
 
               updateAIMessageInStore((msg) => ({
                 content: `${msg.content || ""}\n\nError: ${error}`,
