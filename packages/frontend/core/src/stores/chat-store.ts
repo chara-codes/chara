@@ -24,25 +24,7 @@ import type {
   MessageContent,
   ToolCall,
 } from "../types";
-import { THINKING_TAG_REGEX } from "../utils";
-
-// Fallback data in case fetch fails
-const fallbackChats: Chat[] = [];
-
-// Predefined prompts for immediate display while loading
-// Note: These prompts are also used in conversation-suggestions.tsx as placeholder content
-export const PREDEFINED_PROMPTS = [
-  "Help me brainstorm ideas for a new mobile app that helps people track their daily habits",
-  "How do I implement a debounce function in JavaScript?",
-  "Write a professional email to request a meeting with a potential client",
-  "Explain the concept of React hooks and how they improve component development",
-  "Give me feedback on my website design and suggest improvements",
-  "What are the best practices for optimizing database queries?",
-  "Help me debug this code that's causing a memory leak in my Node.js application",
-  "Create a plan for launching a new product in the next quarter",
-  "Summarize this article about artificial intelligence trends",
-  "Compare and contrast microservices vs monolithic architecture",
-];
+import { PREDEFINED_PROMPTS, THINKING_TAG_REGEX } from "../utils";
 
 interface ChatState {
   // Chat data
@@ -75,6 +57,10 @@ interface ChatState {
   disconnectWebSocket: () => void;
   retryConnection: () => Promise<void>;
   processMessageQueue: () => Promise<void>;
+  handleStreamContinuation: (
+    chatId: number,
+    messageId?: string
+  ) => Promise<void>;
   setActiveChat: (chatId: string | null) => Promise<void>;
   createNewChat: () => void;
   sendMessage: (content: string) => Promise<void>;
@@ -82,8 +68,7 @@ interface ChatState {
     chatId: number,
     aiMessageId?: string,
     currentActiveChatId?: string | null,
-    savedUserMessageId?: string,
-    assistantMessageSaved?: boolean
+    savedUserMessageId?: string
   ) => WebSocketChatCallbacks;
   setIsResponding: (isResponding: boolean) => void;
   setIsThinking: (isThinking: boolean) => void;
@@ -94,6 +79,7 @@ interface ChatState {
   setModel: (model: string) => void;
   clearContextItems: () => void;
   deleteMessage: (messageId: string) => void;
+  isIncompleteAssistantMessage: (message: Message) => boolean;
   beautifyPromptStream: (
     currentPrompt: string,
     onTextDelta: (delta: string) => void,
@@ -130,6 +116,27 @@ export const useChatStore = create<ChatState>()(
         wsReconnecting: false,
         wsError: null,
         messageQueue: [],
+
+        // Helper function to detect incomplete assistant messages
+        isIncompleteAssistantMessage: (message: Message): boolean => {
+          if (!message || typeof message.id !== "string") {
+            console.warn(
+              "Store: Invalid message passed to isIncompleteAssistantMessage:",
+              message
+            );
+            return false;
+          }
+          return (
+            !message.isUser &&
+            (message.content === "" ||
+              (typeof message.content === "string" &&
+                message.content.trim() === "") ||
+              (Array.isArray(message.content) &&
+                message.content.every(
+                  (c) => c.type === "text" && c.text?.trim() === ""
+                )))
+          );
+        },
 
         connectWebSocket: async () => {
           try {
@@ -234,6 +241,97 @@ export const useChatStore = create<ChatState>()(
           set({ messageQueue: [] });
         },
 
+        handleStreamContinuation: async (
+          chatId: number,
+          messageId?: string
+        ) => {
+          try {
+            console.log(
+              `Chat Store: Checking for active stream on chat ${chatId}${
+                messageId ? ` for message ${messageId}` : ""
+              }`
+            );
+
+            const currentState = get();
+            let targetMessage: Message | undefined;
+
+            if (messageId) {
+              // Find specific message by ID
+              targetMessage = currentState.messages.find((m) => {
+                if (!m || typeof m.id !== "string") {
+                  console.warn(
+                    "Store: Found message with invalid ID type during continuation:",
+                    m
+                  );
+                  return false;
+                }
+                return m.id === messageId;
+              });
+              if (!targetMessage) {
+                console.warn(
+                  `Chat Store: Message ${messageId} not found in chat ${chatId}`
+                );
+                return;
+              }
+            } else {
+              // Fallback to last message if no ID specified
+              targetMessage =
+                currentState.messages[currentState.messages.length - 1];
+            }
+
+            // Check if the target message is an incomplete assistant message
+            if (
+              targetMessage &&
+              get().isIncompleteAssistantMessage(targetMessage)
+            ) {
+              console.log(
+                `Chat Store: Found incomplete assistant message ${targetMessage.id}, resuming stream for chat ${chatId}`
+              );
+
+              // Set responding state
+              set({
+                isResponding: true,
+                isThinking: false,
+                wsError: null,
+              });
+
+              // Subscribe to the chat with callbacks to continue the stream
+              // Ensure we pass the exact message ID that needs updating
+              const callbacks = get().createChatCallbacks(
+                chatId,
+                targetMessage.id
+              );
+              chatService.subscribeToChat(chatId, callbacks);
+
+              console.log(
+                `Chat Store: Subscribed to continue stream for message ${targetMessage.id} in chat ${chatId}`
+              );
+            } else if (currentState.wsConnected) {
+              // Just subscribe for future messages without setting responding state
+              chatService.subscribeToChat(
+                chatId,
+                get().createChatCallbacks(chatId)
+              );
+              console.log(
+                `Chat Store: Subscribed to chat ${chatId} for future messages`
+              );
+            }
+          } catch (error) {
+            console.error(
+              `Chat Store: Failed to handle stream continuation for chat ${chatId}:`,
+              error
+            );
+            set({
+              wsError:
+                error instanceof Error
+                  ? error.message
+                  : "Stream continuation failed",
+              isResponding: false,
+              isThinking: false,
+            });
+          }
+        },
+
         initializeStore: async () => {
           console.log("Chat Store: Starting initialization...");
           set({ isLoading: true, loadError: null });
@@ -290,11 +388,11 @@ export const useChatStore = create<ChatState>()(
             );
 
             set({
-              chats: chats.length > 0 ? chats : fallbackChats,
+              chats: chats.length > 0 ? chats : [],
               isLoading: false,
             });
 
-            // Load messages for persisted activeChat if it exists
+            // Load messages for persisted activeChat and handle stream continuation
             const currentState = get();
             if (currentState.activeChat) {
               console.log(
@@ -302,21 +400,57 @@ export const useChatStore = create<ChatState>()(
                 currentState.activeChat
               );
               try {
-                // Subscribe to WebSocket for the persisted activeChat (if WebSocket is connected)
-                if (currentState.wsConnected) {
-                  const numericChatId = parseInt(currentState.activeChat);
-                  chatService.subscribeToChat(numericChatId, {});
-                  console.log(
-                    "Chat Store: Subscribed to WebSocket for persisted activeChat:",
-                    numericChatId
-                  );
-                }
-
-                // Load chat history from database
+                // Load chat history from database first
                 await get().loadChatHistory(currentState.activeChat);
                 console.log(
                   "Chat Store: Messages loaded for persisted activeChat"
                 );
+
+                // Handle stream continuation after refresh
+                if (currentState.wsConnected) {
+                  const numericChatId = parseInt(currentState.activeChat);
+
+                  // Find the most recent incomplete assistant message to continue streaming
+                  const incompleteMessages = currentState.messages.filter(
+                    (m) => {
+                      if (!m || typeof m.id !== "string") {
+                        console.warn(
+                          "Store: Found message with invalid ID type during initialization filter:",
+                          m
+                        );
+                        return false;
+                      }
+                      return get().isIncompleteAssistantMessage(m);
+                    }
+                  );
+                  const incompleteMessage =
+                    incompleteMessages.length > 0
+                      ? incompleteMessages[incompleteMessages.length - 1]
+                      : null;
+
+                  console.log(
+                    `Chat Store: Found ${incompleteMessages.length} incomplete messages in chat ${numericChatId}`,
+                    incompleteMessages.map((m) => ({
+                      id: m.id,
+                      content: m.content,
+                    }))
+                  );
+
+                  if (incompleteMessage) {
+                    console.log(
+                      `Chat Store: Attempting to continue stream for message ${incompleteMessage.id}`
+                    );
+                    await get().handleStreamContinuation(
+                      numericChatId,
+                      incompleteMessage.id
+                    );
+                  } else {
+                    console.log(
+                      `Chat Store: No incomplete messages found, subscribing for new messages`
+                    );
+                    await get().handleStreamContinuation(numericChatId);
+                  }
+                }
               } catch (error) {
                 console.error(
                   "Chat Store: Failed to load messages for persisted activeChat:",
@@ -338,7 +472,7 @@ export const useChatStore = create<ChatState>()(
               error instanceof Error ? error.message : "Failed to load data";
 
             set({
-              chats: fallbackChats,
+              chats: [],
               isLoading: false,
               loadError: wsConnectionFailed
                 ? `Connection and data loading failed: ${errorMessage}`
@@ -581,8 +715,8 @@ export const useChatStore = create<ChatState>()(
             }
           }
 
+          // eslint-disable-next-line prefer-const, @typescript-eslint/no-unused-vars
           let aiMessageId: string | null = null; // Will be set when server provides assistantMessageId
-          const assistantMessageSaved = false; // Flag to prevent duplicate saves
           const tempAiMessageId = `${Date.now().toString()}-ai-temp`;
           const initialAiMessage: Message = {
             id: tempAiMessageId,
@@ -612,13 +746,7 @@ export const useChatStore = create<ChatState>()(
           // Initial callbacks with temp ID, will be updated when server provides real ID
           chatService.updateChatCallbacks(
             numericChatId,
-            get().createChatCallbacks(
-              numericChatId,
-              tempAiMessageId,
-              currentActiveChatId,
-              savedUserMessageId,
-              assistantMessageSaved
-            )
+            get().createChatCallbacks(numericChatId, tempAiMessageId)
           );
 
           // Send message via WebSocket or queue if offline
@@ -740,25 +868,48 @@ export const useChatStore = create<ChatState>()(
         // Helper method to create chat callbacks
         createChatCallbacks: (
           chatId: number,
-          aiMessageId?: string,
-          currentActiveChatId?: string | null,
-          _savedUserMessageId?: string,
-          assistantMessageSaved?: boolean
+          aiMessageId?: string
         ): WebSocketChatCallbacks => {
+          console.log(
+            `Store: Creating chat callbacks for chat ${chatId} with aiMessageId: ${aiMessageId}`
+          );
+
+          // For stream continuation, ensure we have the correct message ID
+          if (aiMessageId) {
+            console.log(
+              `Store: Stream continuation mode - will update message ${aiMessageId}`
+            );
+          } else {
+            console.log(
+              `Store: New message mode - will create temp message and migrate ID`
+            );
+          }
+
           // Helper to migrate temp message ID to server-provided ID
           const migrateToServerMessageId = (
             serverAssistantMessageId: number | null
           ): string | null => {
-            if (!serverAssistantMessageId || aiMessageId)
+            // If we already have an aiMessageId (stream continuation), don't migrate
+            if (aiMessageId) {
+              return aiMessageId;
+            }
+
+            // If no server ID provided, return current aiMessageId
+            if (!serverAssistantMessageId) {
               return aiMessageId || null;
+            }
 
             const serverMsgId = serverAssistantMessageId.toString();
             set((currentState) => {
               const finalActiveChatId = currentState.activeChat;
               const currentMsgs = [...currentState.messages];
-              const tempMsgIdx = currentMsgs.findIndex((m) =>
-                m.id.endsWith("-ai-temp")
-              );
+              const tempMsgIdx = currentMsgs.findIndex((m) => {
+                if (!m || typeof m.id !== "string") {
+                  console.warn("Store: Found message with invalid ID type:", m);
+                  return false;
+                }
+                return m.id.endsWith("-ai-temp");
+              });
               if (tempMsgIdx !== -1) {
                 currentMsgs[tempMsgIdx] = {
                   ...currentMsgs[tempMsgIdx],
@@ -783,16 +934,42 @@ export const useChatStore = create<ChatState>()(
             messageId?: string
           ) => {
             const targetMessageId = messageId || aiMessageId;
-            if (!targetMessageId) return;
+            if (!targetMessageId) {
+              console.warn(
+                `Store: updateAIMessageInStore called but no targetMessageId available. aiMessageId: ${aiMessageId}, messageId: ${messageId}`
+              );
+              return;
+            }
+
+            console.log(
+              `Store: updateAIMessageInStore called with targetMessageId: ${targetMessageId}, aiMessageId: ${aiMessageId}, override messageId: ${messageId}`
+            );
 
             set((currentState) => {
               const finalActiveChatId = currentState.activeChat;
               const currentMsgs = [...currentState.messages];
-              const aiMsgIdx = currentMsgs.findIndex(
-                (m) => m.id === targetMessageId
-              );
-              if (aiMsgIdx === -1) return {};
+              const aiMsgIdx = currentMsgs.findIndex((m) => {
+                if (!m || typeof m.id !== "string") {
+                  console.warn(
+                    "Store: Found message with invalid ID type during update:",
+                    m
+                  );
+                  return false;
+                }
+                return m.id === targetMessageId;
+              });
 
+              if (aiMsgIdx === -1) {
+                console.warn(
+                  `Store: Message with ID ${targetMessageId} not found in messages array. Available message IDs:`,
+                  currentMsgs.map((m) => m.id)
+                );
+                return {};
+              }
+
+              console.log(
+                `Store: Updating message ${targetMessageId} at index ${aiMsgIdx}`
+              );
               const updatedAIMsgPart = updater(currentMsgs[aiMsgIdx]);
               currentMsgs[aiMsgIdx] = {
                 ...currentMsgs[aiMsgIdx],
@@ -811,6 +988,10 @@ export const useChatStore = create<ChatState>()(
           };
 
           const processTextWithThinkingTags = (text: string) => {
+            console.log(
+              `Store: processTextWithThinkingTags called with text: "${text}", aiMessageId: ${aiMessageId}`
+            );
+
             const thinkingTagRegex = new RegExp(
               THINKING_TAG_REGEX.source,
               THINKING_TAG_REGEX.flags
@@ -834,12 +1015,18 @@ export const useChatStore = create<ChatState>()(
                 );
                 if (beforeTag) {
                   if (isThinking) {
+                    console.log(
+                      `Store: Adding thinking content: "${beforeTag}"`
+                    );
                     updateAIMessageInStore((msg) => ({
                       thinkingContent: (msg.thinkingContent || "") + beforeTag,
                       isThinking: true,
                     }));
                     set({ isThinking: true });
                   } else {
+                    console.log(
+                      `Store: Adding regular content: "${beforeTag}"`
+                    );
                     updateAIMessageInStore((msg) => ({
                       content: (msg.content || "") + beforeTag,
                       isThinking: false,
@@ -873,6 +1060,9 @@ export const useChatStore = create<ChatState>()(
               const remainingText = textToProcess.slice(currentIndex);
               if (remainingText) {
                 if (isThinking) {
+                  console.log(
+                    `Store: Adding remaining thinking content: "${remainingText}"`
+                  );
                   updateAIMessageInStore((msg) => ({
                     thinkingContent:
                       (msg.thinkingContent || "") + remainingText,
@@ -880,6 +1070,9 @@ export const useChatStore = create<ChatState>()(
                   }));
                   set({ isThinking: true });
                 } else {
+                  console.log(
+                    `Store: Adding remaining regular content: "${remainingText}"`
+                  );
                   updateAIMessageInStore((msg) => ({
                     content: (msg.content || "") + remainingText,
                     isThinking: false,
@@ -906,11 +1099,32 @@ export const useChatStore = create<ChatState>()(
               }
             },
             onTextDelta: (delta, serverAssistantMessageId) => {
-              migrateToServerMessageId(serverAssistantMessageId);
+              console.log(
+                `Store: Text delta received for chat ${chatId}, aiMessageId: ${aiMessageId}, serverAssistantMessageId: ${serverAssistantMessageId}, delta: "${delta}"`
+              );
+
+              // Only migrate if we don't already have an aiMessageId (new messages)
+              if (!aiMessageId) {
+                console.log(
+                  `Store: Migrating temp message to server ID ${serverAssistantMessageId}`
+                );
+                migrateToServerMessageId(serverAssistantMessageId ?? null);
+              } else {
+                console.log(
+                  `Store: Using existing aiMessageId ${aiMessageId} for stream continuation`
+                );
+              }
               processTextWithThinkingTags(delta);
             },
             onThinkingDelta: (delta, serverAssistantMessageId) => {
-              migrateToServerMessageId(serverAssistantMessageId);
+              console.log(
+                `Store: Thinking delta received for chat ${chatId}, aiMessageId: ${aiMessageId}, delta: "${delta}"`
+              );
+
+              // Only migrate if we don't already have an aiMessageId (new messages)
+              if (!aiMessageId) {
+                migrateToServerMessageId(serverAssistantMessageId ?? null);
+              }
               updateAIMessageInStore((msg) => ({
                 thinkingContent: (msg.thinkingContent || "") + delta,
                 isThinking: true,
@@ -919,7 +1133,10 @@ export const useChatStore = create<ChatState>()(
             },
             onToolCall: (toolCall, serverAssistantMessageId) => {
               console.log("Store: Tool Call received", toolCall);
-              migrateToServerMessageId(serverAssistantMessageId);
+              // Only migrate if we don't already have an aiMessageId (new messages)
+              if (!aiMessageId) {
+                migrateToServerMessageId(serverAssistantMessageId ?? null);
+              }
 
               const incomingToolCall = toolCall as ToolCall;
 
@@ -965,12 +1182,18 @@ export const useChatStore = create<ChatState>()(
             },
             onChatComplete: async (data) => {
               console.log("Chat Store: WebSocket chat completed", data);
-              migrateToServerMessageId(data.assistantMessageId);
+              // Only migrate if we don't already have an aiMessageId (new messages)
+              if (!aiMessageId) {
+                migrateToServerMessageId(data.assistantMessageId ?? null);
+              }
               set({ isResponding: false, isThinking: false });
             },
             onChatError: (error, code, serverAssistantMessageId) => {
               console.error(`Chat ${chatId} error:`, error, code);
-              migrateToServerMessageId(serverAssistantMessageId);
+              // Only migrate if we don't already have an aiMessageId (new messages)
+              if (!aiMessageId) {
+                migrateToServerMessageId(serverAssistantMessageId ?? null);
+              }
 
               updateAIMessageInStore((msg) => ({
                 content: `${msg.content || ""}\n\nError: ${error}`,
@@ -1211,7 +1434,7 @@ export const useChatStore = create<ChatState>()(
               }
 
               const messageObj: Message = {
-                id: msg.id,
+                id: String(msg.id), // Ensure ID is always a string
                 content: message as string | MessageContent[],
                 isUser: msg.role === "user",
                 timestamp: new Date(msg.timestamp).toLocaleTimeString(

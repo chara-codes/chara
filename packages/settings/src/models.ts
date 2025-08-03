@@ -149,8 +149,8 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     approved: true,
   },
   {
-    id: "openrouter/horizon-alpha",
-    name: "Horizon Alpha",
+    id: "openrouter/horizon-beta",
+    name: "Horizon Beta",
     provider: "openrouter",
     contextSize: 256000,
     hasTools: true,
