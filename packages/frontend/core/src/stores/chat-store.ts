@@ -717,36 +717,12 @@ export const useChatStore = create<ChatState>()(
 
           // eslint-disable-next-line prefer-const, @typescript-eslint/no-unused-vars
           let aiMessageId: string | null = null; // Will be set when server provides assistantMessageId
-          const tempAiMessageId = `${Date.now().toString()}-ai-temp`;
-          const initialAiMessage: Message = {
-            id: tempAiMessageId,
-            content: "",
-            isUser: false,
-            timestamp: new Date().toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            thinkingContent: "",
-            isThinking: false,
-          };
 
-          // Add placeholder for AI's response
-          set((currentState) => {
-            const finalActiveChatId = currentState.activeChat;
-            return {
-              messages: [...currentState.messages, initialAiMessage],
-              chats: currentState.chats.map((chat) =>
-                chat.id === finalActiveChatId
-                  ? { ...chat, messages: [...chat.messages, initialAiMessage] }
-                  : chat
-              ),
-            };
-          });
-
-          // Initial callbacks with temp ID, will be updated when server provides real ID
+          // Don't create temporary message - wait for server to send real message via WebSocket
+          // Initial callbacks without temp ID - will be updated when server provides real ID
           chatService.updateChatCallbacks(
             numericChatId,
-            get().createChatCallbacks(numericChatId, tempAiMessageId)
+            get().createChatCallbacks(numericChatId)
           );
 
           // Send message via WebSocket or queue if offline
@@ -795,31 +771,8 @@ export const useChatStore = create<ChatState>()(
                 isThinking: false,
               }));
 
-              // Update AI message with offline status
-              set((currentState) => {
-                const currentMsgs = [...currentState.messages];
-                const aiMsgIdx = currentMsgs.findIndex(
-                  (m) => m.id === tempAiMessageId
-                );
-                if (aiMsgIdx !== -1) {
-                  currentMsgs[aiMsgIdx] = {
-                    ...currentMsgs[aiMsgIdx],
-                    content: `Message queued for delivery when connection is restored. Error: ${
-                      error instanceof Error
-                        ? error.message
-                        : "Connection failed"
-                    }`,
-                  };
-                }
-                return {
-                  messages: currentMsgs,
-                  chats: currentState.chats.map((c) =>
-                    c.id === currentState.activeChat
-                      ? { ...c, messages: currentMsgs }
-                      : c
-                  ),
-                };
-              });
+              // No need to update AI message since we don't create temp messages anymore
+              // The server will handle creating the assistant message when connection is restored
             }
           } else {
             // WebSocket not connected, queue the message
@@ -841,27 +794,8 @@ export const useChatStore = create<ChatState>()(
             }));
 
             // Update AI message with queued status
-            set((currentState) => {
-              const currentMsgs = [...currentState.messages];
-              const aiMsgIdx = currentMsgs.findIndex(
-                (m) => m.id === tempAiMessageId
-              );
-              if (aiMsgIdx !== -1) {
-                currentMsgs[aiMsgIdx] = {
-                  ...currentMsgs[aiMsgIdx],
-                  content:
-                    "Message queued for delivery when connection is restored.",
-                };
-              }
-              return {
-                messages: currentMsgs,
-                chats: currentState.chats.map((c) =>
-                  c.id === currentState.activeChat
-                    ? { ...c, messages: currentMsgs }
-                    : c
-                ),
-              };
-            });
+            // No need to update AI message since we don't create temp messages anymore
+            // Messages will be properly handled when connection is restored
           }
         },
 
@@ -881,15 +815,15 @@ export const useChatStore = create<ChatState>()(
             );
           } else {
             console.log(
-              `Store: New message mode - will create temp message and migrate ID`
+              `Store: New message mode - will create message when server provides ID`
             );
           }
 
-          // Helper to migrate temp message ID to server-provided ID
-          const migrateToServerMessageId = (
+          // Helper to create or update message based on server ID
+          const createOrUpdateMessage = (
             serverAssistantMessageId: number | null
           ): string | null => {
-            // If we already have an aiMessageId (stream continuation), don't migrate
+            // If we already have an aiMessageId (stream continuation), use it
             if (aiMessageId) {
               return aiMessageId;
             }
@@ -900,32 +834,33 @@ export const useChatStore = create<ChatState>()(
             }
 
             const serverMsgId = serverAssistantMessageId.toString();
+
+            // Create new message with server-provided ID
+            const newMessage: Message = {
+              id: serverMsgId,
+              content: "",
+              isUser: false,
+              timestamp: new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              thinkingContent: "",
+              isThinking: false,
+            };
+
             set((currentState) => {
               const finalActiveChatId = currentState.activeChat;
-              const currentMsgs = [...currentState.messages];
-              const tempMsgIdx = currentMsgs.findIndex((m) => {
-                if (!m || typeof m.id !== "string") {
-                  console.warn("Store: Found message with invalid ID type:", m);
-                  return false;
-                }
-                return m.id.endsWith("-ai-temp");
-              });
-              if (tempMsgIdx !== -1) {
-                currentMsgs[tempMsgIdx] = {
-                  ...currentMsgs[tempMsgIdx],
-                  id: serverMsgId,
-                };
-                aiMessageId = serverMsgId;
-              }
               return {
-                messages: currentMsgs,
-                chats: currentState.chats.map((c) =>
-                  c.id === finalActiveChatId
-                    ? { ...c, messages: currentMsgs }
-                    : c
+                messages: [...currentState.messages, newMessage],
+                chats: currentState.chats.map((chat) =>
+                  chat.id === finalActiveChatId
+                    ? { ...chat, messages: [...chat.messages, newMessage] }
+                    : chat
                 ),
               };
             });
+
+            aiMessageId = serverMsgId;
             return serverMsgId;
           };
 
@@ -1103,12 +1038,12 @@ export const useChatStore = create<ChatState>()(
                 `Store: Text delta received for chat ${chatId}, aiMessageId: ${aiMessageId}, serverAssistantMessageId: ${serverAssistantMessageId}, delta: "${delta}"`
               );
 
-              // Only migrate if we don't already have an aiMessageId (new messages)
+              // Create message if we don't have one yet (new messages)
               if (!aiMessageId) {
                 console.log(
-                  `Store: Migrating temp message to server ID ${serverAssistantMessageId}`
+                  `Store: Creating new message with server ID ${serverAssistantMessageId}`
                 );
-                migrateToServerMessageId(serverAssistantMessageId ?? null);
+                createOrUpdateMessage(serverAssistantMessageId ?? null);
               } else {
                 console.log(
                   `Store: Using existing aiMessageId ${aiMessageId} for stream continuation`
@@ -1121,9 +1056,9 @@ export const useChatStore = create<ChatState>()(
                 `Store: Thinking delta received for chat ${chatId}, aiMessageId: ${aiMessageId}, delta: "${delta}"`
               );
 
-              // Only migrate if we don't already have an aiMessageId (new messages)
+              // Create message if we don't have one yet (new messages)
               if (!aiMessageId) {
-                migrateToServerMessageId(serverAssistantMessageId ?? null);
+                createOrUpdateMessage(serverAssistantMessageId ?? null);
               }
               updateAIMessageInStore((msg) => ({
                 thinkingContent: (msg.thinkingContent || "") + delta,
@@ -1133,9 +1068,9 @@ export const useChatStore = create<ChatState>()(
             },
             onToolCall: (toolCall, serverAssistantMessageId) => {
               console.log("Store: Tool Call received", toolCall);
-              // Only migrate if we don't already have an aiMessageId (new messages)
+              // Create message if we don't have one yet (new messages)
               if (!aiMessageId) {
-                migrateToServerMessageId(serverAssistantMessageId ?? null);
+                createOrUpdateMessage(serverAssistantMessageId ?? null);
               }
 
               const incomingToolCall = toolCall as ToolCall;
@@ -1182,17 +1117,17 @@ export const useChatStore = create<ChatState>()(
             },
             onChatComplete: async (data) => {
               console.log("Chat Store: WebSocket chat completed", data);
-              // Only migrate if we don't already have an aiMessageId (new messages)
+              // Create message if we don't have one yet (new messages)
               if (!aiMessageId) {
-                migrateToServerMessageId(data.assistantMessageId ?? null);
+                createOrUpdateMessage(data.assistantMessageId ?? null);
               }
               set({ isResponding: false, isThinking: false });
             },
             onChatError: (error, code, serverAssistantMessageId) => {
               console.error(`Chat ${chatId} error:`, error, code);
-              // Only migrate if we don't already have an aiMessageId (new messages)
+              // Create message if we don't have one yet (new messages)
               if (!aiMessageId) {
-                migrateToServerMessageId(serverAssistantMessageId ?? null);
+                createOrUpdateMessage(serverAssistantMessageId ?? null);
               }
 
               updateAIMessageInStore((msg) => ({
