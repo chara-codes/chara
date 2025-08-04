@@ -1276,20 +1276,16 @@ export const useChatStore = create<ChatState>()(
 
         beautifyPromptStream: async (
           currentPrompt,
-          _onTextDelta,
+          onTextDelta,
           onComplete,
           onError
         ) => {
-          // For beautify, we might still use HTTP since it's a simple one-off request
-          // Or we could implement it via WebSocket if the backend supports it
           const state = get();
           if (!currentPrompt.trim()) {
             onComplete(currentPrompt);
             return;
           }
 
-          // For now, keeping the existing HTTP implementation for beautify
-          // This could be migrated to WebSocket later if needed
           try {
             const agentBaseUrl =
               import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
@@ -1325,8 +1321,43 @@ export const useChatStore = create<ChatState>()(
               throw new Error(`Beautify request failed: ${response.status}`);
             }
 
-            const result = await response.text();
-            onComplete(result.trim() || currentPrompt);
+            // Handle streaming response
+            const reader = response.body?.getReader();
+            if (!reader) {
+              throw new Error("No response body reader available");
+            }
+
+            const decoder = new TextDecoder();
+            let accumulatedText = "";
+
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split("\n");
+
+                for (const line of lines) {
+                  if (line.trim() === "") continue;
+
+                  // Parse streaming data format
+                  if (line.startsWith("0:")) {
+                    // Extract text content from format like '0:"text content"'
+                    const match = line.match(/^0:"(.*)"/);
+                    if (match) {
+                      const textDelta = match[1];
+                      accumulatedText += textDelta;
+                      onTextDelta(textDelta);
+                    }
+                  }
+                }
+              }
+
+              onComplete(accumulatedText.trim() || currentPrompt);
+            } finally {
+              reader.releaseLock();
+            }
           } catch (error) {
             console.error("Failed to beautify prompt:", error);
             onError(
