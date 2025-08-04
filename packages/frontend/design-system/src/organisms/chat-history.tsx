@@ -1,7 +1,7 @@
 "use client";
 
 import type { Chat } from "@chara-codes/core";
-import { format, isValid } from "date-fns"; // Added isValid import
+import { isValid } from "date-fns"; // Added isValid import
 import type React from "react";
 import { useState } from "react";
 import styled from "styled-components";

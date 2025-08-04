@@ -16,6 +16,7 @@ async function initializeDatabase() {
 
     if (!(await dbFile.exists())) {
       await Bun.write(dbFileName, "");
+
       const db = new Database(dbFileName, { create: true });
 
       const [previous, current] = await Promise.all(
@@ -35,10 +36,12 @@ async function initializeDatabase() {
   }
 }
 
-// Initialize database on module load but handle errors gracefully
-initializeDatabase().catch((error) => {
+try {
+  // Initialize database on module load but handle errors gracefully
+  await initializeDatabase();
+} catch (error) {
   console.error("Failed to initialize database:", error);
-});
+}
 
 export const db = drizzle({
   client: new Database(dbFileName),
