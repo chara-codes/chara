@@ -1,5 +1,11 @@
 # @chara-codes/core
 
+## 0.1.22
+
+### Patch Changes
+
+- f599d3d: fix issue with database creation
+
 ## 0.1.21
 
 ### Patch Changes

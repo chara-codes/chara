@@ -1,5 +1,13 @@
 # @chara-codes/agents
 
+## 0.1.23
+
+### Patch Changes
+
+- f599d3d: fix issue with database creation
+- Updated dependencies [f599d3d]
+  - @chara-codes/settings@0.1.23
+
 ## 0.1.22
 
 ### Patch Changes
