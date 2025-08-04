@@ -1,5 +1,11 @@
 # chara
 
+## 0.1.22
+
+### Patch Changes
+
+- 048028b: Move from streaming to websockets
+
 ## 0.1.21
 
 ### Patch Changes

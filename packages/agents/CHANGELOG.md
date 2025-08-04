@@ -1,5 +1,13 @@
 # @chara-codes/agents
 
+## 0.1.22
+
+### Patch Changes
+
+- 048028b: Move from streaming to websockets
+- Updated dependencies [048028b]
+  - @chara-codes/settings@0.1.22
+
 ## 0.1.21
 
 ### Patch Changes
