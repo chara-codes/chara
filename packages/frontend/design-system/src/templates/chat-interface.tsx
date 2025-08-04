@@ -6,19 +6,22 @@ import {
   useChatStore,
   useModelsStore,
   useNavigateToConversation,
+  useNavigateToServerConnection,
   useRoutingStore,
   useRunnerConnect,
   useRunnerConnection,
+  useWebSocketStatus,
 } from "@chara-codes/core";
 import type { ButtonConfig } from "@chara-codes/core";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import DebugPanel from "../molecules/debug-panel";
 import Header from "../molecules/header";
 import AddEditTechStackView from "../organisms/add-edit-tech-stack-view";
 import ConversationView from "../organisms/conversation-view";
 import HistoryView from "../organisms/history-view";
+import ServerConnectionView from "../organisms/server-connection-view";
 import SettingsView from "../organisms/settings-view";
 import TechStacksView from "../organisms/tech-stacks-view";
 import TerminalView from "../organisms/terminal-view";
@@ -113,8 +116,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     (state) => state.initializeStore
   );
 
-  const { isConnected, isConnecting } = useRunnerConnection();
+  const { isConnected, isConnecting, connectionError } = useRunnerConnection();
   const connect = useRunnerConnect();
+
+  // Also monitor WebSocket connection for comprehensive connection detection
+  const wsStatus = useWebSocketStatus();
 
   // Connect to runner service on mount
   useEffect(() => {
@@ -126,6 +132,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   // Get routing state
   const currentScreen = useRoutingStore((state) => state.currentScreen);
   const navigateToConversation = useNavigateToConversation();
+  const navigateToServerConnection = useNavigateToServerConnection();
 
   // Get chat store state
   const chats = useChatStore((state) => state.chats);
@@ -138,6 +145,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
   // Get chat store actions using getState to avoid subscription issues
   const chatStore = useChatStore.getState();
+
+  // Track previous connection state to detect connection loss
+  const wasConnectedRef = useRef(isConnected);
+  const wasWsConnectedRef = useRef(wsStatus.connected);
+  const connectionLostTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Memoize handlers to prevent unnecessary re-renders
   const handleSelectChatFromHistory = useCallback(
@@ -201,6 +213,152 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     initializeStores();
   }, [initializeChatStore, initializeModelsStore]);
 
+  /**
+   * Monitor connection loss and navigate to SERVER_CONNECTION screen with delay.
+   *
+   * This effect implements a 0.5 second delay before redirecting to the SERVER_CONNECTION
+   * screen when connection is lost. This prevents immediate redirection for brief
+   * connection drops and allows for quick reconnections without disrupting the user.
+   *
+   * Behavior:
+   * - When connection is lost: Sets a 0.5s timeout before navigation
+   * - If connection is restored before timeout: Cancels the navigation
+   * - Prevents duplicate timeouts if effect runs multiple times
+   * - Cleans up timeout on unmount or screen change
+   */
+  useEffect(() => {
+    // Check if either Runner or WebSocket connection was lost
+    const hadRunnerConnection = wasConnectedRef.current;
+    const hadWsConnection = wasWsConnectedRef.current;
+    const hasRunnerConnection = isConnected;
+    const hasWsConnection = wsStatus.connected;
+
+    // Connection is considered lost if we had either connection before but both are now down
+    const connectionLost =
+      (hadRunnerConnection || hadWsConnection) &&
+      !hasRunnerConnection &&
+      !hasWsConnection &&
+      !isConnecting &&
+      !wsStatus.reconnecting;
+
+    // Connection is restored if we have any connection now
+    const connectionRestored = hasRunnerConnection || hasWsConnection;
+
+    if (connectionLost) {
+      // Only set timeout if one isn't already pending
+      if (connectionLostTimeoutRef.current) {
+        console.log(
+          "Connection lost timeout already pending, skipping duplicate"
+        );
+      } else {
+        console.log(
+          "Connection lost detected, starting 0.5s delay (Runner:",
+          !hasRunnerConnection,
+          ", WebSocket:",
+          !hasWsConnection,
+          ")"
+        );
+
+        // Set a timeout to navigate after 0.5 seconds
+        connectionLostTimeoutRef.current = setTimeout(() => {
+          // Double-check connection status before navigating
+          const currentHasConnection = isConnected || wsStatus.connected;
+
+          if (
+            !currentHasConnection &&
+            currentScreen !== Screen.SERVER_CONNECTION &&
+            (debugInfo.chatStoreInitialized || debugInfo.modelsStoreInitialized)
+          ) {
+            console.log(
+              "Connection still lost after delay (Runner:",
+              !isConnected,
+              ", WebSocket:",
+              !wsStatus.connected,
+              "), navigating to SERVER_CONNECTION screen"
+            );
+            navigateToServerConnection();
+          } else {
+            console.log(
+              "Connection recovered during delay or already on correct screen, skipping navigation"
+            );
+          }
+          connectionLostTimeoutRef.current = null;
+        }, 500); // 0.5 second delay
+      }
+    } else if (connectionRestored && connectionLostTimeoutRef.current) {
+      // Connection was restored before timeout, cancel the navigation
+      console.log(
+        "Connection restored before timeout (Runner:",
+        hasRunnerConnection,
+        ", WebSocket:",
+        hasWsConnection,
+        "), canceling navigation to SERVER_CONNECTION"
+      );
+      clearTimeout(connectionLostTimeoutRef.current);
+      connectionLostTimeoutRef.current = null;
+    }
+
+    // Update the refs with current connection status
+    wasConnectedRef.current = hasRunnerConnection;
+    wasWsConnectedRef.current = hasWsConnection;
+  }, [
+    isConnected,
+    isConnecting,
+    wsStatus.connected,
+    wsStatus.reconnecting,
+    currentScreen,
+    navigateToServerConnection,
+    debugInfo.chatStoreInitialized,
+    debugInfo.modelsStoreInitialized,
+  ]);
+
+  /**
+   * Navigate back to conversation when connection is restored from SERVER_CONNECTION screen.
+   *
+   * This effect monitors for connection restoration and automatically returns the user
+   * to the conversation view when any connection (Runner or WebSocket) is re-established.
+   */
+  useEffect(() => {
+    // Connection is considered restored if either Runner or WebSocket is connected
+    const hasAnyConnection = isConnected || wsStatus.connected;
+
+    if (
+      hasAnyConnection &&
+      currentScreen === Screen.SERVER_CONNECTION &&
+      (debugInfo.chatStoreInitialized || debugInfo.modelsStoreInitialized)
+    ) {
+      console.log(
+        "Connection restored (Runner:",
+        isConnected,
+        ", WebSocket:",
+        wsStatus.connected,
+        "), navigating back to conversation"
+      );
+      navigateToConversation();
+    }
+  }, [
+    isConnected,
+    wsStatus.connected,
+    currentScreen,
+    navigateToConversation,
+    debugInfo.chatStoreInitialized,
+    debugInfo.modelsStoreInitialized,
+  ]);
+
+  /**
+   * Cleanup connection timeout on component unmount.
+   *
+   * Ensures that any pending connection loss timeout is cleared when the component
+   * is unmounted to prevent memory leaks and unexpected navigation.
+   */
+  useEffect(() => {
+    return () => {
+      if (connectionLostTimeoutRef.current) {
+        clearTimeout(connectionLostTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Handle new thread navigation
   useEffect(() => {
     if (currentScreen === Screen.NEW_THREAD) {
@@ -210,6 +368,32 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
   const isLoading = isChatsLoading || isModelsLoading;
   const hasError = chatsLoadError || modelsLoadError;
+
+  // Show server connection view if not connected
+  // This covers both initial connection failure and connection loss during usage
+  const hasAnyConnection = isConnected || wsStatus.connected;
+  const isAnyConnecting = isConnecting || wsStatus.reconnecting;
+  const hasAnyConnectionError = connectionError || wsStatus.error;
+
+  if (
+    !hasAnyConnection &&
+    !isAnyConnecting &&
+    !isLoading &&
+    !connectionLostTimeoutRef.current && // Don't show if we're waiting for timeout
+    (debugInfo.chatStoreInitialized ||
+      debugInfo.modelsStoreInitialized ||
+      hasAnyConnectionError ||
+      // Also show if stores are initialized but we lost connection
+      (!isChatsLoading && !isModelsLoading))
+  ) {
+    return (
+      <Container>
+        <Content>
+          <ServerConnectionView onBack={navigateToConversation} />
+        </Content>
+      </Container>
+    );
+  }
 
   // Show error with options to continue or debug
   if (
@@ -341,6 +525,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       case Screen.TERMINAL: {
         // Sample terminal logs for demonstration
         return <TerminalView onBack={navigateToConversation} />;
+      }
+
+      case Screen.SERVER_CONNECTION: {
+        // Clear any pending connection timeout when manually on SERVER_CONNECTION screen
+        if (connectionLostTimeoutRef.current) {
+          console.log(
+            "Clearing connection timeout - already on SERVER_CONNECTION screen"
+          );
+          clearTimeout(connectionLostTimeoutRef.current);
+          connectionLostTimeoutRef.current = null;
+        }
+        return <ServerConnectionView onBack={navigateToConversation} />;
       }
 
       default:
