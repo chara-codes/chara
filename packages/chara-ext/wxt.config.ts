@@ -33,7 +33,7 @@ export default defineConfig({
       "notifications",
     ],
     action: {
-      default_title: "Chara Codes",
+      default_title: "Click to Chara Codes side panel",
     },
     side_panel: {
       default_path: "sidepanel/index.html",
