@@ -44,6 +44,9 @@ export function createBrowserTransport(
 
 export function createMultiTransport(transports: LoggerTransportConfig[]) {
   const targets = transports.map((transport) => {
+    const levels = transport.levels?.length
+      ? { levels: transport.levels }
+      : undefined;
     switch (transport.type) {
       case "console":
         return {
@@ -57,7 +60,9 @@ export function createMultiTransport(transports: LoggerTransportConfig[]) {
             customLevels: undefined as any,
             ...transport.options,
           },
-        };
+          level: transport.levels ? transport.levels[0] : undefined,
+          ...levels,
+        } as any;
       case "file":
         return {
           target: "pino/file",
@@ -65,14 +70,18 @@ export function createMultiTransport(transports: LoggerTransportConfig[]) {
             destination: transport.options?.destination || "./logs/app.log",
             mkdir: transport.options?.mkdir ?? true,
           },
-        };
+          level: transport.levels ? transport.levels[0] : undefined,
+          ...levels,
+        } as any;
       case "browser":
         return {
           target: "pino/browser",
           options: {
             asObject: transport.options?.asObject ?? false,
           },
-        };
+          level: transport.levels ? transport.levels[0] : undefined,
+          ...levels,
+        } as any;
       default:
         throw new Error(`Unknown transport type: ${transport.type}`);
     }

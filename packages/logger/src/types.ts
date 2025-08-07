@@ -26,16 +26,12 @@ export type TransportType = 'console' | 'browser' | 'file';
 
 export interface LoggerTransportConfig {
   type: TransportType;
+  levels?: Array<'trace'|'debug'|'info'|'warn'|'error'|'fatal'>;
   options?: {
-    // Console transport options
     colorize?: boolean;
     translateTime?: boolean | string;
-    
-    // File transport options
     destination?: string;
     mkdir?: boolean;
-    
-    // Browser transport options
     asObject?: boolean;
   };
 }
