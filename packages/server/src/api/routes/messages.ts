@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { publicProcedure, router } from "../trpc";
 import { ensureChat } from "../../repos/chatRepo.ts";
-import { myLogger as logger } from "../../utils/logger";
+import { logger } from "../../utils/logger";
+import { publicProcedure, router } from "../trpc";
 
 export const messagesRouter = router({
   ask: publicProcedure

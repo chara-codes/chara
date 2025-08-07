@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "../api/db.ts";
 import { chats, messages, stacks } from "../db/schema";
-import { myLogger as logger } from "../utils/logger";
+import { logger } from "../utils/logger";
 
 /** Create a new chat. */
 export async function createChat(titleSuggestion: string) {

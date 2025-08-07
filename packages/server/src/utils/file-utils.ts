@@ -1,14 +1,14 @@
 import fs from "fs";
 import path from "node:path";
-import { myLogger } from "./logger";
+import { logger } from "./logger";
 
 export function isNonEmptyDirectory(projectPath: string): boolean {
   try {
     const files = fs.readdirSync(projectPath).filter((f) => !f.startsWith("."));
-    myLogger.info("Found files:", files.length);
+    logger.info("Found files:", files.length);
     return files.length > 0;
   } catch (e) {
-    myLogger.error(e);
+    logger.error(e);
     return false;
   }
 }
@@ -24,7 +24,7 @@ export function resolveProjectPath(projectName: string): string {
   if (!projectName) {
     throw new Error("Project name must be provided");
   }
-  myLogger.debug("Project path:", path.join(PROJECTS_ROOT, projectName));
+  logger.debug("Project path:", path.join(PROJECTS_ROOT, projectName));
   return path.join(PROJECTS_ROOT, projectName);
 }
 

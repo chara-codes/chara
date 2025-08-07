@@ -1,4 +1,3 @@
-import { logger } from "@chara-codes/logger";
 import { z } from "zod";
 import {
   createChat,
@@ -10,6 +9,7 @@ import {
   updateChat,
   updateMessage,
 } from "../../repos/chatRepo.ts";
+import { logger } from "../../utils/logger.ts";
 import { publicProcedure, router } from "../trpc";
 
 export const chatRouter = router({

@@ -1,19 +1,17 @@
-import { logger } from "@chara-codes/logger";
 import { initTRPC } from "@trpc/server";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import { type Server, serve } from "bun";
+import { serve, type Server } from "bun";
 import { cyan } from "picocolors";
 import superjson from "superjson";
-
-import { type Context, createContext } from "./api/context";
+import { createContext, type Context } from "./api/context";
 import { chatRouter } from "./api/routes/chat";
 import { filesRouter } from "./api/routes/files";
 import { instructionsRouter } from "./api/routes/instructions";
 import { linksRouter } from "./api/routes/links";
 import { messagesRouter } from "./api/routes/messages";
-
 import { stacksRouter } from "./api/routes/stacks";
 import { subscription } from "./api/routes/subscription";
+import { logger } from "./utils/logger";
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
@@ -204,13 +202,13 @@ class ServerManager {
       this.mainServer = serve({
         port: this.options.server.port,
         fetch: (request: Request) => this.handleMainServerRequest(request),
-      });
+      } as any);
 
       // Setup shutdown handlers
       this.setupShutdownHandlers();
 
       // Log server information
-      logger.debug(
+      logger.info(
         `Main Server ready at: http://localhost:${this.mainServer.port}/`
       );
 
