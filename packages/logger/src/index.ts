@@ -1,8 +1,13 @@
 // Export types
-export * from './types';
+export * from "./types";
 
 // Export logger implementation
-export { Logger, coloredConsoleTransport, logger } from './logger';
+export { Logger, coloredConsoleTransport, logger } from "./logger";
 
-// Export dumper functionality
-export { Dumper, defaultDumper, dump, dumpToConsole, type DumpOptions } from './dumper';
+// Export transport utilities
+export {
+  createConsoleTransport,
+  createFileTransport,
+  createBrowserTransport,
+  createMultiTransport,
+} from "./transports";
