@@ -5,9 +5,11 @@ const cwd = process.cwd();
 const logDir = path.join(cwd, ".chara", "logs");
 const errorLogFile = path.join(logDir, "server-errors.log");
 
+const envLevel = (process.env.SERVER_LOG_LEVEL || process.env.LOG_LEVEL || "info").toLowerCase();
+
 export const logger = new BaseLogger({
   name: "server",
-  level: "info",
+  level: envLevel,
   transports: [
     {
       type: "console",
