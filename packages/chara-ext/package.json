@@ -17,6 +17,7 @@
   "dependencies": {
     "@chara-codes/core": "workspace:*",
     "@chara-codes/design-system": "workspace:*",
+    "@webext-core/messaging": "^2.3.0",
     "@webext-pegasus/rpc": "^0.3.6",
     "@webext-pegasus/transport": "^0.3.6",
     "react": "^19.1.0",
