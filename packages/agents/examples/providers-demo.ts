@@ -1,13 +1,13 @@
 import { generateText, streamText } from "ai";
-import { logger } from "@chara-codes/logger";
 import {
-  providersRegistry,
-  getModel,
-  getAvailableProviders,
-  hasProvider,
-  fetchModels,
   fetchAllModels,
+  fetchModels,
+  getAvailableProviders,
+  getModel,
+  hasProvider,
+  providersRegistry,
 } from "../src/providers";
+import { logger } from "../src/utils/logger";
 
 /**
  * Example demonstrating how to use the providers registry

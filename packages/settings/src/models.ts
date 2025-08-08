@@ -149,6 +149,15 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     approved: true,
   },
   {
+    id: "openai/gpt-5",
+    name: "GPT-5",
+    provider: "openrouter",
+    contextSize: 256000,
+    hasTools: true,
+    recommended: false,
+    approved: true,
+  },
+  {
     id: "openrouter/horizon-beta",
     name: "Horizon Beta",
     provider: "openrouter",

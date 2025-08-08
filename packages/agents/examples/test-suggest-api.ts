@@ -1,4 +1,4 @@
-import { logger } from "@chara-codes/logger";
+import { logger } from "../src/utils/logger";
 
 /**
  * Example script to test the suggest API endpoint

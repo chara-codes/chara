@@ -1,8 +1,8 @@
-import { logger } from "@chara-codes/logger";
 import { streamText } from "ai";
 import { initPrompt } from "../prompts/init";
 import { providersRegistry } from "../providers";
 import { initTools } from "../tools/init-tools";
+import { logger } from "../utils/logger";
 
 let tools: Record<string, any> = { ...initTools };
 

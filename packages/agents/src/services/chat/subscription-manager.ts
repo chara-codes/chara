@@ -1,5 +1,5 @@
-import { logger } from "@chara-codes/logger";
 import type { ServerWebSocket } from "bun";
+import { logger } from "../../utils/logger";
 import type { ChatEvent, ChatSubscription } from "./types";
 
 export class SubscriptionManager {

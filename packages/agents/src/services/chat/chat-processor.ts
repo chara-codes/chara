@@ -1,8 +1,8 @@
-import { logger } from "@chara-codes/logger";
 import { chatAgent } from "../../agents/chat-agent";
 import { gitAgent } from "../../agents/git-agent";
 import { chatToolsAskMode, chatToolsWriteMode } from "../../tools/chat-tools";
 import { mapMessages } from "../../utils";
+import { logger } from "../../utils/logger";
 import { isoGitService } from "../isogit";
 import { trpc } from "../trpc";
 import { chatHooksManager } from "./hooks";

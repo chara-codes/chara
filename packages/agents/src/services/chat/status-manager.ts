@@ -1,6 +1,6 @@
-import { logger } from "@chara-codes/logger";
-import type { ChatStatus } from "./types";
+import { logger } from "../../utils/logger";
 import { chatHooksManager } from "./hooks";
+import type { ChatStatus } from "./types";
 
 export class StatusManager {
   // Map of chatId to current status
@@ -14,7 +14,10 @@ export class StatusManager {
     }, 5 * 60 * 1000);
   }
 
-  updateChatStatus(chatId: number, statusUpdate: Partial<ChatStatus>): ChatStatus {
+  updateChatStatus(
+    chatId: number,
+    statusUpdate: Partial<ChatStatus>
+  ): ChatStatus {
     const currentStatus = this.chatStatuses.get(chatId) || {
       chatId,
       status: "idle" as const,
@@ -25,7 +28,10 @@ export class StatusManager {
 
     // Trigger hook for status update
     chatHooksManager.onStatusUpdate(newStatus).catch((error) => {
-      logger.error(`Failed to execute status update hook for chat ${chatId}:`, error);
+      logger.error(
+        `Failed to execute status update hook for chat ${chatId}:`,
+        error
+      );
     });
 
     return newStatus;
@@ -67,7 +73,12 @@ export class StatusManager {
     }
   }
 
-  getStatusCounts(): { idle: number; inProgress: number; completed: number; error: number } {
+  getStatusCounts(): {
+    idle: number;
+    inProgress: number;
+    completed: number;
+    error: number;
+  } {
     const counts = { idle: 0, inProgress: 0, completed: 0, error: 0 };
 
     for (const status of this.chatStatuses.values()) {

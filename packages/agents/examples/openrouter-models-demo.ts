@@ -1,5 +1,5 @@
-import { logger } from "@chara-codes/logger";
 import { fetchModels, hasProvider } from "../src/providers";
+import { logger } from "../src/utils/logger";
 
 async function demonstrateOpenRouterModels() {
   logger.info("🚀 OpenRouter Models Demo");
@@ -7,7 +7,7 @@ async function demonstrateOpenRouterModels() {
   // Check if OpenRouter is available
   if (!hasProvider("openrouter")) {
     logger.error(
-      "OpenRouter provider is not available. Please check your OPEN_ROUTER_API_KEY environment variable.",
+      "OpenRouter provider is not available. Please check your OPEN_ROUTER_API_KEY environment variable."
     );
     process.exit(1);
   }
@@ -25,16 +25,18 @@ async function demonstrateOpenRouterModels() {
     logger.info("📋 Sample models (first 10):");
     models.slice(0, 10).forEach((model, index) => {
       logger.info(
-        `${index + 1}. ${model.id}${model.name ? ` (${model.name})` : ""}`,
+        `${index + 1}. ${model.id}${model.name ? ` (${model.name})` : ""}`
       );
       if (model.description) {
         logger.info(
-          `   Description: ${model.description.substring(0, 100)}${model.description.length > 100 ? "..." : ""}`,
+          `   Description: ${model.description.substring(0, 100)}${
+            model.description.length > 100 ? "..." : ""
+          }`
         );
       }
       if (model.contextLength) {
         logger.info(
-          `   Context Length: ${model.contextLength.toLocaleString()} tokens`,
+          `   Context Length: ${model.contextLength.toLocaleString()} tokens`
         );
       }
     });
@@ -74,7 +76,7 @@ async function demonstrateOpenRouterModels() {
         logger.info(`  ✅ ${modelId}${model.name ? ` (${model.name})` : ""}`);
         if (model.contextLength) {
           logger.info(
-            `     Context: ${model.contextLength.toLocaleString()} tokens`,
+            `     Context: ${model.contextLength.toLocaleString()} tokens`
           );
         }
       } else {
@@ -100,7 +102,9 @@ async function demonstrateOpenRouterModels() {
       logger.info("🧠 Top 5 models by context length:");
       modelsWithContext.slice(0, 5).forEach((model, index) => {
         logger.info(
-          `  ${index + 1}. ${model.id} - ${model.contextLength?.toLocaleString()} tokens`,
+          `  ${index + 1}. ${
+            model.id
+          } - ${model.contextLength?.toLocaleString()} tokens`
         );
       });
     }
@@ -110,23 +114,22 @@ async function demonstrateOpenRouterModels() {
       "Vision Models": models.filter(
         (m) =>
           m.description?.toLowerCase().includes("vision") ||
-          m.id.includes("vision"),
+          m.id.includes("vision")
       ),
       "Code Models": models.filter(
         (m) =>
-          m.description?.toLowerCase().includes("code") ||
-          m.id.includes("code"),
+          m.description?.toLowerCase().includes("code") || m.id.includes("code")
       ),
       "Reasoning Models": models.filter(
         (m) =>
           m.description?.toLowerCase().includes("reasoning") ||
-          m.id.includes("reasoning"),
+          m.id.includes("reasoning")
       ),
       "Fast Models": models.filter(
         (m) =>
           m.description?.toLowerCase().includes("fast") ||
           m.id.includes("turbo") ||
-          m.id.includes("mini"),
+          m.id.includes("mini")
       ),
     };
 

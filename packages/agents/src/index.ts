@@ -1,6 +1,5 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { logger, LogLevel } from "@chara-codes/logger";
 import type { ServerWebSocket } from "bun";
 import { initAgent } from "./agents";
 import {
@@ -18,6 +17,7 @@ import { chatService } from "./services/chat";
 import { appEvents } from "./services/events";
 import { runnerService } from "./services/runner";
 import { logWithPreset } from "./utils";
+import { logger, LogLevel } from "./utils/logger";
 
 export { beautifyAgent } from "./agents/beautify-agent";
 // Export agents for programmatic use

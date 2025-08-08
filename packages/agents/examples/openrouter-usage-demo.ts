@@ -1,6 +1,6 @@
-import { logger } from "@chara-codes/logger";
 import { generateText, streamText, type LanguageModelV1 } from "ai";
 import { getModel, hasProvider } from "../src/providers";
+import { logger } from "../src/utils/logger";
 
 async function demonstrateOpenRouterUsage() {
   logger.info("🚀 OpenRouter Usage Demo");

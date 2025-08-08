@@ -1,6 +1,6 @@
-import { logger } from "@chara-codes/logger";
 import { generateText, streamText, type CoreMessage } from "ai";
-import { getModel, hasProvider, fetchModels } from "../src/providers";
+import { fetchModels, getModel, hasProvider } from "../src/providers";
+import { logger } from "../src/utils/logger";
 
 /**
  * Example demonstrating how to use the DIAL provider

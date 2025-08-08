@@ -1,6 +1,6 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { LanguageModelV1 } from "@ai-sdk/provider";
-import { logger } from "@chara-codes/logger";
+import { logger } from "../../utils/logger";
 import { ModelFetcher } from "../model-fetcher";
 import type { ModelInfo } from "../types";
 import { AbstractProvider, getEnvVar, validateApiKey } from "./base-provider";

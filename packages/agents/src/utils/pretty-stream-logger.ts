@@ -1,6 +1,5 @@
-import colors from "picocolors";
 import spinners from "cli-spinners";
-import { logger } from "@chara-codes/logger";
+import colors from "picocolors";
 
 export interface StreamChunk {
   type: string;

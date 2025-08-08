@@ -1,10 +1,10 @@
-import { logger } from "@chara-codes/logger";
 import type { CoreMessage } from "ai";
 import {
   parseSuggestionsFromResponse,
   suggestionAgent,
 } from "../agents/suggestion-agent";
 import { mapMessages } from "../utils";
+import { logger } from "../utils/logger";
 
 let mcpTools: Record<string, unknown> = {};
 

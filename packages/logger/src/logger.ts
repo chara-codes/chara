@@ -15,44 +15,44 @@ export class Logger {
   private pinoLogger: pino.Logger<"success" | "event" | "server">;
 
   constructor(config: LoggerConfig) {
-      // Set up transports
-      let transport: any;
-      if (config.transports && config.transports.length > 0) {
-        if (config.transports.length === 1) {
-          const transportConfig = config.transports[0];
-          switch (transportConfig.type) {
-            case "console":
-              transport = createConsoleTransport(transportConfig.options);
-              break;
-            case "file":
-              transport = createFileTransport(transportConfig.options);
-              break;
-            case "browser":
-              transport = createBrowserTransport(transportConfig.options);
-              break;
-          }
-        } else {
-          transport = createMultiTransport(config.transports);
+    // Set up transports
+    let transport: any;
+    if (config.transports && config.transports.length > 0) {
+      if (config.transports.length === 1) {
+        const transportConfig = config.transports[0];
+        switch (transportConfig.type) {
+          case "console":
+            transport = createConsoleTransport(transportConfig.options);
+            break;
+          case "file":
+            transport = createFileTransport(transportConfig.options);
+            break;
+          case "browser":
+            transport = createBrowserTransport(transportConfig.options);
+            break;
         }
       } else {
-        // Default to console transport
-        transport = createConsoleTransport();
+        transport = createMultiTransport(config.transports);
       }
-
-      // Create logger with custom levels
-      this.pinoLogger = pino(
-        {
-          name: config.name,
-          level: (config.level as string) || "info",
-          customLevels,
-          useOnlyCustomLevels: false,
-          formatters: config.formatters as pino.LoggerOptions["formatters"],
-          serializers: config.serializers,
-          redact: config.redact,
-        },
-        transport
-      ) as pino.Logger<"success" | "event" | "server">;
+    } else {
+      // Default to console transport
+      transport = createConsoleTransport();
     }
+
+    // Create logger with custom levels
+    this.pinoLogger = pino(
+      {
+        name: config.name,
+        level: (config.level as string) || "info",
+        customLevels,
+        useOnlyCustomLevels: false,
+        formatters: config.formatters as pino.LoggerOptions["formatters"],
+        serializers: config.serializers,
+        redact: config.redact,
+      },
+      transport
+    ) as pino.Logger<"success" | "event" | "server">;
+  }
 
   // Standard Pino methods
   log(message: string, ...args: any[]): void;
@@ -96,10 +96,10 @@ export class Logger {
   }
 
   warn(message: string, ...args: any[]): void;
-  warn(obj: object, message?: string, ...args: any[]): void;
-  warn(msgOrObj: string | object, message?: string, ...args: any[]): void {
+  warn(obj: object, message?: any, ...args: any[]): void;
+  warn(msgOrObj: string | object, message?: any, ...args: any[]): void {
     if (typeof msgOrObj === "string") {
-      this.pinoLogger.warn(msgOrObj, ...args);
+      this.pinoLogger.warn(msgOrObj, { ...args, ...message });
     } else {
       this.pinoLogger.warn(msgOrObj, message, ...args);
     }

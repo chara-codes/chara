@@ -1,7 +1,7 @@
-import { logger } from "@chara-codes/logger";
 import type { CoreMessage } from "ai";
 import { chatAgentSimple } from "../src/agents/chat-agent";
 import { fetchModels, hasProvider } from "../src/providers";
+import { logger } from "../src/utils/logger";
 
 /**
  * Example demonstrating how to use the chatAgent with DIAL provider

@@ -1,5 +1,5 @@
 import { isoGitService } from "../src/services/isogit.js";
-import { logger } from "@chara-codes/logger";
+import { logger } from "../src/utils/logger";
 
 async function demonstrateGitOperations() {
   const workingDir = process.cwd();

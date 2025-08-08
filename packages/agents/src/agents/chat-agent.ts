@@ -1,4 +1,3 @@
-import { logger } from "@chara-codes/logger";
 import {
   generateObject,
   NoSuchToolError,
@@ -9,6 +8,7 @@ import {
 } from "ai";
 import { chatPrompt } from "../prompts/chat";
 import { providersRegistry } from "../providers";
+import { logger } from "../utils/logger";
 
 export interface ChatAgentCallbacks {
   onChunk?: (chunk: any) => void | Promise<void>;

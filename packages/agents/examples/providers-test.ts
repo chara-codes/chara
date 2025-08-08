@@ -1,4 +1,4 @@
-import { logger } from "@chara-codes/logger";
+import { parseArgs } from "node:util";
 import {
   generateText,
   StreamData,
@@ -6,9 +6,9 @@ import {
   tool,
   type LanguageModelV1,
 } from "ai";
-import { parseArgs } from "node:util";
 import z from "zod";
 import { providersRegistry } from "../src/providers";
+import { logger } from "../src/utils/logger";
 
 const { values } = parseArgs({
   // args: Bun.argv,

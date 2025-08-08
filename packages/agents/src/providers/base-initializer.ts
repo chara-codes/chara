@@ -1,4 +1,4 @@
-import { logger } from "@chara-codes/logger";
+import { logger } from "../utils/logger";
 import type { InitializationError, ProviderConfig } from "./types";
 
 /**

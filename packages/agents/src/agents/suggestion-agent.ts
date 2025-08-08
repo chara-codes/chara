@@ -1,8 +1,8 @@
-import { logger } from "@chara-codes/logger";
 import { generateText, type CoreMessage } from "ai";
 import { suggestionPrompt } from "../prompts/suggestion";
 import { providersRegistry } from "../providers";
 import { chatToolsAskMode } from "../tools/chat-tools";
+import { logger } from "../utils/logger";
 
 /**
  * Suggestion agent that analyzes the current environment and context to generate
