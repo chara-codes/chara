@@ -11,6 +11,14 @@ import type { DumpOptions, LoggerConfig } from "./types";
 // Custom levels for Chara-specific log types
 const customLevels = undefined as any;
 
+// Helper function to format message with additional data
+function formatMessageWithData(message: string, data: any): string {
+  if (data !== undefined && data !== null) {
+    return message + "\n" + dumperDump(data);
+  }
+  return message;
+}
+
 export class Logger {
   private pinoLogger: pino.Logger<"success" | "event" | "server">;
 
@@ -55,116 +63,164 @@ export class Logger {
   }
 
   // Standard Pino methods
-  log(message: string, ...args: any[]): void;
+  log(message: string, data?: any): void;
   log(obj: object, message?: string, ...args: any[]): void;
-  log(msgOrObj: string | object, message?: string, ...args: any[]): void {
+  log(msgOrObj: string | object, messageOrData?: any, ...args: any[]): void {
     if (typeof msgOrObj === "string") {
-      this.pinoLogger.info(msgOrObj, ...args);
+      if (messageOrData !== undefined) {
+        this.pinoLogger.info(formatMessageWithData(msgOrObj, messageOrData));
+      } else {
+        this.pinoLogger.info(msgOrObj);
+      }
     } else {
-      this.pinoLogger.info(msgOrObj, message, ...args);
+      this.pinoLogger.info(msgOrObj, messageOrData, ...args);
     }
   }
 
-  trace(message: string, ...args: any[]): void;
+  trace(message: string, data?: any): void;
   trace(obj: object, message?: string, ...args: any[]): void;
-  trace(msgOrObj: string | object, message?: string, ...args: any[]): void {
+  trace(msgOrObj: string | object, messageOrData?: any, ...args: any[]): void {
     if (typeof msgOrObj === "string") {
-      this.pinoLogger.trace(msgOrObj, ...args);
+      if (messageOrData !== undefined) {
+        this.pinoLogger.trace(formatMessageWithData(msgOrObj, messageOrData));
+      } else {
+        this.pinoLogger.trace(msgOrObj);
+      }
     } else {
-      this.pinoLogger.trace(msgOrObj, message, ...args);
+      this.pinoLogger.trace(msgOrObj, messageOrData, ...args);
     }
   }
 
-  debug(message: string, ...args: any[]): void;
+  debug(message: string, data?: any): void;
   debug(obj: object, message?: string, ...args: any[]): void;
-  debug(msgOrObj: string | object, message?: string, ...args: any[]): void {
+  debug(msgOrObj: string | object, messageOrData?: any, ...args: any[]): void {
     if (typeof msgOrObj === "string") {
-      this.pinoLogger.debug(msgOrObj, ...args);
+      if (messageOrData !== undefined) {
+        this.pinoLogger.debug(formatMessageWithData(msgOrObj, messageOrData));
+      } else {
+        this.pinoLogger.debug(msgOrObj);
+      }
     } else {
-      this.pinoLogger.debug(msgOrObj, message, ...args);
+      this.pinoLogger.debug(msgOrObj, messageOrData, ...args);
     }
   }
 
-  info(message: string, ...args: any[]): void;
+  info(message: string, data?: any): void;
   info(obj: object, message?: string, ...args: any[]): void;
-  info(msgOrObj: string | object, message?: string, ...args: any[]): void {
+  info(msgOrObj: string | object, messageOrData?: any, ...args: any[]): void {
     if (typeof msgOrObj === "string") {
-      this.pinoLogger.info(msgOrObj, ...args);
+      if (messageOrData !== undefined) {
+        this.pinoLogger.info(formatMessageWithData(msgOrObj, messageOrData));
+      } else {
+        this.pinoLogger.info(msgOrObj);
+      }
     } else {
-      this.pinoLogger.info(msgOrObj, message, ...args);
+      this.pinoLogger.info(msgOrObj, messageOrData, ...args);
     }
   }
 
-  warn(message: string, ...args: any[]): void;
-  warn(obj: object, message?: any, ...args: any[]): void;
-  warn(msgOrObj: string | object, message?: any, ...args: any[]): void {
+  warn(message: string, data?: any): void;
+  warn(obj: object, message?: string, ...args: any[]): void;
+  warn(msgOrObj: string | object, messageOrData?: any, ...args: any[]): void {
     if (typeof msgOrObj === "string") {
-      this.pinoLogger.warn(msgOrObj, { ...args, ...message });
+      if (messageOrData !== undefined) {
+        this.pinoLogger.warn(formatMessageWithData(msgOrObj, messageOrData));
+      } else {
+        this.pinoLogger.warn(msgOrObj);
+      }
     } else {
-      this.pinoLogger.warn(msgOrObj, message, ...args);
+      this.pinoLogger.warn(msgOrObj, messageOrData, ...args);
     }
   }
 
-  warning(message: string, ...args: any[]): void;
+  warning(message: string, data?: any): void;
   warning(obj: object, message?: string, ...args: any[]): void;
-  warning(msgOrObj: string | object, message?: string, ...args: any[]): void {
-    this.warn(msgOrObj as any, message, ...args);
+  warning(
+    msgOrObj: string | object,
+    messageOrData?: any,
+    ...args: any[]
+  ): void {
+    this.warn(msgOrObj as any, messageOrData, ...args);
   }
 
-  error(message: string, ...args: any[]): void;
+  error(message: string, data?: any): void;
   error(obj: object, message?: string, ...args: any[]): void;
-  error(msgOrObj: string | object, message?: string, ...args: any[]): void {
+  error(msgOrObj: string | object, messageOrData?: any, ...args: any[]): void {
     if (typeof msgOrObj === "string") {
-      this.pinoLogger.error(msgOrObj, ...args);
+      if (messageOrData !== undefined) {
+        this.pinoLogger.error(formatMessageWithData(msgOrObj, messageOrData));
+      } else {
+        this.pinoLogger.error(msgOrObj);
+      }
     } else {
-      this.pinoLogger.error(msgOrObj, message, ...args);
+      this.pinoLogger.error(msgOrObj, messageOrData, ...args);
     }
   }
 
-  err(message: string, ...args: any[]): void;
+  err(message: string, data?: any): void;
   err(obj: object, message?: string, ...args: any[]): void;
-  err(msgOrObj: string | object, message?: string, ...args: any[]): void {
-    this.error(msgOrObj as any, message, ...args);
+  err(msgOrObj: string | object, messageOrData?: any, ...args: any[]): void {
+    this.error(msgOrObj as any, messageOrData, ...args);
   }
 
-  fatal(message: string, ...args: any[]): void;
+  fatal(message: string, data?: any): void;
   fatal(obj: object, message?: string, ...args: any[]): void;
-  fatal(msgOrObj: string | object, message?: string, ...args: any[]): void {
+  fatal(msgOrObj: string | object, messageOrData?: any, ...args: any[]): void {
     if (typeof msgOrObj === "string") {
-      this.pinoLogger.fatal(msgOrObj, ...args);
+      if (messageOrData !== undefined) {
+        this.pinoLogger.fatal(formatMessageWithData(msgOrObj, messageOrData));
+      } else {
+        this.pinoLogger.fatal(msgOrObj);
+      }
     } else {
-      this.pinoLogger.fatal(msgOrObj, message, ...args);
+      this.pinoLogger.fatal(msgOrObj, messageOrData, ...args);
     }
   }
 
   // Custom Chara methods
-  success(message: string, ...args: any[]): void;
+  success(message: string, data?: any): void;
   success(obj: object, message?: string, ...args: any[]): void;
-  success(msgOrObj: string | object, message?: string, ...args: any[]): void {
+  success(
+    msgOrObj: string | object,
+    messageOrData?: any,
+    ...args: any[]
+  ): void {
     if (typeof msgOrObj === "string") {
-      this.pinoLogger.info(msgOrObj, ...args);
+      if (messageOrData !== undefined) {
+        this.pinoLogger.info(formatMessageWithData(msgOrObj, messageOrData));
+      } else {
+        this.pinoLogger.info(msgOrObj);
+      }
     } else {
-      this.pinoLogger.info(msgOrObj, message, ...args);
+      this.pinoLogger.info(msgOrObj, messageOrData, ...args);
     }
   }
 
-  event(message: string, ...args: any[]): void;
+  event(message: string, data?: any): void;
   event(obj: object, message?: string, ...args: any[]): void;
-  event(msgOrObj: string | object, message?: string, ...args: any[]): void {
+  event(msgOrObj: string | object, messageOrData?: any, ...args: any[]): void {
     if (typeof msgOrObj === "string") {
-      this.pinoLogger.info(msgOrObj, ...args);
+      if (messageOrData !== undefined) {
+        this.pinoLogger.info(formatMessageWithData(msgOrObj, messageOrData));
+      } else {
+        this.pinoLogger.info(msgOrObj);
+      }
     } else {
-      this.pinoLogger.info(msgOrObj, message, ...args);
+      this.pinoLogger.info(msgOrObj, messageOrData, ...args);
     }
   }
 
-  server(message: string, ...args: any[]): void;
+  server(message: string, data?: any): void;
   server(obj: object, message?: string, ...args: any[]): void;
-  server(msgOrObj: string | object, message?: string, ...args: any[]): void {
+  server(msgOrObj: string | object, messageOrData?: any, ...args: any[]): void {
     if (typeof msgOrObj === "string") {
-      this.pinoLogger.info(msgOrObj, ...args);
+      if (messageOrData !== undefined) {
+        this.pinoLogger.info(formatMessageWithData(msgOrObj, messageOrData));
+      } else {
+        this.pinoLogger.info(msgOrObj);
+      }
     } else {
-      this.pinoLogger.info(msgOrObj, message, ...args);
+      this.pinoLogger.info(msgOrObj, messageOrData, ...args);
     }
   }
 
