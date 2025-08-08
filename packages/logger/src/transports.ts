@@ -9,7 +9,7 @@ export function createConsoleTransport(
     options: {
       colorize: options.colorize ?? true,
       translateTime: options.translateTime ?? "SYS:standard",
-      ignore: "pid,hostname",
+      ignore: "pid,hostname,time",
       customColors: "trace:gray,debug:gray,info:cyan,warn:yellow,error:red",
       customLevels: undefined as any,
       ...options,
@@ -54,7 +54,7 @@ export function createMultiTransport(transports: LoggerTransportConfig[]) {
           options: {
             colorize: transport.options?.colorize ?? true,
             translateTime: transport.options?.translateTime ?? "SYS:standard",
-            ignore: "pid,hostname",
+            ignore: "pid,hostname,time",
             customColors:
               "trace:gray,debug:gray,info:cyan,warn:yellow,error:red",
             customLevels: undefined as any,
