@@ -1,53 +1,54 @@
 "use client";
 
-import React from "react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown"; // Import ReactMarkdown
-import remarkGfm from "remark-gfm"; // Import remark-gfm for GitHub Flavored Markdown
+
 import rehypeHighlight from "rehype-highlight"; // Import rehype-highlight for syntax highlighting
+import remarkGfm from "remark-gfm"; // Import remark-gfm for GitHub Flavored Markdown
+
 import "highlight.js/styles/github.css"; // Import highlight.js CSS theme for syntax highlighting
-import ToolCallComponent from "./tool-call-component";
 
 import type { MessageContent as MessageContentType } from "@chara-codes/core";
-
-import type { MessageBubbleProps } from "./types";
+import { cleanThinkingTags } from "@chara-codes/core";
 import {
+  DocumentationIcon,
   FileIcon,
   LinkIcon,
-  TextIcon,
-  DocumentationIcon,
   TerminalIcon,
+  TextIcon,
   TrashIcon,
 } from "../../atoms/icons";
+import { CloseIcon } from "../../atoms/icons/close-icon";
+import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
+import { ThinkingIcon } from "../../atoms/icons/thinking-icon";
 import {
-  BubbleContainer,
   Bubble,
-  MessageContent, // This styled component will wrap the Markdown output
-  Time,
+  BubbleContainer,
+  CloseButton,
   ContextContainer,
-  ContextItemComponent,
-  ContextLabel,
-  ContextItemWrapper,
-  DeleteButton,
+  ContextDetailContent,
+  ContextDetailHeader,
   // Styled components for inline context details
   ContextDetailsPanel,
-  ContextDetailHeader,
   ContextDetailTitle,
   ContextDetailType,
-  ContextDetailContent,
-  CloseButton,
+  ContextItemComponent,
+  ContextItemWrapper,
+  ContextLabel,
+  DeleteButton,
+  MessageContent, // This styled component will wrap the Markdown output
   // Thinking section styled components
   ThinkingContainer,
+  ThinkingContent,
   ThinkingHeader,
   ThinkingLabel,
   ThinkingToggle,
-  ThinkingContent,
+  Time,
 } from "./styles";
-import { ThinkingIcon } from "../../atoms/icons/thinking-icon";
-import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
-import { CloseIcon } from "../../atoms/icons/close-icon";
+import ToolCallComponent from "./tool-call-component";
+import type { MessageBubbleProps } from "./types";
 import { getPreviewContent } from "./utils";
-import { cleanThinkingTags } from "@chara-codes/core";
+
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
 
 // Helper function to get the main message content (first text part)
@@ -278,7 +279,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     : null;
 
   return (
-    <BubbleContainer isUser={isUser}>
+    <BubbleContainer $isUser={isUser}>
       <Bubble $isUser={isUser}>
         {isUser && onDeleteMessage && (
           <DeleteButton
