@@ -14,3 +14,6 @@ export * from "./tech-stack-detail-view";
 export * from "./tech-stacks-view";
 export * from "./terminal-view";
 export { default as ServerConnectionView } from "./server-connection-view";
+
+// Element Selector Components
+export * from "./element-selector-widget";

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BrowserContext,
   readFileContent,
   useChatStore,
   useRunnerProcesses,
@@ -8,7 +9,7 @@ import {
   type InputAreaProps,
 } from "@chara-codes/core";
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import IconButton from "../../atoms/icon-button";
 import {
@@ -101,6 +102,7 @@ const InputArea: React.FC<InputAreaProps> = ({
   buttonConfig, // Prop for button config
   initialMessage,
 }) => {
+  const { browser, sentMessageToApp } = useContext(BrowserContext);
   // Use the context-aware hook to get buttonConfig from the store
   const storeButtonConfig = useUIStore((state) => state.inputButtonConfig);
   const beautifyPromptStream = useChatStore(
@@ -125,6 +127,14 @@ const InputArea: React.FC<InputAreaProps> = ({
 
   const { startElementSelection } = useElementSelector(onAddContext);
 
+  const startSelection = async () => {
+    if (browser) {
+      const contextItem = await sentMessageToApp();
+      onAddContext(contextItem);
+    } else {
+      startElementSelection();
+    }
+  };
   // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;
@@ -270,7 +280,7 @@ const InputArea: React.FC<InputAreaProps> = ({
   const runnerProcesses = useRunnerProcesses();
 
   const dropdownItems = createDropdownItems(
-    startElementSelection,
+    startSelection,
     triggerFileUpload,
     onAddContext,
     runnerProcesses
@@ -352,7 +362,7 @@ const InputArea: React.FC<InputAreaProps> = ({
                 delay={500}
               >
                 <RoundedIconButton
-                  onClick={startElementSelection}
+                  onClick={startSelection}
                   disabled={isResponding || isLoading || isBeautifyLoading}
                   aria-label="Select element"
                 >

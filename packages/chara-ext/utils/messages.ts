@@ -2,7 +2,7 @@ import { defineExtensionMessaging } from "@webext-core/messaging";
 
 interface ProtocolMap {
   getStringLength(data: string): number;
-  ololo(): string;
+  ololo(): Promise<unknown>;
 }
 
 export const { sendMessage, onMessage } =

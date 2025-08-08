@@ -1,12 +1,13 @@
-import { ThemeProvider } from "styled-components";
-import { ChatInterface, theme } from "@chara-codes/design-system";
 import {
-  UIStoreProvider,
-  useUIStore,
-  TrpcProvider,
   TechStacksProvider,
   Toaster,
+  TrpcProvider,
+  UIStoreProvider,
+  useUIStore,
 } from "@chara-codes/core";
+import { ChatInterface, theme } from "@chara-codes/design-system";
+import { ThemeProvider } from "styled-components";
+import { BrowserProvider } from "./BrowserProvider";
 
 // Configuration interface
 export interface CharaWidgetConfig {
@@ -21,23 +22,22 @@ export const CharaWidgetPanel = (config: CharaWidgetConfig) => {
 
   if (enabledInputButtons?.length && enabledInputButtons?.split(",").length) {
     disableAllInputButtons();
-    // for (const button of enabledInputButtons.split(",")) {
-    //   enableInputButton(button);
-    // }
   }
 
   return (
     <>
-      <TrpcProvider>
-        <TechStacksProvider>
-          <UIStoreProvider>
-            <ThemeProvider theme={theme}>
-              <ChatInterface />
-              <Toaster />
-            </ThemeProvider>
-          </UIStoreProvider>
-        </TechStacksProvider>
-      </TrpcProvider>
+      <BrowserProvider>
+        <TrpcProvider>
+          <TechStacksProvider>
+            <UIStoreProvider>
+              <ThemeProvider theme={theme}>
+                <ChatInterface />
+                <Toaster />
+              </ThemeProvider>
+            </UIStoreProvider>
+          </TechStacksProvider>
+        </TrpcProvider>
+      </BrowserProvider>
     </>
   );
 };
