@@ -129,7 +129,7 @@ const InputArea: React.FC<InputAreaProps> = ({
 
   const startSelection = async () => {
     if (browser) {
-      const contextItem = await sentMessageToApp();
+      const contextItem = await sentMessageToApp("selectElement");
       onAddContext(contextItem);
     } else {
       startElementSelection();

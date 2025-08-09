@@ -1,9 +1,9 @@
 import { defineExtensionMessaging } from "@webext-core/messaging";
 
-interface ProtocolMap {
+export interface MessagingProtocolMap {
   getStringLength(data: string): number;
-  ololo(): Promise<unknown>;
+  selectElement(): Promise<unknown>;
 }
 
 export const { sendMessage, onMessage } =
-  defineExtensionMessaging<ProtocolMap>();
+  defineExtensionMessaging<MessagingProtocolMap>();

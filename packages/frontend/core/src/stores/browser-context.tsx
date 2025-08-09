@@ -1,3 +1,8 @@
 import { createContext } from "react";
 
-export const BrowserContext = createContext({});
+interface IBrowserContext {
+  browser?: any;
+  sentMessageToApp?: any;
+}
+
+export const BrowserContext = createContext<IBrowserContext>({});

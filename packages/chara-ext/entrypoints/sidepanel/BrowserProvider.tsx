@@ -1,13 +1,14 @@
+import { MessagingProtocolMap } from "@/utils/messages";
 import { BrowserContext } from "@chara-codes/core";
 
-export const BrowserProvider = ({ children }) => {
+export const BrowserProvider = ({ children }: any) => {
   const sentMessageToApp = async (
-    message: string = "ololo",
+    message: keyof MessagingProtocolMap,
     payload: any = null
   ) => {
     const queryOptions = { active: true, lastFocusedWindow: true };
     const [tab] = await chrome.tabs.query(queryOptions);
-    return await sendMessage(message as any, payload, tab.id);
+    return await sendMessage(message, payload, tab.id);
   };
 
   return (
