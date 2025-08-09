@@ -1,19 +1,19 @@
 "use client";
 
+import type { ContextItem as ContextItemType } from "@chara-codes/core";
+import { formatFileSize } from "@chara-codes/core";
 import type React from "react";
 import { useState } from "react";
 import styled from "styled-components";
-import type { ContextItem as ContextItemType } from "@chara-codes/core";
-import { formatFileSize } from "@chara-codes/core";
-import { ContextItemTooltip } from "../context-tooltip";
 import {
+  CloseIcon,
+  DocumentationIcon,
   FileIcon,
   LinkIcon,
-  TextIcon,
-  DocumentationIcon,
   TerminalIcon,
-  CloseIcon,
+  TextIcon,
 } from "../../atoms/icons";
+import { ContextItemTooltip } from "../context-tooltip";
 
 export interface ContextItemProps {
   item: ContextItemType;
@@ -82,7 +82,7 @@ const ContextItem: React.FC<ContextItemProps> = ({ item, onRemove }) => {
     }
   };
 
-  const isFile = item.type.toLowerCase() === "file";
+  const isFile = item.type?.toLowerCase() === "file";
   const file = item.data as File | undefined;
   const fileSize = file?.size;
   const mimeType = item.mimeType || file?.type;
@@ -103,7 +103,7 @@ const ContextItem: React.FC<ContextItemProps> = ({ item, onRemove }) => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {getIcon(item.type)}
+      {getIcon(item?.type ?? "")}
       {item.name}
 
       {isFile && fileSize && <FileInfo>({formatFileSize(fileSize)})</FileInfo>}
