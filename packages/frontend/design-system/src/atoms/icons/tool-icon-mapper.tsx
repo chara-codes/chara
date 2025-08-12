@@ -1,17 +1,18 @@
 import type React from "react";
-import { FileIcon } from "./file-icon";
+import { DocumentationIcon } from "./documentation-icon";
 import { EditIcon } from "./edit-icon";
-import { MoveIcon } from "./move-icon";
+import { ExaminationIcon } from "./examination-icon";
+import { FileIcon } from "./file-icon";
 import { FilesIcon } from "./files-icon";
-import { SearchIcon } from "./search-icon";
+import { FindIcon } from "./find-icon";
 import { LinkIcon } from "./link-icon";
+import { MkdirIcon } from "./mkdir-icon";
+import { MoveIcon } from "./move-icon";
+import { RunnerIcon } from "./runner-icon";
+import { SearchIcon } from "./search-icon";
 import { TerminalIcon } from "./terminal-icon";
 import { ThinkingIcon } from "./thinking-icon";
-import { RunnerIcon } from "./runner-icon";
-import { ExaminationIcon } from "./examination-icon";
 import { ToolIcon } from "./tool-icon";
-import { MkdirIcon } from "./mkdir-icon";
-import { FindIcon } from "./find-icon";
 
 /**
  * Props for tool icons
@@ -155,6 +156,15 @@ export const getToolIcon = (
     case "mkdir":
       return (
         <MkdirIcon
+          width={width}
+          height={height}
+          color={color}
+          className={className}
+        />
+      );
+    case "project-info":
+      return (
+        <DocumentationIcon
           width={width}
           height={height}
           color={color}
