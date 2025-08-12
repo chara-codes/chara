@@ -23,6 +23,7 @@ Tools for the project initialization agent focused on analysis and configuration
 - **Search**: `grep` (content search), `find` (file/directory search)
 - **Code Quality**: `examination`
 - **Meta Tools**: `thinking`
+- **Project Analysis**: `project-info`
 
 ## Removed Redundancies
 
@@ -154,6 +155,16 @@ The tool optimization achieved significant improvements:
 - **`thinking`**: Internal reasoning and planning
 - **`fetch`**: Download external resources (chat agent only)
 
+### Project Analysis
+- **`project-info`**: **COMPREHENSIVE PROJECT ANALYSIS TOOL** - Get detailed project information:
+  - Package manager detection (npm, yarn, pnpm, bun)
+  - Workspace configuration analysis
+  - Build system detection (Vite, Webpack, etc.)
+  - Framework identification (Next.js, React, Vue, etc.)
+  - Language runtime detection
+  - Build settings and configuration analysis
+  - Package.json metadata and dependencies
+
 ## Best Practices
 
 1. **Agent-Specific Tools**: Only include tools that the agent actually needs
@@ -231,6 +242,29 @@ await examination.execute({ path: "src/main.ts" })
 
 // Check for TypeScript errors in components
 await examination.execute({ path: "src/components/Header.tsx" })
+```
+
+### Project Information Analysis
+```typescript
+// Get comprehensive project analysis
+await projectInfo.execute({})
+
+// Analyze specific directory
+await projectInfo.execute({ path: "./packages/frontend" })
+
+// Get quick analysis without detailed settings
+await projectInfo.execute({
+  includeSettings: false,
+  includeFrameworks: true,
+  includeRuntimes: true
+})
+
+// Full analysis with all details
+await projectInfo.execute({
+  includeSettings: true,
+  includeFrameworks: true,
+  includeRuntimes: true
+})
 ```
 
 ## Testing

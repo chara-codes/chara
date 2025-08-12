@@ -8,6 +8,7 @@ import { find } from "./find";
 import { grep } from "./grep";
 import { mkdir } from "./mkdir";
 import { moveFile } from "./move-file";
+import { projectInfo } from "./project-info";
 import { readFile } from "./read-file";
 import { terminal } from "./terminal";
 import { thinking } from "./thinking";
@@ -41,6 +42,7 @@ export const modernTools = {
   thinking: thinking,
   "dev-server": devServer,
   examination: examination,
+  "project-info": projectInfo,
 };
 
 // Keep legacy export for backward compatibility
@@ -59,4 +61,5 @@ export const tools = {
   thinking: thinking,
   "dev-server": devServer,
   examination: examination,
+  "project-info": projectInfo,
 };

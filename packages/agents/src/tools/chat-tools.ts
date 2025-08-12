@@ -8,6 +8,7 @@ import { find } from "./find";
 import { grep } from "./grep";
 import { mkdir } from "./mkdir";
 import { moveFile } from "./move-file";
+import { projectInfo } from "./project-info";
 import { readFile } from "./read-file";
 import { terminal } from "./terminal";
 import { thinking } from "./thinking";
@@ -29,6 +30,7 @@ export const chatToolsWriteMode = {
   thinking,
   "dev-server": devServer,
   examination,
+  "project-info": projectInfo,
 };
 
 // Tools for ask mode - read-only tools that don't modify the system
@@ -42,6 +44,7 @@ export const chatToolsAskMode = {
   directory,
   "dev-server": devServer,
   examination,
+  "project-info": projectInfo,
 };
 
 // Legacy export for backward compatibility
