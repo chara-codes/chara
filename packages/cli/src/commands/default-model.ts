@@ -1,10 +1,6 @@
 import { logger } from "@chara-codes/logger";
 import type { CommandModule } from "yargs";
-import type {
-  DefaultModelActionOptions,
-  StartAgentsActionOptions,
-  StopAgentsActionOptions,
-} from "../actions";
+import type { DefaultModelActionOptions } from "../actions";
 import { ActionFactory, startAgentsAction, stopAgentsAction } from "../actions";
 
 interface DefaultModelCommandArgs {

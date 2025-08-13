@@ -14,7 +14,6 @@ export {
 export { setupLoggingAction } from "./setup-logging";
 export { setupProjectAction } from "./setup-project";
 export { loadConfigAction } from "./load-config";
-export { initializeConfigAction } from "./initialize-config";
 export {
   compose,
   createAction,
@@ -40,7 +39,6 @@ export type {
   SetupLoggingActionOptions,
   SetupProjectActionOptions,
   LoadConfigActionOptions,
-  InitializeConfigActionOptions,
   InitActionOptions,
   ResetActionOptions,
   ServeStaticActionOptions,

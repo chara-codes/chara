@@ -7,7 +7,6 @@ import {
   withLogging,
 } from "./factory";
 import { initAction } from "./init";
-import { initializeConfigAction } from "./initialize-config";
 import { loadConfigAction } from "./load-config";
 import { resetAction } from "./reset";
 import { serveStaticAction, stopStaticAction } from "./serve-static";
@@ -18,17 +17,16 @@ import { startAgentsAction, stopAgentsAction } from "./start-agents";
 import { startServerAction } from "./start-server";
 import { stopServerAction } from "./stop-server";
 import {
-  startTunnelServerAction,
-  stopTunnelServerAction,
-} from "./tunnel-server";
-import {
   startTunnelClientAction,
   stopTunnelClientAction,
 } from "./tunnel-client";
+import {
+  startTunnelServerAction,
+  stopTunnelServerAction,
+} from "./tunnel-server";
 import type {
   DefaultModelActionOptions,
   InitActionOptions,
-  InitializeConfigActionOptions,
   LoadConfigActionOptions,
   ResetActionOptions,
   ServeStaticActionOptions,
@@ -37,13 +35,13 @@ import type {
   ShowActionOptions,
   StartAgentsActionOptions,
   StartServerActionOptions,
-  StartTunnelServerActionOptions,
   StartTunnelClientActionOptions,
+  StartTunnelServerActionOptions,
   StopAgentsActionOptions,
   StopServerActionOptions,
   StopServeStaticActionOptions,
-  StopTunnelServerActionOptions,
   StopTunnelClientActionOptions,
+  StopTunnelServerActionOptions,
 } from "./types";
 
 // Register all actions with the factory
@@ -168,17 +166,6 @@ export function registerActions(): void {
       compose<LoadConfigActionOptions>(withErrorHandling, (fn) =>
         withLogging(fn, "load-config")
       )(loadConfigAction)
-    )
-  );
-
-  // Register initialize-config action
-  ActionFactory.register(
-    createAction(
-      "initialize-config",
-      "Initialize Chara configuration with default model from global config",
-      compose<InitializeConfigActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "initialize-config")
-      )(initializeConfigAction)
     )
   );
 

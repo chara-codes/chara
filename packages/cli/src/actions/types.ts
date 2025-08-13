@@ -78,8 +78,6 @@ export interface InitApiActionOptions extends ActionOptions {}
 
 export interface InitMcpClientActionOptions extends ActionOptions {}
 
-export interface InitializeConfigActionOptions extends ActionOptions {}
-
 export interface StartServerActionOptions extends ActionOptions {
   port?: number;
   host?: string;
