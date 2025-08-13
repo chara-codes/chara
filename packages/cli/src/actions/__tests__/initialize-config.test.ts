@@ -3,7 +3,8 @@
  *
  * Tests the complete functionality of the initialize-config action including:
  * - Reading default model from global config
- * - Calling initializeCharaConfig with the correct model
+ * - Setting up .mcp.json configuration
+ * - Using @netlify/build-info for dev command detection
  * - Provider initialization
  * - Error handling and edge cases
  * - Integration with the action factory
@@ -58,13 +59,31 @@ mock.module("@chara-codes/settings", () => ({
 
 // Mock the agents package
 const mockInitialize = mock(() => Promise.resolve());
-const mockInitializeCharaConfig = mock(() =>
-  Promise.resolve({ dev: "npx serve ." })
-);
+
+// Mock @netlify/build-info
+const mockProject = {
+  getBuildSettings: mock(() => Promise.resolve([{ devCommand: "npm run dev" }])),
+};
+const mockNodeFS = mock(() => ({}));
+
+mock.module("@netlify/build-info", () => ({
+  Project: mock(() => mockProject),
+  FileSystem: mockNodeFS,
+}));
+
+// Mock fs promises
+const mockWriteFile = mock(() => Promise.resolve());
+const mockAccess = mock(() => Promise.resolve());
+
+mock.module("node:fs", () => ({
+  promises: {
+    writeFile: mockWriteFile,
+    access: mockAccess,
+  },
+}));
 
 mock.module("@chara-codes/agents", () => ({
   initialize: mockInitialize,
-  initializeCharaConfig: mockInitializeCharaConfig,
 }));
 
 describe("Initialize Config Action", () => {
@@ -84,7 +103,9 @@ describe("Initialize Config Action", () => {
     mockReadGlobalConfig.mockClear();
 
     mockInitialize.mockClear();
-    mockInitializeCharaConfig.mockClear();
+    mockWriteFile.mockClear();
+    mockAccess.mockClear();
+    mockProject.getBuildSettings.mockClear();
 
     // Reset mock return values to defaults
     mockExistsGlobalConfig.mockResolvedValue(true);
@@ -93,7 +114,8 @@ describe("Initialize Config Action", () => {
       defaultModel: "openai:::gpt-4",
     });
     mockInitialize.mockResolvedValue(undefined);
-    mockInitializeCharaConfig.mockResolvedValue({ dev: "npx serve ." });
+    mockProject.getBuildSettings.mockResolvedValue([{ devCommand: "npm run dev" }]);
+    mockAccess.mockRejectedValue(new Error("File not found")); // Default to creating new .mcp.json
   });
 
   afterEach(() => {
@@ -112,7 +134,9 @@ describe("Initialize Config Action", () => {
     mockReadGlobalConfig.mockClear();
 
     mockInitialize.mockClear();
-    mockInitializeCharaConfig.mockClear();
+    mockWriteFile.mockClear();
+    mockAccess.mockClear();
+    mockProject.getBuildSettings.mockClear();
   });
 
   describe("Basic Functionality", () => {
@@ -130,27 +154,28 @@ describe("Initialize Config Action", () => {
       // Should initialize providers
       expect(mockInitialize).toHaveBeenCalledTimes(1);
 
-      // Should initialize chara config with the model from global config
-      expect(mockInitializeCharaConfig).toHaveBeenCalledTimes(1);
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        ".chara.json",
-        "openai:::gpt-4"
-      );
+      // Should initialize providers
+      expect(mockInitialize).toHaveBeenCalledTimes(1);
 
-      // Verify action completed successfully
-      expect(mockInitializeCharaConfig).toHaveBeenCalledTimes(1);
+      // Should detect dev command
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
+
+      // Should create .mcp.json (since mockAccess rejects by default)
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        ".mcp.json",
+        JSON.stringify({ mcpServers: {} }, null, 2)
+      );
     });
 
-    test("should use custom config file when specified", async () => {
+    test("should handle existing .mcp.json file", async () => {
+      mockAccess.mockResolvedValue(undefined); // File exists
+
       await initializeConfigAction({
-        configFile: "custom.chara.json",
         verbose: false,
       });
 
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        "custom.chara.json",
-        "openai:::gpt-4"
-      );
+      // Should not create new file if it exists
+      expect(mockWriteFile).not.toHaveBeenCalled();
     });
 
     test("should set debug logging when verbose is true", async () => {
@@ -174,11 +199,9 @@ describe("Initialize Config Action", () => {
       expect(mockExistsGlobalConfig).toHaveBeenCalledTimes(1);
       expect(mockReadGlobalConfig).not.toHaveBeenCalled();
 
-      // Should use default fallback model
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        ".chara.json",
-        "deepseek:::deepseek-chat"
-      );
+      // Should still proceed with initialization
+      expect(mockInitialize).toHaveBeenCalledTimes(1);
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
     });
 
     test("should use fallback model when global config exists but no defaultModel", async () => {
@@ -194,26 +217,23 @@ describe("Initialize Config Action", () => {
       expect(mockExistsGlobalConfig).toHaveBeenCalledTimes(1);
       expect(mockReadGlobalConfig).toHaveBeenCalledTimes(1);
 
-      // Should use default fallback model
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        ".chara.json",
-        "deepseek:::deepseek-chat"
-      );
+      // Should still proceed with initialization
+      expect(mockInitialize).toHaveBeenCalledTimes(1);
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
     });
 
-    test("should use specific model from global config", async () => {
-      mockReadGlobalConfig.mockResolvedValue({
-        env: { ANTHROPIC_API_KEY: "test-key" },
-        defaultModel: "anthropic:::claude-3-5-sonnet",
-      });
+    test("should handle dev command detection failure", async () => {
+      mockProject.getBuildSettings.mockRejectedValue(new Error("Detection failed"));
 
       await initializeConfigAction({
         verbose: true,
       });
 
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        ".chara.json",
-        "anthropic:::claude-3-5-sonnet"
+      // Should still proceed with initialization
+      expect(mockInitialize).toHaveBeenCalledTimes(1);
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        ".mcp.json",
+        JSON.stringify({ mcpServers: {} }, null, 2)
       );
     });
   });
@@ -231,11 +251,9 @@ describe("Initialize Config Action", () => {
         expect.any(Error)
       );
 
-      // Should still proceed with fallback model
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        ".chara.json",
-        "deepseek:::deepseek-chat"
-      );
+      // Should still proceed with initialization
+      expect(mockInitialize).toHaveBeenCalledTimes(1);
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
     });
 
     test("should handle provider initialization errors", async () => {
@@ -256,13 +274,13 @@ describe("Initialize Config Action", () => {
         expect.any(Error)
       );
 
-      // Should not proceed to initialize chara config
-      expect(mockInitializeCharaConfig).not.toHaveBeenCalled();
+      // Should not proceed to dev command detection
+      expect(mockProject.getBuildSettings).not.toHaveBeenCalled();
     });
 
-    test("should handle chara config initialization errors", async () => {
-      mockInitializeCharaConfig.mockRejectedValue(
-        new Error("Chara config initialization failed")
+    test("should handle MCP config setup errors", async () => {
+      mockWriteFile.mockRejectedValue(
+        new Error("MCP config setup failed")
       );
 
       await expect(
@@ -270,8 +288,9 @@ describe("Initialize Config Action", () => {
           verbose: true,
         })
       ).rejects.toThrow(
-        "Failed to initialize Chara configuration: Chara config initialization failed"
+        "Failed to setup MCP configuration: MCP config setup failed"
       );
+    });
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Error initializing configuration:",
@@ -280,13 +299,13 @@ describe("Initialize Config Action", () => {
     });
 
     test("should handle non-Error objects thrown", async () => {
-      mockInitializeCharaConfig.mockRejectedValue("String error");
+      mockWriteFile.mockRejectedValue("String error");
 
       await expect(
         initializeConfigAction({
           verbose: true,
         })
-      ).rejects.toThrow("Failed to initialize Chara configuration:");
+      ).rejects.toThrow("Failed to setup MCP configuration:");
     });
   });
 
@@ -353,12 +372,12 @@ describe("Initialize Config Action", () => {
   });
 
   describe("Configuration File Handling", () => {
-    test("should use default config file when not specified", async () => {
+    test("should create default .mcp.json when not specified", async () => {
       await initializeConfigAction({});
 
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        ".chara.json",
-        "openai:::gpt-4"
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        ".mcp.json",
+        JSON.stringify({ mcpServers: {} }, null, 2)
       );
     });
 
@@ -367,7 +386,7 @@ describe("Initialize Config Action", () => {
 
       expect(mockExistsGlobalConfig).toHaveBeenCalledTimes(1);
       expect(mockInitialize).toHaveBeenCalledTimes(1);
-      expect(mockInitializeCharaConfig).toHaveBeenCalledTimes(1);
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
     });
 
     test("should handle undefined options", async () => {
@@ -375,25 +394,20 @@ describe("Initialize Config Action", () => {
 
       expect(mockExistsGlobalConfig).toHaveBeenCalledTimes(1);
       expect(mockInitialize).toHaveBeenCalledTimes(1);
-      expect(mockInitializeCharaConfig).toHaveBeenCalledTimes(1);
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("Model Selection Logic", () => {
-    test("should prioritize global config defaultModel", async () => {
-      mockReadGlobalConfig.mockResolvedValue({
-        env: { MULTIPLE_API_KEYS: "test" },
-        defaultModel: "priority:::model",
-      });
+    test("should detect development command properly", async () => {
+      mockProject.getBuildSettings.mockResolvedValue([{ devCommand: "vite dev" }]);
 
       await initializeConfigAction({
         verbose: true,
       });
 
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        ".chara.json",
-        "priority:::model"
-      );
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
+      expect(mockInitialize).toHaveBeenCalledTimes(1);
     });
 
     test("should handle empty string defaultModel", async () => {
@@ -406,11 +420,9 @@ describe("Initialize Config Action", () => {
         verbose: true,
       });
 
-      // Empty string should be treated as no defaultModel
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        ".chara.json",
-        "deepseek:::deepseek-chat"
-      );
+      // Should still proceed with initialization
+      expect(mockInitialize).toHaveBeenCalledTimes(1);
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
     });
 
     test("should handle null defaultModel", async () => {
@@ -423,34 +435,31 @@ describe("Initialize Config Action", () => {
         verbose: true,
       });
 
-      // Null should be treated as no defaultModel
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        ".chara.json",
-        "deepseek:::deepseek-chat"
-      );
+      // Should still proceed with initialization
+      expect(mockInitialize).toHaveBeenCalledTimes(1);
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("Output Messages", () => {
-    test("should show correct success message with model info", async () => {
+    test("should complete successfully with detected dev command", async () => {
+      mockProject.getBuildSettings.mockResolvedValue([{ devCommand: "npm run start" }]);
+
       await expect(
         initializeConfigAction({
-          configFile: "test.json",
+          verbose: true,
         })
       ).resolves.toBeUndefined();
 
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        "test.json",
-        "openai:::gpt-4"
-      );
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
     });
 
     test("should include helpful next steps in output", async () => {
       await expect(initializeConfigAction({})).resolves.toBeUndefined();
 
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        ".chara.json",
-        "openai:::gpt-4"
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        ".mcp.json",
+        JSON.stringify({ mcpServers: {} }, null, 2)
       );
     });
   });
@@ -466,38 +475,31 @@ describe("Initialize Config Action", () => {
         verbose: true,
       });
 
-      // Should handle gracefully and use fallback
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        ".chara.json",
-        "deepseek:::deepseek-chat"
-      );
+      // Should handle gracefully and proceed
+      expect(mockInitialize).toHaveBeenCalledTimes(1);
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
     });
 
-    test("should handle very long config file paths", async () => {
-      const longPath =
-        "very/long/path/to/config/file/that/might/cause/issues.chara.json";
+    test("should handle empty build settings", async () => {
+      mockProject.getBuildSettings.mockResolvedValue([]);
 
       await initializeConfigAction({
-        configFile: longPath,
+        verbose: true,
       });
 
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        longPath,
-        "openai:::gpt-4"
-      );
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
+      expect(mockInitialize).toHaveBeenCalledTimes(1);
     });
 
-    test("should handle special characters in config file path", async () => {
-      const specialPath = "config with spaces & symbols.chara.json";
+    test("should handle build settings without devCommand", async () => {
+      mockProject.getBuildSettings.mockResolvedValue([{ buildCommand: "npm run build" }]);
 
       await initializeConfigAction({
-        configFile: specialPath,
+        verbose: true,
       });
 
-      expect(mockInitializeCharaConfig).toHaveBeenCalledWith(
-        specialPath,
-        "openai:::gpt-4"
-      );
+      expect(mockProject.getBuildSettings).toHaveBeenCalledTimes(1);
+      expect(mockInitialize).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -533,9 +535,13 @@ describe("Initialize Config Action", () => {
         callOrder.push("initialize");
       });
 
-      mockInitializeCharaConfig.mockImplementation(async () => {
-        callOrder.push("initializeCharaConfig");
-        return {};
+      mockProject.getBuildSettings.mockImplementation(async () => {
+        callOrder.push("getBuildSettings");
+        return [{ devCommand: "npm run dev" }];
+      });
+
+      mockWriteFile.mockImplementation(async () => {
+        callOrder.push("writeFile");
       });
 
       await initializeConfigAction({
@@ -546,7 +552,8 @@ describe("Initialize Config Action", () => {
         "existsGlobalConfig",
         "readGlobalConfig",
         "initialize",
-        "initializeCharaConfig",
+        "getBuildSettings",
+        "writeFile",
       ]);
     });
   });

@@ -1,0 +1,42 @@
+{
+  "name": "@chara-codes/shared",
+  "version": "0.1.23",
+  "description": "Shared utilities and types for Chara Codes",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "bun test .",
+    "test:watch": "bun test --watch .",
+    "test:coverage": "bun test --coverage ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.1.2",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@netlify/build-info": "^10.0.7"
+  },
+  "keywords": [
+    "chara",
+    "ai",
+    "development",
+    "utilities",
+    "shared"
+  ],
+  "author": "Chara Codes",
+  "license": "MIT",
+  "homepage": "https://github.com/chara-codes/chara",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/shared"
+  },
+  "bugs": {
+    "url": "https://github.com/chara-codes/chara/issues"
+  }
+}

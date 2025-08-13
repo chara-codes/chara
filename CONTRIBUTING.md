@@ -349,7 +349,7 @@ When working with the tunnel service for local development sharing:
 
 When adding new MCP servers or tools:
 
-1. **Configure MCP servers** in project `.chara.json`:
+1. **Configure MCP servers** in project `.mcp.json`:
    ```json
    {
      "mcpServers": {

@@ -117,7 +117,7 @@ The runner service emits the following events:
 - `startPnpmDev(cwd?: string): Promise<string>` - Start `pnpm dev` in specified directory
 - `startNextDev(cwd?: string): Promise<string>` - Start `next dev` in specified directory
 - `startViteDev(cwd?: string, port?: number): Promise<string>` - Start `vite` in specified directory with optional port
-- `startServe(directory?: string, port?: number): Promise<string>` - Start `npx serve` for static files in specified directory with optional port
+- `startServe(directory?: string, port?: number): Promise<string>` - Start `npx live-server --no-browser` for static files in specified directory with optional port
 - `startDevelopmentServer(command: string): Promise<string>` - Start any development server
 
 ### Examples
@@ -130,7 +130,8 @@ const commands = [
   "bun run dev",     // Auto-detects as "bun-dev-server"
   "next dev",        // Auto-detects as "next-dev-server"
   "vite --port 3000", // Auto-detects as "vite-dev-server"
-  "npx serve dist"   // Auto-detects as "serve-static-server"
+  "npx serve dist",  // Auto-detects as "serve-static-server"
+  "npx live-server --no-browser ." // Auto-detects as "live-server"
 ];
 
 for (const command of commands) {
@@ -176,7 +177,7 @@ const customId = await startServe("build", 8080);
 
 // Using the full command
 const manualId = await runnerService.start({
-  command: "npx serve docs --port 3001" // Auto-detects as "serve-static-server"
+  command: "npx live-server --no-browser docs --port 3001" // Auto-detects as "live-server"
 });
 ```
 

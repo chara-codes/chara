@@ -1,9 +1,9 @@
 import { existsSync } from "node:fs";
-import ping from "ping";
 import { dirname, join, resolve } from "node:path";
 import { logger } from "@chara-codes/logger";
 import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
 import { bold, cyan, green, yellow } from "picocolors";
+import ping from "ping";
 import type { CommandModule } from "yargs";
 import { ActionFactory } from "../actions";
 import { intro } from "../utils/prompts";
@@ -233,19 +233,13 @@ export const devCommand: CommandModule<
         throw error;
       }
 
-      // Step 5: Check if local/project config exists
-      const localConfigPath = join(projectDir || process.cwd(), ".chara.json");
-      if (!existsSync(localConfigPath)) {
-        if (argv.verbose) {
-          logger.warning(
-            "No local configuration found. Initializing project configuration..."
-          );
-        }
-        await ActionFactory.execute("initialize-config", {
-          verbose: argv.verbose,
-          configFile: ".chara.json",
-        });
+      // Step 5: Initialize development environment
+      if (argv.verbose) {
+        logger.info("Initializing development environment...");
       }
+      await ActionFactory.execute("initialize-config", {
+        verbose: argv.verbose,
+      });
 
       // Step 6: Start server with appropriate configuration
       showProgress("Starting backend server");

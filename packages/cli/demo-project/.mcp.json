@@ -1,5 +1,4 @@
 {
-  "dev": "bunx serve .",
   "mcpServers": {
     "context7": {
       "command": "npx",

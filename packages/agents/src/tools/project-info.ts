@@ -1,83 +1,7 @@
-import { promises as fs } from "fs";
-import { basename, dirname, isAbsolute, join, relative, resolve } from "path";
-import { FileSystem, Project } from "@netlify/build-info";
+import { NodeFS } from "@chara-codes/shared";
+import { Project } from "@netlify/build-info";
 import { tool } from "ai";
 import z from "zod";
-
-// Node.js FileSystem implementation
-class NodeFS extends FileSystem {
-  constructor() {
-    super();
-    this.cwd = process.cwd();
-  }
-
-  getEnvironment() {
-    return "node" as any;
-  }
-
-  isAbsolute(path: string): boolean {
-    return isAbsolute(path);
-  }
-
-  dirname(path: string): string {
-    return dirname(path);
-  }
-
-  resolve(...paths: string[]): string {
-    return resolve(...paths);
-  }
-
-  relative(from: string, to: string): string {
-    return relative(from, to);
-  }
-
-  basename(path: string): string {
-    return basename(path);
-  }
-
-  join(...segments: string[]): string {
-    return join(...segments);
-  }
-
-  async fileExists(path: string) {
-    try {
-      await fs.stat(resolve(path));
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  async readDir(path: string): Promise<string[]>;
-  async readDir(
-    path: string,
-    withFileTypes: true
-  ): Promise<Record<string, "directory" | "file">>;
-  async readDir(
-    path: string,
-    withFileTypes?: true
-  ): Promise<Record<string, "directory" | "file"> | string[]> {
-    try {
-      if (!withFileTypes) {
-        return fs.readdir(resolve(path));
-      }
-      const result = await fs.readdir(resolve(path), { withFileTypes: true });
-      return result.reduce(
-        (prev, cur) => ({
-          ...prev,
-          [cur.name]: cur.isDirectory() ? "directory" : "file",
-        }),
-        {}
-      );
-    } catch {
-      return [];
-    }
-  }
-
-  async readFile(path: string): Promise<string> {
-    return (await fs.readFile(resolve(path), "utf-8")).toString();
-  }
-}
 
 export const projectInfo = tool({
   description: `Get comprehensive project information including package manager, workspaces, build systems, frameworks, and build settings.
@@ -123,11 +47,11 @@ Can be used on the current project or a specific directory path.`,
     includeRuntimes = true,
   }) => {
     try {
-      const fs = new NodeFS();
+      const fsImpl = new NodeFS();
       const targetPath = path ? path : process.cwd();
 
       // Create project instance
-      const project = new Project(fs, targetPath)
+      const project = new Project(fsImpl, targetPath)
         .setEnvironment(process.env)
         .setNodeVersion(process.version);
 

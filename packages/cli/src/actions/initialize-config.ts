@@ -1,9 +1,12 @@
+import { promises as fs } from "node:fs";
+import { initialize } from "@chara-codes/agents";
 import { logger } from "@chara-codes/logger";
-import { intro, outro, spinner } from "../utils/prompts";
-import { bold, cyan, green } from "picocolors";
 import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
-import { initializeCharaConfig, initialize } from "@chara-codes/agents";
-import type { InitializeConfigActionOptions } from "./types";
+import { NodeFS } from "@chara-codes/shared";
+import { Project } from "@netlify/build-info";
+import { bold, cyan, green } from "picocolors";
+import { intro, outro, spinner } from "../utils/prompts.js";
+import type { InitializeConfigActionOptions } from "./types.js";
 
 export async function initializeConfigAction(
   options: InitializeConfigActionOptions = {}
@@ -12,7 +15,7 @@ export async function initializeConfigAction(
     logger.setLevel("debug");
   }
 
-  intro(bold(cyan("🛠️ Initialize Chara Configuration")));
+  intro(bold(cyan("🛠️ Initialize Chara Development Environment")));
 
   const s = spinner();
   s.start("Reading configuration...");
@@ -79,43 +82,98 @@ export async function initializeConfigAction(
     );
   }
 
-  // Initialize Chara configuration
-  s.start("Initializing Chara configuration...");
+  // Detect development command using @netlify/build-info
+  s.start("Detecting project development command...");
+
+  let devCommand = "npx live-server --no-browser {path}".replace(
+    "{path}",
+    process.cwd()
+  ); // Default fallback
 
   try {
-    const charaConfigFile = options.configFile || ".chara.json";
+    const fsImpl = new NodeFS();
+    const project = new Project(fsImpl, process.cwd())
+      .setEnvironment(process.env)
+      .setNodeVersion(process.version);
 
-    if (options.verbose) {
-      logger.debug(`Initializing config file: ${charaConfigFile}`);
-      logger.debug(`Using model: ${selectedModel}`);
+    const buildSettings = await project.getBuildSettings();
+
+    if (buildSettings.length > 0 && buildSettings[0].devCommand) {
+      devCommand = buildSettings[0].devCommand;
+      s.stop(`Development command detected: ${devCommand}`);
+
+      if (options.verbose) {
+        logger.debug(`Detected dev command from build settings: ${devCommand}`);
+      }
+    } else {
+      s.stop("No development command detected, using fallback");
+
+      if (options.verbose) {
+        logger.debug("No dev command found in build settings, using fallback");
+      }
     }
-
-    const result = await initializeCharaConfig(charaConfigFile, selectedModel);
-
-    s.stop("Chara configuration initialized successfully!");
+  } catch (error) {
+    s.stop("Failed to detect development command, using fallback");
+    logger.error("Error detecting development command:", error);
 
     if (options.verbose) {
-      logger.debug("Configuration result:", result);
+      logger.debug(
+        "Falling back to default dev command due to detection error"
+      );
+    }
+  }
+
+  // Check for existing .mcp.json or create a minimal one
+  s.start("Setting up MCP configuration...");
+
+  try {
+    const mcpConfigFile = ".mcp.json";
+    const mcpConfigExists = await fs
+      .access(mcpConfigFile)
+      .then(() => true)
+      .catch(() => false);
+
+    if (!mcpConfigExists) {
+      const defaultMcpConfig = {
+        mcpServers: {},
+      };
+
+      await fs.writeFile(
+        mcpConfigFile,
+        JSON.stringify(defaultMcpConfig, null, 2)
+      );
+      s.stop("Created default .mcp.json configuration");
+
+      if (options.verbose) {
+        logger.debug(`Created ${mcpConfigFile} with empty mcpServers`);
+      }
+    } else {
+      s.stop("Existing .mcp.json configuration found");
+
+      if (options.verbose) {
+        logger.debug(`Found existing ${mcpConfigFile}`);
+      }
     }
 
     outro(
-      `${bold(green("✅ Configuration initialized!"))}
+      `${bold(green("✅ Development environment initialized!"))}
 
-Configuration file: ${bold(cyan(charaConfigFile))}
-Model used: ${bold(cyan(selectedModel))}
+Development command: ${bold(cyan(devCommand))}
+MCP configuration: ${bold(cyan(mcpConfigFile))}
+Model: ${bold(cyan(selectedModel))}
 
 ${bold("Next steps:")}
-• Your Chara configuration is ready to use
 • Run ${cyan("chara dev")} to start development
-• Modify ${cyan(charaConfigFile)} to customize your setup
+• Configure MCP servers in ${cyan(mcpConfigFile)} if needed
+• Your environment will automatically use the detected dev command
 
 ${bold("Need help?")} Run ${cyan("chara --help")} for more options`
     );
   } catch (error) {
-    s.stop("Failed to initialize Chara configuration");
-    logger.error("Error initializing configuration:", error);
+    s.stop("Failed to setup MCP configuration");
+    logger.error("Error setting up MCP configuration:", error);
     throw new Error(
-      `Failed to initialize Chara configuration: ${(error as Error).message}`
+      `Failed to setup MCP configuration: ${(error as Error).message}`
     );
   }
 }

@@ -15,15 +15,7 @@ Tools for the interactive chat agent focused on development tasks:
 - **System Integration**: `terminal`
 - **Meta Tools**: `thinking`
 
-### Init Tools (`init-tools.ts`)
-Tools for the project initialization agent focused on analysis and configuration:
 
-- **File System Management**: `file-system` (stats, info, env operations), `find` (file/directory search)
-- **File Reading**: `read-file`
-- **Search**: `grep` (content search), `find` (file/directory search)
-- **Code Quality**: `examination`
-- **Meta Tools**: `thinking`
-- **Project Analysis**: `project-info`
 
 ## Removed Redundancies
 
@@ -68,15 +60,7 @@ tools: {
 }
 ```
 
-### In Init Agent
-```typescript
-import { initTools } from "../tools/init-tools";
 
-// Use in streamText
-tools: {
-  ...initTools,
-}
-```
 
 ## Optimization Results
 
@@ -84,7 +68,6 @@ The tool optimization achieved significant improvements:
 
 - **Original tools**: 19 tools (all agents used everything)
 - **Chat agent tools**: 9 tools (streamlined with focused `file-system` and dedicated `find` tools)
-- **Init agent tools**: 5 tools (minimal set for project analysis)
 - **Modern tools**: 9 tools (streamlined set using only essential tools)
 
 ### Refactored Tool Benefits
@@ -106,7 +89,7 @@ The tool optimization achieved significant improvements:
 
 ### Tools Removed from Specific Agents
 - **From chat agent**: `write-file`, `read-multiple-files`, `get-file-info`, `env-info`, legacy directory tools
-- **From init agent**: `terminal`, `move-file`, `fetch`, `get-file-info`, `env-info`, `write-file`, `read-multiple-files` (development-only tools)
+
 - **Globally removed**: `write-file`, `read-multiple-files`, `list-directory`, `directory-tree`, `current-dir`, `create-directory`, `get-file-info`, `env-info`
 
 ### Tools Replaced by Refactored Tools
@@ -178,7 +161,6 @@ The tool optimization achieved significant improvements:
 Different tool configurations are available:
 - **`modernTools`**: Streamlined set with focused `file-system` and dedicated `find` tools
 - **`chatToolsWriteMode`** / **`chatToolsAskMode`**: Specialized configurations for chat agent
-- **`initTools`**: Minimal configuration for init agent
 - **`tools`**: Legacy export maintained for backward compatibility
 
 ## Tool Usage Examples

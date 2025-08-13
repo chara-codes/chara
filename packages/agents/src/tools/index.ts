@@ -18,7 +18,6 @@ import { writeFile } from "./write-file";
 
 // Export specialized tool configurations
 export { chatTools, chatToolsWriteMode, chatToolsAskMode } from "./chat-tools";
-export { initTools } from "./init-tools";
 
 // Export individual tools
 export { mkdir };

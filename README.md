@@ -292,7 +292,7 @@ Creates `~/.chararc` with all provider environment variables:
 
 ### Project Configuration
 
-Create `.chara.json` in your project root:
+Create `.mcp.json` in your project root for MCP server configuration:
 
 ```json
 {

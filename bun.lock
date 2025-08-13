@@ -25,6 +25,7 @@
         "@ai-sdk/openai-compatible": "^0.2.16",
         "@chara-codes/logger": "workspace:*",
         "@chara-codes/settings": "workspace:*",
+        "@chara-codes/shared": "workspace:*",
         "@netlify/build-info": "^10.0.7",
         "@openrouter/ai-sdk-provider": "^0.6.0",
         "@trpc/client": "^11.4.3",
@@ -83,6 +84,7 @@
         "@chara-codes/cli": "./dist/chara",
       },
       "dependencies": {
+        "@chara-codes/shared": "workspace:*",
         "@modelcontextprotocol/sdk": "^1.15.0",
         "enquirer": "^2.4.1",
         "ink": "^6.0.1",
@@ -241,6 +243,20 @@
       },
       "peerDependencies": {
         "typescript": "^5",
+      },
+    },
+    "packages/shared": {
+      "name": "@chara-codes/shared",
+      "version": "0.1.23",
+      "dependencies": {
+        "@netlify/build-info": "^10.0.7",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "^2.1.2",
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5.8.3",
       },
     },
     "packages/tunnel": {
@@ -514,6 +530,8 @@
     "@chara-codes/server": ["@chara-codes/server@workspace:packages/server"],
 
     "@chara-codes/settings": ["@chara-codes/settings@workspace:packages/settings"],
+
+    "@chara-codes/shared": ["@chara-codes/shared@workspace:packages/shared"],
 
     "@chara-codes/tunnel": ["@chara-codes/tunnel@workspace:packages/tunnel"],
 
@@ -2927,6 +2945,8 @@
 
     "@chara-codes/settings/@types/bun": ["@types/bun@1.2.20", "", { "dependencies": { "bun-types": "1.2.20" } }, "sha512-dX3RGzQ8+KgmMw7CsW4xT5ITBSCrSbfHc36SNT31EOUg/LA9JWq0VDdEXDRSe1InVWpd2yLUM1FUF/kEOyTzYA=="],
 
+    "@chara-codes/shared/@types/bun": ["@types/bun@1.2.20", "", { "dependencies": { "bun-types": "1.2.20" } }, "sha512-dX3RGzQ8+KgmMw7CsW4xT5ITBSCrSbfHc36SNT31EOUg/LA9JWq0VDdEXDRSe1InVWpd2yLUM1FUF/kEOyTzYA=="],
+
     "@chara-codes/tunnel/@types/bun": ["@types/bun@1.2.20", "", { "dependencies": { "bun-types": "1.2.20" } }, "sha512-dX3RGzQ8+KgmMw7CsW4xT5ITBSCrSbfHc36SNT31EOUg/LA9JWq0VDdEXDRSe1InVWpd2yLUM1FUF/kEOyTzYA=="],
 
     "@chara-codes/web/@types/react-dom": ["@types/react-dom@19.1.6", "", { "peerDependencies": { "@types/react": "^19.0.0" } }, "sha512-4hOiT/dwO8Ko0gV1m/TJZYk3y0KBnY9vzDh7W+DH17b2HFSOGgdj33dhihPeuy3l0q23+4e+hoXHV6hCC4dCXw=="],
@@ -3356,6 +3376,8 @@
     "@chara-codes/server/@types/bun/bun-types": ["bun-types@1.2.20", "", { "dependencies": { "@types/node": "*" }, "peerDependencies": { "@types/react": "^19" } }, "sha512-pxTnQYOrKvdOwyiyd/7sMt9yFOenN004Y6O4lCcCUoKVej48FS5cvTw9geRaEcB9TsDZaJKAxPTVvi8tFsVuXA=="],
 
     "@chara-codes/settings/@types/bun/bun-types": ["bun-types@1.2.20", "", { "dependencies": { "@types/node": "*" }, "peerDependencies": { "@types/react": "^19" } }, "sha512-pxTnQYOrKvdOwyiyd/7sMt9yFOenN004Y6O4lCcCUoKVej48FS5cvTw9geRaEcB9TsDZaJKAxPTVvi8tFsVuXA=="],
+
+    "@chara-codes/shared/@types/bun/bun-types": ["bun-types@1.2.20", "", { "dependencies": { "@types/node": "*" }, "peerDependencies": { "@types/react": "^19" } }, "sha512-pxTnQYOrKvdOwyiyd/7sMt9yFOenN004Y6O4lCcCUoKVej48FS5cvTw9geRaEcB9TsDZaJKAxPTVvi8tFsVuXA=="],
 
     "@chara-codes/tunnel/@types/bun/bun-types": ["bun-types@1.2.20", "", { "dependencies": { "@types/node": "*" }, "peerDependencies": { "@types/react": "^19" } }, "sha512-pxTnQYOrKvdOwyiyd/7sMt9yFOenN004Y6O4lCcCUoKVej48FS5cvTw9geRaEcB9TsDZaJKAxPTVvi8tFsVuXA=="],
 
