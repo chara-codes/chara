@@ -1,5 +1,13 @@
 # @chara-codes/tunnel
 
+## 0.1.26
+
+### Patch Changes
+
+- 07ca324: update logger
+- Updated dependencies [07ca324]
+  - @chara-codes/logger@0.1.26
+
 ## 0.1.25
 
 ### Patch Changes

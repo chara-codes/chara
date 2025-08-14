@@ -1,5 +1,11 @@
 # @chara-codes/shared
 
+## 0.1.29
+
+### Patch Changes
+
+- 07ca324: update logger
+
 ## 0.1.28
 
 ### Patch Changes

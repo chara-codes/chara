@@ -1,5 +1,11 @@
 # @chara-codes/core
 
+## 0.1.28
+
+### Patch Changes
+
+- 07ca324: update logger
+
 ## 0.1.27
 
 ### Patch Changes

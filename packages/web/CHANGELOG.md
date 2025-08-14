@@ -1,5 +1,14 @@
 # @chara-codes/web
 
+## 0.1.29
+
+### Patch Changes
+
+- 07ca324: update logger
+- Updated dependencies [07ca324]
+  - @chara-codes/design-system@0.1.28
+  - @chara-codes/core@0.1.28
+
 ## 0.1.28
 
 ### Patch Changes
