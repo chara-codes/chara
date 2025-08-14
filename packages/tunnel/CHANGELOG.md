@@ -1,5 +1,13 @@
 # @chara-codes/tunnel
 
+## 0.1.23
+
+### Patch Changes
+
+- 5b8228d: align package.json propirties for set of packages
+- Updated dependencies [5b8228d]
+  - @chara-codes/logger@0.1.23
+
 ## 0.1.22
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @chara-codes/shared
 
+## 0.1.26
+
+### Patch Changes
+
+- 5b8228d: align package.json propirties for set of packages
+
 ## 0.1.25
 
 ### Patch Changes

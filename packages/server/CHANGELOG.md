@@ -1,5 +1,13 @@
 # @chara-codes/server
 
+## 0.1.26
+
+### Patch Changes
+
+- 5b8228d: align package.json propirties for set of packages
+- Updated dependencies [5b8228d]
+  - @chara-codes/logger@0.1.23
+
 ## 0.1.25
 
 ### Patch Changes

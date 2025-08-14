@@ -1,5 +1,13 @@
 # @chara-codes/design-system
 
+## 0.1.25
+
+### Patch Changes
+
+- 5b8228d: align package.json propirties for set of packages
+- Updated dependencies [5b8228d]
+  - @chara-codes/core@0.1.25
+
 ## 0.1.24
 
 ### Patch Changes

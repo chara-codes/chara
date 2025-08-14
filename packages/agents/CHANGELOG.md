@@ -1,5 +1,15 @@
 # @chara-codes/agents
 
+## 0.1.26
+
+### Patch Changes
+
+- 5b8228d: align package.json propirties for set of packages
+- Updated dependencies [5b8228d]
+  - @chara-codes/settings@0.1.26
+  - @chara-codes/logger@0.1.23
+  - @chara-codes/shared@0.1.26
+
 ## 0.1.25
 
 ### Patch Changes
