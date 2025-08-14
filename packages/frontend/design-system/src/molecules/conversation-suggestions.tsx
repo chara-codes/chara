@@ -242,7 +242,7 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
 
   // Get suggested prompts from chat store
   const getSuggestedPrompts = useChatStore(
-    (state) => (state as any).getSuggestedPrompts
+    (state) => state.getSuggestedPrompts
   );
 
   // Load suggested prompts on component mount

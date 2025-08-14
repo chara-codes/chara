@@ -1,12 +1,7 @@
 import { ElementSelectorUI } from "../components/element-selector-ui";
 import { componentDetectionService } from "../services/component-detection";
 import type { ComponentInfo, SelectionEventHandlers } from "../types";
-import {
-  debounce,
-  getElementAtPoint,
-  isUIElement,
-  throttle,
-} from "../utils/dom-utils";
+import { getElementAtPoint, isUIElement } from "../utils/dom-utils";
 
 /**
  * Selection event handlers for element selection functionality

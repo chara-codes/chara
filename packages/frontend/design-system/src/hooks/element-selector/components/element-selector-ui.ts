@@ -1,8 +1,4 @@
-import {
-  ComponentInfo,
-  ElementSelectorUIConfig,
-  UIElementResult,
-} from "../types";
+import { ComponentInfo, ElementSelectorUIConfig } from "../types";
 import { cleanupSelectionUI, createStyleElement } from "../utils/dom-utils";
 import {
   DEFAULT_UI_CONFIG,

@@ -1,20 +1,20 @@
 import React from "react";
-import { describe, it, expect } from "vitest";
 import { ThemeProvider } from "styled-components";
+import { describe, expect, it } from "vitest";
 import {
-  InputBase,
-  TextAreaBase,
-  SelectBase,
-  LabelBase,
+  ButtonBase,
+  CheckboxBase,
   ErrorMessageBase,
   FormGroupBase,
   FormRowBase,
   FormSectionBase,
-  SectionTitleBase,
-  CheckboxBase,
-  ButtonBase,
-  IconSelectorBase,
   IconOptionBase,
+  IconSelectorBase,
+  InputBase,
+  LabelBase,
+  SectionTitleBase,
+  SelectBase,
+  TextAreaBase,
 } from "../form-elements";
 
 const mockTheme = {
@@ -103,7 +103,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(InputBase, { placeholder: "Test input" }),
+        React.createElement(InputBase, { placeholder: "Test input" })
       );
       expect(element).toBeTruthy();
       expect(element.type).toBe(ThemeProvider);
@@ -113,7 +113,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(InputBase, { $hasError: true }),
+        React.createElement(InputBase, { $hasError: true })
       );
       expect(element.props.children.props.$hasError).toBe(true);
     });
@@ -122,7 +122,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(InputBase, { $disabled: true }),
+        React.createElement(InputBase, { $disabled: true })
       );
       expect(element.props.children.props.$disabled).toBe(true);
     });
@@ -135,7 +135,7 @@ describe("Form Elements Components", () => {
           type: "email",
           placeholder: "Enter email",
           "data-testid": "email-input",
-        }),
+        })
       );
       expect(element.props.children.props.type).toBe("email");
       expect(element.props.children.props.placeholder).toBe("Enter email");
@@ -148,7 +148,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(TextAreaBase, { placeholder: "Enter text" }),
+        React.createElement(TextAreaBase, { placeholder: "Enter text" })
       );
       expect(element).toBeTruthy();
       expect(element.type).toBe(ThemeProvider);
@@ -158,7 +158,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(TextAreaBase, { rows: 5 }),
+        React.createElement(TextAreaBase, { rows: 5 })
       );
       expect(element.props.children.props.rows).toBe(5);
     });
@@ -167,7 +167,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(TextAreaBase, { $hasError: true }),
+        React.createElement(TextAreaBase, { $hasError: true })
       );
       expect(element.props.children.props.$hasError).toBe(true);
     });
@@ -178,7 +178,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(SelectBase, {}),
+        React.createElement(SelectBase, {})
       );
       expect(element).toBeTruthy();
       expect(element.type).toBe(ThemeProvider);
@@ -188,7 +188,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(SelectBase, { $hasError: true }),
+        React.createElement(SelectBase, { $hasError: true })
       );
       expect(element.props.children.props.$hasError).toBe(true);
     });
@@ -197,7 +197,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(SelectBase, { $disabled: true }),
+        React.createElement(SelectBase, { $disabled: true })
       );
       expect(element.props.children.props.$disabled).toBe(true);
     });
@@ -208,7 +208,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(LabelBase, {}, "Label text"),
+        React.createElement(LabelBase, {}, "Label text")
       );
       expect(element).toBeTruthy();
       expect(element.type).toBe(ThemeProvider);
@@ -219,7 +219,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(LabelBase, { htmlFor: "input-id" }, "Label"),
+        React.createElement(LabelBase, { htmlFor: "input-id" }, "Label")
       );
       expect(element.props.children.props.htmlFor).toBe("input-id");
     });
@@ -231,7 +231,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(ErrorMessageBase, {}, errorMessage),
+        React.createElement(ErrorMessageBase, {}, errorMessage)
       );
       expect(element).toBeTruthy();
       expect(element.props.children.props.children).toBe(errorMessage);
@@ -241,7 +241,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(ErrorMessageBase, { role: "alert" }, "Error"),
+        React.createElement(ErrorMessageBase, { role: "alert" }, "Error")
       );
       expect(element.props.children.props.role).toBe("alert");
     });
@@ -252,7 +252,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(FormGroupBase, {}, "Form group content"),
+        React.createElement(FormGroupBase, {}, "Form group content")
       );
       expect(element).toBeTruthy();
       expect(element.type).toBe(ThemeProvider);
@@ -262,7 +262,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(FormGroupBase, { $fullWidth: true }),
+        React.createElement(FormGroupBase, { $fullWidth: true })
       );
       expect(element.props.children.props.$fullWidth).toBe(true);
     });
@@ -271,7 +271,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(FormGroupBase, { $fullWidth: false }),
+        React.createElement(FormGroupBase, { $fullWidth: false })
       );
       expect(element.props.children.props.$fullWidth).toBe(false);
     });
@@ -282,7 +282,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(FormRowBase, {}, "Form row content"),
+        React.createElement(FormRowBase, {}, "Form row content")
       );
       expect(element).toBeTruthy();
       expect(element.props.children.props.children).toBe("Form row content");
@@ -294,7 +294,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(FormSectionBase, {}, "Section content"),
+        React.createElement(FormSectionBase, {}, "Section content")
       );
       expect(element).toBeTruthy();
       expect(element.props.children.props.children).toBe("Section content");
@@ -307,7 +307,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(SectionTitleBase, {}, titleText),
+        React.createElement(SectionTitleBase, {}, titleText)
       );
       expect(element).toBeTruthy();
       expect(element.props.children.props.children).toBe(titleText);
@@ -319,7 +319,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(CheckboxBase, {}, "Checkbox wrapper"),
+        React.createElement(CheckboxBase, {}, "Checkbox wrapper")
       );
       expect(element).toBeTruthy();
       expect(element.props.children.props.children).toBe("Checkbox wrapper");
@@ -331,7 +331,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(ButtonBase, {}, "Button text"),
+        React.createElement(ButtonBase, {}, "Button text")
       );
       expect(element).toBeTruthy();
       expect(element.props.children.props.children).toBe("Button text");
@@ -339,12 +339,12 @@ describe("Form Elements Components", () => {
 
     it("should accept $variant prop", () => {
       const variants = ["primary", "secondary", "destructive", "link"] as const;
-      
+
       for (const variant of variants) {
         const element = React.createElement(
           ThemeProvider,
           { theme: mockTheme },
-          React.createElement(ButtonBase, { $variant: variant }, "Button"),
+          React.createElement(ButtonBase, { $variant: variant }, "Button")
         );
         expect(element.props.children.props.$variant).toBe(variant);
       }
@@ -352,12 +352,12 @@ describe("Form Elements Components", () => {
 
     it("should accept $size prop", () => {
       const sizes = ["small", "medium", "large"] as const;
-      
+
       for (const size of sizes) {
         const element = React.createElement(
           ThemeProvider,
           { theme: mockTheme },
-          React.createElement(ButtonBase, { $size: size }, "Button"),
+          React.createElement(ButtonBase, { $size: size }, "Button")
         );
         expect(element.props.children.props.$size).toBe(size);
       }
@@ -367,17 +367,19 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(ButtonBase, { disabled: true }, "Disabled Button"),
+        React.createElement(ButtonBase, { disabled: true }, "Disabled Button")
       );
       expect(element.props.children.props.disabled).toBe(true);
     });
 
     it("should accept onClick handler", () => {
-      const handleClick = () => {};
+      const handleClick = () => {
+        // no-op for test
+      };
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(ButtonBase, { onClick: handleClick }, "Button"),
+        React.createElement(ButtonBase, { onClick: handleClick }, "Button")
       );
       expect(element.props.children.props.onClick).toBe(handleClick);
     });
@@ -388,7 +390,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(IconSelectorBase, {}, "Icon selector"),
+        React.createElement(IconSelectorBase, {}, "Icon selector")
       );
       expect(element).toBeTruthy();
       expect(element.props.children.props.children).toBe("Icon selector");
@@ -400,7 +402,7 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(IconOptionBase, { $selected: true }, "Icon"),
+        React.createElement(IconOptionBase, { $selected: true }, "Icon")
       );
       expect(element).toBeTruthy();
       expect(element.props.children.props.$selected).toBe(true);
@@ -410,20 +412,26 @@ describe("Form Elements Components", () => {
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(IconOptionBase, { $selected: false }, "Icon"),
+        React.createElement(IconOptionBase, { $selected: false }, "Icon")
       );
       expect(element.props.children.props.$selected).toBe(false);
     });
 
     it("should accept onClick handler", () => {
-      const handleClick = () => {};
+      const handleClick = () => {
+        // no-op for test
+      };
       const element = React.createElement(
         ThemeProvider,
         { theme: mockTheme },
-        React.createElement(IconOptionBase, { 
-          $selected: false, 
-          onClick: handleClick 
-        }, "Icon"),
+        React.createElement(
+          IconOptionBase,
+          {
+            $selected: false,
+            onClick: handleClick,
+          },
+          "Icon"
+        )
       );
       expect(element.props.children.props.onClick).toBe(handleClick);
     });

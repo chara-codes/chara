@@ -3,7 +3,14 @@
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 import type React from "react";
 import { memo, useEffect, useMemo, useState } from "react";
-import { Diff, Hunk, parseDiff } from "react-diff-view";
+import {
+  Diff,
+  Hunk,
+  parseDiff,
+  type ChangeData,
+  type FileData,
+  type HunkData,
+} from "react-diff-view";
 import "react-diff-view/style/index.css";
 import styled from "styled-components";
 import { FileIcon } from "../../atoms";
@@ -592,10 +599,10 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     };
 
     // Parse diff content for react-diff-view
-    let diffFiles: any[] = [];
+    let diffFiles: FileData[] = [];
 
     // Helper function to validate and parse diff safely
-    const safeParseDiff = (diffText: string): any[] => {
+    const safeParseDiff = (diffText: string): FileData[] => {
       if (!diffText || typeof diffText !== "string") {
         console.warn("Invalid diff text provided:", diffText);
         return [];
@@ -640,7 +647,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
           }
 
           // Validate hunks structure
-          const validHunks = file.hunks.every((hunk: any) => {
+          const validHunks = file.hunks.every((hunk: HunkData) => {
             return (
               hunk && typeof hunk === "object" && Array.isArray(hunk.changes)
             );
@@ -783,7 +790,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
 
       // Create a synthetic diff for display
       const syntheticDiff = {
-        type: operation === "created" ? "add" : ("modify" as any),
+        type: operation === "created" ? "add" : "modify",
         hunks: [
           {
             oldStart: 1,
@@ -812,9 +819,9 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
                 isInsert: true,
                 isDelete: false,
               })),
-            ] as any[],
+            ] as ChangeData[],
           },
-        ] as any[],
+        ] as HunkData[],
       };
       return (
         <DiffContainer isVisible={isVisible}>

@@ -3,25 +3,16 @@
 import React from "react";
 import styled from "styled-components";
 import {
-  GlobeIcon,
-  CodeIcon,
-  FileIcon,
-  DocumentationIcon,
-  ServerIcon,
   ChartIcon,
+  CodeIcon,
+  DocumentationIcon,
+  FileIcon,
+  GlobeIcon,
+  ServerIcon,
 } from "../atoms/icons";
 import Tooltip from "../atoms/tooltip";
 import type { Theme } from "../theme";
-
-// Define the different preview types
-export enum PreviewType {
-  APP = "app",
-  CODE = "code",
-  TESTS = "tests",
-  STATISTICS = "statistics",
-  DOCUMENTATION = "documentation",
-  DEPLOYMENT = "deployment",
-}
+import { PreviewType } from "./constants/preview-types";
 
 interface PreviewToolbarProps {
   activeType: PreviewType;

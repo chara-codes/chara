@@ -1,49 +1,49 @@
-import { CloseIcon } from "./icons/close-icon";
-import { ChatIcon } from "./icons/chat-icon";
-import { SettingsIcon } from "./icons/settings-icon";
-import { HistoryIcon } from "./icons/history-icon";
-import { MinimizeIcon } from "./icons/minimize-icon";
-import { FileIcon } from "./icons/file-icon";
-import { LinkIcon } from "./icons/link-icon";
-import { TextIcon } from "./icons/text-icon";
-import { DocumentationIcon } from "./icons/documentation-icon";
-import { TerminalIcon } from "./icons/terminal-icon";
-import { ExternalLinkIcon } from "./icons/external-link-icon";
-import { TrashIcon } from "./icons/trash-icon";
-import { PlusIcon } from "./icons/plus-icon";
-import { ClipIcon } from "./icons/clip-icon";
-import { ChartIcon } from "./icons/chart-icon";
-import { PointerIcon } from "./icons/pointer-icon";
-import { SendIcon } from "./icons/send-icon";
-import { StopIcon } from "./icons/stop-icon";
-import { ContextIcon } from "./icons/context-icon";
-import { SearchIcon } from "./icons/search-icon";
-import { DocumentIcon } from "./icons/document-icon";
-import { UploadIcon } from "./icons/upload-icon";
-import { LightbulbIcon } from "./icons/lightbulb-icon";
-import { TrendingUpIcon } from "./icons/trending-up-icon";
-import { CodeIcon } from "./icons/code-icon";
-import { ImageIcon } from "./icons/image-icon";
 import { ArrowLeftIcon } from "./icons/arrow-left-icon";
-import { ChevronDownIcon } from "./icons/chevron-down-icon";
 import { BeautifyIcon } from "./icons/beautify-icon";
-import { UndoIcon } from "./icons/undo-icon";
-import { LayersIcon } from "./icons/layers-icon";
-import { ServerIcon } from "./icons/server-icon";
-import { DatabaseIcon } from "./icons/database-icon";
-import { GlobeIcon } from "./icons/globe-icon";
-import { EditIcon } from "./icons/edit-icon";
-import { RefreshIcon } from "./icons/refresh-icon";
-import { ScrollDownIcon } from "./icons/scroll-down-icon";
-import { FilesIcon } from "./icons/files-icon";
-import { RunnerIcon } from "./icons/runner-icon";
-import { ExaminationIcon } from "./icons/examination-icon";
-import { MoveIcon } from "./icons/move-icon";
-import { ToolIcon } from "./icons/tool-icon";
-import { ThinkingIcon } from "./icons/thinking-icon";
 import { BrainIcon } from "./icons/brain-icon";
-import { StarIcon } from "./icons/star-icon";
+import { ChartIcon } from "./icons/chart-icon";
+import { ChatIcon } from "./icons/chat-icon";
+import { ChevronDownIcon } from "./icons/chevron-down-icon";
+import { ClipIcon } from "./icons/clip-icon";
+import { CloseIcon } from "./icons/close-icon";
+import { CodeIcon } from "./icons/code-icon";
+import { ContextIcon } from "./icons/context-icon";
+import { DatabaseIcon } from "./icons/database-icon";
+import { DocumentIcon } from "./icons/document-icon";
+import { DocumentationIcon } from "./icons/documentation-icon";
+import { EditIcon } from "./icons/edit-icon";
+import { ExaminationIcon } from "./icons/examination-icon";
+import { ExternalLinkIcon } from "./icons/external-link-icon";
+import { FileIcon } from "./icons/file-icon";
+import { FilesIcon } from "./icons/files-icon";
+import { GlobeIcon } from "./icons/globe-icon";
+import { HistoryIcon } from "./icons/history-icon";
+import { ImageIcon } from "./icons/image-icon";
+import { LayersIcon } from "./icons/layers-icon";
+import { LightbulbIcon } from "./icons/lightbulb-icon";
+import { LinkIcon } from "./icons/link-icon";
+import { MinimizeIcon } from "./icons/minimize-icon";
 import { MkdirIcon } from "./icons/mkdir-icon";
+import { MoveIcon } from "./icons/move-icon";
+import { PlusIcon } from "./icons/plus-icon";
+import { PointerIcon } from "./icons/pointer-icon";
+import { RefreshIcon } from "./icons/refresh-icon";
+import { RunnerIcon } from "./icons/runner-icon";
+import { ScrollDownIcon } from "./icons/scroll-down-icon";
+import { SearchIcon } from "./icons/search-icon";
+import { SendIcon } from "./icons/send-icon";
+import { ServerIcon } from "./icons/server-icon";
+import { SettingsIcon } from "./icons/settings-icon";
+import { StarIcon } from "./icons/star-icon";
+import { StopIcon } from "./icons/stop-icon";
+import { TerminalIcon } from "./icons/terminal-icon";
+import { TextIcon } from "./icons/text-icon";
+import { ThinkingIcon } from "./icons/thinking-icon";
+import { ToolIcon } from "./icons/tool-icon";
+import { TrashIcon } from "./icons/trash-icon";
+import { TrendingUpIcon } from "./icons/trending-up-icon";
+import { UndoIcon } from "./icons/undo-icon";
+import { UploadIcon } from "./icons/upload-icon";
 
 /**
  * Central export file for all icon components
@@ -100,9 +100,6 @@ export {
   StarIcon,
   MkdirIcon,
 };
-
-// Export tool icon mapper
-export { getToolIcon } from "./icons/tool-icon-mapper";
 
 // Export types
 export type { CloseIconProps } from "./icons/close-icon";

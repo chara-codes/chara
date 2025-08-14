@@ -98,7 +98,9 @@ const InputArea: React.FC<InputAreaProps> = ({
   onAddContext,
   isResponding = false,
   isLoading = false,
-  onStopResponse = () => {},
+  onStopResponse = () => {
+    // no-op
+  },
   buttonConfig, // Prop for button config
   initialMessage,
 }) => {
@@ -290,7 +292,7 @@ const InputArea: React.FC<InputAreaProps> = ({
     id: string;
     label: string;
     type: string;
-    action?: any;
+    action?: () => void;
   }) => {
     if (item.action) {
       return;

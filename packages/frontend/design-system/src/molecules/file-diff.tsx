@@ -1,13 +1,12 @@
 "use client";
 
-import React from "react";
-import { useState, useEffect } from "react";
-import styled from "styled-components";
 import type { FileDiff as FileDiffType } from "@chara-codes/core";
-import { CloseIcon } from "../atoms/icons/close-icon";
+import React, { useEffect, useState } from "react";
+import styled from "styled-components";
+import { FileIcon, UndoIcon } from "../atoms";
 import { ArrowLeftIcon } from "../atoms/icons/arrow-left-icon";
-import { UndoIcon, FileIcon } from "../atoms";
 import CheckIcon from "../atoms/icons/check-icon";
+import { CloseIcon } from "../atoms/icons/close-icon";
 
 interface FileDiffProps {
   diff: FileDiffType;
@@ -26,9 +25,7 @@ const DiffContainer = styled.div<{ isVisible?: boolean }>`
   font-size: 12px;
   line-height: 1.5;
   overflow: hidden;
-  transition:
-    opacity 0.2s ease,
-    height 0.2s ease;
+  transition: opacity 0.2s ease, height 0.2s ease;
   opacity: ${({ isVisible }) => (isVisible ? 1 : 0)};
   height: ${({ isVisible }) => (isVisible ? "auto" : "0")};
   margin-bottom: ${({ isVisible }) => (isVisible ? "16px" : "0")};
@@ -276,13 +273,15 @@ const BackToDiffButton = styled.button`
 const FileDiff: React.FC<FileDiffProps> = ({
   diff,
   isVisible = true,
-  onClose = () => {},
+  onClose = () => {
+    // no-op
+  },
   onKeep,
   onRevert,
 }) => {
   const [status, setStatus] = useState(diff.status);
   const [expandedHunks, setExpandedHunks] = useState<Set<string>>(
-    new Set(diff.hunks?.map((h) => h.id) || []),
+    new Set(diff.hunks?.map((h) => h.id) || [])
   );
   const [viewMode, setViewMode] = useState<"diff" | "original" | "new">("diff");
 
@@ -304,7 +303,7 @@ const FileDiff: React.FC<FileDiffProps> = ({
       (count, hunk) =>
         count +
         hunk.changes.filter((change) => change.type === "addition").length,
-      0,
+      0
     ) || 0;
 
   const deletions =
@@ -312,7 +311,7 @@ const FileDiff: React.FC<FileDiffProps> = ({
       (count, hunk) =>
         count +
         hunk.changes.filter((change) => change.type === "deletion").length,
-      0,
+      0
     ) || 0;
 
   // Add effect to log when diff status changes

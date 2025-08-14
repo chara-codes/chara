@@ -1,14 +1,18 @@
-import { ElementSelectorUIConfig, ModalOptions, UIElementResult, ComponentInfo } from '../types';
-import { createElement } from '../utils/dom-utils';
 import {
-  UI_ELEMENT_STYLES,
+  ElementSelectorUIConfig,
+  ModalOptions,
+  UIElementResult,
+} from "../types";
+import { createElement } from "../utils/dom-utils";
+import {
+  applyButtonHoverEffects,
+  applyInputFocusEffects,
+  getInfoSectionStyles,
+  getModalHeaderStyles,
   getPrimaryButtonStyles,
   getSecondaryButtonStyles,
-  getModalHeaderStyles,
-  getInfoSectionStyles,
-  applyButtonHoverEffects,
-  applyInputFocusEffects
-} from '../utils/style-utils';
+  UI_ELEMENT_STYLES,
+} from "../utils/style-utils";
 
 /**
  * Comment modal component for adding comments to selected elements
@@ -60,9 +64,9 @@ export class CommentModal {
    * Create the modal backdrop
    */
   private createBackdrop(): HTMLElement {
-    const backdrop = createElement('div', {
-      id: 'element-comment-backdrop',
-      className: 'element-selector-ui',
+    const backdrop = createElement("div", {
+      id: "element-comment-backdrop",
+      className: "element-selector-ui",
       styles: {
         ...UI_ELEMENT_STYLES.backdrop,
         zIndex: `${this.config.zIndexBase + 6}`,
@@ -83,18 +87,18 @@ export class CommentModal {
    * Create the main modal container
    */
   private createModal(): HTMLElement {
-    const modal = createElement('div', {
-      id: 'element-comment-modal',
-      className: 'element-selector-ui',
+    const modal = createElement("div", {
+      id: "element-comment-modal",
+      className: "element-selector-ui",
       styles: {
         ...UI_ELEMENT_STYLES.modal,
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
         zIndex: `${this.config.zIndexBase + 7}`,
-        width: '400px',
-        maxWidth: '90vw',
-        animation: 'slideIn 0.25s ease-out',
+        width: "400px",
+        maxWidth: "90vw",
+        animation: "slideIn 0.25s ease-out",
       },
       eventListeners: {
         click: (e) => e.stopPropagation(),
@@ -105,7 +109,7 @@ export class CommentModal {
     modal.appendChild(this.createHeader());
     modal.appendChild(this.createElementInfo());
 
-    if (this.options.componentInfo.componentName !== 'Unknown') {
+    if (this.options.componentInfo.componentName !== "Unknown") {
       modal.appendChild(this.createComponentInfo());
     }
 
@@ -119,17 +123,17 @@ export class CommentModal {
    * Create modal header
    */
   private createHeader(): HTMLElement {
-    const header = createElement('div', {
+    const header = createElement("div", {
       styles: getModalHeaderStyles(),
     });
 
-    const title = createElement('h3', {
-      textContent: 'Add Comment to Element',
+    const title = createElement("h3", {
+      textContent: "Add Comment to Element",
       styles: {
-        margin: '0',
-        fontSize: '16px',
-        fontWeight: '600',
-        color: '#1f2937',
+        margin: "0",
+        fontSize: "16px",
+        fontWeight: "600",
+        color: "#1f2937",
       },
     });
 
@@ -141,16 +145,16 @@ export class CommentModal {
    * Create element information section
    */
   private createElementInfo(): HTMLElement {
-    const elementInfo = createElement('div', {
-      styles: getInfoSectionStyles(this.config, 'element'),
+    const elementInfo = createElement("div", {
+      styles: getInfoSectionStyles(this.config, "element"),
     });
 
     const tagName = this.options.element.tagName.toLowerCase();
-    const idText = this.options.element.id ? `#${this.options.element.id}` : '';
+    const idText = this.options.element.id ? `#${this.options.element.id}` : "";
     const classText = this.getClassText(this.options.element);
 
     // Add element type badge
-    const elementBadge = createElement('div', {
+    const elementBadge = createElement("div", {
       textContent: tagName,
       styles: {
         ...UI_ELEMENT_STYLES.badge,
@@ -160,13 +164,13 @@ export class CommentModal {
     });
 
     // Create text container
-    const textContainer = createElement('div', {
-      textContent: `${tagName}${idText}${idText ? '' : classText}`,
+    const textContainer = createElement("div", {
+      textContent: `${tagName}${idText}${idText ? "" : classText}`,
       styles: {
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        paddingRight: '50px',
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        paddingRight: "50px",
       },
     });
 
@@ -180,26 +184,28 @@ export class CommentModal {
    * Create component information section
    */
   private createComponentInfo(): HTMLElement {
-    const componentInfo = createElement('div', {
-      styles: getInfoSectionStyles(this.config, 'component'),
+    const componentInfo = createElement("div", {
+      styles: getInfoSectionStyles(this.config, "component"),
     });
 
-    const componentBadge = createElement('div', {
-      textContent: this.options.componentInfo.isReactComponent ? 'React Component' : 'Component',
+    const componentBadge = createElement("div", {
+      textContent: this.options.componentInfo.isReactComponent
+        ? "React Component"
+        : "Component",
       styles: {
         ...UI_ELEMENT_STYLES.badge,
-        backgroundColor: '#4f46e5',
-        color: 'white',
+        backgroundColor: "#4f46e5",
+        color: "white",
       },
     });
 
-    const nameContainer = createElement('div', {
+    const nameContainer = createElement("div", {
       textContent: `${this.options.componentInfo.componentName} (${this.options.componentInfo.componentPath})`,
       styles: {
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-        paddingRight: '100px',
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        paddingRight: "100px",
       },
     });
 
@@ -213,36 +219,36 @@ export class CommentModal {
    * Create comment input section
    */
   private createCommentInput(): HTMLElement {
-    const inputContainer = createElement('div', {
+    const inputContainer = createElement("div", {
       styles: {
-        marginBottom: '12px',
+        marginBottom: "12px",
       },
     });
 
-    const label = createElement('label', {
-      textContent: 'Comment',
+    const label = createElement("label", {
+      textContent: "Comment",
       attributes: {
-        for: 'element-comment-input',
+        for: "element-comment-input",
       },
       styles: {
-        display: 'block',
-        marginBottom: '6px',
-        fontSize: '13px',
-        fontWeight: '500',
-        color: '#374151',
+        display: "block",
+        marginBottom: "6px",
+        fontSize: "13px",
+        fontWeight: "500",
+        color: "#374151",
       },
     });
 
-    this.inputElement = createElement('input', {
-      id: 'element-comment-input',
+    this.inputElement = createElement("input", {
+      id: "element-comment-input",
       attributes: {
-        type: 'text',
-        placeholder: 'Add your comment about this element...',
+        type: "text",
+        placeholder: "Add your comment about this element...",
       },
       styles: UI_ELEMENT_STYLES.input,
       eventListeners: {
         keydown: (e) => {
-          if ((e as KeyboardEvent).key === 'Enter') {
+          if ((e as KeyboardEvent).key === "Enter") {
             e.preventDefault();
             this.handleConfirm();
           }
@@ -263,36 +269,36 @@ export class CommentModal {
    * Create buttons section
    */
   private createButtons(): HTMLElement {
-    const buttonsContainer = createElement('div', {
+    const buttonsContainer = createElement("div", {
       styles: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        gap: '8px',
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: "8px",
       },
     });
 
     // Cancel button
-    const cancelButton = createElement('button', {
-      textContent: 'Cancel',
+    const cancelButton = createElement("button", {
+      textContent: "Cancel",
       styles: getSecondaryButtonStyles(),
       eventListeners: {
         click: () => this.options.onCancel(),
       },
     });
 
-    applyButtonHoverEffects(cancelButton, 'secondary', this.config);
+    applyButtonHoverEffects(cancelButton, "secondary", this.config);
 
     // Confirm button
-    const confirmButton = createElement('button', {
-      textContent: 'Add',
-      id: 'element-comment-confirm',
+    const confirmButton = createElement("button", {
+      textContent: "Add",
+      id: "element-comment-confirm",
       styles: getPrimaryButtonStyles(this.config),
       eventListeners: {
         click: () => this.handleConfirm(),
       },
     });
 
-    applyButtonHoverEffects(confirmButton, 'primary', this.config);
+    applyButtonHoverEffects(confirmButton, "primary", this.config);
 
     buttonsContainer.appendChild(cancelButton);
     buttonsContainer.appendChild(confirmButton);
@@ -304,7 +310,7 @@ export class CommentModal {
    * Handle confirm action
    */
   private handleConfirm(): void {
-    const comment = this.inputElement?.value.trim() || '';
+    const comment = this.inputElement?.value.trim() || "";
     this.options.onConfirm(comment);
   }
 
@@ -312,15 +318,15 @@ export class CommentModal {
    * Get formatted class text for display
    */
   private getClassText(element: HTMLElement): string {
-    if (!element.className || typeof element.className !== 'string') {
-      return '';
+    if (!element.className || typeof element.className !== "string") {
+      return "";
     }
 
     const classes = element.className.trim().split(/\s+/);
-    if (classes.length === 0) return '';
+    if (classes.length === 0) return "";
 
     const displayClasses = classes.slice(0, 2);
-    return `.${displayClasses.join('.')}`;
+    return `.${displayClasses.join(".")}`;
   }
 
   /**
@@ -336,7 +342,7 @@ export class CommentModal {
    * Get current comment value
    */
   getCurrentComment(): string {
-    return this.inputElement?.value.trim() || '';
+    return this.inputElement?.value.trim() || "";
   }
 
   /**
@@ -344,7 +350,7 @@ export class CommentModal {
    */
   show(): void {
     if (this.backdropElement) {
-      this.backdropElement.style.display = 'flex';
+      this.backdropElement.style.display = "flex";
     }
   }
 
@@ -353,7 +359,7 @@ export class CommentModal {
    */
   hide(): void {
     if (this.backdropElement) {
-      this.backdropElement.style.display = 'none';
+      this.backdropElement.style.display = "none";
     }
   }
 
@@ -381,7 +387,9 @@ export class CommentModal {
     }
 
     // Update button styles
-    const confirmButton = this.modalElement?.querySelector('#element-comment-confirm') as HTMLElement;
+    const confirmButton = this.modalElement?.querySelector(
+      "#element-comment-confirm"
+    ) as HTMLElement;
     if (confirmButton) {
       Object.assign(confirmButton.style, getPrimaryButtonStyles(config));
     }
@@ -393,18 +401,19 @@ export class CommentModal {
   animateIn(): void {
     if (!this.modalElement || !this.backdropElement) return;
 
-    this.backdropElement.style.opacity = '0';
-    this.modalElement.style.opacity = '0';
-    this.modalElement.style.transform = 'translate(-50%, -55%)';
+    this.backdropElement.style.opacity = "0";
+    this.modalElement.style.opacity = "0";
+    this.modalElement.style.transform = "translate(-50%, -55%)";
 
     requestAnimationFrame(() => {
       if (this.backdropElement && this.modalElement) {
-        this.backdropElement.style.transition = 'opacity 0.2s ease';
-        this.modalElement.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        this.backdropElement.style.transition = "opacity 0.2s ease";
+        this.modalElement.style.transition =
+          "opacity 0.25s ease, transform 0.25s ease";
 
-        this.backdropElement.style.opacity = '1';
-        this.modalElement.style.opacity = '1';
-        this.modalElement.style.transform = 'translate(-50%, -50%)';
+        this.backdropElement.style.opacity = "1";
+        this.modalElement.style.opacity = "1";
+        this.modalElement.style.transform = "translate(-50%, -50%)";
       }
     });
   }
@@ -419,12 +428,13 @@ export class CommentModal {
         return;
       }
 
-      this.backdropElement.style.transition = 'opacity 0.15s ease';
-      this.modalElement.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+      this.backdropElement.style.transition = "opacity 0.15s ease";
+      this.modalElement.style.transition =
+        "opacity 0.2s ease, transform 0.2s ease";
 
-      this.backdropElement.style.opacity = '0';
-      this.modalElement.style.opacity = '0';
-      this.modalElement.style.transform = 'translate(-50%, -55%)';
+      this.backdropElement.style.opacity = "0";
+      this.modalElement.style.opacity = "0";
+      this.modalElement.style.transform = "translate(-50%, -55%)";
 
       setTimeout(() => {
         this.destroy();

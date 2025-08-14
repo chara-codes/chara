@@ -1,18 +1,18 @@
 "use client";
 
-import type React from "react";
-import { useRef, useEffect, useCallback, useMemo } from "react";
-import styled from "styled-components";
-import ViewNavigation from "../molecules/view-navigation";
 import {
   useActiveRunnerProcess,
-  useRunnerConnection,
-  useRunnerConnect,
   useRunnerClearOutput,
-  useRunnerRestart,
+  useRunnerConnect,
+  useRunnerConnection,
   useRunnerGetStatus,
+  useRunnerRestart,
 } from "@chara-codes/core/stores";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import styled from "styled-components";
 import Button from "../atoms/button";
+import ViewNavigation from "../molecules/view-navigation";
 
 const TerminalContainer = styled.div`
   display: flex;
@@ -252,7 +252,7 @@ const TerminalView: React.FC<TerminalViewProps> = ({
     }
 
     return baseLogs.sort(
-      (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
     );
   }, [logs, activeProcess?.error, activeProcess?.processId]);
 
@@ -273,7 +273,7 @@ const TerminalView: React.FC<TerminalViewProps> = ({
     if (!isConnected && !isConnecting) {
       connect().catch(console.error);
     }
-  }, [isConnected, isConnecting]);
+  }, [isConnected, isConnecting, connect]);
 
   // Auto-scroll to bottom when new logs are added
   useEffect(() => {
@@ -312,7 +312,9 @@ const TerminalView: React.FC<TerminalViewProps> = ({
       <ViewNavigation
         onBack={onBack}
         searchQuery=""
-        onSearchChange={() => {}}
+        onSearchChange={() => {
+          // no-op
+        }}
         placeholder=""
         showSearch={false}
       />

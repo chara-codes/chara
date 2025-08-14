@@ -1,24 +1,5 @@
-import styled, { keyframes } from "styled-components";
-
-const shimmer = keyframes`
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-`;
-
-const pulse = keyframes`
-  0%, 100% {
-    opacity: 0.6;
-    transform: scaleY(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scaleY(1.2);
-  }
-`;
+import styled from "styled-components";
+import { pulse, shimmer, spin } from "./constants/animations";
 
 export const LoadingLine = styled.div`
   position: absolute;
@@ -48,9 +29,7 @@ export const LoadingLine = styled.div`
     );
     background-size: 200% 100%;
     box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
-    animation:
-      ${shimmer} 2s infinite linear,
-      ${pulse} 2s infinite ease-in-out;
+    animation: ${shimmer} 2s infinite linear, ${pulse} 2s infinite ease-in-out;
   }
 `;
 
@@ -132,11 +111,6 @@ export const ButtonsContainer = styled.div`
   display: flex;
   align-items: center;
   position: relative;
-`;
-
-export const spin = keyframes`
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 `;
 
 export const SendButton = styled.button<{ $isResponding?: boolean }>`

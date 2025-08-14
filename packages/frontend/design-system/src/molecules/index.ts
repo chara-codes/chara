@@ -18,6 +18,7 @@ export * from "./header";
 export * from "./input-area";
 export * from "./message-bubble";
 export * from "./preview-toolbar";
+export * from "./constants/preview-types";
 export * from "./statistics-preview";
 export * from "./tests-preview";
 export * from "./tools";

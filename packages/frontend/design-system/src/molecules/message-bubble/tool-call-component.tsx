@@ -3,8 +3,8 @@
 import type { ToolCall } from "@chara-codes/core";
 import { useCallback, useState } from "react";
 import type React from "react";
-import { getToolIcon } from "../../atoms/icons";
 import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
+import { getToolIcon } from "../../atoms/icons/tool-icon-mapper";
 // Import specialized tool components for enhanced display
 import { TerminalToolBlock } from "../tools";
 import { DiffBlock } from "../tools/diff-block";
