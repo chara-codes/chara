@@ -6,6 +6,7 @@
   "module": "src/index.ts",
   "types": "src/index.ts",
   "type": "module",
+  "private": true,
   "scripts": {
     "test": "bun test .",
     "test:watch": "bun test --watch .",
@@ -38,5 +39,8 @@
   },
   "bugs": {
     "url": "https://github.com/chara-codes/chara/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
