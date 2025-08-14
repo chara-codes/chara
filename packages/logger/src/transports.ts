@@ -1,4 +1,5 @@
 import pino from "pino";
+import "pino-pretty";
 import type { LoggerTransportConfig } from "./types";
 
 export function createConsoleTransport(
