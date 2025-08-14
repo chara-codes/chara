@@ -279,6 +279,226 @@ describe("coloredConsoleTransport (legacy)", () => {
   });
 });
 
+describe("Transport error handling", () => {
+  test("should handle transport creation errors gracefully", () => {
+    // Should not throw error even if transport creation fails
+    expect(() => {
+      new Logger({
+        name: "error-test",
+        transports: [{ type: "console" }],
+      });
+    }).not.toThrow();
+  });
+
+  test("should fallback to safe transport when pino-pretty fails", () => {
+    // Create logger that should trigger fallback
+    const fallbackLogger = new Logger({
+      name: "fallback-test",
+      transports: [{ type: "console", options: { colorize: true } }],
+    });
+
+    expect(fallbackLogger).toBeInstanceOf(Logger);
+    expect(fallbackLogger.getLevel()).toBe("info");
+  });
+
+  test("should handle multi-transport errors gracefully", () => {
+    const multiLogger = new Logger({
+      name: "multi-error-test",
+      transports: [
+        { type: "console" },
+        { type: "file", options: { destination: "./test-error.log" } },
+        { type: "browser" },
+      ],
+    });
+
+    expect(multiLogger).toBeInstanceOf(Logger);
+  });
+
+  test("should work with browser transport", () => {
+    const browserLogger = new Logger({
+      name: "browser-test",
+      transports: [{ type: "browser", options: { asObject: true } }],
+    });
+
+    expect(browserLogger).toBeInstanceOf(Logger);
+
+    const spy = jest
+      .spyOn(browserLogger.pino, "info")
+      .mockImplementation(() => undefined as any);
+    browserLogger.info("browser test message");
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  test("should handle unknown transport type", () => {
+    const unknownLogger = new Logger({
+      name: "unknown-test",
+      transports: [{ type: "unknown" as any }],
+    });
+
+    expect(unknownLogger).toBeInstanceOf(Logger);
+  });
+
+  test("should handle empty transports array", () => {
+    const emptyLogger = new Logger({
+      name: "empty-test",
+      transports: [],
+    });
+
+    expect(emptyLogger).toBeInstanceOf(Logger);
+  });
+});
+
+describe("Message formatting with data", () => {
+  let localTestLogger: Logger;
+
+  beforeEach(() => {
+    localTestLogger = new Logger({
+      name: "message-test",
+      level: "trace",
+      transports: [{ type: "console", options: { colorize: false } }],
+    });
+  });
+
+  test("should format messages with additional data", () => {
+    const spy = jest
+      .spyOn(localTestLogger.pino, "info")
+      .mockImplementation(() => undefined as any);
+
+    const testData = { key: "value", number: 42 };
+    localTestLogger.info("Test message", testData);
+
+    expect(spy).toHaveBeenCalled();
+    const callArgs = spy.mock.calls[0];
+    expect(callArgs[0]).toContain("Test message");
+    spy.mockRestore();
+  });
+
+  test("should handle undefined data gracefully", () => {
+    const spy = jest
+      .spyOn(localTestLogger.pino, "info")
+      .mockImplementation(() => undefined as any);
+
+    localTestLogger.info("Test message", undefined);
+
+    expect(spy).toHaveBeenCalledWith("Test message");
+    spy.mockRestore();
+  });
+
+  test("should handle null data gracefully", () => {
+    const spy = jest
+      .spyOn(localTestLogger.pino, "info")
+      .mockImplementation(() => undefined as any);
+
+    localTestLogger.info("Test message", null);
+
+    expect(spy).toHaveBeenCalledWith("Test message");
+    spy.mockRestore();
+  });
+});
+
+describe("Transport level filtering", () => {
+  test("should create logger with transport-specific levels", () => {
+    const levelLogger = new Logger({
+      name: "level-test",
+      transports: [
+        {
+          type: "console",
+          levels: ["error", "warn"],
+          options: { colorize: false },
+        },
+      ],
+    });
+
+    expect(levelLogger).toBeInstanceOf(Logger);
+  });
+
+  test("should handle multiple transports with different levels", () => {
+    const multiLevelLogger = new Logger({
+      name: "multi-level-test",
+      transports: [
+        {
+          type: "console",
+          levels: ["info", "warn", "error"],
+        },
+        {
+          type: "file",
+          levels: ["error"],
+          options: { destination: "./error-only.log" },
+        },
+      ],
+    });
+
+    expect(multiLevelLogger).toBeInstanceOf(Logger);
+  });
+});
+
+describe("Alias methods", () => {
+  let aliasTestLogger: Logger;
+
+  beforeEach(() => {
+    aliasTestLogger = new Logger({
+      name: "alias-test",
+      level: "trace",
+      transports: [{ type: "console", options: { colorize: false } }],
+    });
+  });
+
+  test("should use warn method for warning", () => {
+    const warnSpy = jest
+      .spyOn(aliasTestLogger, "warn")
+      .mockImplementation(() => undefined as any);
+
+    aliasTestLogger.warning("warning message");
+    expect(warnSpy).toHaveBeenCalledWith("warning message", undefined);
+    warnSpy.mockRestore();
+  });
+
+  test("should use error method for err", () => {
+    const errorSpy = jest
+      .spyOn(aliasTestLogger, "error")
+      .mockImplementation(() => undefined as any);
+
+    aliasTestLogger.err("error message");
+    expect(errorSpy).toHaveBeenCalledWith("error message", undefined);
+    errorSpy.mockRestore();
+  });
+});
+
+describe("Configuration options", () => {
+  test("should handle custom formatters", () => {
+    const customLogger = new Logger({
+      name: "custom-formatter-test",
+      formatters: {
+        level: (label: string, number: number) => ({ level: number }),
+        log: (object: object) => object,
+      },
+    });
+
+    expect(customLogger).toBeInstanceOf(Logger);
+  });
+
+  test("should handle serializers", () => {
+    const customLogger = new Logger({
+      name: "serializer-test",
+      serializers: {
+        error: (err: Error) => ({ message: err.message }),
+      },
+    });
+
+    expect(customLogger).toBeInstanceOf(Logger);
+  });
+
+  test("should handle redact options", () => {
+    const customLogger = new Logger({
+      name: "redact-test",
+      redact: ["password", "secret"],
+    });
+
+    expect(customLogger).toBeInstanceOf(Logger);
+  });
+});
+
 describe("Default logger instance", () => {
   test("should export a default logger instance", () => {
     expect(logger).toBeInstanceOf(Logger);

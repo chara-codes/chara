@@ -19,32 +19,58 @@ function formatMessageWithData(message: string, data: any): string {
   return message;
 }
 
+// Safe transport/stream creation with error handling
+function createSafeDestination(transportConfig?: any) {
+  try {
+    if (!transportConfig) {
+      return createConsoleTransport();
+    }
+
+    switch (transportConfig.type) {
+      case "console":
+        return createConsoleTransport(transportConfig.options);
+      case "file":
+        return createFileTransport(transportConfig.options);
+      case "browser":
+        return createBrowserTransport(transportConfig.options);
+      default:
+        return createConsoleTransport();
+    }
+  } catch (error) {
+    // Fallback to stdout destination if transport creation fails
+    console.warn("Warning: Failed to create transport, using fallback");
+    return pino.destination({
+      dest: 1, // stdout
+      sync: false,
+    });
+  }
+}
+
 export class Logger {
   private pinoLogger: pino.Logger<"success" | "event" | "server">;
 
   constructor(config: LoggerConfig) {
-    // Set up transports
-    let transport: any;
-    if (config.transports && config.transports.length > 0) {
-      if (config.transports.length === 1) {
-        const transportConfig = config.transports[0];
-        switch (transportConfig.type) {
-          case "console":
-            transport = createConsoleTransport(transportConfig.options);
-            break;
-          case "file":
-            transport = createFileTransport(transportConfig.options);
-            break;
-          case "browser":
-            transport = createBrowserTransport(transportConfig.options);
-            break;
+    // Set up transports/streams with proper error handling
+    let destination: any;
+
+    try {
+      if (config.transports && config.transports.length > 0) {
+        if (config.transports.length === 1) {
+          destination = createSafeDestination(config.transports[0]);
+        } else {
+          destination = createMultiTransport(config.transports);
         }
       } else {
-        transport = createMultiTransport(config.transports);
+        // Default to console transport
+        destination = createSafeDestination();
       }
-    } else {
-      // Default to console transport
-      transport = createConsoleTransport();
+    } catch (error) {
+      // If any transport setup fails, use safe fallback
+      console.warn("Warning: Transport setup failed, using fallback");
+      destination = pino.destination({
+        dest: 1, // stdout
+        sync: false,
+      });
     }
 
     // Create logger with custom levels
@@ -58,7 +84,7 @@ export class Logger {
         serializers: config.serializers,
         redact: config.redact,
       },
-      transport
+      destination
     ) as pino.Logger<"success" | "event" | "server">;
   }
 
@@ -273,7 +299,7 @@ export class Logger {
   }
 }
 
-// Create default logger instance
+// Create default logger instance with safe configuration
 export const logger = new Logger({
   name: "chara",
   level: "info",
