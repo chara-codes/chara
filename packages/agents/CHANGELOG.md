@@ -1,5 +1,15 @@
 # @chara-codes/agents
 
+## 0.1.28
+
+### Patch Changes
+
+- a001ed4: Fix issue with pino-pretty
+- Updated dependencies [a001ed4]
+  - @chara-codes/settings@0.1.28
+  - @chara-codes/logger@0.1.25
+  - @chara-codes/shared@0.1.28
+
 ## 0.1.27
 
 ### Patch Changes

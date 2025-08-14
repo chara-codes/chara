@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/shared",
-  "version": "0.1.27",
+  "version": "0.1.28",
   "description": "Shared utilities and types for Chara Codes",
   "main": "src/index.ts",
   "module": "src/index.ts",

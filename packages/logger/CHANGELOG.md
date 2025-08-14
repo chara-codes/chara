@@ -1,5 +1,11 @@
 # @chara-codes/logger
 
+## 0.1.25
+
+### Patch Changes
+
+- a001ed4: Fix issue with pino-pretty
+
 ## 0.1.24
 
 ### Patch Changes

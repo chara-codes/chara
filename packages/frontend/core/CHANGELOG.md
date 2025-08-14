@@ -1,5 +1,11 @@
 # @chara-codes/core
 
+## 0.1.27
+
+### Patch Changes
+
+- a001ed4: Fix issue with pino-pretty
+
 ## 0.1.26
 
 ### Patch Changes

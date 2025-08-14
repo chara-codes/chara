@@ -1,5 +1,14 @@
 # @chara-codes/widget
 
+## 0.1.28
+
+### Patch Changes
+
+- a001ed4: Fix issue with pino-pretty
+- Updated dependencies [a001ed4]
+  - @chara-codes/design-system@0.1.27
+  - @chara-codes/core@0.1.27
+
 ## 0.1.27
 
 ### Patch Changes
