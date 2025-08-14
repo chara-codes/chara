@@ -1,5 +1,13 @@
 # @chara-codes/server
 
+## 0.1.25
+
+### Patch Changes
+
+- 6b23122: fix issue with @chara-codes/shared
+- Updated dependencies [6b23122]
+  - @chara-codes/logger@0.1.22
+
 ## 0.1.24
 
 ### Patch Changes

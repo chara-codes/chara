@@ -2,7 +2,7 @@
   "name": "Chara Codes",
   "description": "Chara Codes is an AI-powered development environment designed to streamline frontend development workflows.",
   "private": true,
-  "version": "0.1.23",
+  "version": "0.1.24",
   "type": "module",
   "scripts": {
     "dev": "wxt",

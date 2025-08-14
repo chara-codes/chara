@@ -1,5 +1,13 @@
 # @chara-codes/design-system
 
+## 0.1.24
+
+### Patch Changes
+
+- 6b23122: fix issue with @chara-codes/shared
+- Updated dependencies [6b23122]
+  - @chara-codes/core@0.1.24
+
 ## 0.1.23
 
 ### Patch Changes

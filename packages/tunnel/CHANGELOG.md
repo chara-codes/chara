@@ -1,5 +1,13 @@
 # @chara-codes/tunnel
 
+## 0.1.22
+
+### Patch Changes
+
+- 6b23122: fix issue with @chara-codes/shared
+- Updated dependencies [6b23122]
+  - @chara-codes/logger@0.1.22
+
 ## 0.1.21
 
 ### Patch Changes
