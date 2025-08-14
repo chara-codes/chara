@@ -1,5 +1,13 @@
 # @chara-codes/design-system
 
+## 0.1.23
+
+### Patch Changes
+
+- 82a1f4d: Add project-info tool, move dev-server runner from agent to project-info
+- Updated dependencies [82a1f4d]
+  - @chara-codes/core@0.1.23
+
 ## 0.1.22
 
 ### Patch Changes

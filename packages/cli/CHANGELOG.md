@@ -1,5 +1,13 @@
 # chara
 
+## 0.1.24
+
+### Patch Changes
+
+- 82a1f4d: Add project-info tool, move dev-server runner from agent to project-info
+- Updated dependencies [82a1f4d]
+  - @chara-codes/shared@0.1.24
+
 ## 0.1.23
 
 ### Patch Changes
