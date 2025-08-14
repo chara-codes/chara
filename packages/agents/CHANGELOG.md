@@ -1,5 +1,15 @@
 # @chara-codes/agents
 
+## 0.1.27
+
+### Patch Changes
+
+- 1c97bba: change package.json dependencies for workspace dependency
+- Updated dependencies [1c97bba]
+  - @chara-codes/settings@0.1.27
+  - @chara-codes/logger@0.1.24
+  - @chara-codes/shared@0.1.27
+
 ## 0.1.26
 
 ### Patch Changes

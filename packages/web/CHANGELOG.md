@@ -1,5 +1,14 @@
 # @chara-codes/web
 
+## 0.1.27
+
+### Patch Changes
+
+- 1c97bba: change package.json dependencies for workspace dependency
+- Updated dependencies [1c97bba]
+  - @chara-codes/design-system@0.1.26
+  - @chara-codes/core@0.1.26
+
 ## 0.1.26
 
 ### Patch Changes

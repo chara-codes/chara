@@ -1,5 +1,13 @@
 # @chara-codes/tunnel
 
+## 0.1.24
+
+### Patch Changes
+
+- 1c97bba: change package.json dependencies for workspace dependency
+- Updated dependencies [1c97bba]
+  - @chara-codes/logger@0.1.24
+
 ## 0.1.23
 
 ### Patch Changes

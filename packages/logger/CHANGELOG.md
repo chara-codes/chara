@@ -1,5 +1,11 @@
 # @chara-codes/logger
 
+## 0.1.24
+
+### Patch Changes
+
+- 1c97bba: change package.json dependencies for workspace dependency
+
 ## 0.1.23
 
 ### Patch Changes

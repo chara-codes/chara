@@ -1,7 +1,7 @@
 {
   "name": "Chara Codes",
   "description": "Chara Codes is an AI-powered development environment designed to streamline frontend development workflows.",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "type": "module",
   "private": true,
   "scripts": {

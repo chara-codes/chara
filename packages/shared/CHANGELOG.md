@@ -1,5 +1,11 @@
 # @chara-codes/shared
 
+## 0.1.27
+
+### Patch Changes
+
+- 1c97bba: change package.json dependencies for workspace dependency
+
 ## 0.1.26
 
 ### Patch Changes
