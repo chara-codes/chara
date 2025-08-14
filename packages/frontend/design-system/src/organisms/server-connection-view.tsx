@@ -165,13 +165,7 @@ const StatusIndicator = styled.div<{ $isConnecting: boolean }>`
   align-items: center;
   gap: ${({ theme }) => (theme as Theme).spacing.sm};
   font-size: ${({ theme }) => (theme as Theme).typography.fontSize.sm};
-  color: ${({
-    $isConnecting,
-    theme,
-  }: {
-    $isConnecting: boolean;
-    theme: Theme;
-  }) =>
+  color: ${({ $isConnecting, theme }) =>
     $isConnecting
       ? (theme as Theme).colors.warning
       : (theme as Theme).colors.textSecondary};
@@ -181,17 +175,11 @@ const StatusIndicator = styled.div<{ $isConnecting: boolean }>`
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background-color: ${({
-      $isConnecting,
-      theme,
-    }: {
-      $isConnecting: boolean;
-      theme: Theme;
-    }) =>
+    background-color: ${({ $isConnecting, theme }) =>
       $isConnecting
         ? (theme as Theme).colors.warning
         : (theme as Theme).colors.error};
-    animation: ${({ $isConnecting }: { $isConnecting: boolean }) =>
+    animation: ${({ $isConnecting }) =>
       $isConnecting ? "pulse 1.5s infinite" : "none"};
   }
 
@@ -268,18 +256,14 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
 
   const handleRetryConnection = useCallback(async () => {
     try {
-      // Try to reconnect both services
+      // Only try to reconnect the runner service
+      // WebSocket service handles its own reconnection automatically
       console.log("Attempting to reconnect Runner service...");
       await connect();
-
-      if (!wsStatus.connected && !wsStatus.reconnecting) {
-        console.log("Attempting to reconnect WebSocket service...");
-        await wsStatus.reconnect();
-      }
     } catch (error) {
-      console.error("Reconnection failed:", error);
+      console.error("Runner reconnection failed:", error);
     }
-  }, [connect, wsStatus]);
+  }, [connect]);
 
   const handleCopyCommand = useCallback(() => {
     const command = "bunx @chara-codes/cli dev";
@@ -319,8 +303,10 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
           {!isConnected && !wsStatus.connected
             ? "No active connections detected."
             : !isConnected
-            ? "Backend services are unavailable."
-            : "Real-time features are unavailable."}{" "}
+            ? "Runner service is unavailable."
+            : !wsStatus.connected
+            ? "Real-time features are unavailable."
+            : "Services are connecting..."}{" "}
           Please start your development server to continue.
         </Description>
 
@@ -346,27 +332,31 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
             variant="primary"
             size="md"
             onClick={handleRetryConnection}
-            disabled={isConnecting || wsStatus.reconnecting}
+            disabled={isConnecting}
           >
-            {isConnecting || wsStatus.reconnecting
-              ? "Connecting..."
-              : "Retry Connection"}
+            {isConnecting ? "Connecting..." : "Retry Connection"}
           </Button>
 
           <StatusIndicator
             $isConnecting={isConnecting || wsStatus.reconnecting}
           >
-            {isConnecting || wsStatus.reconnecting
-              ? "Connecting to server..."
-              : isConnected || wsStatus.connected
-              ? "Server connected"
-              : "Server offline"}
+            {isConnecting
+              ? "Connecting to runner..."
+              : wsStatus.reconnecting
+              ? "Reconnecting WebSocket..."
+              : isConnected && wsStatus.connected
+              ? "All services connected"
+              : isConnected
+              ? "Runner connected, WebSocket offline"
+              : wsStatus.connected
+              ? "WebSocket connected, runner offline"
+              : "All services offline"}
           </StatusIndicator>
         </ActionButtons>
 
         {(connectionError || wsStatus.error) && (
           <TroubleshootingSection>
-            <TroubleshootingTitle>⚠️ Troubleshooting</TroubleshootingTitle>
+            <TroubleshootingTitle>⚠️ Connection Status</TroubleshootingTitle>
             {connectionError && (
               <ErrorMessage>
                 <strong>Runner Service:</strong> {connectionError}
@@ -378,10 +368,10 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
               </ErrorMessageWs>
             )}
             <InstructionsList>
-              <li>Ensure the development server is running</li>
+              <li>Start the development server with the command above</li>
+              <li>Services will automatically connect when available</li>
               <li>Check if port 3000 (or your configured port) is available</li>
               <li>Verify no firewall is blocking the connection</li>
-              <li>Try stopping and restarting the server</li>
               <li>Check the terminal for any error messages</li>
             </InstructionsList>
           </TroubleshootingSection>

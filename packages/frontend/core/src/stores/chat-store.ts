@@ -141,7 +141,6 @@ export const useChatStore = create<ChatState>()(
         connectWebSocket: async () => {
           try {
             console.log("Chat Store: Connecting to WebSocket service...");
-            set({ wsReconnecting: true, wsError: null });
 
             await chatService.connect();
             console.log("Chat Store: WebSocket service connected");
@@ -154,24 +153,23 @@ export const useChatStore = create<ChatState>()(
                 wsReconnecting: status.reconnecting,
                 wsError: status.error,
               });
+
+              // Process queued messages when connection is established
+              if (status.connected) {
+                get()
+                  .processMessageQueue()
+                  .catch((error) => {
+                    console.error("Failed to process message queue:", error);
+                  });
+              }
             });
 
             // Store unsubscribe function for cleanup
             (get() as any).statusUnsubscribe = unsubscribe;
 
-            // Process any queued messages after successful connection
-            await get().processMessageQueue();
-
             console.log("Chat Store: WebSocket connection setup complete");
           } catch (error) {
             console.error("Failed to connect to WebSocket:", error);
-            const errorMessage =
-              error instanceof Error ? error.message : "Connection failed";
-            set({
-              wsConnected: false,
-              wsReconnecting: false,
-              wsError: errorMessage,
-            });
             throw error;
           }
         },
@@ -193,11 +191,11 @@ export const useChatStore = create<ChatState>()(
         },
 
         retryConnection: async () => {
-          console.log("Chat Store: Retrying WebSocket connection...");
+          console.log("Chat Store: Manual reconnection requested...");
           try {
             await chatService.reconnect();
           } catch (error) {
-            console.error("Chat Store: Retry connection failed:", error);
+            console.error("Chat Store: Manual reconnection failed:", error);
             // Don't throw here, let the user try again
           }
         },
@@ -359,13 +357,7 @@ export const useChatStore = create<ChatState>()(
               "Chat Store: WebSocket connection failed during initialization, continuing without real-time features:",
               error
             );
-            // Set WebSocket state to failed but continue initialization
-            set({
-              wsConnected: false,
-              wsReconnecting: false,
-              wsError:
-                error instanceof Error ? error.message : "Connection failed",
-            });
+            // WebSocket state is managed by the status observer
           }
 
           // Always proceed with chat data loading regardless of WebSocket status
@@ -1138,47 +1130,27 @@ export const useChatStore = create<ChatState>()(
             },
             onConnectionOpen: () => {
               console.log("Chat Store: WebSocket connection opened");
-              set({
-                wsConnected: true,
-                wsReconnecting: false,
-                wsError: null,
-              });
-
-              // Process any queued messages
-              get()
-                .processMessageQueue()
-                .catch((error) => {
-                  console.error("Failed to process message queue:", error);
-                });
+              // Connection status is handled by the status observer
             },
             onConnectionClose: (wasClean) => {
               console.log("Chat Store: WebSocket connection closed", {
                 wasClean,
               });
+              // Stop any ongoing chat operations
               set({
-                wsConnected: false,
-                wsReconnecting: false,
                 isResponding: false,
                 isThinking: false,
               });
-
-              if (!wasClean) {
-                // Set reconnecting state and attempt to reconnect
-                set({ wsReconnecting: true });
-                setTimeout(() => {
-                  get().retryConnection();
-                }, 2000);
-              }
+              // Connection status is handled by the status observer
             },
             onConnectionError: (error) => {
               console.error("Chat Store: WebSocket connection error:", error);
+              // Stop any ongoing chat operations
               set({
-                wsConnected: false,
-                wsReconnecting: false,
-                wsError: "Connection error occurred",
                 isResponding: false,
                 isThinking: false,
               });
+              // Connection status is handled by the status observer
             },
           };
         },

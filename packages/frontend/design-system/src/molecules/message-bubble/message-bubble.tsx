@@ -309,7 +309,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     : null;
 
   return (
-    <BubbleContainer isUser={isUser}>
+    <BubbleContainer $isUser={isUser}>
       <Bubble $isUser={isUser}>
         {isUser && onDeleteMessage && (
           <DeleteButton

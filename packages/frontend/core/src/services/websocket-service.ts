@@ -12,7 +12,7 @@ import type {
  * Architecture:
  * - Single WebSocket connection shared across all services
  * - Service registration system for callbacks
- * - Automatic reconnection with exponential backoff
+ * - Automatic reconnection with exponential backoff and proper debouncing
  * - Connection status monitoring
  *
  * Usage:
@@ -30,19 +30,30 @@ import type {
 export class WebSocketService {
   private ws: WebSocket | null = null;
   private callbacks = new Map<string, SharedWebSocketCallbacks>();
+
+  // Reconnection state
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000; // Start with 1 second
+  private baseReconnectDelay = 1000; // Start with 1 second
   private maxReconnectDelay = 30000; // Max 30 seconds
   private reconnectTimer: number | null = null;
+
+  // Connection state
   private isConnecting = false;
   private isManuallyDisconnected = false;
+  private connectionPromise: Promise<void> | null = null;
+  private lastConnectionAttempt = 0;
+  private minConnectionInterval = 1000; // Minimum 1 second between connection attempts
+
+  // Chat subscriptions
   private subscribedChats = new Set<number>();
   private lastConnectedAt: number | null = null;
-  private connectionPromise: Promise<void> | null = null;
 
   // Connection status observers
   private statusObservers = new Set<(status: ConnectionStatus) => void>();
+
+  // Error tracking
+  private lastError: string | null = null;
 
   constructor(private baseUrl?: string) {
     this.baseUrl = baseUrl || this.getDefaultBaseUrl();
@@ -110,7 +121,7 @@ export class WebSocketService {
     return {
       connected: this.isConnected(),
       reconnecting: this.isConnecting,
-      error: null, // TODO: Add error tracking
+      error: this.lastError,
       lastConnectedAt: this.lastConnectedAt,
       reconnectAttempts: this.reconnectAttempts,
     };
@@ -131,7 +142,7 @@ export class WebSocketService {
   }
 
   /**
-   * Connect to the WebSocket server
+   * Connect to the WebSocket server with proper debouncing
    */
   connect(): Promise<void> {
     // If already connected, return resolved promise
@@ -148,6 +159,27 @@ export class WebSocketService {
       return this.connectionPromise;
     }
 
+    // Debounce connection attempts to prevent rapid reconnections
+    const now = Date.now();
+    const timeSinceLastAttempt = now - this.lastConnectionAttempt;
+    if (timeSinceLastAttempt < this.minConnectionInterval) {
+      const waitTime = this.minConnectionInterval - timeSinceLastAttempt;
+      console.log(
+        `Shared WebSocket: Debouncing connection attempt, waiting ${waitTime}ms`
+      );
+
+      this.connectionPromise = new Promise((resolve, reject) => {
+        setTimeout(() => {
+          this.connectionPromise = null;
+          this.connect().then(resolve).catch(reject);
+        }, waitTime);
+      });
+
+      return this.connectionPromise;
+    }
+
+    this.lastConnectionAttempt = now;
+
     // Start new connection
     this.connectionPromise = new Promise((resolve, reject) => {
       if (this.isConnecting) {
@@ -157,6 +189,7 @@ export class WebSocketService {
 
       this.isConnecting = true;
       this.isManuallyDisconnected = false;
+      this.lastError = null;
       this.notifyStatusObservers();
 
       const wsUrl = this.getWebSocketUrl();
@@ -165,20 +198,49 @@ export class WebSocketService {
       try {
         this.ws = new WebSocket(wsUrl);
 
+        // Set up connection timeout
+        const connectionTimeout = setTimeout(() => {
+          if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+            console.error(
+              "Shared WebSocket: Connection timeout after 10 seconds"
+            );
+            this.lastError = "Connection timeout";
+            this.ws.close(4001, "Connection timeout");
+          }
+        }, 10000); // 10 second timeout
+
         this.ws.onopen = () => {
+          clearTimeout(connectionTimeout);
           console.log("Shared WebSocket: Connected successfully");
+
           this.isConnecting = false;
           this.reconnectAttempts = 0;
-          this.reconnectDelay = 1000;
           this.lastConnectedAt = Date.now();
+          this.lastError = null;
           this.connectionPromise = null;
 
           // Notify all registered callbacks
           this.callbacks.forEach((callbacks) => {
             if (callbacks.onConnectionOpen) {
-              callbacks.onConnectionOpen();
+              try {
+                callbacks.onConnectionOpen();
+              } catch (error) {
+                console.error("Error in onConnectionOpen callback:", error);
+              }
             }
           });
+
+          // Re-subscribe to chats if we have any
+          if (this.subscribedChats.size > 0) {
+            console.log(
+              "Shared WebSocket: Re-subscribing to chats after reconnection"
+            );
+            const chatsToResubscribe = Array.from(this.subscribedChats);
+            this.subscribedChats.clear();
+            chatsToResubscribe.forEach((chatId) => {
+              this.subscribeToChat(chatId);
+            });
+          }
 
           this.notifyStatusObservers();
           resolve();
@@ -198,50 +260,100 @@ export class WebSocketService {
         };
 
         this.ws.onclose = (event) => {
+          clearTimeout(connectionTimeout);
           console.log("Shared WebSocket: Connection closed", {
             code: event.code,
             reason: event.reason,
             wasClean: event.wasClean,
+            wasConnecting: this.isConnecting,
+            isManuallyDisconnected: this.isManuallyDisconnected,
+            hasConnectionPromise: !!this.connectionPromise,
           });
 
+          const wasConnecting = this.isConnecting;
           this.isConnecting = false;
           this.ws = null;
-          this.connectionPromise = null;
+
+          // Set error state for status tracking
+          if (!event.wasClean && !this.isManuallyDisconnected) {
+            this.lastError = `Connection closed unexpectedly (code: ${event.code})`;
+          } else if (event.wasClean || this.isManuallyDisconnected) {
+            this.lastError = null;
+          }
+
+          // Handle connection promise
+          if (this.connectionPromise) {
+            this.connectionPromise = null;
+
+            if (wasConnecting && !this.isManuallyDisconnected) {
+              // Connection failed during initial connect
+              const errorMessage =
+                event.reason || `Connection failed (code: ${event.code})`;
+              console.log(
+                "Shared WebSocket: Rejecting connection promise:",
+                errorMessage
+              );
+              reject(new Error(errorMessage));
+            } else {
+              console.log(
+                "Shared WebSocket: Connection was already established or manually disconnected"
+              );
+            }
+          }
 
           // Notify all registered callbacks
           this.callbacks.forEach((callbacks) => {
             if (callbacks.onConnectionClose) {
-              callbacks.onConnectionClose(event.wasClean);
+              try {
+                callbacks.onConnectionClose(event.wasClean);
+              } catch (error) {
+                console.error("Error in onConnectionClose callback:", error);
+              }
             }
           });
 
           this.notifyStatusObservers();
 
-          // Auto-reconnect unless manually disconnected
+          // Auto-reconnect unless manually disconnected or clean close
           if (!this.isManuallyDisconnected && !event.wasClean) {
             this.scheduleReconnect();
           }
         };
 
         this.ws.onerror = (error) => {
-          console.error("Shared WebSocket: Connection error:", error);
-          this.isConnecting = false;
-          this.connectionPromise = null;
+          clearTimeout(connectionTimeout);
+          console.error("Shared WebSocket: Connection error occurred", {
+            error,
+            readyState: this.ws?.readyState,
+            isConnecting: this.isConnecting,
+            hasConnectionPromise: !!this.connectionPromise,
+          });
 
-          // Notify all registered callbacks
+          // Set error state
+          this.lastError = "WebSocket connection error";
+
+          // Notify callbacks about the error
           this.callbacks.forEach((callbacks) => {
             if (callbacks.onConnectionError) {
-              callbacks.onConnectionError(error);
+              try {
+                callbacks.onConnectionError(error);
+              } catch (callbackError) {
+                console.error(
+                  "Error in onConnectionError callback:",
+                  callbackError
+                );
+              }
             }
           });
 
-          this.notifyStatusObservers();
-          reject(new Error("Failed to connect to WebSocket"));
+          // Note: Don't reject here, let onclose handle it
         };
       } catch (error) {
+        console.error("Shared WebSocket: Failed to create WebSocket:", error);
         this.isConnecting = false;
         this.connectionPromise = null;
-        console.error("Shared WebSocket: Failed to create WebSocket:", error);
+        this.lastError =
+          error instanceof Error ? error.message : "Failed to create WebSocket";
         this.notifyStatusObservers();
         reject(error);
       }
@@ -254,12 +366,10 @@ export class WebSocketService {
    * Disconnect from the WebSocket server
    */
   disconnect(): void {
-    this.isManuallyDisconnected = true;
+    console.log("Shared WebSocket: Manual disconnect requested");
 
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
+    this.isManuallyDisconnected = true;
+    this.clearReconnectTimer();
 
     // Unsubscribe from all chats before disconnecting
     if (this.subscribedChats.size > 0) {
@@ -267,13 +377,28 @@ export class WebSocketService {
     }
 
     if (this.ws) {
-      console.log("Shared WebSocket: Disconnecting");
+      console.log("Shared WebSocket: Closing connection");
       this.ws.close(1000, "Manual disconnect");
       this.ws = null;
     }
 
-    this.connectionPromise = null;
+    // Clean up connection state
+    if (this.connectionPromise) {
+      this.connectionPromise = null;
+    }
+    this.isConnecting = false;
+    this.lastError = null;
     this.notifyStatusObservers();
+  }
+
+  /**
+   * Clear reconnection timer
+   */
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
   }
 
   /**
@@ -404,12 +529,80 @@ export class WebSocketService {
    */
   async reconnect(): Promise<void> {
     console.log("Shared WebSocket: Manual reconnection requested");
+
+    // Clear any pending reconnection
+    this.clearReconnectTimer();
+    this.reconnectAttempts = 0;
+
+    // Disconnect cleanly
     this.disconnect();
 
     // Small delay to ensure clean disconnect
     await new Promise((resolve) => setTimeout(resolve, 100));
 
+    // Reset manual disconnect flag and connect
+    this.isManuallyDisconnected = false;
     return this.connect();
+  }
+
+  /**
+   * Schedule reconnection with exponential backoff and jitter
+   */
+  private scheduleReconnect(): void {
+    // Clear any existing timer
+    this.clearReconnectTimer();
+
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error("Shared WebSocket: Max reconnection attempts reached");
+      this.lastError = `Failed to reconnect after ${this.maxReconnectAttempts} attempts`;
+      this.notifyStatusObservers();
+      return;
+    }
+
+    if (this.isManuallyDisconnected) {
+      console.log("Shared WebSocket: Manual disconnect, skipping reconnection");
+      return;
+    }
+
+    this.reconnectAttempts++;
+
+    // Calculate delay with exponential backoff and jitter
+    const baseDelay = Math.min(
+      this.baseReconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
+      this.maxReconnectDelay
+    );
+
+    // Add jitter (±25% of the base delay)
+    const jitter = baseDelay * 0.25 * (Math.random() * 2 - 1);
+    const delay = Math.max(baseDelay + jitter, this.baseReconnectDelay);
+
+    console.log(
+      `Shared WebSocket: Scheduling reconnection attempt ${
+        this.reconnectAttempts
+      }/${this.maxReconnectAttempts} in ${Math.round(delay)}ms`
+    );
+
+    this.reconnectTimer = window.setTimeout(() => {
+      console.log(
+        `Shared WebSocket: Attempting to reconnect (attempt ${this.reconnectAttempts})`
+      );
+
+      this.connect().catch((error) => {
+        console.error("Shared WebSocket: Reconnection failed:", error);
+        this.lastError = `Reconnection attempt ${this.reconnectAttempts} failed: ${error.message}`;
+        this.notifyStatusObservers();
+
+        // Only schedule next reconnection if we haven't exceeded max attempts
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          console.log("Shared WebSocket: Scheduling next reconnection attempt");
+          this.scheduleReconnect();
+        } else {
+          console.error(
+            "Shared WebSocket: Max reconnection attempts reached, giving up"
+          );
+        }
+      });
+    }, delay);
   }
 
   private handleMessage(message: ChatEvent | RunnerEvent): void {
@@ -430,33 +623,37 @@ export class WebSocketService {
 
     // Broadcast to all registered callbacks
     this.callbacks.forEach((callbacks) => {
-      switch (event.event) {
-        case "chat:status":
-          if (callbacks.onChatStatus) {
-            callbacks.onChatStatus(event.data as any);
-          }
-          break;
+      try {
+        switch (event.event) {
+          case "chat:status":
+            if (callbacks.onChatStatus) {
+              callbacks.onChatStatus(event.data as any);
+            }
+            break;
 
-        case "chat:chunk":
-          if (callbacks.onChatChunk) {
-            callbacks.onChatChunk(event.data as any);
-          }
-          break;
+          case "chat:chunk":
+            if (callbacks.onChatChunk) {
+              callbacks.onChatChunk(event.data as any);
+            }
+            break;
 
-        case "chat:complete":
-          if (callbacks.onChatComplete) {
-            callbacks.onChatComplete(event.data as any);
-          }
-          break;
+          case "chat:complete":
+            if (callbacks.onChatComplete) {
+              callbacks.onChatComplete(event.data as any);
+            }
+            break;
 
-        case "chat:error":
-          if (callbacks.onChatError) {
-            callbacks.onChatError(event.data as any);
-          }
-          break;
+          case "chat:error":
+            if (callbacks.onChatError) {
+              callbacks.onChatError(event.data as any);
+            }
+            break;
 
-        default:
-          console.log("Shared WebSocket: Unhandled chat event:", event.event);
+          default:
+            console.log("Shared WebSocket: Unhandled chat event:", event.event);
+        }
+      } catch (error) {
+        console.error("Error in chat event callback:", error);
       }
     });
   }
@@ -466,85 +663,60 @@ export class WebSocketService {
 
     // Broadcast to all registered callbacks
     this.callbacks.forEach((callbacks) => {
-      switch (runnerEvent.event) {
-        case "runner:started":
-          if (callbacks.onRunnerStarted) {
-            callbacks.onRunnerStarted(runnerEvent.data as any);
-          }
-          break;
+      try {
+        switch (runnerEvent.event) {
+          case "runner:started":
+            if (callbacks.onRunnerStarted) {
+              callbacks.onRunnerStarted(runnerEvent.data as any);
+            }
+            break;
 
-        case "runner:stopped":
-          if (callbacks.onRunnerStopped) {
-            callbacks.onRunnerStopped(runnerEvent.data as any);
-          }
-          break;
+          case "runner:stopped":
+            if (callbacks.onRunnerStopped) {
+              callbacks.onRunnerStopped(runnerEvent.data as any);
+            }
+            break;
 
-        case "runner:output":
-          if (callbacks.onRunnerOutput) {
-            callbacks.onRunnerOutput(runnerEvent.data as any);
-          }
-          break;
+          case "runner:output":
+            if (callbacks.onRunnerOutput) {
+              callbacks.onRunnerOutput(runnerEvent.data as any);
+            }
+            break;
 
-        case "runner:error":
-          if (callbacks.onRunnerError) {
-            callbacks.onRunnerError(runnerEvent.data as any);
-          }
-          break;
+          case "runner:error":
+            if (callbacks.onRunnerError) {
+              callbacks.onRunnerError(runnerEvent.data as any);
+            }
+            break;
 
-        case "runner:status":
-          if (callbacks.onRunnerStatus) {
-            callbacks.onRunnerStatus(runnerEvent.data as any);
-          }
-          break;
+          case "runner:status":
+            if (callbacks.onRunnerStatus) {
+              callbacks.onRunnerStatus(runnerEvent.data as any);
+            }
+            break;
 
-        case "runner:restarted":
-          if (callbacks.onRunnerRestarted) {
-            callbacks.onRunnerRestarted(runnerEvent.data as any);
-          }
-          break;
+          case "runner:restarted":
+            if (callbacks.onRunnerRestarted) {
+              callbacks.onRunnerRestarted(runnerEvent.data as any);
+            }
+            break;
 
-        case "runner:info-updated":
-          if (callbacks.onRunnerInfoUpdated) {
-            callbacks.onRunnerInfoUpdated(runnerEvent.data as any);
-          }
-          break;
+          case "runner:info-updated":
+            if (callbacks.onRunnerInfoUpdated) {
+              callbacks.onRunnerInfoUpdated(runnerEvent.data as any);
+            }
+            break;
 
-        default:
-          console.log(
-            "Shared WebSocket: Unhandled runner event:",
-            runnerEvent.event
-          );
+          default:
+            console.log(
+              "Shared WebSocket: Unhandled runner event:",
+              runnerEvent.event
+            );
+        }
+      } catch (error) {
+        console.error("Error in runner event callback:", error);
       }
     });
-  }
-
-  private scheduleReconnect(): void {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error("Shared WebSocket: Max reconnection attempts reached");
-      this.notifyStatusObservers();
-      return;
-    }
-
-    this.reconnectAttempts++;
-    console.log(
-      `Shared WebSocket: Scheduling reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${this.reconnectDelay}ms`
-    );
-
-    this.reconnectTimer = window.setTimeout(() => {
-      console.log(
-        `Shared WebSocket: Attempting to reconnect (attempt ${this.reconnectAttempts})`
-      );
-
-      this.connect().catch((error) => {
-        console.error("Shared WebSocket: Reconnection failed:", error);
-        // Exponential backoff with jitter
-        this.reconnectDelay = Math.min(
-          this.reconnectDelay * 2 + Math.random() * 1000,
-          this.maxReconnectDelay
-        );
-        this.notifyStatusObservers();
-      });
-    }, this.reconnectDelay);
   }
 }
 

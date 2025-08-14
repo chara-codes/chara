@@ -335,7 +335,7 @@ export class ChatService {
   }
 
   /**
-   * Force reconnection
+   * Force reconnection (delegates to shared service)
    */
   async reconnect(): Promise<void> {
     return webSocketService.reconnect();
