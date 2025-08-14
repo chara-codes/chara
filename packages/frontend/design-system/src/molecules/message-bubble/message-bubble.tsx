@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown"; // Import ReactMarkdown
 
 import rehypeHighlight from "rehype-highlight"; // Import rehype-highlight for syntax highlighting
 import remarkGfm from "remark-gfm"; // Import remark-gfm for GitHub Flavored Markdown
-
+import styled from "styled-components";
 import "highlight.js/styles/github.css"; // Import highlight.js CSS theme for syntax highlighting
 
 import type { MessageContent as MessageContentType } from "@chara-codes/core";
@@ -48,6 +48,35 @@ import {
 import ToolCallComponent from "./tool-call-component";
 import type { MessageBubbleProps } from "./types";
 import { getPreviewContent } from "./utils";
+
+// Animated ellipsis component for generating messages
+const GeneratingIndicator = styled.span`
+  color: #6b7280;
+  font-size: 12px;
+
+  &::after {
+    content: "";
+    animation: ellipsis 1.5s infinite;
+  }
+
+  @keyframes ellipsis {
+    0% {
+      content: "";
+    }
+    25% {
+      content: ".";
+    }
+    50% {
+      content: "..";
+    }
+    75% {
+      content: "...";
+    }
+    100% {
+      content: "";
+    }
+  }
+`;
 
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
 
@@ -170,6 +199,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   contextItems,
   toolCalls,
   onDeleteMessage,
+  isGenerating,
 }) => {
   const [expandedContextId, setExpandedContextId] = useState<string | null>(
     null
@@ -279,7 +309,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     : null;
 
   return (
-    <BubbleContainer $isUser={isUser}>
+    <BubbleContainer isUser={isUser}>
       <Bubble $isUser={isUser}>
         {isUser && onDeleteMessage && (
           <DeleteButton
@@ -441,7 +471,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
       </Bubble>
 
-      {timestamp && <Time>{timestamp}</Time>}
+      {isGenerating ? (
+        <Time>
+          <GeneratingIndicator>Generating</GeneratingIndicator>
+        </Time>
+      ) : (
+        timestamp && <Time>{timestamp}</Time>
+      )}
     </BubbleContainer>
   );
 };

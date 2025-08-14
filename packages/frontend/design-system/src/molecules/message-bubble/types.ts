@@ -10,6 +10,7 @@ export interface MessageBubbleProps {
   contextItems?: ContextItem[];
   toolCalls?: Record<string, ToolCall>;
   onDeleteMessage?: (messageId: string) => void;
+  isGenerating?: boolean;
 }
 
 export type TooltipPositionType = "top" | "right" | "bottom" | "left";

@@ -1,11 +1,10 @@
 "use client";
 
-import React from "react";
-import styled from "styled-components";
-import MessageBubble from "../molecules/message-bubble";
 import type { Message } from "@chara-codes/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import styled from "styled-components";
 import { ScrollDownIcon } from "../atoms/icons";
+import MessageBubble from "../molecules/message-bubble";
 
 // Update the ChatMessagesProps interface to include handlers for the new buttons
 interface ChatMessagesProps {
@@ -95,6 +94,7 @@ const EmptyStateText = styled.p`
 // Update the ChatMessages component to pass the handlers to MessageBubble
 const ChatMessages: React.FC<ChatMessagesProps> = ({
   messages,
+  isResponding = false,
   onDeleteMessage,
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -139,7 +139,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
   }, [isNearBottom]);
 
   // Auto-scroll when new messages arrive or when responding (but not if user scrolled up)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scrollToBottom is stable
   useEffect(() => {
     if (shouldAutoScroll && !userScrolledUp) {
       scrollToBottom();
@@ -169,7 +169,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
   return (
     <Container>
       <MessagesContainer ref={messagesContainerRef}>
-        {messages.map((message) => (
+        {messages.map((message, index) => (
           <MessageBubble
             key={message.id}
             id={message.id}
@@ -181,6 +181,9 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
             contextItems={message.contextItems}
             toolCalls={message.toolCalls}
             onDeleteMessage={onDeleteMessage}
+            isGenerating={
+              isResponding && index === messages.length - 1 && !message.isUser
+            }
           />
         ))}
       </MessagesContainer>
