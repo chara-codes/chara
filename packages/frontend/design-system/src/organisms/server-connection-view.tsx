@@ -92,8 +92,9 @@ const CommandTitle = styled.h3`
 `;
 
 const CommandBlock = styled.div`
-  background-color: #1a1a1a;
-  border: 1px solid #333;
+  background-color: ${({ theme }) =>
+    (theme as Theme).colors.backgroundSecondary};
+  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
   border-radius: ${({ theme }) => (theme as Theme).borderRadius.md};
   padding: ${({ theme }) => (theme as Theme).spacing.md};
   margin-bottom: ${({ theme }) => (theme as Theme).spacing.md};
@@ -101,26 +102,26 @@ const CommandBlock = styled.div`
     monospace;
   font-size: ${({ theme }) => (theme as Theme).typography.fontSize.sm};
   position: relative;
-  border-left: 3px solid #00ff41;
+  border-left: 3px solid ${({ theme }) => (theme as Theme).colors.primary};
   transition: all ${({ theme }) => (theme as Theme).transitions.fast} ease;
   display: flex;
   align-items: center;
 
   &:hover {
-    border-left-color: #00ff41;
-    box-shadow: 0 0 10px rgba(0, 255, 65, 0.1);
+    border-left-color: ${({ theme }) => (theme as Theme).colors.primary};
+    box-shadow: ${({ theme }) => (theme as Theme).shadows.sm};
   }
 
   &::before {
     content: "$ ";
-    color: #00ff41;
+    color: ${({ theme }) => (theme as Theme).colors.primary};
     margin-right: ${({ theme }) => (theme as Theme).spacing.sm};
     font-weight: bold;
   }
 `;
 
 const CommandText = styled.code`
-  color: #00ff41;
+  color: ${({ theme }) => (theme as Theme).colors.text};
   background: none;
   font-family: inherit;
   font-size: inherit;
@@ -129,9 +130,9 @@ const CommandText = styled.code`
 
 const CopyButton = styled.button`
   margin-left: auto;
-  background-color: #2a2a2a;
-  border: 1px solid #444;
-  color: #ccc;
+  background-color: ${({ theme }) => (theme as Theme).colors.background};
+  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  color: ${({ theme }) => (theme as Theme).colors.textSecondary};
   padding: ${({ theme }) => (theme as Theme).spacing.sm};
   border-radius: ${({ theme }) => (theme as Theme).borderRadius.sm};
   font-size: ${({ theme }) => (theme as Theme).typography.fontSize.xs};
@@ -144,13 +145,14 @@ const CopyButton = styled.button`
   gap: ${({ theme }) => (theme as Theme).spacing.xs};
 
   &:hover {
-    background-color: #333;
-    border-color: #00ff41;
-    color: #00ff41;
+    background-color: ${({ theme }) =>
+      (theme as Theme).colors.backgroundSecondary};
+    border-color: ${({ theme }) => (theme as Theme).colors.primary};
+    color: ${({ theme }) => (theme as Theme).colors.primary};
   }
 
   &:active {
-    background-color: #1a1a1a;
+    background-color: ${({ theme }) => (theme as Theme).colors.highlight};
     transform: translateY(1px);
   }
 `;
@@ -314,20 +316,20 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
           <IconContainer>◈</IconContainer>
         </IconWrapper>
 
-        <Title>Development Server Not Connected</Title>
+        <Title>Chara Codes Server Not Connected</Title>
 
         <Description>
-          Chara needs a running development server to work properly.{" "}
+          Chara Codes needs to be running to work properly.{" "}
           {!wsStatus.connected
-            ? "No connection to development server detected."
+            ? "Not connected to Chara Codes."
             : !isConnected
-            ? "Connected to server, initializing runner services..."
-            : "Development server ready."}{" "}
-          Please start your development server to continue.
+            ? "Connected to Chara Codes, starting services..."
+            : "Chara Codes is ready to use."}{" "}
+          Please start Chara Codes to continue.
         </Description>
 
         <CommandSection>
-          <CommandTitle>› Quick Start</CommandTitle>
+          <CommandTitle>› Start Chara Codes</CommandTitle>
           <CommandBlock>
             <CommandText>bunx @chara-codes/cli dev</CommandText>
             <CopyButton onClick={handleCopyCommand} title="Copy command">
@@ -338,8 +340,8 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
           <InstructionsList>
             <li>Open your terminal in the project directory</li>
             <li>Copy and run the command above</li>
-            <li>Wait for "Server ready" message</li>
-            <li>The interface will automatically reconnect</li>
+            <li>Wait for "Chara Codes ready" message</li>
+            <li>This interface will automatically connect</li>
           </InstructionsList>
         </CommandSection>
 
@@ -360,14 +362,14 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
             $isConnecting={isConnecting || wsStatus.reconnecting}
           >
             {isConnecting
-              ? "Connecting to development server..."
+              ? "Connecting to Chara Codes..."
               : wsStatus.reconnecting
-              ? "Reconnecting to development server..."
+              ? "Reconnecting to Chara Codes..."
               : isConnected && wsStatus.connected
-              ? "Development server connected"
+              ? "Connected to Chara Codes"
               : wsStatus.connected
-              ? "WebSocket connected, runner services starting..."
-              : "Development server offline"}
+              ? "Connected, starting services..."
+              : "Chara Codes offline"}
           </StatusIndicator>
         </ActionButtons>
       </ConnectionContent>
