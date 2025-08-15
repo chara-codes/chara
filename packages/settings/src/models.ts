@@ -230,6 +230,15 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     approved: true,
   },
   {
+    id: "moonshotai/kimi-k2:free",
+    name: "MoonshotAI: Kimi K2 Free",
+    provider: "openrouter",
+    contextSize: 32768,
+    hasTools: true,
+    recommended: true,
+    approved: true,
+  },
+  {
     id: "anthropic/claude-opus-4",
     name: "Claude Opus 4",
     provider: "openrouter",

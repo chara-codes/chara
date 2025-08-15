@@ -69,7 +69,8 @@ const Description = styled.p`
 `;
 
 const CommandSection = styled.div`
-  background-color: ${({ theme }) => (theme as Theme).colors.background};
+  background-color: ${({ theme }) =>
+    (theme as Theme).colors.backgroundSecondary};
   border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
   border-radius: ${({ theme }) => (theme as Theme).borderRadius.lg};
   padding: ${({ theme }) => (theme as Theme).spacing.lg};
@@ -81,15 +82,18 @@ const CommandSection = styled.div`
 
 const CommandTitle = styled.h3`
   font-size: ${({ theme }) => (theme as Theme).typography.fontSize.md};
-  color: ${({ theme }) => (theme as Theme).colors.success};
+  color: ${({ theme }) => (theme as Theme).colors.text};
   margin-bottom: ${({ theme }) => (theme as Theme).spacing.md};
   font-weight: ${({ theme }) =>
     (theme as Theme).typography.fontWeight.semibold};
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => (theme as Theme).spacing.sm};
 `;
 
 const CommandBlock = styled.div`
-  background-color: ${({ theme }) => (theme as Theme).colors.highlight};
-  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  background-color: #1a1a1a;
+  border: 1px solid #333;
   border-radius: ${({ theme }) => (theme as Theme).borderRadius.md};
   padding: ${({ theme }) => (theme as Theme).spacing.md};
   margin-bottom: ${({ theme }) => (theme as Theme).spacing.md};
@@ -97,17 +101,26 @@ const CommandBlock = styled.div`
     monospace;
   font-size: ${({ theme }) => (theme as Theme).typography.fontSize.sm};
   position: relative;
-  border-left: 4px solid ${({ theme }) => (theme as Theme).colors.success};
+  border-left: 3px solid #00ff41;
   transition: all ${({ theme }) => (theme as Theme).transitions.fast} ease;
+  display: flex;
+  align-items: center;
 
   &:hover {
-    border-left-color: ${({ theme }) => (theme as Theme).colors.success};
-    box-shadow: ${({ theme }) => (theme as Theme).shadows.sm};
+    border-left-color: #00ff41;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.1);
+  }
+
+  &::before {
+    content: "$ ";
+    color: #00ff41;
+    margin-right: ${({ theme }) => (theme as Theme).spacing.sm};
+    font-weight: bold;
   }
 `;
 
 const CommandText = styled.code`
-  color: ${({ theme }) => (theme as Theme).colors.success};
+  color: #00ff41;
   background: none;
   font-family: inherit;
   font-size: inherit;
@@ -115,28 +128,29 @@ const CommandText = styled.code`
 `;
 
 const CopyButton = styled.button`
-  position: absolute;
-  top: ${({ theme }) => (theme as Theme).spacing.sm};
-  right: ${({ theme }) => (theme as Theme).spacing.sm};
-  background-color: ${({ theme }) => (theme as Theme).colors.background};
-  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
-  color: ${({ theme }) => (theme as Theme).colors.textSecondary};
-  padding: ${({ theme }) => (theme as Theme).spacing.sm} 10px;
+  margin-left: auto;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: ${({ theme }) => (theme as Theme).spacing.sm};
   border-radius: ${({ theme }) => (theme as Theme).borderRadius.sm};
   font-size: ${({ theme }) => (theme as Theme).typography.fontSize.xs};
   cursor: pointer;
-  font-family: ${({ theme }) => (theme as Theme).typography.fontFamily};
+  font-family: "SF Mono", "Monaco", "Menlo", "Consolas", "Ubuntu Mono",
+    monospace;
   transition: all ${({ theme }) => (theme as Theme).transitions.fast} ease;
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => (theme as Theme).spacing.xs};
 
   &:hover {
-    background-color: ${({ theme }) =>
-      (theme as Theme).colors.backgroundSecondary};
-    border-color: ${({ theme }) => (theme as Theme).colors.borderHover};
-    color: ${({ theme }) => (theme as Theme).colors.text};
+    background-color: #333;
+    border-color: #00ff41;
+    color: #00ff41;
   }
 
   &:active {
-    background-color: ${({ theme }) => (theme as Theme).colors.highlight};
+    background-color: #1a1a1a;
     transform: translateY(1px);
   }
 `;
@@ -195,7 +209,8 @@ const StatusIndicator = styled.div<{ $isConnecting: boolean }>`
 `;
 
 const TroubleshootingSection = styled.div`
-  background-color: ${({ theme }) => (theme as Theme).colors.background};
+  background-color: ${({ theme }) =>
+    (theme as Theme).colors.backgroundSecondary};
   border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
   border-radius: ${({ theme }) => (theme as Theme).borderRadius.lg};
   padding: 20px;
@@ -208,10 +223,13 @@ const TroubleshootingSection = styled.div`
 
 const TroubleshootingTitle = styled.h4`
   font-size: ${({ theme }) => (theme as Theme).typography.fontSize.sm};
-  color: ${({ theme }) => (theme as Theme).colors.warning};
+  color: ${({ theme }) => (theme as Theme).colors.text};
   margin-bottom: 12px;
   font-weight: ${({ theme }) =>
     (theme as Theme).typography.fontWeight.semibold};
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => (theme as Theme).spacing.sm};
 `;
 
 const IconContainer = styled.div`
@@ -226,7 +244,7 @@ const IconContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  color: ${({ theme }) => (theme as Theme).colors.textSecondary};
   border: 3px solid ${({ theme }) => (theme as Theme).colors.border};
 `;
 
@@ -293,7 +311,7 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
 
       <ConnectionContent>
         <IconWrapper>
-          <IconContainer>🔌</IconContainer>
+          <IconContainer>◈</IconContainer>
         </IconWrapper>
 
         <Title>Development Server Not Connected</Title>
@@ -311,11 +329,11 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
         </Description>
 
         <CommandSection>
-          <CommandTitle>🚀 Quick Start</CommandTitle>
+          <CommandTitle>› Quick Start</CommandTitle>
           <CommandBlock>
             <CommandText>bunx @chara-codes/cli dev</CommandText>
             <CopyButton onClick={handleCopyCommand} title="Copy command">
-              {copyFeedback || "Copy"}
+              ⧉<span>{copyFeedback || "Copy"}</span>
             </CopyButton>
           </CommandBlock>
 
@@ -328,15 +346,6 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
         </CommandSection>
 
         <ActionButtons>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleRetryConnection}
-            disabled={isConnecting}
-          >
-            {isConnecting ? "Connecting..." : "Retry Connection"}
-          </Button>
-
           <StatusIndicator
             $isConnecting={isConnecting || wsStatus.reconnecting}
           >
@@ -353,29 +362,6 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
               : "All services offline"}
           </StatusIndicator>
         </ActionButtons>
-
-        {(connectionError || wsStatus.error) && (
-          <TroubleshootingSection>
-            <TroubleshootingTitle>⚠️ Connection Status</TroubleshootingTitle>
-            {connectionError && (
-              <ErrorMessage>
-                <strong>Runner Service:</strong> {connectionError}
-              </ErrorMessage>
-            )}
-            {wsStatus.error && (
-              <ErrorMessageWs>
-                <strong>WebSocket Service:</strong> {wsStatus.error}
-              </ErrorMessageWs>
-            )}
-            <InstructionsList>
-              <li>Start the development server with the command above</li>
-              <li>Services will automatically connect when available</li>
-              <li>Check if port 3000 (or your configured port) is available</li>
-              <li>Verify no firewall is blocking the connection</li>
-              <li>Check the terminal for any error messages</li>
-            </InstructionsList>
-          </TroubleshootingSection>
-        )}
       </ConnectionContent>
     </ConnectionContainer>
   );
