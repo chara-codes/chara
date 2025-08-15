@@ -707,9 +707,6 @@ export const useChatStore = create<ChatState>()(
             }
           }
 
-          // eslint-disable-next-line prefer-const, @typescript-eslint/no-unused-vars
-          let aiMessageId: string | null = null; // Will be set when server provides assistantMessageId
-
           // Don't create temporary message - wait for server to send real message via WebSocket
           // Initial callbacks without temp ID - will be updated when server provides real ID
           chatService.updateChatCallbacks(

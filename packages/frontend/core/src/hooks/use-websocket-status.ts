@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { webSocketService, type ConnectionStatus } from "../services";
+import { webSocketService } from "../services";
+import type { ConnectionStatus } from "../types";
 
 /**
  * React hook for monitoring WebSocket connection status
