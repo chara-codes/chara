@@ -318,13 +318,11 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
 
         <Description>
           Chara needs a running development server to work properly.{" "}
-          {!isConnected && !wsStatus.connected
-            ? "No active connections detected."
+          {!wsStatus.connected
+            ? "No connection to development server detected."
             : !isConnected
-            ? "Runner service is unavailable."
-            : !wsStatus.connected
-            ? "Real-time features are unavailable."
-            : "Services are connecting..."}{" "}
+            ? "Connected to server, initializing runner services..."
+            : "Development server ready."}{" "}
           Please start your development server to continue.
         </Description>
 
@@ -346,20 +344,30 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
         </CommandSection>
 
         <ActionButtons>
+          {!isConnecting && (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleRetryConnection}
+              disabled={isConnecting}
+            >
+              {!isConnecting && "↻"}
+              {isConnecting ? "Connecting..." : "Retry Connection"}
+            </Button>
+          )}
+
           <StatusIndicator
             $isConnecting={isConnecting || wsStatus.reconnecting}
           >
             {isConnecting
-              ? "Connecting to runner..."
+              ? "Connecting to development server..."
               : wsStatus.reconnecting
-              ? "Reconnecting WebSocket..."
+              ? "Reconnecting to development server..."
               : isConnected && wsStatus.connected
-              ? "All services connected"
-              : isConnected
-              ? "Runner connected, WebSocket offline"
+              ? "Development server connected"
               : wsStatus.connected
-              ? "WebSocket connected, runner offline"
-              : "All services offline"}
+              ? "WebSocket connected, runner services starting..."
+              : "Development server offline"}
           </StatusIndicator>
         </ActionButtons>
       </ConnectionContent>
