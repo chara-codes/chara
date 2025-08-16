@@ -170,7 +170,7 @@ Engineering best practices:
 10. Validate solutions against requirements and constraints
 11. Only set nextThoughtNeeded to false when engineering analysis is complete`,
 
-  parameters: z.object({
+  inputSchema: z.object({
     thought: z
       .string()
       .describe(

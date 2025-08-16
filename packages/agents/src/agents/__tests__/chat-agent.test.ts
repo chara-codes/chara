@@ -1,4 +1,4 @@
-import type { CoreMessage } from "ai";
+import type { ModelMessage } from "ai";
 import { describe, expect, it } from "bun:test";
 import { cleanMessages } from "../chat-agent";
 
@@ -7,7 +7,7 @@ describe("Chat Agent", () => {
     // Test the cleanMessages function directly
 
     it("should remove toolCall tags from message content", () => {
-      const messages: CoreMessage[] = [
+      const messages: ModelMessage[] = [
         {
           role: "user",
           content:
@@ -21,7 +21,7 @@ describe("Chat Agent", () => {
     });
 
     it("should remove multiple toolCall tags from message content", () => {
-      const messages: CoreMessage[] = [
+      const messages: ModelMessage[] = [
         {
           role: "user",
           content:
@@ -35,7 +35,7 @@ describe("Chat Agent", () => {
     });
 
     it("should handle messages without toolCall tags", () => {
-      const messages: CoreMessage[] = [
+      const messages: ModelMessage[] = [
         {
           role: "user",
           content: "Hello, this is a normal message",
@@ -50,7 +50,7 @@ describe("Chat Agent", () => {
     });
 
     it("should handle empty messages", () => {
-      const messages: CoreMessage[] = [
+      const messages: ModelMessage[] = [
         {
           role: "user",
           content: "",
@@ -63,7 +63,7 @@ describe("Chat Agent", () => {
     });
 
     it("should handle messages with only toolCall tags", () => {
-      const messages: CoreMessage[] = [
+      const messages: ModelMessage[] = [
         {
           role: "user",
           content:
@@ -77,7 +77,7 @@ describe("Chat Agent", () => {
     });
 
     it("should handle complex toolCall tag patterns", () => {
-      const messages: CoreMessage[] = [
+      const messages: ModelMessage[] = [
         {
           role: "user",
           content:
@@ -93,7 +93,7 @@ describe("Chat Agent", () => {
     });
 
     it("should not affect non-string content", () => {
-      const messages: CoreMessage[] = [
+      const messages: ModelMessage[] = [
         {
           role: "user",
           content: [
@@ -116,7 +116,7 @@ describe("Chat Agent", () => {
     });
 
     it("should preserve other message properties", () => {
-      const messages: CoreMessage[] = [
+      const messages: ModelMessage[] = [
         {
           role: "assistant",
           content: "Response with [toolCall:call_1,edit-file] tag",

@@ -1,4 +1,8 @@
-import { createDataStreamResponse, type CoreMessage } from "ai";
+import {
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  type ModelMessage,
+} from "ai";
 import { beautifyAgent } from "../agents/beautify-agent";
 
 const CORS_HEADERS = {
@@ -11,18 +15,20 @@ export const beautifyController = {
   async POST(req: Request) {
     const { model, messages } = (await req.json()) as {
       model: string;
-      messages: CoreMessage[];
+      messages: ModelMessage[];
     };
 
-    return createDataStreamResponse({
+    return createUIMessageStreamResponse({
       headers: CORS_HEADERS,
-      execute: async (dataStream) => {
-        const result = await beautifyAgent({
-          model,
-          messages,
-        });
-        result.mergeIntoDataStream(dataStream);
-      },
+      stream: createUIMessageStream({
+        execute: async ({ writer }) => {
+          const result = await beautifyAgent({
+            model,
+            messages,
+          });
+          writer.merge(result.toUIMessageStream());
+        },
+      }),
     });
   },
 };

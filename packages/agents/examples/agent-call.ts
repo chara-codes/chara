@@ -1,11 +1,11 @@
-import type { CoreMessage } from "ai";
+import type { ModelMessage } from "ai";
 import { chatAgentSimple } from "../src/agents/chat-agent";
 
 /**
  * Example 1: Basic usage with default OpenAI model
  */
 async function basicExample() {
-  const messages: CoreMessage[] = [
+  const messages: ModelMessage[] = [
     { role: "user", content: "Hello, how are you today?" },
   ];
 
@@ -24,7 +24,7 @@ async function basicExample() {
  * Example 2: Using a different model provider
  */
 async function differentProviderExample() {
-  const messages: CoreMessage[] = [
+  const messages: ModelMessage[] = [
     { role: "user", content: "Tell me a joke about programming" },
   ];
 
@@ -43,7 +43,7 @@ async function differentProviderExample() {
  * Example 3: Multi-turn conversation
  */
 async function conversationExample() {
-  const messages: CoreMessage[] = [
+  const messages: ModelMessage[] = [
     { role: "user", content: "What's the weather like?" },
     {
       role: "assistant",
@@ -73,7 +73,7 @@ async function conversationExample() {
  */
 async function errorHandlingExample() {
   try {
-    const messages: CoreMessage[] = [
+    const messages: ModelMessage[] = [
       { role: "user", content: "Help me solve this math problem: 2 + 2" },
     ];
 
@@ -92,7 +92,7 @@ async function errorHandlingExample() {
  * Example 5: Using system message through the agent (note: agent adds its own system message)
  */
 async function systemMessageExample() {
-  const messages: CoreMessage[] = [
+  const messages: ModelMessage[] = [
     { role: "user", content: "Explain quantum computing in simple terms" },
   ];
 
@@ -110,7 +110,7 @@ async function systemMessageExample() {
  * Example 6: Streaming with custom processing
  */
 async function customStreamingExample() {
-  const messages: CoreMessage[] = [
+  const messages: ModelMessage[] = [
     {
       role: "user",
       content: "Write a short story about a robot learning to paint",

@@ -3,7 +3,7 @@ import {
   NoSuchToolError,
   smoothStream,
   streamText,
-  type CoreMessage,
+  type ModelMessage,
   type StepResult,
 } from "ai";
 import { chatPrompt } from "../prompts/chat";
@@ -36,7 +36,7 @@ export interface ChatAgentCallbacks {
  * // Result: [{ role: "user", content: "Hello  world" }]
  * ```
  */
-export const cleanMessages = (messages: CoreMessage[]): CoreMessage[] => {
+export const cleanMessages = (messages: ModelMessage[]): ModelMessage[] => {
   return messages.map((message) => {
     if (typeof message.content === "string") {
       // Remove toolCall tags using regex
@@ -47,7 +47,7 @@ export const cleanMessages = (messages: CoreMessage[]): CoreMessage[] => {
       return {
         ...message,
         content: cleanedContent,
-      } as CoreMessage;
+      } as ModelMessage;
     }
     return message;
   });
@@ -95,7 +95,7 @@ export const chatAgent = async (
     callbacks,
   }: {
     model: string;
-    messages: CoreMessage[];
+    messages: ModelMessage[];
     mode: "write" | "ask";
     workingDir: string;
     tools?: Record<string, any>;
@@ -130,15 +130,12 @@ export const chatAgent = async (
     tools: tools,
     model: aiModel,
     temperature: 0.3,
-    toolCallStreaming: true,
-    experimental_continueSteps: true,
     abortSignal: options.abortSignal,
     experimental_repairToolCall: repairToolCall(aiModel),
     experimental_transform: smoothStream({
       delayInMs: 20, // optional: defaults to 10ms
       chunking: "line", // optional: defaults to 'word'
     }),
-    maxSteps: 99,
     messages: cleanedMessages,
     onFinish: (result) => {
       if (onFinish) {
@@ -176,7 +173,7 @@ export const chatAgentSimple = async (
     tools = {},
   }: {
     model: string;
-    messages: CoreMessage[];
+    messages: ModelMessage[];
     mode?: "write" | "ask";
     workingDir?: string;
     tools?: Record<string, any>;

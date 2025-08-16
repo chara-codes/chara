@@ -22,8 +22,11 @@ export const logger = new BaseLogger({
     },
     {
       type: "file",
-      options: { destination: errorLogFile, mkdir: true },
-      levels: ["error", "fatal"],
+
+      file: {
+        options: { destination: errorLogFile, mkdir: true },
+        levels: ["error", "fatal"]
+      }
     },
   ],
 });

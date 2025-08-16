@@ -197,11 +197,11 @@ describe("ChatProcessor", () => {
 
     test("should handle complex tools object", () => {
       const complexTools = {
-        tool1: { name: "tool1", description: "First tool", parameters: {} },
+        tool1: { name: "tool1", description: "First tool", inputSchema: {} },
         tool2: {
           name: "tool2",
           description: "Second tool",
-          parameters: { type: "object" },
+          inputSchema: { type: "object" },
         },
         tool3: {
           name: "tool3",

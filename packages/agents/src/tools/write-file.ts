@@ -13,7 +13,7 @@ Use this tool when you need to:
 
 For making granular edits to existing files, use the edit-file tool instead.`,
 
-  parameters: z.object({
+  inputSchema: z.object({
     path: z.string().describe(
       `The relative path of the file to create or overwrite in the project.
 

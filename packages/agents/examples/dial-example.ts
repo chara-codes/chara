@@ -1,4 +1,4 @@
-import { generateText, streamText, type CoreMessage } from "ai";
+import { generateText, streamText, type ModelMessage } from "ai";
 import { fetchModels, getModel, hasProvider } from "../src/providers";
 import { logger } from "../src/utils/logger";
 
@@ -65,12 +65,12 @@ async function demonstrateDIAL() {
     const response = await generateText({
       model,
       prompt,
-      maxTokens: 150,
+      maxOutputTokens: 150,
     });
     const duration = Date.now() - startTime;
 
     logger.success(`Response received in ${duration}ms:`, {
-      text: response.text,
+      text: response.text.text,
       usage: response.usage,
     });
 
@@ -79,10 +79,10 @@ async function demonstrateDIAL() {
     const streamPrompt = "Count from 1 to 5, explaining each number briefly.";
 
     logger.info(`Streaming prompt: "${streamPrompt}"`);
-    const stream = await streamText({
+    const stream = streamText({
       model,
       prompt: streamPrompt,
-      maxTokens: 200,
+      maxOutputTokens: 200,
     });
 
     logger.info("Streaming response:");
@@ -95,7 +95,7 @@ async function demonstrateDIAL() {
 
     // 5. Multi-turn conversation example
     logger.info("💬 Testing multi-turn conversation:");
-    const messages: CoreMessage[] = [
+    const messages: ModelMessage[] = [
       { role: "user", content: "What's the capital of France?" },
       { role: "assistant", content: "The capital of France is Paris." },
       { role: "user", content: "What's its population?" },
@@ -111,10 +111,10 @@ async function demonstrateDIAL() {
       })),
     });
 
-    const conversationResult = await streamText({
+    const conversationResult = streamText({
       model,
       messages,
-      maxTokens: 150,
+      maxOutputTokens: 150,
     });
 
     logger.info("Conversation response:");
@@ -140,10 +140,10 @@ async function demonstrateDIAL() {
         logger.info(`Using model: ${thinkingModelId}`);
         logger.info(`Prompt: "${thinkingPrompt}"`);
 
-        const thinkingResult = await streamText({
+        const thinkingResult = streamText({
           model: thinkingModel,
           prompt: thinkingPrompt,
-          maxTokens: 300,
+          maxOutputTokens: 300,
         });
 
         logger.info("Response with thinking:");

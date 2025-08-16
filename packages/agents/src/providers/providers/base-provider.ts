@@ -1,4 +1,4 @@
-import type { LanguageModelV1 } from "@ai-sdk/provider";
+import type { LanguageModelV2 } from 'ai';
 import type { ModelInfo } from "../types";
 
 /**

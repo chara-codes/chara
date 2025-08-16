@@ -274,6 +274,7 @@ export class ChatProcessor {
       // Process the stream and broadcast chunks
       try {
         for await (const chunk of result.fullStream) {
+          logger.dump(chunk.type);
           // Check if stream was aborted
           if (abortController.signal.aborted) {
             logger.info(
@@ -284,7 +285,7 @@ export class ChatProcessor {
           // Handle different chunk types
           if (chunk.type === "text-delta") {
             // Accumulate content for message updates
-            accumulatedContent += chunk.textDelta;
+            accumulatedContent += chunk.text;
 
             // Broadcast text chunks to subscribers
             subscriptionManager.broadcastToChat(chatId, {
@@ -292,11 +293,18 @@ export class ChatProcessor {
               data: {
                 chatId,
                 assistantMessageId,
-                chunk: chunk.textDelta,
+                chunk: chunk.text,
                 type: "text",
               },
             });
+          } else if (
+            chunk.type === "tool-input-start" ||
+            chunk.type === "tool-input-delta" ||
+            chunk.type === "tool-input-end"
+          ) {
+            logger.dump(chunk);
           } else if (chunk.type === "tool-call") {
+            logger.log(chunk);
             accumulatedContent = this.handleToolCall(
               chunk,
               toolCalls,
@@ -330,7 +338,9 @@ export class ChatProcessor {
             });
           }
         }
+        logger.log("Stream is over");
       } catch (streamError) {
+        logger.dump(streamError);
         // Check if this was an abort error
         if (abortController.signal.aborted) {
           await this.handleCancellation(
@@ -377,6 +387,7 @@ export class ChatProcessor {
         await chatHooksManager.onChatComplete(chatId, "", result.usage);
       }
     } catch (error) {
+      logger.dump(error);
       // Check if this was a cancellation
       if (abortController.signal.aborted) {
         await this.handleCancellation(

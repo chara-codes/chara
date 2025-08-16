@@ -51,9 +51,9 @@ async function demonstrateProvidersRegistry() {
         // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         model: openaiModel as any,
         prompt: prompt,
-        maxTokens: 50,
+        maxOutputTokens: 50,
       });
-      logger.success("OpenAI Response:", { text: openaiResult.text });
+      logger.success("OpenAI Response:", { text: openaiResult.text.text });
     } catch (error) {
       logger.error("OpenAI Error:", {
         error: error instanceof Error ? error.message : "Unknown error",
@@ -70,9 +70,9 @@ async function demonstrateProvidersRegistry() {
         // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         model: anthropicModel as any,
         prompt: prompt,
-        maxTokens: 50,
+        maxOutputTokens: 50,
       });
-      logger.success("Anthropic Response:", { text: anthropicResult.text });
+      logger.success("Anthropic Response:", { text: anthropicResult.text.text });
     } catch (error) {
       logger.error("Anthropic Error:", {
         error: error instanceof Error ? error.message : "Unknown error",
@@ -89,9 +89,9 @@ async function demonstrateProvidersRegistry() {
         // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         model: googleModel as any,
         prompt: prompt,
-        maxTokens: 50,
+        maxOutputTokens: 50,
       });
-      logger.success("Google Response:", { text: googleResult.text });
+      logger.success("Google Response:", { text: googleResult.text.text });
     } catch (error) {
       logger.error("Google Error:", {
         error: error instanceof Error ? error.message : "Unknown error",
@@ -108,9 +108,9 @@ async function demonstrateProvidersRegistry() {
         // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         model: mistralModel as any,
         prompt: prompt,
-        maxTokens: 50,
+        maxOutputTokens: 50,
       });
-      logger.success("Mistral Response:", { text: mistralResult.text });
+      logger.success("Mistral Response:", { text: mistralResult.text.text });
     } catch (error) {
       logger.error("Mistral Error:", {
         error: error instanceof Error ? error.message : "Unknown error",
@@ -141,11 +141,11 @@ async function demonstrateProvidersRegistry() {
         const model = getModel(providerName, modelName);
 
         logger.info(`Using ${firstProvider.name} for streaming...`);
-        const stream = await streamText({
+        const stream = streamText({
           // biome-ignore lint/suspicious/noExplicitAny: <explanation>
           model: model as any,
           prompt: "Count from 1 to 5 slowly.",
-          maxTokens: 30,
+          maxOutputTokens: 30,
         });
 
         let streamedText = "";
@@ -331,9 +331,9 @@ async function compareProviders() {
         // biome-ignore lint/suspicious/noExplicitAny: <explanation>
         model: model as any,
         prompt: question,
-        maxTokens: 30,
+        maxOutputTokens: 30,
       });
-      logger.success(`${provider.name} response:`, { text: result.text });
+      logger.success(`${provider.name} response:`, { text: result.text.text });
     } catch (error) {
       logger.error(`${provider.name} failed:`, {
         error: error instanceof Error ? error.message : "Unknown error",
@@ -379,9 +379,9 @@ async function dynamicProviderSelection() {
           // biome-ignore lint/suspicious/noExplicitAny: <explanation>
           model: model as any,
           prompt: `Help with ${task.toLowerCase()}: Write a haiku about programming.`,
-          maxTokens: 50,
+          maxOutputTokens: 50,
         });
-        logger.success(`${task} result:`, { text: result.text });
+        logger.success(`${task} result:`, { text: result.text.text });
       } catch (error) {
         logger.error(`${task} error:`, {
           error: error instanceof Error ? error.message : "Unknown error",

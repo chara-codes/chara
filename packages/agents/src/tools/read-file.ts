@@ -241,7 +241,7 @@ export const readFile = tool({
 - Supports reading specific line ranges using start_line and end_line parameters.
 - Prevents access to files outside the project boundaries for security.`,
 
-  parameters: ReadFileInput,
+  inputSchema: ReadFileInput,
 
   execute: async ({ path, start_line, end_line }): Promise<ReadFileResult> => {
     // Manual input validation

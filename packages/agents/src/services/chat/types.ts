@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: events from external services */
-import type { CoreMessage, StepResult } from "ai";
+import type { ModelMessage, StepResult } from "ai";
 import type { ServerWebSocket } from "bun";
 
 export interface ChatAgentCallbacks {
@@ -49,7 +49,7 @@ export interface ChatSendEvent {
   data: {
     chatId: number;
     model: string;
-    messages: CoreMessage[];
+    messages: ModelMessage[];
     userMessageId?: number;
     mode: "write" | "ask";
   };

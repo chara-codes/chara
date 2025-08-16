@@ -1,4 +1,4 @@
-import type { CoreMessage } from "ai";
+import type { ModelMessage } from "ai";
 import {
   parseSuggestionsFromResponse,
   suggestionAgent,
@@ -37,7 +37,7 @@ export const suggestController = {
     const data = await req.json();
     const { model, messages } = data as {
       model: string;
-      messages: CoreMessage[];
+      messages: ModelMessage[];
     };
     const url = new URL(req.url);
     const maxSuggestions = parseInt(

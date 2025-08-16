@@ -1,5 +1,5 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import type { LanguageModelV1 } from "@ai-sdk/provider";
+import type { LanguageModelV2 } from 'ai';
 import { logger } from "../../utils/logger";
 import {
   AbstractProvider,

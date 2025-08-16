@@ -1,4 +1,4 @@
-import { streamText, type CoreMessage } from "ai";
+import { streamText, type ModelMessage } from "ai";
 import { fetchModels, getModel, hasProvider } from "../src/providers";
 import { logger } from "../src/utils/logger";
 
@@ -67,7 +67,7 @@ async function dialWithToolsExample() {
 async function runSimpleExample(modelId: string) {
   logger.info("💬 Example 1: Simple Prompt");
 
-  const messages: CoreMessage[] = [
+  const messages: ModelMessage[] = [
     {
       role: "user",
       content:
@@ -78,10 +78,10 @@ async function runSimpleExample(modelId: string) {
   const model = getModel("dial", modelId);
 
   logger.info("Sending request to DIAL...");
-  const result = await streamText({
+  const result = streamText({
     model,
     messages,
-    maxTokens: 500,
+    maxOutputTokens: 500,
   });
 
   logger.info("Response:");
@@ -98,7 +98,7 @@ async function runSimpleExample(modelId: string) {
 async function runSystemPromptExample(modelId: string) {
   logger.info("\n🧠 Example 2: Using System Prompt");
 
-  const messages: CoreMessage[] = [
+  const messages: ModelMessage[] = [
     {
       role: "system",
       content:
@@ -115,10 +115,10 @@ async function runSystemPromptExample(modelId: string) {
   const model = getModel("dial", modelId);
 
   logger.info("Sending request with system prompt...");
-  const result = await streamText({
+  const result = streamText({
     model,
     messages,
-    maxTokens: 800,
+    maxOutputTokens: 800,
   });
 
   logger.info("Response with system prompt guidance:");
@@ -135,7 +135,7 @@ async function runSystemPromptExample(modelId: string) {
 async function runJsonExample(modelId: string) {
   logger.info("\n📊 Example 3: Structured JSON Output");
 
-  const messages: CoreMessage[] = [
+  const messages: ModelMessage[] = [
     {
       role: "system",
       content:
@@ -151,10 +151,10 @@ async function runJsonExample(modelId: string) {
   const model = getModel("dial", modelId);
 
   logger.info("Requesting JSON response...");
-  const result = await streamText({
+  const result = streamText({
     model,
     messages,
-    maxTokens: 600,
+    maxOutputTokens: 600,
   });
 
   logger.info("JSON response:");

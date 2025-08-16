@@ -16,7 +16,7 @@ This tool analyzes a project directory to detect:
 
 Can be used on the current project or a specific directory path.`,
 
-  parameters: z.object({
+  inputSchema: z.object({
     path: z
       .string()
       .optional()

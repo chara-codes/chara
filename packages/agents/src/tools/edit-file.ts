@@ -11,7 +11,7 @@ Before using this tool:
 1. Use the read_file tool to understand the file's contents and context
 2. Ensure the file exists - this tool only works with existing files`,
 
-  parameters: z.object({
+  inputSchema: z.object({
     path: z.string().describe(
       `The relative path of the file to edit in the project.
 

@@ -1,6 +1,6 @@
-import type { CoreMessage } from "ai";
+import type { ModelMessage } from "ai";
 
-export const mapMessages = (messages: CoreMessage[]): CoreMessage[] => {
+export const mapMessages = (messages: ModelMessage[]): ModelMessage[] => {
   return messages
     .map((message) => {
       if (Array.isArray(message.content)) {

@@ -675,7 +675,7 @@ To get a project-wide diagnostic summary:
 - Don't remove code you've generated just because you can't fix an error. The user can help you fix it.
 </guidelines>`,
 
-  parameters: z.object({
+  inputSchema: z.object({
     path: z
       .string()
       .optional()

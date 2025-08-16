@@ -422,7 +422,7 @@ export const find = tool({
 - Formatted output for easy reading
 - Search statistics and pattern information`,
 
-  parameters: z.object({
+  inputSchema: z.object({
     path: z
       .string()
       .optional()

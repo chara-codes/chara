@@ -1,4 +1,4 @@
-import type { CoreMessage } from "ai";
+import type { ModelMessage } from "ai";
 import { chatAgentSimple } from "../src/agents/chat-agent";
 import { fetchModels, hasProvider } from "../src/providers";
 import { logger } from "../src/utils/logger";
@@ -77,7 +77,7 @@ async function dialAgentExample() {
 async function runBasicExample(modelId: string) {
   logger.info("💬 Example 1: Basic usage");
 
-  const messages: CoreMessage[] = [
+  const messages: ModelMessage[] = [
     {
       role: "user",
       content: "Hello, what can you tell me about quantum computing?",
@@ -103,7 +103,7 @@ async function runBasicExample(modelId: string) {
 async function runConversationExample(modelId: string) {
   logger.info("\n💬 Example 2: Multi-turn conversation");
 
-  const messages: CoreMessage[] = [
+  const messages: ModelMessage[] = [
     {
       role: "user",
       content: "What are the three most popular programming languages in 2023?",
@@ -139,7 +139,7 @@ async function runThinkingExample(modelId: string) {
   logger.info("\n🧠 Example 3: Using model with thinking capabilities");
   logger.info(`Using model: ${modelId}`);
 
-  const messages: CoreMessage[] = [
+  const messages: ModelMessage[] = [
     {
       role: "user",
       content:

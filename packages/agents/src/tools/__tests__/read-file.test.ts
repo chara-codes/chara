@@ -32,8 +32,11 @@ class MockFileSystem {
     const normalizedPath = this.normalizePath(path);
     this.fs.set(normalizedPath, {
       type: "file",
-      content,
-      size: Buffer.byteLength(content, "utf8"),
+
+      file: {
+        content,
+        size: Buffer.byteLength(content, "utf8")
+      }
     });
   }
 

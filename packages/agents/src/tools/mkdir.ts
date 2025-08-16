@@ -17,7 +17,7 @@ export const mkdir = tool({
 - Creates parent directories as needed
 - Detailed success and error reporting`,
 
-  parameters: z.object({
+  inputSchema: z.object({
     path: z
       .string()
       .describe(

@@ -1,4 +1,4 @@
-import { streamText, type CoreMessage } from "ai";
+import { streamText, type ModelMessage } from "ai";
 import { providersRegistry } from "../providers";
 import { logger } from "../utils/logger";
 
@@ -8,7 +8,7 @@ export const beautifyAgent = async (
     messages,
   }: {
     model: string;
-    messages: CoreMessage[];
+    messages: ModelMessage[];
   },
   options: { headers?: Record<string, string> } = {}
 ) => {

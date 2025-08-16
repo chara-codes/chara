@@ -1,4 +1,4 @@
-import { generateText, type CoreMessage } from "ai";
+import { generateText, type ModelMessage } from "ai";
 import { suggestionPrompt } from "../prompts/suggestion";
 import { providersRegistry } from "../providers";
 import { chatToolsAskMode } from "../tools/chat-tools";
@@ -22,7 +22,7 @@ export const suggestionAgent = async (
     tools = {},
   }: {
     model: string;
-    messages: CoreMessage[];
+    messages: ModelMessage[];
     workingDir?: string;
     maxSuggestions?: number;
     tools?: Record<string, unknown>;
@@ -54,18 +54,16 @@ export const suggestionAgent = async (
     }),
     tools: allTools,
     temperature: 0.3,
-    experimental_continueSteps: true,
-    maxSteps: 10,
     messages: [
+      ...messages,
       {
-        ...messages,
         role: "user",
         content:
           "Suggest a list of prompts, use previous messages as reference",
       },
     ],
-    onError: (err) => {
-      logger.dump(err);
+    onError: (error) => {
+      logger.dump(error);
     },
   });
 };

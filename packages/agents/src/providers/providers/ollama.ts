@@ -1,5 +1,5 @@
-import type { LanguageModelV1 } from "@ai-sdk/provider";
-import { createOllama } from "ollama-ai-provider";
+import type { LanguageModelV2 } from "ai";
+import { createOllama } from "ollama-ai-provider-v2";
 import { logger } from "../../utils/logger";
 import { ModelFetcher } from "../model-fetcher";
 import type { ModelInfo } from "../types";

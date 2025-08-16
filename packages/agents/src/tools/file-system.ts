@@ -353,7 +353,7 @@ export const fileSystem = tool({
 - System and runtime information
 - Project configuration analysis`,
 
-  parameters: z.object({
+  inputSchema: z.object({
     action: z
       .string()
       .describe("Operation to perform: 'stats', 'info', or 'env'"),

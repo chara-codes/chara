@@ -102,7 +102,7 @@ export const fetchTool = tool({
 
 This tool grants you internet access. You can fetch the most up-to-date information from websites.
 HTML content is automatically converted to markdown for better readability, but you can request raw HTML if needed.`,
-  parameters: z.object({
+  inputSchema: z.object({
     url: z.string().describe("URL to fetch (must be a valid HTTP/HTTPS URL)"),
     maxLength: z
       .number()

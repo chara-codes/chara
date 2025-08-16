@@ -1,5 +1,5 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
-import type { LanguageModelV1 } from "@ai-sdk/provider";
+import type { LanguageModelV2 } from 'ai';
 import { logger } from "../../utils/logger";
 import { ModelFetcher } from "../model-fetcher";
 import type { ModelInfo } from "../types";
