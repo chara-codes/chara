@@ -6,7 +6,7 @@ describe("projectInfo tool", () => {
     expect(projectInfo.description).toContain("project information");
     expect(projectInfo.description).toContain("package manager");
     expect(projectInfo.description).toContain("frameworks");
-    expect(projectInfo.parameters).toBeDefined();
+    expect(projectInfo.inputSchema).toBeDefined();
   });
 
   it("should execute successfully with default parameters", async () => {
@@ -98,7 +98,7 @@ describe("projectInfo tool", () => {
   it("should handle errors gracefully", async () => {
     // Mock a scenario that could cause errors
     const result = await projectInfo.execute({
-      path: "/",  // Root path might cause permission issues
+      path: "/", // Root path might cause permission issues
     });
 
     expect(typeof result).toBe("string");
@@ -109,14 +109,14 @@ describe("projectInfo tool", () => {
     const result = await projectInfo.execute({});
 
     // Check for markdown formatting
-    expect(result).toContain("##");  // Headers
+    expect(result).toContain("##"); // Headers
     expect(result).toContain("###"); // Subheaders
     expect(result).toContain("- **"); // Bold list items
-    expect(result).toContain("`");    // Code formatting
+    expect(result).toContain("`"); // Code formatting
   });
 
   it("should validate parameter types correctly", () => {
-    const schema = projectInfo.parameters;
+    const schema = projectInfo.inputSchema;
 
     expect(schema.shape.path).toBeDefined();
     expect(schema.shape.includeSettings).toBeDefined();

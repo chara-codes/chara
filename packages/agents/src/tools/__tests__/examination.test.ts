@@ -43,7 +43,7 @@ describe.skip("examination", () => {
     );
 
     // Pre-run and cache results to speed up tests
-    projectSummaryResult = await examination.execute({});
+    projectSummaryResult = await examination.execute({ path: undefined });
     cleanFileResult = await examination.execute({ path: "src/clean.ts" });
   });
 
@@ -122,7 +122,7 @@ describe.skip("examination", () => {
           await rm(tsConfigPath);
         }
 
-        const result = await examination.execute({});
+        const result = await examination.execute({ path: undefined });
         expect(result).toContain("nodejs");
         // Now the test should pass, as we've removed both TypeScript detection methods
         expect(result).not.toContain("typescript");

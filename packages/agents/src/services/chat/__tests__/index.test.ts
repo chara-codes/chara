@@ -1,28 +1,27 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
   chatHooksManager,
   chatProcessor,
-  statusManager,
-  subscriptionManager,
   ChatService,
   chatService,
+  subscriptionManager,
 } from "../index";
 import type {
-  ChatSubscription,
-  ChatStatus,
-  ChatSubscribeEvent,
-  ChatUnsubscribeEvent,
-  ChatUnsubscribeAllEvent,
-  ChatSendEvent,
+  ChatAgentCallbacks,
+  ChatAgentHooks,
   ChatCancelEvent,
   ChatChunkEvent,
   ChatCompleteEvent,
   ChatErrorEvent,
-  ChatStatusEvent,
   ChatEvent,
   ChatHooks,
-  ChatAgentCallbacks,
-  ChatAgentHooks,
+  ChatSendEvent,
+  ChatStatus,
+  ChatStatusEvent,
+  ChatSubscribeEvent,
+  ChatSubscription,
+  ChatUnsubscribeAllEvent,
+  ChatUnsubscribeEvent,
 } from "../index";
 
 describe("Chat Service Index", () => {
@@ -49,29 +48,22 @@ describe("Chat Service Index", () => {
       expect(typeof chatProcessor.clear).toBe("function");
     });
 
-    test("should export statusManager", () => {
-      expect(statusManager).toBeDefined();
-      expect(typeof statusManager.updateChatStatus).toBe("function");
-      expect(typeof statusManager.getChatStatus).toBe("function");
-      expect(typeof statusManager.getActiveChats).toBe("function");
-      expect(typeof statusManager.getAllChatStatuses).toBe("function");
-      expect(typeof statusManager.isChatInProgress).toBe("function");
-      expect(typeof statusManager.deleteChatStatus).toBe("function");
-      expect(typeof statusManager.getStatusCounts).toBe("function");
-      expect(typeof statusManager.clear).toBe("function");
-      expect(typeof statusManager.destroy).toBe("function");
-    });
-
     test("should export subscriptionManager", () => {
       expect(subscriptionManager).toBeDefined();
       expect(typeof subscriptionManager.subscribeToChat).toBe("function");
       expect(typeof subscriptionManager.unsubscribeFromChat).toBe("function");
-      expect(typeof subscriptionManager.unsubscribeFromAllChats).toBe("function");
-      expect(typeof subscriptionManager.cleanupClientSubscriptions).toBe("function");
+      expect(typeof subscriptionManager.unsubscribeFromAllChats).toBe(
+        "function"
+      );
+      expect(typeof subscriptionManager.cleanupClientSubscriptions).toBe(
+        "function"
+      );
       expect(typeof subscriptionManager.sendToClient).toBe("function");
       expect(typeof subscriptionManager.broadcastToChat).toBe("function");
       expect(typeof subscriptionManager.getSubscriberCount).toBe("function");
-      expect(typeof subscriptionManager.getClientSubscriptions).toBe("function");
+      expect(typeof subscriptionManager.getClientSubscriptions).toBe(
+        "function"
+      );
       expect(typeof subscriptionManager.getAllSubscribedChats).toBe("function");
       expect(typeof subscriptionManager.hasSubscribers).toBe("function");
       expect(typeof subscriptionManager.clear).toBe("function");
@@ -274,7 +266,6 @@ describe("Chat Service Index", () => {
       // Test that the exported instances are actually working
       expect(() => {
         chatHooksManager.registerHooks({});
-        statusManager.updateChatStatus(1, { status: "idle" });
         subscriptionManager.getSubscriberCount(1);
         chatProcessor.getActiveChats();
       }).not.toThrow();
@@ -284,13 +275,11 @@ describe("Chat Service Index", () => {
       // Import again to test singleton behavior
       const {
         chatHooksManager: hooksManager2,
-        statusManager: statusManager2,
         subscriptionManager: subscriptionManager2,
         chatProcessor: chatProcessor2,
       } = require("../index");
 
       expect(chatHooksManager).toBe(hooksManager2);
-      expect(statusManager).toBe(statusManager2);
       expect(subscriptionManager).toBe(subscriptionManager2);
       expect(chatProcessor).toBe(chatProcessor2);
     });
@@ -316,7 +305,12 @@ describe("Chat Service Index", () => {
     });
 
     test("should support all chat status values", () => {
-      const statuses: ChatStatus["status"][] = ["idle", "in_progress", "completed", "error"];
+      const statuses: ChatStatus["status"][] = [
+        "idle",
+        "in_progress",
+        "completed",
+        "error",
+      ];
 
       for (const status of statuses) {
         const chatStatus: ChatStatus = {
@@ -370,7 +364,6 @@ describe("Chat Service Index", () => {
         "chatService",
         "chatHooksManager",
         "chatProcessor",
-        "statusManager",
         "subscriptionManager",
       ];
 
@@ -384,7 +377,6 @@ describe("Chat Service Index", () => {
 
       // These should not be exported directly
       expect(chatModule.ChatHooksManager).toBeUndefined();
-      expect(chatModule.StatusManager).toBeUndefined();
       expect(chatModule.SubscriptionManager).toBeUndefined();
       expect(chatModule.ChatProcessor).toBeUndefined();
     });

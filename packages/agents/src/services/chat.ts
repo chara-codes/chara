@@ -2,7 +2,6 @@ import type { ServerWebSocket } from "bun";
 import { logger } from "../utils/logger";
 import { chatProcessor } from "./chat/chat-processor";
 import { chatHooksManager } from "./chat/hooks";
-import { statusManager } from "./chat/status-manager";
 import { subscriptionManager } from "./chat/subscription-manager";
 import type {
   ChatCancelEvent,
@@ -29,24 +28,14 @@ export class ChatService {
     const subscriptionId = subscriptionManager.subscribeToChat(chatId, ws);
 
     // Send current status to the new subscriber
-    const currentStatus = statusManager.getChatStatus(chatId);
-    if (currentStatus) {
-      subscriptionManager.sendToClient(ws, {
-        event: "chat:status",
-        data: currentStatus,
-      });
-    } else {
-      // Initialize status if it doesn't exist
-      const newStatus = statusManager.updateChatStatus(chatId, {
+    const isProcessing = chatProcessor.isProcessing(chatId);
+    subscriptionManager.sendToClient(ws, {
+      event: "chat:status",
+      data: {
+        status: isProcessing ? "in_progress" : "idle",
         chatId,
-        status: "idle",
-      });
-
-      subscriptionManager.sendToClient(ws, {
-        event: "chat:status",
-        data: newStatus,
-      });
-    }
+      },
+    });
 
     return subscriptionId;
   }
@@ -223,11 +212,15 @@ export class ChatService {
 
   // Status queries
   getChatStatus(chatId: number): ChatStatus | undefined {
-    return statusManager.getChatStatus(chatId);
+    const isProcessing = chatProcessor.isProcessing(chatId);
+    return {
+      chatId,
+      status: isProcessing ? "in_progress" : "idle",
+    } as ChatStatus;
   }
 
   getActiveChats(): number[] {
-    return statusManager.getActiveChats();
+    return chatProcessor.getActiveChats();
   }
 
   getSubscriberCount(chatId: number): number {
@@ -240,10 +233,10 @@ export class ChatService {
 
   // Service statistics
   getServiceStats() {
+    const activeChats = chatProcessor.getActiveChats();
     return {
-      statusCounts: statusManager.getStatusCounts(),
-      activeChats: statusManager.getActiveChats(),
-      processingChats: chatProcessor.getActiveChats(),
+      activeChats,
+      processingChats: activeChats,
       subscribedChats: subscriptionManager.getAllSubscribedChats(),
     };
   }
@@ -254,9 +247,6 @@ export class ChatService {
 
     // Cancel all ongoing chats
     chatProcessor.destroy();
-
-    // Clean up status manager
-    statusManager.destroy();
 
     // Clear subscriptions
     subscriptionManager.clear();

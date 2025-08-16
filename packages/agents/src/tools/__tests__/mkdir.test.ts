@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { mkdir } from "../mkdir";
-import { stat, rm } from "node:fs/promises";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 import { existsSync } from "node:fs";
+import { rm, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { mkdir } from "../mkdir";
 
 class TestFileSystem {
   private testDir: string;
@@ -297,23 +297,23 @@ describe("mkdir tool", () => {
     });
 
     test("should have proper parameter validation", () => {
-      expect(mkdir.parameters).toBeDefined();
+      expect(mkdir.inputSchema).toBeDefined();
     });
 
     test("should have required path parameter", () => {
-      const pathParam = mkdir.parameters.shape.path;
+      const pathParam = mkdir.inputSchema.shape.path;
       expect(pathParam).toBeDefined();
       expect(pathParam._def.typeName).toBe("ZodString");
     });
 
     test("should have recursive parameter with default true", () => {
-      const recursiveParam = mkdir.parameters.shape.recursive;
+      const recursiveParam = mkdir.inputSchema.shape.recursive;
       expect(recursiveParam._def.defaultValue()).toBe(true);
     });
 
     test("should not have file-related parameters", () => {
-      expect(mkdir.parameters.shape.type).toBeUndefined();
-      expect(mkdir.parameters.shape.content).toBeUndefined();
+      expect(mkdir.inputSchema.shape.type).toBeUndefined();
+      expect(mkdir.inputSchema.shape.content).toBeUndefined();
     });
   });
 

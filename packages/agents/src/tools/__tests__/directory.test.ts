@@ -59,11 +59,8 @@ class MockFileSystem {
 
     parent.children.set(fileName, {
       type: "file",
-
-      file: {
-        content,
-        size: content.length
-      }
+      content,
+      size: content.length,
     });
   }
 

@@ -37,7 +37,7 @@ describe("Agent Tools Integration", () => {
         expect(tool).toBeDefined();
         expect(typeof tool).toBe("object");
         expect(tool).toHaveProperty("description");
-        expect(tool).toHaveProperty("parameters");
+        expect(tool).toHaveProperty("inputSchema");
         expect(tool).toHaveProperty("execute");
         expect(typeof tool.execute).toBe("function");
       }

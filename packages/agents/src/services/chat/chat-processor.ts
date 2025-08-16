@@ -6,7 +6,6 @@ import { logger } from "../../utils/logger";
 import { isoGitService } from "../isogit";
 import { trpc } from "../trpc";
 import { chatHooksManager } from "./hooks";
-import { statusManager } from "./status-manager";
 import { subscriptionManager } from "./subscription-manager";
 import type { ChatSendEvent } from "./types";
 
@@ -14,9 +13,9 @@ export interface ToolCall {
   id: string;
   name: string;
   arguments: Record<string, unknown>;
-  status: "pending" | "in-progress" | "success" | "error";
+  status: "idle" | "in_progress" | "completed" | "error";
   result?: any;
-  timestamp?: string;
+  timestamp: string;
 }
 
 export class ChatProcessor {
@@ -54,104 +53,46 @@ export class ChatProcessor {
   ): Promise<void> {
     logger.info(`Chat ${chatId} was cancelled`);
 
-    // Add cancellation message to content
     const finalContent = accumulatedContent + "\n\n(Canceled by user)";
 
-    // Update message with cancellation info
     await this.updateAssistantMessage(
       assistantMessageId,
       finalContent,
       toolCalls
     );
 
-    // Update status and broadcast
-    const completedStatus = statusManager.updateChatStatus(chatId, {
-      status: "completed",
-      completedAt: Date.now(),
-    });
-
     subscriptionManager.broadcastToChat(chatId, {
       event: "chat:status",
-      data: completedStatus,
+      data: { status: "error", chatId },
     });
 
     await chatHooksManager.onChatCancel(chatId);
   }
 
-  private handleToolCall(
-    chunk: any,
-    toolCalls: Record<string, ToolCall>,
-    accumulatedContent: string
-  ): string {
-    // Add tool call to collection
-    const toolCall: ToolCall = {
-      id: chunk.toolCallId,
-      name: chunk.toolName,
-      arguments: chunk.args,
-      status: "pending",
-      timestamp: new Date().toISOString(),
-    };
-    toolCalls[chunk.toolCallId] = toolCall;
-
-    // Add tool call tag to accumulated content
-    const toolCallTag = `[toolCall:${chunk.toolCallId},${chunk.toolName}]`;
-    return accumulatedContent + toolCallTag;
-  }
-
-  private handleToolResult(
-    chunk: { toolCallId: string; isError?: boolean; result?: any },
-    toolCalls: Record<string, ToolCall>,
-    accumulatedContent: string
-  ): string {
-    // Update tool call status and result
-    const toolCall = toolCalls[chunk.toolCallId];
-    if (toolCall) {
-      toolCall.status = chunk.isError ? "error" : "success";
-      toolCall.result = chunk.result;
-
-      // Add error information to content if tool call failed
-      if (chunk.isError) {
-        const errorInfo = `\n[Error in ${toolCall.name}: ${
-          chunk.result?.error || "Unknown error"
-        }]`;
-        return accumulatedContent + errorInfo;
-      }
-    }
-    return accumulatedContent;
-  }
-
-  private updateStatusAndBroadcast(
+  private broadcastChunk(
     chatId: number,
-    status: any,
-    event: string = "chat:status"
+    assistantMessageId: number | null,
+    chunk: any,
+    type: string
   ): void {
     subscriptionManager.broadcastToChat(chatId, {
-      event: event as any,
-      data: status,
+      event: "chat:chunk",
+      data: {
+        chatId,
+        assistantMessageId,
+        chunk: typeof chunk === "string" ? chunk : JSON.stringify(chunk),
+        type: type as "text" | "tool-call" | "tool-result",
+      },
     });
   }
 
   async handleChatSend(data: ChatSendEvent["data"]): Promise<void> {
     const { chatId, model, messages, userMessageId, mode } = data;
 
-    // Track assistant message and accumulated content
     let assistantMessageId: number | null = null;
     let accumulatedContent = "";
     const toolCalls: Record<string, ToolCall> = {};
-
-    // Check if chat is already in progress
-    if (statusManager.isChatInProgress(chatId)) {
-      subscriptionManager.broadcastToChat(chatId, {
-        event: "chat:error",
-        data: {
-          chatId,
-          assistantMessageId: null,
-          error: "Chat is already in progress",
-          code: "CHAT_IN_PROGRESS",
-        },
-      });
-      return;
-    }
+    const textBlocks: Record<string, string> = {};
 
     // Create abort controller for this chat
     const abortController = new AbortController();
@@ -163,18 +104,10 @@ export class ChatProcessor {
       // Trigger chat start hook
       await chatHooksManager.onChatStart(chatId, data);
 
-      // Update status to in_progress
-      const newStatus = statusManager.updateChatStatus(chatId, {
-        status: "in_progress",
-        startedAt: Date.now(),
-        mode,
-        model,
-      });
-
-      // Broadcast status update
+      // Broadcast initial status
       subscriptionManager.broadcastToChat(chatId, {
         event: "chat:status",
-        data: newStatus,
+        data: { status: "in_progress", chatId, mode, model },
       });
 
       // Initialize repository if needed
@@ -190,14 +123,13 @@ export class ChatProcessor {
           commit: commit?.oid,
         });
 
-        // Trigger message update hook
         await chatHooksManager.onMessageUpdate(
           Number(userMessageId),
           commit?.oid
         );
       }
 
-      // Create assistant message for the response
+      // Create assistant message
       try {
         const assistantMessage = await trpc.chat.saveMessage.mutate({
           chatId,
@@ -209,12 +141,12 @@ export class ChatProcessor {
         logger.error("Failed to create assistant message:", error);
       }
 
-      // Combine agent-specific tools with MCP tools
+      // Combine tools
       const localChatTools =
         mode === "write" ? chatToolsWriteMode : chatToolsAskMode;
       const allTools = { ...localChatTools, ...this.mcpTools };
 
-      // Start chat agent with abort signal and callbacks
+      // Start chat agent
       const result = await chatAgent(
         {
           model,
@@ -224,13 +156,11 @@ export class ChatProcessor {
           tools: allTools,
           callbacks: {
             onStepFinish: async (stepResult) => {
-              // Log step completion for debugging
               logger.debug(`Step completed for chat ${chatId}:`, {
-                stepType: stepResult.stepType,
+                text: stepResult.text,
                 toolCalls: stepResult.toolCalls?.length || 0,
               });
 
-              // Update assistant message with current content and tool calls
               await this.updateAssistantMessage(
                 assistantMessageId,
                 accumulatedContent,
@@ -255,7 +185,6 @@ export class ChatProcessor {
             },
             onError: async (error: Error) => {
               logger.error(`Chat agent error for chat ${chatId}:`, error);
-              // Broadcast error to subscribers
               subscriptionManager.broadcastToChat(chatId, {
                 event: "chat:error",
                 data: {
@@ -271,112 +200,237 @@ export class ChatProcessor {
         { abortSignal: abortController.signal }
       );
 
-      // Process the stream and broadcast chunks
-      try {
-        for await (const chunk of result.fullStream) {
-          logger.dump(chunk.type);
-          // Check if stream was aborted
-          if (abortController.signal.aborted) {
-            logger.info(
-              `Stream for chat ${chatId} was aborted during processing`
+      // Process the stream with AI SDK v5 chunk types
+      for await (const chunk of result.fullStream) {
+        if (abortController.signal.aborted) {
+          logger.info(
+            `Stream for chat ${chatId} was aborted during processing`
+          );
+          break;
+        }
+
+        switch (chunk.type) {
+          case "start": {
+            logger.debug("Stream started");
+            break;
+          }
+
+          case "text-start": {
+            logger.debug(`Text block started: ${chunk.id}`);
+            textBlocks[chunk.id] = "";
+            break;
+          }
+
+          case "text-delta": {
+            const textContent = chunk.text;
+            textBlocks[chunk.id] += textContent;
+            accumulatedContent += textContent;
+
+            this.broadcastChunk(
+              chatId,
+              assistantMessageId,
+              textContent,
+              "text"
             );
             break;
           }
-          // Handle different chunk types
-          if (chunk.type === "text-delta") {
-            // Accumulate content for message updates
-            accumulatedContent += chunk.text;
 
-            // Broadcast text chunks to subscribers
-            subscriptionManager.broadcastToChat(chatId, {
-              event: "chat:chunk",
-              data: {
-                chatId,
-                assistantMessageId,
-                chunk: chunk.text,
-                type: "text",
+          case "text-end": {
+            logger.debug(`Text block completed: ${chunk.id}`);
+            break;
+          }
+
+          case "tool-input-start": {
+            const toolCall: ToolCall = {
+              id: chunk.id,
+              name: chunk.toolName,
+              arguments: {},
+              status: "input-streaming",
+              timestamp: new Date().toISOString(),
+            };
+            toolCalls[chunk.id] = toolCall;
+
+            this.broadcastChunk(
+              chatId,
+              assistantMessageId,
+              {
+                type: "tool-input-start",
+                id: chunk.id,
+                toolName: chunk.toolName,
               },
-            });
-          } else if (
-            chunk.type === "tool-input-start" ||
-            chunk.type === "tool-input-delta" ||
-            chunk.type === "tool-input-end"
-          ) {
-            logger.dump(chunk);
-          } else if (chunk.type === "tool-call") {
-            logger.log(chunk);
-            accumulatedContent = this.handleToolCall(
-              chunk,
-              toolCalls,
-              accumulatedContent
+              "tool-input-start"
             );
+            break;
+          }
 
-            subscriptionManager.broadcastToChat(chatId, {
-              event: "chat:chunk",
-              data: {
-                chatId,
-                assistantMessageId,
-                chunk: JSON.stringify(chunk),
+          case "tool-input-delta": {
+            this.broadcastChunk(
+              chatId,
+              assistantMessageId,
+              {
+                type: "tool-input-delta",
+                id: chunk.id,
+                delta: chunk.delta,
+              },
+              "tool-input-delta"
+            );
+            break;
+          }
+
+          case "tool-input-end": {
+            const toolCall = toolCalls[chunk.id];
+            if (toolCall) {
+              toolCall.status = "input-available";
+            }
+
+            this.broadcastChunk(
+              chatId,
+              assistantMessageId,
+              {
+                type: "tool-input-end",
+                id: chunk.id,
+              },
+              "tool-input-end"
+            );
+            break;
+          }
+
+          case "tool-call": {
+            const toolCall = toolCalls[chunk.toolCallId];
+            if (toolCall) {
+              toolCall.arguments = chunk.input;
+              toolCall.status = "executing";
+            }
+
+            this.broadcastChunk(
+              chatId,
+              assistantMessageId,
+              {
                 type: "tool-call",
+                toolCallId: chunk.toolCallId,
+                toolName: chunk.toolName,
+                input: chunk.input,
               },
-            });
-          } else if (chunk.type === "tool-result") {
-            accumulatedContent = this.handleToolResult(
-              chunk,
-              toolCalls,
-              accumulatedContent
+              "tool-call"
             );
 
+            // Add tool call marker to content
+            accumulatedContent += `\n[Tool: ${chunk.toolName}]`;
+            break;
+          }
+
+          case "tool-result": {
+            const toolCall = toolCalls[chunk.toolCallId];
+            if (toolCall) {
+              toolCall.status =
+                chunk.result &&
+                typeof chunk.result === "object" &&
+                "isError" in chunk.result &&
+                chunk.result.isError
+                  ? "error"
+                  : "completed";
+              toolCall.result = chunk.result;
+            }
+
+            this.broadcastChunk(
+              chatId,
+              assistantMessageId,
+              {
+                type: "tool-result",
+                toolCallId: chunk.toolCallId,
+                result: chunk.result,
+                isError:
+                  chunk.result &&
+                  typeof chunk.result === "object" &&
+                  "isError" in chunk.result &&
+                  chunk.result.isError,
+              },
+              "tool-result"
+            );
+
+            if (
+              chunk.result &&
+              typeof chunk.result === "object" &&
+              "isError" in chunk.result &&
+              chunk.result.isError
+            ) {
+              accumulatedContent += `\n[Tool Error: ${
+                (chunk.result as any)?.error || "Unknown error"
+              }]`;
+            }
+            break;
+          }
+
+          case "reasoning-start": {
+            logger.debug(`Reasoning block started: ${chunk.id}`);
+            break;
+          }
+
+          case "reasoning-delta": {
+            // Reasoning content can be handled similarly to text
+            this.broadcastChunk(
+              chatId,
+              assistantMessageId,
+              chunk.text,
+              "reasoning"
+            );
+            break;
+          }
+
+          case "reasoning-end": {
+            logger.debug(`Reasoning block completed: ${chunk.id}`);
+            break;
+          }
+
+          case "source": {
+            this.broadcastChunk(
+              chatId,
+              assistantMessageId,
+              {
+                type: "source",
+                sourceType: chunk.sourceType,
+                id: chunk.id,
+                url: chunk.sourceType === "url" ? chunk.url : undefined,
+                title: chunk.title,
+              },
+              "source"
+            );
+            break;
+          }
+
+          case "finish": {
+            logger.debug("Stream finished", {
+              usage: chunk.totalUsage,
+              finishReason: chunk.finishReason,
+            });
+
             subscriptionManager.broadcastToChat(chatId, {
-              event: "chat:chunk",
+              event: "chat:complete",
               data: {
                 chatId,
                 assistantMessageId,
-                chunk: JSON.stringify(chunk),
-                type: "tool-result",
+                usage: chunk.totalUsage,
+                finishReason: chunk.finishReason,
               },
             });
+            break;
+          }
+
+          default: {
+            logger.debug("Unhandled chunk type:", chunk.type);
+            break;
           }
         }
-        logger.log("Stream is over");
-      } catch (streamError) {
-        logger.dump(streamError);
-        // Check if this was an abort error
-        if (abortController.signal.aborted) {
-          await this.handleCancellation(
-            chatId,
-            assistantMessageId,
-            accumulatedContent,
-            toolCalls
-          );
-          return;
-        }
-
-        // Re-throw other stream errors to be handled by outer catch
-        throw streamError;
       }
 
-      // Only broadcast completion if not aborted
       if (!abortController.signal.aborted) {
-        // Broadcast completion event
+        // Broadcast completion status
         subscriptionManager.broadcastToChat(chatId, {
-          event: "chat:complete",
-          data: {
-            chatId,
-            assistantMessageId,
-            usage: result.usage,
-          },
+          event: "chat:status",
+          data: { status: "completed", chatId },
         });
 
-        // Update status to completed
-        const completedStatus = statusManager.updateChatStatus(chatId, {
-          status: "completed",
-          completedAt: Date.now(),
-        });
-
-        this.updateStatusAndBroadcast(chatId, completedStatus);
-
-        // Final update to assistant message with complete content and tool calls
+        // Final update to assistant message
         await this.updateAssistantMessage(
           assistantMessageId,
           accumulatedContent,
@@ -384,11 +438,13 @@ export class ChatProcessor {
         );
 
         // Trigger completion hook
-        await chatHooksManager.onChatComplete(chatId, "", result.usage);
+        await chatHooksManager.onChatComplete(
+          chatId,
+          accumulatedContent,
+          (await result.usage) || undefined
+        );
       }
     } catch (error) {
-      logger.dump(error);
-      // Check if this was a cancellation
       if (abortController.signal.aborted) {
         await this.handleCancellation(
           chatId,
@@ -401,7 +457,7 @@ export class ChatProcessor {
 
       logger.error(`Chat error for chat ${chatId}:`, error);
 
-      // Try to handle git commit even on error if in write mode
+      // Handle git commit even on error if in write mode
       if (mode === "write") {
         try {
           const commitMessage = await gitAgent({
@@ -416,8 +472,6 @@ export class ChatProcessor {
 
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-
-      // Add error information to content
       accumulatedContent += `\n\n[Chat Error: ${errorMessage}]`;
 
       subscriptionManager.broadcastToChat(chatId, {
@@ -430,26 +484,19 @@ export class ChatProcessor {
         },
       });
 
-      // Update status to error
-      const errorStatus = statusManager.updateChatStatus(chatId, {
-        status: "error",
-        error: errorMessage,
-        completedAt: Date.now(),
+      subscriptionManager.broadcastToChat(chatId, {
+        event: "chat:status",
+        data: { status: "error", chatId, error: errorMessage },
       });
 
-      this.updateStatusAndBroadcast(chatId, errorStatus);
-
-      // Final update to assistant message with accumulated content and tool calls even on error
       await this.updateAssistantMessage(
         assistantMessageId,
         accumulatedContent,
         toolCalls
       );
 
-      // Trigger error hook
       await chatHooksManager.onChatError(chatId, errorMessage);
     } finally {
-      // Clean up abort controller
       this.chatAbortControllers.delete(chatId);
     }
   }
@@ -457,25 +504,16 @@ export class ChatProcessor {
   handleChatCancel(chatId: number): void {
     logger.info(`Cancelling chat ${chatId}`);
 
-    // Get the abort controller for this chat
     const abortController = this.chatAbortControllers.get(chatId);
     if (abortController) {
-      // Abort the ongoing stream
       abortController.abort();
-
-      // The abort will be handled in the stream processing logic
       logger.debug(`Successfully signaled cancellation for chat ${chatId}`);
     } else {
       logger.warn(`No active stream found for chat ${chatId} to cancel`);
 
-      // Still broadcast status update for UI consistency
-      const idleStatus = statusManager.updateChatStatus(chatId, {
-        status: "idle",
-      });
-
       subscriptionManager.broadcastToChat(chatId, {
         event: "chat:status",
-        data: idleStatus,
+        data: { status: "idle", chatId },
       });
     }
   }
@@ -489,7 +527,6 @@ export class ChatProcessor {
   }
 
   destroy(): void {
-    // Cancel all ongoing chats
     for (const [chatId, controller] of this.chatAbortControllers) {
       logger.info(`Cancelling chat ${chatId} during shutdown`);
       controller.abort();

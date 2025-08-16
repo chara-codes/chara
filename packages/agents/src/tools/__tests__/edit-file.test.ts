@@ -286,7 +286,7 @@ describe("editFile tool", () => {
 
   test("should have correct tool metadata", () => {
     expect(editFile.description).toContain("making edits to existing files");
-    expect(editFile.parameters).toBeDefined();
+    expect(editFile.inputSchema).toBeDefined();
   });
 
   test("should handle large file edits", async () => {

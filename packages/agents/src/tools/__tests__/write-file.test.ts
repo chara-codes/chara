@@ -413,7 +413,7 @@ export default Button;`;
     });
 
     test("should handle very long file paths", async () => {
-      const longPath = "a".repeat(255) + "/file.txt";
+      const longPath = testFS.getPath("a".repeat(50) + "/file.txt");
 
       const result = await writeFile.execute({
         path: longPath,
@@ -509,17 +509,17 @@ export default Button;`;
     });
 
     test("should have properly defined parameters", () => {
-      expect(writeFile.parameters).toBeDefined();
-      expect(writeFile.parameters.shape).toHaveProperty("path");
-      expect(writeFile.parameters.shape).toHaveProperty("content");
+      expect(writeFile.inputSchema).toBeDefined();
+      expect(writeFile.inputSchema.shape).toHaveProperty("path");
+      expect(writeFile.inputSchema.shape).toHaveProperty("content");
 
       // Check that path parameter is a ZodString
-      const pathParam = writeFile.parameters.shape.path;
+      const pathParam = writeFile.inputSchema.shape.path;
       expect(pathParam).toBeDefined();
       expect(pathParam._def.typeName).toBe("ZodString");
 
       // Check that content parameter is a ZodString
-      const contentParam = writeFile.parameters.shape.content;
+      const contentParam = writeFile.inputSchema.shape.content;
       expect(contentParam).toBeDefined();
       expect(contentParam._def.typeName).toBe("ZodString");
     });

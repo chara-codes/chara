@@ -32,11 +32,8 @@ class MockFileSystem {
     const normalizedPath = this.normalizePath(path);
     this.fs.set(normalizedPath, {
       type: "file",
-
-      file: {
-        content,
-        size: Buffer.byteLength(content, "utf8")
-      }
+      content,
+      size: Buffer.byteLength(content, "utf8"),
     });
   }
 
@@ -646,6 +643,6 @@ Nothing special here.
     expect(readFile.description).toContain(
       "Reads the content of the given file"
     );
-    expect(readFile.parameters).toBeDefined();
+    expect(readFile.inputSchema).toBeDefined();
   });
 });
