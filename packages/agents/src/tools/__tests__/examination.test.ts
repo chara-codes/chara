@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { examination } from "../examination";
 
-describe.skip("examination", () => {
+describe("examination", () => {
   const testDir = join(process.cwd(), "tmp", "tool-examination-test");
   const originalCwd = process.cwd();
 

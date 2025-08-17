@@ -8,11 +8,8 @@ import {
 } from "drizzle-orm/sqlite-core";
 
 /**
- * Represents chat conversations in the system using string IDs for better
- * compatibility with AI SDK and modern chat applications.
- *
- * Chats can be organized hierarchically using parentId references and
- * support status tracking for real-time conversation management.
+ * Represents chat conversations in the system.
+ * Chats can be organized hierarchically using parentId references.
  */
 export const chats = sqliteTable(
   "chats",
@@ -46,7 +43,5 @@ export const chats = sqliteTable(
   },
   (table) => ({
     parentIdx: index("idx_chats_parent_id").on(table.parentId),
-    statusIdx: index("idx_chats_status").on(table.status),
-    updatedAtIdx: index("idx_chats_updated_at").on(table.updatedAt),
   })
 );

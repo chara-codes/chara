@@ -3,16 +3,14 @@ import { index, int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { chats } from "./chats";
 
 /**
- * Represents individual messages in a chat conversation using UIMessage format.
- * This schema is designed to work with AI SDK's UIMessage structure for better
- * ecosystem compatibility and modern chat applications.
+ * Represents individual messages in a chat conversation, storing both user queries
+ * and LLM responses.
  *
  * @remarks
  * - Each message belongs to a specific chat conversation
  * - Messages are ordered chronologically by creation timestamp
- * - The role field supports user, assistant, and system messages
- * - Parts array stores the actual message content in UIMessage format
- * - Metadata field supports additional message context and annotations
+ * - The role field distinguishes between user messages and LLM responses
+ * - Messages maintain the complete conversation history for context
  */
 
 export const messages = sqliteTable(
@@ -30,7 +28,7 @@ export const messages = sqliteTable(
     /** Optional metadata as JSON - stores UIMessage.metadata */
     metadata: text({ mode: "json" }),
 
-    /** Commit sha for tracking code changes */
+    /** Commit sha */
     commit: text(),
 
     /** Timestamp when this message was created */
@@ -50,7 +48,5 @@ export const messages = sqliteTable(
   },
   (table) => ({
     chatIdx: index("idx_messages_chat_id").on(table.chatId),
-    createdAtIdx: index("idx_messages_created_at").on(table.createdAt),
-    roleIdx: index("idx_messages_role").on(table.role),
   })
 );

@@ -1,14 +1,19 @@
 import { eq, sql } from "drizzle-orm";
+import { UIMessage, generateId } from "ai";
 import { db } from "../api/db.ts";
-import { chats, messages, stacks } from "../db/schema";
+import { chats, messages } from "../db/schema";
 import { logger } from "../utils/logger";
 
-/** Create a new chat. */
-export async function createChat(titleSuggestion: string) {
+/** Create a new chat with UIMessage format. */
+export async function createChat(titleSuggestion: string): Promise<{ id: string; title: string; createdAt: number }> {
   try {
+    const chatId = generateId();
     const [row] = await db
       .insert(chats)
-      .values({ title: titleSuggestion })
+      .values({
+        id: chatId,
+        title: titleSuggestion
+      })
       .returning({
         id: chats.id,
         createdAt: chats.createdAt,
@@ -21,81 +26,56 @@ export async function createChat(titleSuggestion: string) {
   }
 }
 
-/** Create a new chat with the given title. */
-export async function ensureChat(titleSuggestion: string): Promise<number> {
+/** Save UIMessages to database. */
+export async function saveUIMessages(chatId: string, uiMessages: UIMessage[]): Promise<void> {
   try {
-    const defaultStack = {
-      id: 1, // Default stack ID
-      title: "Default Stack",
-      type: "others" as const,
-      createdAt: sql`CURRENT_TIMESTAMP`,
-      updatedAt: sql`CURRENT_TIMESTAMP`,
-    };
+    // First, delete existing messages for this chat to avoid duplicates
+    await db.delete(messages).where(eq(messages.chatId, chatId));
 
-    // Ensure the default stack exists
-    const [existingStack] = await db
-      .select({ id: stacks.id })
-      .from(stacks)
-      .where(eq(stacks.id, defaultStack.id))
-      .limit(1);
+    // Insert all messages
+    if (uiMessages.length > 0) {
+      const messageValues = uiMessages.map(msg => ({
+        id: msg.id,
+        chatId,
+        parts: JSON.stringify(msg.parts),
+        role: msg.role,
+        metadata: msg.metadata ? JSON.stringify(msg.metadata) : null,
+        createdAt: msg.createdAt ? Math.floor(msg.createdAt.getTime() / 1000) : sql`CURRENT_TIMESTAMP`,
+      }));
 
-    if (!existingStack) {
-      logger.info(`Default stack does not exist. Creating it.`);
-      await db.insert(stacks).values(defaultStack).onConflictDoNothing();
+      await db.insert(messages).values(messageValues);
     }
 
-    // Create a new chat
-    const [newChat] = await db
-      .insert(chats)
-      .values({ title: titleSuggestion })
-      .returning({ id: chats.id });
+    // Update chat's updatedAt timestamp
+    await db
+      .update(chats)
+      .set({ updatedAt: sql`CURRENT_TIMESTAMP` })
+      .where(eq(chats.id, chatId));
 
-    return newChat.id;
   } catch (err) {
-    logger.error(JSON.stringify(err), "ensureChat failed");
+    logger.error(JSON.stringify(err), "saveUIMessages failed");
     throw err;
   }
 }
 
-async function getChatMessages(
-  chatId: number,
-  options?: { lastMessageId: number | null; limit?: number }
-) {
-  const { lastMessageId, limit = 20 } = options || {};
-
+/** Load UIMessages from database. */
+export async function loadUIMessages(chatId: string): Promise<UIMessage[]> {
   try {
-    let whereCondition = eq(messages.chatId, chatId);
-
-    if (lastMessageId) {
-      const [lastMsg] = await db
-        .select()
-        .from(messages)
-        .where(eq(messages.id, lastMessageId))
-        .limit(1);
-
-      if (lastMsg.id) {
-        whereCondition = sql`${messages.chatId} = ${chatId} AND ${messages.id} < ${lastMessageId}`;
-      }
-    }
-
-    const query = db
+    const result = await db
       .select()
       .from(messages)
-      .where(whereCondition)
-      .orderBy(sql`${messages.id} desc`)
-      .limit(limit + 1); // fetch one extra to check for more
+      .where(eq(messages.chatId, chatId))
+      .orderBy(messages.createdAt);
 
-    const result = await query;
-    const hasMore = result.length > limit;
-
-    const messagesResult = hasMore ? result.slice(0, limit) : result;
-
-    return {
-      messages: messagesResult.reverse(),
-      hasMore,
-    };
+    return result.map(msg => ({
+      id: msg.id,
+      role: msg.role as 'user' | 'assistant' | 'system',
+      parts: JSON.parse(msg.parts as string),
+      metadata: msg.metadata ? JSON.parse(msg.metadata as string) : undefined,
+      createdAt: new Date(typeof msg.createdAt === 'number' ? msg.createdAt * 1000 : msg.createdAt),
+    }));
   } catch (err) {
-    logger.error(JSON.stringify(err), "getChatMessages failed");
+    logger.error(JSON.stringify(err), "loadUIMessages failed");
     throw err;
   }
 }
@@ -104,7 +84,7 @@ async function getChatMessages(
 export async function getChatList(options?: {
   limit?: number;
   offset?: number;
-  parentId?: number | null;
+  parentId?: string | null;
 }) {
   const { limit = 20, offset = 0, parentId } = options || {};
 
@@ -126,6 +106,7 @@ export async function getChatList(options?: {
         createdAt: chats.createdAt,
         updatedAt: chats.updatedAt,
         parentId: chats.parentId,
+        status: chats.status,
       })
       .from(chats)
       .where(whereCondition)
@@ -137,13 +118,7 @@ export async function getChatList(options?: {
     const chatsResult = hasMore ? result.slice(0, limit) : result;
 
     return {
-      chats: chatsResult.map((chat) => ({
-        id: chat.id,
-        title: chat.title,
-        createdAt: chat.createdAt,
-        updatedAt: chat.updatedAt,
-        parentId: chat.parentId,
-      })),
+      chats: chatsResult,
       hasMore,
     };
   } catch (err) {
@@ -152,255 +127,29 @@ export async function getChatList(options?: {
   }
 }
 
-/** Get chat history and persist access if needed. */
-export async function getHistory({
-  chatId,
-  lastMessageId,
-  limit,
-}: {
-  chatId: number;
-  lastMessageId: number | null;
-  limit?: number;
-}) {
+/** Get chat with its messages in UIMessage format. */
+export async function getChatWithMessages(chatId: string) {
   try {
-    const history = await getChatMessages(chatId, {
-      lastMessageId,
-      limit,
-    });
-
-    return {
-      messages: history.messages.map((msg) => ({
-        id: msg.id,
-        message: msg.content,
-        role: msg.role,
-        timestamp: msg.createdAt,
-        context: msg.context ?? undefined,
-        toolCalls: msg.toolCalls ?? undefined,
-        commit: msg.commit ?? undefined,
-      })),
-      hasMore: history.hasMore,
-    };
-  } catch (err) {
-    logger.error(JSON.stringify(err), "getHistoryAndPersist failed");
-    throw err;
-  }
-}
-
-/** Save a new message to a chat. */
-export async function saveMessage({
-  chatId,
-  content,
-  role,
-  commit,
-  context,
-  toolCalls,
-}: {
-  chatId: number;
-  content: string;
-  role: string;
-  commit?: string;
-  context?: any;
-  toolCalls?: any;
-}) {
-  try {
-    const [message] = await db
-      .insert(messages)
-      .values({
-        chatId,
-        content,
-        commit,
-        role,
-        context: context ? JSON.stringify(context) : null,
-        toolCalls: toolCalls ? JSON.stringify(toolCalls) : null,
-      })
-      .returning({
-        id: messages.id,
-        content: messages.content,
-        role: messages.role,
-        commit: messages.commit,
-        createdAt: messages.createdAt,
-        context: messages.context,
-        toolCalls: messages.toolCalls,
-      });
-
-    return {
-      id: message.id,
-      content: message.content,
-      role: message.role,
-      timestamp:
-        message.createdAt instanceof Date
-          ? message.createdAt.getTime()
-          : message.createdAt,
-      context: message.context
-        ? JSON.parse(message.context as string)
-        : undefined,
-      commit: message.commit,
-      toolCalls: message.toolCalls
-        ? JSON.parse(message.toolCalls as string)
-        : undefined,
-    };
-  } catch (err) {
-    logger.error(JSON.stringify(err), "saveMessage failed");
-    throw err;
-  }
-}
-
-/** Update a message with new values. */
-export async function updateMessage({
-  messageId,
-  commit,
-  content,
-  context,
-  toolCalls,
-}: {
-  messageId: number;
-  commit?: string;
-  content?: string;
-  context?: any;
-  toolCalls?: any;
-}) {
-  try {
-    const updateValues: any = {};
-
-    if (commit !== undefined) updateValues.commit = commit;
-    if (content !== undefined) updateValues.content = content;
-    if (context !== undefined)
-      updateValues.context = context ? JSON.stringify(context) : null;
-    if (toolCalls !== undefined)
-      updateValues.toolCalls = toolCalls ? JSON.stringify(toolCalls) : null;
-
-    if (Object.keys(updateValues).length === 0) {
-      throw new Error("No fields to update");
-    }
-
-    updateValues.updatedAt = sql`CURRENT_TIMESTAMP`;
-
-    const [updatedMessage] = await db
-      .update(messages)
-      .set(updateValues)
-      .where(eq(messages.id, messageId))
-      .returning({
-        id: messages.id,
-        content: messages.content,
-        role: messages.role,
-        commit: messages.commit,
-        createdAt: messages.createdAt,
-        updatedAt: messages.updatedAt,
-        context: messages.context,
-        toolCalls: messages.toolCalls,
-      });
-
-    if (!updatedMessage) {
-      throw new Error(`Message with ID ${messageId} not found`);
-    }
-
-    return {
-      id: updatedMessage.id,
-      content: updatedMessage.content,
-      role: updatedMessage.role,
-      timestamp:
-        updatedMessage.createdAt instanceof Date
-          ? updatedMessage.createdAt.getTime()
-          : updatedMessage.createdAt,
-      context: updatedMessage.context
-        ? JSON.parse(updatedMessage.context as string)
-        : undefined,
-      commit: updatedMessage.commit,
-      toolCalls: updatedMessage.toolCalls
-        ? JSON.parse(updatedMessage.toolCalls as string)
-        : undefined,
-    };
-  } catch (err) {
-    logger.error(JSON.stringify(err), "updateMessage failed");
-    throw err;
-  }
-}
-
-/** Get the first message from the most recent chats. */
-export async function getFirstMessageFromRecentChats(options?: {
-  chatLimit?: number;
-}) {
-  const { chatLimit = 10 } = options || {};
-
-  try {
-    // Get the most recent chats
-    const recentChats = await db
-      .select({
-        id: chats.id,
-        title: chats.title,
-        createdAt: chats.createdAt,
-        updatedAt: chats.updatedAt,
-      })
+    // Get chat info
+    const [chat] = await db
+      .select()
       .from(chats)
-      .orderBy(sql`${chats.updatedAt} DESC`)
-      .limit(chatLimit);
+      .where(eq(chats.id, chatId))
+      .limit(1);
 
-    if (recentChats.length === 0) {
-      return [];
+    if (!chat) {
+      throw new Error(`Chat with ID ${chatId} not found`);
     }
 
-    const chatIds = recentChats.map((chat) => chat.id);
+    // Get messages
+    const uiMessages = await loadUIMessages(chatId);
 
-    // Get the first message from each chat
-    const firstMessages = [];
-
-    for (const chatId of chatIds) {
-      const [firstMessage] = await db
-        .select({
-          chatId: messages.chatId,
-          id: messages.id,
-          content: messages.content,
-          role: messages.role,
-          createdAt: messages.createdAt,
-          context: messages.context,
-          toolCalls: messages.toolCalls,
-          commit: messages.commit,
-        })
-        .from(messages)
-        .where(eq(messages.chatId, chatId))
-        .orderBy(sql`${messages.id} ASC`)
-        .limit(1);
-
-      if (firstMessage) {
-        firstMessages.push(firstMessage);
-      }
-    }
-
-    // Combine chat info with first message
-    const result = recentChats.map((chat) => {
-      const firstMessage = firstMessages.find((msg) => msg.chatId === chat.id);
-
-      return {
-        chat: {
-          id: chat.id,
-          title: chat.title,
-          createdAt: chat.createdAt,
-          updatedAt: chat.updatedAt,
-        },
-        firstMessage: firstMessage
-          ? {
-              id: firstMessage.id,
-              content: firstMessage.content,
-              role: firstMessage.role,
-              timestamp:
-                firstMessage.createdAt instanceof Date
-                  ? firstMessage.createdAt.getTime()
-                  : firstMessage.createdAt,
-              context: firstMessage.context
-                ? JSON.parse(firstMessage.context as string)
-                : undefined,
-              commit: firstMessage.commit,
-              toolCalls: firstMessage.toolCalls
-                ? JSON.parse(firstMessage.toolCalls as string)
-                : undefined,
-            }
-          : null,
-      };
-    });
-
-    return result;
+    return {
+      chat,
+      messages: uiMessages,
+    };
   } catch (err) {
-    logger.error(JSON.stringify(err), "getFirstMessageFromRecentChats failed");
+    logger.error(JSON.stringify(err), "getChatWithMessages failed");
     throw err;
   }
 }
@@ -411,7 +160,7 @@ export async function updateChat({
   title,
   status,
 }: {
-  chatId: number;
+  chatId: string;
   title?: string;
   status?: "idle" | "in_progress" | "completed" | "error";
 }) {
@@ -451,40 +200,144 @@ export async function updateChat({
   }
 }
 
-/** Delete all messages in a chat after a specific message ID. */
-export async function deleteMessages({
-  chatId,
-  messageId,
-}: {
-  chatId: number;
-  messageId: number;
-}) {
+/** Delete a chat and all its messages. */
+export async function deleteChat(chatId: string) {
   try {
-    // First, get the commit from the message just before the one being deleted
-    const [previousMessage] = await db
-      .select({ commit: messages.commit })
+    // Delete messages first (cascade should handle this, but being explicit)
+    await db.delete(messages).where(eq(messages.chatId, chatId));
+
+    // Delete the chat
+    const result = await db
+      .delete(chats)
+      .where(eq(chats.id, chatId))
+      .returning({ id: chats.id });
+
+    if (result.length === 0) {
+      throw new Error(`Chat with ID ${chatId} not found`);
+    }
+
+    logger.info(`Deleted chat ${chatId} and all its messages`);
+    return { deletedChatId: chatId };
+  } catch (err) {
+    logger.error(JSON.stringify(err), "deleteChat failed");
+    throw err;
+  }
+}
+
+/** Get the first message from the most recent chats. */
+export async function getFirstMessageFromRecentChats(options?: {
+  chatLimit?: number;
+}) {
+  const { chatLimit = 10 } = options || {};
+
+  try {
+    // Get the most recent chats
+    const recentChats = await db
+      .select({
+        id: chats.id,
+        title: chats.title,
+        createdAt: chats.createdAt,
+        updatedAt: chats.updatedAt,
+      })
+      .from(chats)
+      .orderBy(sql`${chats.updatedAt} DESC`)
+      .limit(chatLimit);
+
+    if (recentChats.length === 0) {
+      return [];
+    }
+
+    const result = [];
+
+    // Get the first message from each chat
+    for (const chat of recentChats) {
+      const [firstMessage] = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.chatId, chat.id))
+        .orderBy(messages.createdAt)
+        .limit(1);
+
+      let firstUIMessage: UIMessage | null = null;
+      if (firstMessage) {
+        firstUIMessage = {
+          id: firstMessage.id,
+          role: firstMessage.role as 'user' | 'assistant' | 'system',
+          parts: JSON.parse(firstMessage.parts as string),
+          metadata: firstMessage.metadata ? JSON.parse(firstMessage.metadata as string) : undefined,
+          createdAt: new Date(typeof firstMessage.createdAt === 'number' ? firstMessage.createdAt * 1000 : firstMessage.createdAt),
+        };
+      }
+
+      result.push({
+        chat,
+        firstMessage: firstUIMessage,
+      });
+    }
+
+    return result;
+  } catch (err) {
+    logger.error(JSON.stringify(err), "getFirstMessageFromRecentChats failed");
+    throw err;
+  }
+}
+
+/** Add a single UIMessage to a chat. */
+export async function addMessageToChat(chatId: string, message: UIMessage): Promise<void> {
+  try {
+    await db.insert(messages).values({
+      id: message.id,
+      chatId,
+      parts: JSON.stringify(message.parts),
+      role: message.role,
+      metadata: message.metadata ? JSON.stringify(message.metadata) : null,
+      createdAt: message.createdAt ? Math.floor(message.createdAt.getTime() / 1000) : sql`CURRENT_TIMESTAMP`,
+    });
+
+    // Update chat's updatedAt timestamp
+    await db
+      .update(chats)
+      .set({ updatedAt: sql`CURRENT_TIMESTAMP` })
+      .where(eq(chats.id, chatId));
+
+  } catch (err) {
+    logger.error(JSON.stringify(err), "addMessageToChat failed");
+    throw err;
+  }
+}
+
+/** Delete messages from a specific message onwards in a chat. */
+export async function deleteMessagesFromChat(chatId: string, fromMessageId: string) {
+  try {
+    // Get the message to determine its timestamp
+    const [messageToDelete] = await db
+      .select({ createdAt: messages.createdAt })
       .from(messages)
-      .where(sql`${messages.id} = ${messageId}`)
+      .where(eq(messages.id, fromMessageId))
       .limit(1);
 
+    if (!messageToDelete) {
+      throw new Error(`Message with ID ${fromMessageId} not found`);
+    }
+
+    // Delete all messages from this timestamp onwards
     const result = await db
       .delete(messages)
       .where(
-        sql`${messages.chatId} = ${chatId} AND ${messages.id} >= ${messageId}`
+        sql`${messages.chatId} = ${chatId} AND ${messages.createdAt} >= ${messageToDelete.createdAt}`
       )
-      .returning({ id: messages.id, commit: messages.commit });
+      .returning({ id: messages.id });
 
     logger.info(
-      `Deleted ${result.length} messages from chat ${chatId} after message ${messageId}`
+      `Deleted ${result.length} messages from chat ${chatId} starting from message ${fromMessageId}`
     );
 
     return {
       deletedCount: result.length,
       deletedMessageIds: result.map((msg) => msg.id),
-      commitToReset: previousMessage?.commit || null,
     };
   } catch (err) {
-    logger.error(JSON.stringify(err), "deleteMessages failed");
+    logger.error(JSON.stringify(err), "deleteMessagesFromChat failed");
     throw err;
   }
 }

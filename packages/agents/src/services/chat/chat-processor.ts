@@ -1,542 +1,421 @@
+import {
+  convertToModelMessages,
+  createUIMessageStreamResponse,
+  generateId,
+  UIMessage,
+} from "ai";
 import { chatAgent } from "../../agents/chat-agent";
 import { gitAgent } from "../../agents/git-agent";
 import { chatToolsAskMode, chatToolsWriteMode } from "../../tools/chat-tools";
-import { mapMessages } from "../../utils";
 import { logger } from "../../utils/logger";
 import { isoGitService } from "../isogit";
 import { trpc } from "../trpc";
 import { chatHooksManager } from "./hooks";
 import { subscriptionManager } from "./subscription-manager";
-import type { ChatSendEvent } from "./types";
 
-export interface ToolCall {
-  id: string;
-  name: string;
-  arguments: Record<string, unknown>;
-  status: "idle" | "in_progress" | "completed" | "error";
-  result?: any;
-  timestamp: string;
+export interface ChatProcessorOptions {
+  chatId: string;
+  messages: UIMessage[];
+  model: string;
+  mode: "ask" | "write";
+  workingDir?: string;
+  abortSignal?: AbortSignal;
 }
 
-export class ChatProcessor {
-  // Map of chatId to AbortController for cancelling ongoing requests
-  private chatAbortControllers = new Map<number, AbortController>();
-  private mcpTools: Record<string, unknown> = {};
+export interface ChatStore {
+  saveChat: (chatId: string, messages: UIMessage[]) => Promise<void>;
+  loadChat: (chatId: string) => Promise<UIMessage[]>;
+}
 
-  setTools(tools: Record<string, unknown>) {
-    this.mcpTools = tools;
-  }
+// Global state for managing active chats
+const activeChats = new Map<string, AbortController>();
+let mcpTools: Record<string, unknown> = {};
 
-  private async updateAssistantMessage(
-    assistantMessageId: number | null,
-    content: string,
-    toolCalls: Record<string, ToolCall>
-  ): Promise<void> {
-    if (!assistantMessageId) return;
-
+// Chat store implementation
+const chatStore: ChatStore = {
+  async saveChat(chatId: string, messages: UIMessage[]): Promise<void> {
     try {
-      await trpc.chat.updateMessage.mutate({
-        messageId: assistantMessageId,
-        content,
-        toolCalls: Object.keys(toolCalls).length > 0 ? toolCalls : undefined,
+      await trpc.chat.saveMessages.mutate({
+        chatId,
+        messages,
       });
     } catch (error) {
-      logger.error("Failed to update assistant message:", error);
+      logger.error("Failed to save chat:", error);
+      throw error;
     }
-  }
+  },
 
-  private async handleCancellation(
-    chatId: number,
-    assistantMessageId: number | null,
-    accumulatedContent: string,
-    toolCalls: Record<string, ToolCall>
-  ): Promise<void> {
-    logger.info(`Chat ${chatId} was cancelled`);
-
-    const finalContent = accumulatedContent + "\n\n(Canceled by user)";
-
-    await this.updateAssistantMessage(
-      assistantMessageId,
-      finalContent,
-      toolCalls
-    );
-
-    subscriptionManager.broadcastToChat(chatId, {
-      event: "chat:status",
-      data: { status: "error", chatId },
-    });
-
-    await chatHooksManager.onChatCancel(chatId);
-  }
-
-  private broadcastChunk(
-    chatId: number,
-    assistantMessageId: number | null,
-    chunk: any,
-    type: string
-  ): void {
-    subscriptionManager.broadcastToChat(chatId, {
-      event: "chat:chunk",
-      data: {
-        chatId,
-        assistantMessageId,
-        chunk: typeof chunk === "string" ? chunk : JSON.stringify(chunk),
-        type: type as "text" | "tool-call" | "tool-result",
-      },
-    });
-  }
-
-  async handleChatSend(data: ChatSendEvent["data"]): Promise<void> {
-    const { chatId, model, messages, userMessageId, mode } = data;
-
-    let assistantMessageId: number | null = null;
-    let accumulatedContent = "";
-    const toolCalls: Record<string, ToolCall> = {};
-    const textBlocks: Record<string, string> = {};
-
-    // Create abort controller for this chat
-    const abortController = new AbortController();
-    this.chatAbortControllers.set(chatId, abortController);
-
+  async loadChat(chatId: string): Promise<UIMessage[]> {
     try {
-      const workingDir = process.cwd();
-
-      // Trigger chat start hook
-      await chatHooksManager.onChatStart(chatId, data);
-
-      // Broadcast initial status
-      subscriptionManager.broadcastToChat(chatId, {
-        event: "chat:status",
-        data: { status: "in_progress", chatId, mode, model },
+      const response = await trpc.chat.getMessages.query({
+        chatId,
       });
 
-      // Initialize repository if needed
-      if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
-        await isoGitService.initializeRepository(workingDir);
-      }
+      return response.messages;
+    } catch (error) {
+      logger.error("Failed to load chat:", error);
+      throw error;
+    }
+  },
+};
 
-      // Update message with commit info
-      const { status, commit } = await isoGitService.getLastCommit(workingDir);
-      if (status === "success" && userMessageId) {
-        await trpc.chat.updateMessage.mutate({
-          messageId: Number(userMessageId),
-          commit: commit?.oid,
-        });
+export function setMcpTools(tools: Record<string, unknown>): void {
+  mcpTools = { ...tools };
+}
 
+export function getActiveChats(): string[] {
+  return Array.from(activeChats.keys());
+}
+
+export function isProcessing(chatId: string): boolean {
+  return activeChats.has(chatId);
+}
+
+export function cancelChat(chatId: string): void {
+  logger.info(`Cancelling chat ${chatId}`);
+
+  const abortController = activeChats.get(chatId);
+  if (abortController) {
+    abortController.abort();
+    activeChats.delete(chatId);
+    logger.debug(`Successfully signaled cancellation for chat ${chatId}`);
+
+    subscriptionManager.broadcastToChat(Number(chatId), {
+      event: "chat:status",
+      data: { status: "idle", chatId: Number(chatId) },
+    });
+  } else {
+    logger.warn(`No active stream found for chat ${chatId} to cancel`);
+  }
+}
+
+export function destroyAllChats(): void {
+  for (const [chatId, controller] of activeChats) {
+    logger.info(`Cancelling chat ${chatId} during shutdown`);
+    controller.abort();
+  }
+  activeChats.clear();
+}
+
+export function clearAllChats(): void {
+  activeChats.clear();
+}
+
+async function broadcastChatUpdate(
+  chatId: string,
+  messages: UIMessage[]
+): Promise<void> {
+  try {
+    await chatStore.saveChat(chatId, messages);
+  } catch (error) {
+    logger.error(`Failed to save chat ${chatId}:`, error);
+  }
+}
+
+export async function processChatMessage(
+  options: ChatProcessorOptions
+): Promise<Response> {
+  const {
+    chatId,
+    messages,
+    model,
+    mode,
+    workingDir = process.cwd(),
+    abortSignal,
+  } = options;
+
+  // Create abort controller for this chat if not provided
+  let controller: AbortController;
+  if (abortSignal) {
+    controller = { abort: () => abortSignal.abort() } as AbortController;
+  } else {
+    controller = new AbortController();
+    activeChats.set(chatId, controller);
+  }
+
+  try {
+    // Trigger chat start hook
+    await chatHooksManager.onChatStart(Number(chatId), {
+      chatId: Number(chatId),
+      model,
+      messages: messages.map((msg) => ({
+        role: msg.role,
+        content: msg.parts
+          .filter((part) => part.type === "text")
+          .map((part) => (part as any).text)
+          .join(""),
+      })),
+      mode: mode as "ask" | "write",
+    });
+
+    // Broadcast initial status
+    subscriptionManager.broadcastToChat(Number(chatId), {
+      event: "chat:status",
+      data: { status: "in_progress", chatId: Number(chatId), mode, model },
+    });
+
+    // Initialize repository if needed
+    if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
+      await isoGitService.initializeRepository(workingDir);
+    }
+
+    // Update message with commit info for user message
+    const { status, commit } = await isoGitService.getLastCommit(workingDir);
+    if (status === "success" && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === "user") {
+        // Note: In the new system, we might need to handle commit tracking differently
         await chatHooksManager.onMessageUpdate(
-          Number(userMessageId),
+          Number(lastMessage.id),
           commit?.oid
         );
       }
+    }
 
-      // Create assistant message
-      try {
-        const assistantMessage = await trpc.chat.saveMessage.mutate({
-          chatId,
-          role: "assistant",
-          content: "",
-        });
-        assistantMessageId = assistantMessage.id;
-      } catch (error) {
-        logger.error("Failed to create assistant message:", error);
-      }
+    // Combine tools
+    const localChatTools =
+      mode === "write" ? chatToolsWriteMode : chatToolsAskMode;
+    const allTools = { ...localChatTools, ...mcpTools };
 
-      // Combine tools
-      const localChatTools =
-        mode === "write" ? chatToolsWriteMode : chatToolsAskMode;
-      const allTools = { ...localChatTools, ...this.mcpTools };
-
-      // Start chat agent
-      const result = await chatAgent(
-        {
-          model,
-          messages: mapMessages(messages),
-          mode: mode === "write" ? "write" : "ask",
-          workingDir,
-          tools: allTools,
-          callbacks: {
-            onStepFinish: async (stepResult) => {
-              logger.debug(`Step completed for chat ${chatId}:`, {
-                text: stepResult.text,
-                toolCalls: stepResult.toolCalls?.length || 0,
-              });
-
-              await this.updateAssistantMessage(
-                assistantMessageId,
-                accumulatedContent,
-                toolCalls
-              );
-            },
-            onFinish: async () => {
-              if (mode === "write") {
-                try {
-                  const commitMessage = await gitAgent({
-                    model,
-                    messages: mapMessages(messages),
-                  });
-                  await isoGitService.saveToHistory(
-                    workingDir,
-                    commitMessage.text
-                  );
-                } catch (error) {
-                  logger.error("Failed to save to git history:", error);
-                }
+    // Start chat agent
+    const result = await chatAgent(
+      {
+        model,
+        messages: convertToModelMessages(messages),
+        mode: mode === "write" ? "write" : "ask",
+        workingDir,
+        tools: allTools,
+        callbacks: {
+          onStepFinish: async (stepResult) => {
+            logger.debug(`Step completed for chat ${chatId}:`, {
+              text: stepResult.text,
+              toolCalls: stepResult.toolCalls?.length || 0,
+            });
+          },
+          onFinish: async () => {
+            if (mode === "write") {
+              try {
+                const commitMessage = await gitAgent({
+                  model,
+                  messages: convertToModelMessages(messages),
+                });
+                await isoGitService.saveToHistory(
+                  workingDir,
+                  commitMessage.text
+                );
+              } catch (error) {
+                logger.error("Failed to save to git history:", error);
               }
-            },
-            onError: async (error: Error) => {
-              logger.error(`Chat agent error for chat ${chatId}:`, error);
-              subscriptionManager.broadcastToChat(chatId, {
-                event: "chat:error",
-                data: {
-                  chatId,
-                  assistantMessageId,
-                  error: error.message,
-                  code: "CHAT_AGENT_ERROR",
-                },
-              });
-            },
+            }
+          },
+          onError: async (error: Error) => {
+            logger.error(`Chat agent error for chat ${chatId}:`, error);
+            subscriptionManager.broadcastToChat(Number(chatId), {
+              event: "chat:error",
+              data: {
+                chatId: Number(chatId),
+                assistantMessageId: null,
+                error: error.message,
+                code: "CHAT_AGENT_ERROR",
+              },
+            });
           },
         },
-        { abortSignal: abortController.signal }
-      );
+      },
+      { abortSignal: controller.signal }
+    );
 
-      // Process the stream with AI SDK v5 chunk types
-      for await (const chunk of result.fullStream) {
-        if (abortController.signal.aborted) {
-          logger.info(
-            `Stream for chat ${chatId} was aborted during processing`
-          );
-          break;
-        }
-
-        switch (chunk.type) {
-          case "start": {
-            logger.debug("Stream started");
-            break;
-          }
-
-          case "text-start": {
-            logger.debug(`Text block started: ${chunk.id}`);
-            textBlocks[chunk.id] = "";
-            break;
-          }
-
-          case "text-delta": {
-            const textContent = chunk.text;
-            textBlocks[chunk.id] += textContent;
-            accumulatedContent += textContent;
-
-            this.broadcastChunk(
-              chatId,
-              assistantMessageId,
-              textContent,
-              "text"
-            );
-            break;
-          }
-
-          case "text-end": {
-            logger.debug(`Text block completed: ${chunk.id}`);
-            break;
-          }
-
-          case "tool-input-start": {
-            const toolCall: ToolCall = {
-              id: chunk.id,
-              name: chunk.toolName,
-              arguments: {},
-              status: "input-streaming",
-              timestamp: new Date().toISOString(),
-            };
-            toolCalls[chunk.id] = toolCall;
-
-            this.broadcastChunk(
-              chatId,
-              assistantMessageId,
-              {
-                type: "tool-input-start",
-                id: chunk.id,
-                toolName: chunk.toolName,
-              },
-              "tool-input-start"
-            );
-            break;
-          }
-
-          case "tool-input-delta": {
-            this.broadcastChunk(
-              chatId,
-              assistantMessageId,
-              {
-                type: "tool-input-delta",
-                id: chunk.id,
-                delta: chunk.delta,
-              },
-              "tool-input-delta"
-            );
-            break;
-          }
-
-          case "tool-input-end": {
-            const toolCall = toolCalls[chunk.id];
-            if (toolCall) {
-              toolCall.status = "input-available";
-            }
-
-            this.broadcastChunk(
-              chatId,
-              assistantMessageId,
-              {
-                type: "tool-input-end",
-                id: chunk.id,
-              },
-              "tool-input-end"
-            );
-            break;
-          }
-
-          case "tool-call": {
-            const toolCall = toolCalls[chunk.toolCallId];
-            if (toolCall) {
-              toolCall.arguments = chunk.input;
-              toolCall.status = "executing";
-            }
-
-            this.broadcastChunk(
-              chatId,
-              assistantMessageId,
-              {
-                type: "tool-call",
-                toolCallId: chunk.toolCallId,
-                toolName: chunk.toolName,
-                input: chunk.input,
-              },
-              "tool-call"
-            );
-
-            // Add tool call marker to content
-            accumulatedContent += `\n[Tool: ${chunk.toolName}]`;
-            break;
-          }
-
-          case "tool-result": {
-            const toolCall = toolCalls[chunk.toolCallId];
-            if (toolCall) {
-              toolCall.status =
-                chunk.result &&
-                typeof chunk.result === "object" &&
-                "isError" in chunk.result &&
-                chunk.result.isError
-                  ? "error"
-                  : "completed";
-              toolCall.result = chunk.result;
-            }
-
-            this.broadcastChunk(
-              chatId,
-              assistantMessageId,
-              {
-                type: "tool-result",
-                toolCallId: chunk.toolCallId,
-                result: chunk.result,
-                isError:
-                  chunk.result &&
-                  typeof chunk.result === "object" &&
-                  "isError" in chunk.result &&
-                  chunk.result.isError,
-              },
-              "tool-result"
-            );
-
-            if (
-              chunk.result &&
-              typeof chunk.result === "object" &&
-              "isError" in chunk.result &&
-              chunk.result.isError
-            ) {
-              accumulatedContent += `\n[Tool Error: ${
-                (chunk.result as any)?.error || "Unknown error"
-              }]`;
-            }
-            break;
-          }
-
-          case "reasoning-start": {
-            logger.debug(`Reasoning block started: ${chunk.id}`);
-            break;
-          }
-
-          case "reasoning-delta": {
-            // Reasoning content can be handled similarly to text
-            this.broadcastChunk(
-              chatId,
-              assistantMessageId,
-              chunk.text,
-              "reasoning"
-            );
-            break;
-          }
-
-          case "reasoning-end": {
-            logger.debug(`Reasoning block completed: ${chunk.id}`);
-            break;
-          }
-
-          case "source": {
-            this.broadcastChunk(
-              chatId,
-              assistantMessageId,
-              {
-                type: "source",
-                sourceType: chunk.sourceType,
-                id: chunk.id,
-                url: chunk.sourceType === "url" ? chunk.url : undefined,
-                title: chunk.title,
-              },
-              "source"
-            );
-            break;
-          }
-
-          case "finish": {
-            logger.debug("Stream finished", {
-              usage: chunk.totalUsage,
-              finishReason: chunk.finishReason,
-            });
-
-            subscriptionManager.broadcastToChat(chatId, {
-              event: "chat:complete",
-              data: {
-                chatId,
-                assistantMessageId,
-                usage: chunk.totalUsage,
-                finishReason: chunk.finishReason,
-              },
-            });
-            break;
-          }
-
-          default: {
-            logger.debug("Unhandled chunk type:", chunk.type);
-            break;
-          }
-        }
-      }
-
-      if (!abortController.signal.aborted) {
-        // Broadcast completion status
-        subscriptionManager.broadcastToChat(chatId, {
-          event: "chat:status",
-          data: { status: "completed", chatId },
-        });
-
-        // Final update to assistant message
-        await this.updateAssistantMessage(
-          assistantMessageId,
-          accumulatedContent,
-          toolCalls
-        );
-
-        // Trigger completion hook
-        await chatHooksManager.onChatComplete(
-          chatId,
-          accumulatedContent,
-          (await result.usage) || undefined
-        );
-      }
-    } catch (error) {
-      if (abortController.signal.aborted) {
-        await this.handleCancellation(
-          chatId,
-          assistantMessageId,
-          accumulatedContent,
-          toolCalls
-        );
-        return;
-      }
-
-      logger.error(`Chat error for chat ${chatId}:`, error);
-
-      // Handle git commit even on error if in write mode
-      if (mode === "write") {
+    // Return the streaming response using AI SDK's toUIMessageStreamResponse
+    return result.toUIMessageStreamResponse({
+      originalMessages: messages,
+      generateMessageId: () => generateId(),
+      onFinish: async ({ messages: finalMessages }) => {
         try {
-          const commitMessage = await gitAgent({
-            model,
-            messages: mapMessages(messages),
+          // Save the complete conversation
+          await broadcastChatUpdate(chatId, finalMessages);
+
+          // Broadcast completion status
+          subscriptionManager.broadcastToChat(Number(chatId), {
+            event: "chat:status",
+            data: { status: "completed", chatId: Number(chatId) },
           });
-          await isoGitService.saveToHistory(process.cwd(), commitMessage.text);
-        } catch (gitError) {
-          logger.error("Failed to save to git history after error:", gitError);
+
+          // Trigger completion hook
+          const assistantMessage = finalMessages[finalMessages.length - 1];
+          const content =
+            assistantMessage?.parts
+              .filter((part) => part.type === "text")
+              .map((part) => (part as any).text)
+              .join("") || "";
+
+          await chatHooksManager.onChatComplete(
+            Number(chatId),
+            content,
+            (await result.usage) || undefined
+          );
+        } catch (error) {
+          logger.error(
+            `Failed to handle chat completion for ${chatId}:`,
+            error
+          );
+
+          subscriptionManager.broadcastToChat(Number(chatId), {
+            event: "chat:error",
+            data: {
+              chatId: Number(chatId),
+              assistantMessageId: null,
+              error: error instanceof Error ? error.message : String(error),
+              code: "CHAT_COMPLETION_ERROR",
+            },
+          });
+        } finally {
+          activeChats.delete(chatId);
         }
+      },
+    });
+  } catch (error) {
+    activeChats.delete(chatId);
+
+    if (controller.signal.aborted) {
+      logger.info(`Chat ${chatId} was cancelled`);
+
+      subscriptionManager.broadcastToChat(Number(chatId), {
+        event: "chat:status",
+        data: { status: "error", chatId: Number(chatId) },
+      });
+
+      await chatHooksManager.onChatCancel(Number(chatId));
+
+      // Return a cancelled response
+      throw new Error("Chat was cancelled");
+    }
+
+    logger.error(`Chat error for chat ${chatId}:`, error);
+
+    // Handle git commit even on error if in write mode
+    if (mode === "write") {
+      try {
+        const commitMessage = await gitAgent({
+          model,
+          messages: convertToModelMessages(messages),
+        });
+        await isoGitService.saveToHistory(workingDir, commitMessage.text);
+      } catch (gitError) {
+        logger.error("Failed to save to git history after error:", gitError);
       }
-
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      accumulatedContent += `\n\n[Chat Error: ${errorMessage}]`;
-
-      subscriptionManager.broadcastToChat(chatId, {
-        event: "chat:error",
-        data: {
-          chatId,
-          assistantMessageId,
-          error: errorMessage,
-          code: "CHAT_ERROR",
-        },
-      });
-
-      subscriptionManager.broadcastToChat(chatId, {
-        event: "chat:status",
-        data: { status: "error", chatId, error: errorMessage },
-      });
-
-      await this.updateAssistantMessage(
-        assistantMessageId,
-        accumulatedContent,
-        toolCalls
-      );
-
-      await chatHooksManager.onChatError(chatId, errorMessage);
-    } finally {
-      this.chatAbortControllers.delete(chatId);
     }
-  }
 
-  handleChatCancel(chatId: number): void {
-    logger.info(`Cancelling chat ${chatId}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
-    const abortController = this.chatAbortControllers.get(chatId);
-    if (abortController) {
-      abortController.abort();
-      logger.debug(`Successfully signaled cancellation for chat ${chatId}`);
-    } else {
-      logger.warn(`No active stream found for chat ${chatId} to cancel`);
+    subscriptionManager.broadcastToChat(Number(chatId), {
+      event: "chat:error",
+      data: {
+        chatId: Number(chatId),
+        assistantMessageId: null,
+        error: errorMessage,
+        code: "CHAT_ERROR",
+      },
+    });
 
-      subscriptionManager.broadcastToChat(chatId, {
-        event: "chat:status",
-        data: { status: "idle", chatId },
-      });
-    }
-  }
+    subscriptionManager.broadcastToChat(Number(chatId), {
+      event: "chat:status",
+      data: { status: "error", chatId: Number(chatId), error: errorMessage },
+    });
 
-  getActiveChats(): number[] {
-    return Array.from(this.chatAbortControllers.keys());
-  }
+    await chatHooksManager.onChatError(Number(chatId), errorMessage);
 
-  isProcessing(chatId: number): boolean {
-    return this.chatAbortControllers.has(chatId);
-  }
-
-  destroy(): void {
-    for (const [chatId, controller] of this.chatAbortControllers) {
-      logger.info(`Cancelling chat ${chatId} during shutdown`);
-      controller.abort();
-    }
-    this.chatAbortControllers.clear();
-  }
-
-  clear(): void {
-    this.chatAbortControllers.clear();
+    throw error;
   }
 }
 
-export const chatProcessor = new ChatProcessor();
+// Utility function to create a new chat and return its ID
+export async function createNewChat(title?: string): Promise<string> {
+  try {
+    const chat = await trpc.chat.createChat.mutate({
+      title: title || "New Chat",
+    });
+    return chat.id;
+  } catch (error) {
+    logger.error("Failed to create new chat:", error);
+    throw error;
+  }
+}
+
+// Utility function to load existing chat messages
+export async function loadChatMessages(chatId: string): Promise<UIMessage[]> {
+  return chatStore.loadChat(chatId);
+}
+
+// Utility function to append a user message to existing chat
+export async function appendUserMessage(
+  chatId: string,
+  message: string,
+  metadata?: Record<string, unknown>
+): Promise<UIMessage[]> {
+  const existingMessages = await loadChatMessages(chatId);
+
+  const userMessage: UIMessage = {
+    id: generateId(),
+    role: "user",
+    parts: [{ type: "text", text: message }],
+    createdAt: new Date(),
+    ...(metadata && { metadata }),
+  };
+
+  const updatedMessages = [...existingMessages, userMessage];
+  await chatStore.saveChat(chatId, updatedMessages);
+
+  return updatedMessages;
+}
+
+// Backward compatibility object for tests and existing code
+export const chatProcessor = {
+  setTools: (tools: Record<string, unknown>) => {
+    // Store tools globally if needed for compatibility
+    // In the new functional approach, tools are passed directly to processChatMessage
+  },
+
+  handleChatSend: async (data: any) => {
+    const { chatId, messages, model, mode, workingDir } = data;
+    return await processChatMessage({
+      chatId: String(chatId),
+      messages,
+      model,
+      mode,
+      workingDir,
+    });
+  },
+
+  handleChatCancel: (chatId: number) => {
+    const controller = activeChats.get(String(chatId));
+    if (controller) {
+      controller.abort();
+      return true;
+    }
+    return false;
+  },
+
+  getActiveChats: () => {
+    return Array.from(activeChats.keys()).map((id) => parseInt(id, 10));
+  },
+
+  isProcessing: (chatId: number) => {
+    return activeChats.has(String(chatId));
+  },
+
+  destroy: () => {
+    // Cancel all active chats
+    for (const controller of activeChats.values()) {
+      controller.abort();
+    }
+    activeChats.clear();
+  },
+
+  clear: () => {
+    // Cancel all active chats and clear state
+    for (const controller of activeChats.values()) {
+      controller.abort();
+    }
+    activeChats.clear();
+  },
+};

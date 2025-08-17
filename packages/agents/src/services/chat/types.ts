@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: events from external services */
-import type { ModelMessage, StepResult } from "ai";
+import type { ModelMessage, StepResult, UIMessage } from "ai";
 import type { ServerWebSocket } from "bun";
 
 export interface ChatAgentCallbacks {
@@ -16,7 +16,7 @@ export interface ChatSubscription {
 }
 
 export interface ChatStatus {
-  chatId: number;
+  chatId: string;
   status: "idle" | "in_progress" | "completed" | "error";
   startedAt?: number;
   completedAt?: number;
@@ -28,14 +28,14 @@ export interface ChatStatus {
 export interface ChatSubscribeEvent {
   event: "chat:subscribe";
   data: {
-    chatId: number;
+    chatId: string;
   };
 }
 
 export interface ChatUnsubscribeEvent {
   event: "chat:unsubscribe";
   data: {
-    chatId: number;
+    chatId: string;
   };
 }
 
@@ -47,10 +47,9 @@ export interface ChatUnsubscribeAllEvent {
 export interface ChatSendEvent {
   event: "chat:send";
   data: {
-    chatId: number;
+    chatId: string;
     model: string;
-    messages: ModelMessage[];
-    userMessageId?: number;
+    messages: UIMessage[];
     mode: "write" | "ask";
   };
 }
@@ -58,15 +57,15 @@ export interface ChatSendEvent {
 export interface ChatCancelEvent {
   event: "chat:cancel";
   data: {
-    chatId: number;
+    chatId: string;
   };
 }
 
 export interface ChatChunkEvent {
   event: "chat:chunk";
   data: {
-    chatId: number;
-    assistantMessageId: number | null;
+    chatId: string;
+    assistantMessageId: string | null;
     chunk: string;
     type: "text" | "tool-call" | "tool-result";
   };
@@ -75,8 +74,8 @@ export interface ChatChunkEvent {
 export interface ChatCompleteEvent {
   event: "chat:complete";
   data: {
-    chatId: number;
-    assistantMessageId: number | null;
+    chatId: string;
+    assistantMessageId: string | null;
     usage?: unknown;
   };
 }
@@ -84,8 +83,8 @@ export interface ChatCompleteEvent {
 export interface ChatErrorEvent {
   event: "chat:error";
   data: {
-    chatId: number;
-    assistantMessageId: number | null;
+    chatId: string;
+    assistantMessageId: string | null;
     error: string;
     code?: string;
   };
@@ -96,23 +95,32 @@ export interface ChatStatusEvent {
   data: ChatStatus;
 }
 
+export interface ChatUIMessageEvent {
+  event: "chat:ui-message";
+  data: {
+    chatId: string;
+    message: UIMessage;
+  };
+}
+
 export type ChatEvent =
   | ChatChunkEvent
   | ChatCompleteEvent
   | ChatErrorEvent
-  | ChatStatusEvent;
+  | ChatStatusEvent
+  | ChatUIMessageEvent;
 
 export interface ChatHooks {
-  onChatStart?: (chatId: number, data: ChatSendEvent["data"]) => Promise<void>;
+  onChatStart?: (chatId: string, data: ChatSendEvent["data"]) => Promise<void>;
   onChatComplete?: (
-    chatId: number,
+    chatId: string,
     response: string,
     usage?: unknown
   ) => Promise<void>;
-  onChatError?: (chatId: number, error: string) => Promise<void>;
-  onChatCancel?: (chatId: number) => Promise<void>;
+  onChatError?: (chatId: string, error: string) => Promise<void>;
+  onChatCancel?: (chatId: string) => Promise<void>;
   onStatusUpdate?: (status: ChatStatus) => Promise<void>;
-  onMessageUpdate?: (messageId: number, commit?: string) => Promise<void>;
+  onMessageUpdate?: (messageId: string, commit?: string) => Promise<void>;
 }
 
 export interface ChatAgentHooks extends ChatAgentCallbacks {

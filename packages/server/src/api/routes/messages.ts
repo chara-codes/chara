@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ensureChat } from "../../repos/chatRepo.ts";
+import { ensureChat } from "../../repos/chatRepo-legacy.ts";
 import { logger } from "../../utils/logger";
 import { publicProcedure, router } from "../trpc";
 

@@ -1,32 +1,51 @@
 # Chat Service Architecture
 
-This directory contains the refactored chat service, broken down into modular components for better maintainability and extensibility.
+This directory contains both the legacy class-based chat service and the new functional chat processor that uses AI SDK's `UIMessage` format.
 
 ## Overview
 
-The chat service has been restructured from a single monolithic `websocket-chat.ts` file into multiple focused modules:
+The chat service has been refactored to provide two approaches:
+
+### Legacy Class-based Approach (chat-processor.ts)
+The original implementation using classes and custom message formats.
+
+### New Functional Approach (chat-processor-new.ts)
+A modern implementation following AI SDK patterns with `UIMessage` format.
 
 ```
 services/chat/
 ├── README.md                    # This documentation
-├── types.ts                     # TypeScript interfaces and types
+├── types.ts                     # TypeScript interfaces and types (updated for UIMessage)
 ├── hooks.ts                     # Hook system for pointcuts/AOP
 ├── subscription-manager.ts      # WebSocket subscription management
 ├── status-manager.ts           # Chat status tracking
-├── chat-processor.ts           # Main chat processing logic
+├── chat-processor.ts           # Legacy class-based processor
+├── chat-processor-new.ts       # New functional processor with UIMessage
 ├── callback-examples.ts        # Example implementations
 └── index.ts                    # Exports for the module
 ```
+
+## Migration to Functional Approach
+
+The new functional approach provides several benefits:
+- **UIMessage Compatibility**: Uses AI SDK's `UIMessage` format for better ecosystem integration
+- **Functional Design**: Pure functions instead of classes for easier testing and debugging
+- **Better Persistence**: Follows AI SDK documentation patterns for message persistence
+- **Improved Streaming**: Uses `toUIMessageStreamResponse` for proper streaming
+- **Type Safety**: Better TypeScript integration with AI SDK types
+
+See [MIGRATION_GUIDE.md](../../MIGRATION_GUIDE.md) for detailed migration instructions.
 
 ## Architecture Components
 
 ### 1. Types (`types.ts`)
 Contains all TypeScript interfaces and type definitions used across the chat service:
-- `ChatStatus` - Status tracking for chats
+- `ChatStatus` - Status tracking for chats (now uses string IDs)
 - `ChatSubscription` - WebSocket subscription information
-- Event interfaces (`ChatSendEvent`, `ChatCompleteEvent`, etc.)
+- Event interfaces (`ChatSendEvent`, `ChatCompleteEvent`, etc.) - updated for UIMessage
 - `ChatHooks` - Interface for service-level pointcut hooks
 - `ChatAgentCallbacks` - Interface for agent-level callbacks
+- `UIMessage` - AI SDK message format integration
 
 ### 2. Hooks System (`hooks.ts`)
 Implements an aspect-oriented programming (AOP) style hook system that provides pointcuts for:
@@ -78,6 +97,7 @@ Orchestrates all components and provides a unified API:
 
 ### Basic Usage
 
+#### Legacy Class-based Approach
 ```typescript
 import { chatService } from "./services/chat";
 
@@ -97,6 +117,51 @@ chatService.handleChatCancel({ chatId: 123 });
 
 // Get chat status
 const status = chatService.getChatStatus(123);
+```
+
+#### New Functional Approach
+```typescript
+import {
+  processChatMessage,
+  setMcpTools,
+  createNewChat,
+  loadChatMessages,
+  cancelChat,
+  isProcessing
+} from "./chat-processor-new";
+import { UIMessage } from "ai";
+
+// Set MCP tools
+setMcpTools(mcpTools);
+
+// Create a new chat
+const chatId = await createNewChat("My Chat");
+
+// Create UIMessage format
+const messages: UIMessage[] = [
+  {
+    id: 'msg-1',
+    role: 'user',
+    parts: [{ type: 'text', text: 'Hello!' }],
+    createdAt: new Date()
+  }
+];
+
+// Process chat message
+const response = await processChatMessage({
+  chatId,
+  messages,
+  model: 'gpt-4',
+  mode: 'ask'
+});
+
+// Check if processing
+if (isProcessing(chatId)) {
+  cancelChat(chatId);
+}
+
+// Load existing messages
+const existingMessages = await loadChatMessages(chatId);
 ```
 
 ### Event Routing
@@ -121,6 +186,7 @@ The service includes automatic validation and error handling for all events.
 
 ### Service-Level Hook System
 
+#### Legacy Approach
 Register hooks for high-level chat events:
 
 ```typescript
@@ -141,6 +207,26 @@ chatService.registerHooks({
   onChatError: async (chatId, error) => {
     console.log(`Chat ${chatId} failed: ${error}`);
     // Log error, send alerts, etc.
+  }
+});
+```
+
+#### New Functional Approach
+The functional approach uses the existing hook system but with UIMessage-compatible data:
+
+```typescript
+import { chatHooksManager } from "./hooks";
+
+// Hooks work the same way but with string IDs and UIMessage data
+chatHooksManager.registerHooks({
+  onChatStart: async (chatId: string, data) => {
+    console.log(`Chat ${chatId} started with model ${data.model}`);
+    // chatId is now a string, data.messages are UIMessage[]
+  },
+  
+  onChatComplete: async (chatId: string, response, usage) => {
+    console.log(`Chat ${chatId} completed`);
+    // Save UIMessage conversation to database
   }
 });
 ```
@@ -182,10 +268,11 @@ Use the chat agent directly with callbacks and abort signals:
 
 ```typescript
 import { chatAgent } from "./agents/chat-agent";
+import { convertToModelMessages } from "ai";
 
 const result = await chatAgent({
   model: "openai:::gpt-4o-mini",
-  messages: [{ role: "user", content: "Hello!" }],
+  messages: convertToModelMessages(uiMessages), // Convert UIMessage to ModelMessage
   mode: "ask",
   workingDir: process.cwd(),
   tools: {},
@@ -204,6 +291,15 @@ const result = await chatAgent({
       console.error(`💥 Error: ${error.message}`);
     },
   },
+});
+
+// New functional approach returns streaming response
+const streamResponse = result.toUIMessageStreamResponse({
+  originalMessages: uiMessages,
+  onFinish: async ({ messages }) => {
+    // Save complete conversation in UIMessage format
+    await saveUIMessages(chatId, messages);
+  }
 });
 ```
 
@@ -249,6 +345,8 @@ const systems = initializeDatabaseHooks(prisma);
 ## Event Flow
 
 ### Service-Level Events
+
+#### Legacy Approach
 1. **Chat Start**: Client sends `chat:send` event
    - `onChatStart` hook called
    - Status updated to `in_progress`
@@ -265,46 +363,74 @@ const systems = initializeDatabaseHooks(prisma);
    - Status updated to `completed`
    - Git commit created (write mode)
 
-4. **Error Handling**: If errors occur
-   - `onError` callback called
-   - `onChatError` hook called
-   - Status updated to `error`
-   - Error broadcast to subscribers
+#### New Functional Approach
+1. **Chat Processing**: Direct function call
+   - `processChatMessage()` called with UIMessage array
+   - Returns streaming Response object
+   - Hooks called at appropriate points
 
-5. **Cancellation**: If cancelled by user
-   - Abort signal triggered
-   - `onChatCancel` hook called
-   - Status updated to `completed`
-   - Streams properly terminated
+2. **AI SDK Integration**: Uses standard AI SDK patterns
+   - `convertToModelMessages()` for agent input
+   - `toUIMessageStreamResponse()` for streaming output
+   - `onFinish` callback saves complete conversation
+
+3. **Persistence**: Following AI SDK documentation
+   - Complete UIMessage array saved on finish
+   - Compatible with AI SDK's `useChat` hook
+   - Optimized request patterns supported
+
+4. **Error Handling**: Functional error handling
+   - Errors thrown from functions
+   - Proper cleanup in finally blocks
+   - AbortSignal support for cancellation
 
 ## Benefits of This Architecture
 
-### 1. **Multi-Level Hooks**
-- **Service Level**: High-level business logic (database, notifications)
-- **Agent Level**: Real-time processing (streaming, progress tracking)
+### Legacy Approach Benefits
+1. **Multi-Level Hooks**: Service and agent level callbacks
+2. **Proper Abort Handling**: Graceful cancellation support
+3. **Real-Time Callbacks**: Streaming and progress tracking
+4. **Extensibility**: Dual hook system for different concerns
+5. **Type Safety**: Strong TypeScript typing
+6. **Separation of Concerns**: Clear boundaries between components
 
-### 2. **Proper Abort Handling**
-- Abort signals properly bound to chat agent
-- Graceful cancellation of ongoing operations
-- Combined abort signals from multiple sources
+### New Functional Approach Benefits
 
-### 3. **Real-Time Callbacks**
-- Stream chunks as they arrive
-- Step-by-step progress tracking
-- Immediate error handling
+#### 1. **AI SDK Integration**
+- Native `UIMessage` format support
+- Compatible with `useChat` hook
+- Follows AI SDK documentation patterns
+- Standard streaming responses
 
-### 4. **Extensibility**
-The dual hook system allows you to add functionality at different levels:
-- Service hooks for business logic
-- Agent callbacks for real-time processing
+#### 2. **Simplified Architecture**
+- Pure functions instead of classes
+- Easier to test and reason about
+- Less state management complexity
+- Functional composition patterns
 
-### 5. **Type Safety**
-Strong TypeScript typing for all callbacks and hooks ensures compile-time error checking.
+#### 3. **Better Persistence**
+- Complete conversation history in UIMessage format
+- Optimized request patterns (send only last message)
+- AI SDK persistence patterns
+- Database schema aligned with UIMessage
 
-### 6. **Separation of Concerns**
-- Service manages high-level workflow
-- Agent handles AI processing details
-- Clear boundaries between responsibilities
+#### 4. **Future-Proof Design**
+- Aligned with AI SDK roadmap
+- Better ecosystem compatibility
+- Standard patterns and conventions
+- Easier maintenance and updates
+
+#### 5. **Enhanced Developer Experience**
+- Better TypeScript inference
+- More predictable behavior
+- Easier debugging and testing
+- Clear data flow patterns
+
+#### 6. **Performance Improvements**
+- Reduced memory usage (no class instances)
+- Better garbage collection
+- Optimized streaming patterns
+- Efficient message handling
 
 ## Advanced Examples
 
@@ -354,9 +480,9 @@ class ContentFilter {
 }
 ```
 
-## Migration from Old Architecture
+## Migration Paths
 
-### Import Changes
+### 1. Legacy to Modular (Existing)
 ```typescript
 // Old
 import { webSocketChatService } from "./services/websocket-chat";
@@ -365,29 +491,44 @@ import { webSocketChatService } from "./services/websocket-chat";
 import { chatService } from "./services/chat";
 ```
 
-### New Capabilities
+### 2. Legacy to Functional (Recommended)
 ```typescript
-// Centralized event routing (new)
-chatService.handleEvent("chat:send", data, ws);
+// Old class-based approach
+import { ChatProcessor } from "./chat-processor";
+const processor = new ChatProcessor();
+await processor.handleChatSend(data);
 
-// Service-level hooks (new)
-chatService.registerHooks({
-  onChatComplete: async (chatId, response, usage) => { /* */ }
-});
-
-// Agent-level callbacks (new)
-chatService.registerChatAgentHooks({
-  onChunk: async (chunk) => { /* */ }
-});
-
-// Direct agent usage with callbacks (new)
-const result = await chatAgent({
-  model: "gpt-4",
-  messages: [...],
-  callbacks: { onChunk: async (chunk) => { /* */ } },
-  abortSignal: controller.signal
-});
+// New functional approach
+import { processChatMessage } from "./chat-processor-new";
+const response = await processChatMessage(options);
 ```
+
+### 3. Message Format Migration
+```typescript
+// Old custom format
+interface OldMessage {
+  id: number;
+  content: string;
+  role: string;
+}
+
+// New UIMessage format
+interface UIMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  parts: Array<{ type: 'text'; text: string }>;
+  createdAt?: Date;
+  metadata?: Record<string, unknown>;
+}
+```
+
+### 4. Database Schema Updates
+The new functional approach requires schema changes:
+- Chat IDs: `number` → `string`
+- Messages: Custom format → UIMessage parts array
+- Better indexing and foreign key relationships
+
+See [MIGRATION_GUIDE.md](../../MIGRATION_GUIDE.md) for detailed instructions.
 
 ## Configuration
 
@@ -423,8 +564,16 @@ The service uses structured logging at different levels:
 
 ## Future Enhancements
 
-Potential areas for future development:
+### Functional Approach Roadmap
+1. **AI SDK Features**: Implement latest AI SDK capabilities (tool calling, structured outputs)
+2. **Resumable Streams**: Add stream resumption support for long conversations
+3. **Multi-Modal Support**: Extend UIMessage for images, audio, and other media
+4. **Edge Runtime**: Optimize for edge deployment with AI SDK
+5. **Streaming Optimizations**: Implement advanced streaming patterns
+6. **Client Synchronization**: Better offline/online sync with UIMessage
+7. **Component Libraries**: Pre-built UI components for UIMessage rendering
 
+### General Enhancements
 1. **Middleware System**: Add middleware for cross-cutting concerns
 2. **Rate Limiting**: Implement per-user rate limiting with callbacks
 3. **Response Caching**: Cache responses with invalidation hooks
@@ -433,3 +582,11 @@ Potential areas for future development:
 6. **Performance Monitoring**: Detailed performance metrics collection
 7. **Circuit Breakers**: Implement circuit breakers with error callbacks
 8. **Distributed Tracing**: Add tracing support across all callbacks
+
+## Examples and Resources
+
+- [Functional Chat Examples](../../../examples/functional-chat-example.ts)
+- [Migration Guide](../../MIGRATION_GUIDE.md)
+- [AI SDK Documentation](https://ai-sdk.dev/)
+- [UIMessage Reference](https://ai-sdk.dev/docs/reference/ui-message)
+- [Chat Persistence Patterns](https://ai-sdk.dev/docs/ai-sdk-ui/chatbot-message-persistence)

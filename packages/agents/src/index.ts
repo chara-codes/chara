@@ -5,6 +5,7 @@ import { Project } from "@netlify/build-info";
 import type { ServerWebSocket } from "bun";
 import {
   beautifyController,
+  chatController,
   gitController,
   miscController,
   modelsController,
@@ -170,6 +171,7 @@ function createServerConfig(config: {
       "/api/providers": providersController.list,
       "/api/beautify": beautifyController,
       "/api/git/reset": gitController,
+      "/api/chat": chatController,
 
       // Wildcard route for all routes that start with "/api/" and aren't otherwise matched
       "/api/*": miscController.notFound,
@@ -334,6 +336,7 @@ export async function startServer(
   // Initialize controllers and services with empty tools first
   chatService.setTools({});
   suggestController.setTools({});
+  chatController.setTools({});
 
   // Asynchronously initialize MCP tools and update controllers when done
   const initializeMcpInBackground = async () => {
@@ -346,6 +349,7 @@ export async function startServer(
       );
       chatService.setTools(mcpTools);
       suggestController.setTools(mcpTools);
+      chatController.setTools(mcpTools);
     } else {
       logger.debug(
         "📦 No MCP servers configured in .mcp.json, skipping MCP initialization."
