@@ -15,36 +15,12 @@ import {
 import { logger } from "../../utils/logger.ts";
 import { publicProcedure, router } from "../trpc";
 
-// Zod schema for UIMessage validation
-const UIMessagePartSchema = z.union([
-  z.object({
-    type: z.literal("text"),
-    text: z.string(),
-  }),
-  z.object({
-    type: z.literal("tool-call"),
-    toolCallId: z.string(),
-    toolName: z.string(),
-    args: z.any(),
-  }),
-  z.object({
-    type: z.literal("tool-result"),
-    toolCallId: z.string(),
-    result: z.any(),
-    isError: z.boolean().optional(),
-  }),
-  z.object({
-    type: z.literal("reasoning"),
-    reasoning: z.string(),
-  }),
-  z.object({
-    type: z.literal("source"),
-    sourceType: z.string(),
-    id: z.string(),
-    url: z.string().optional(),
-    title: z.string().optional(),
-  }),
-]);
+// Zod schema for UIMessage validation - using flexible schema for AI SDK compatibility
+const UIMessagePartSchema = z
+  .object({
+    type: z.string(),
+  })
+  .passthrough(); // Allow any additional properties
 
 const UIMessageSchema = z.object({
   id: z.string(),
@@ -195,11 +171,16 @@ export const chatRouter = router({
     )
     .mutation(async ({ input }) => {
       try {
-        await saveUIMessages(input.chatId, input.messages);
+        // Filter messages to only include valid parts for storage
+        const filteredMessages = input.messages.filter(
+          (msg) => msg.parts.length > 0
+        ); // Only save messages with valid parts
+
+        await saveUIMessages(input.chatId, filteredMessages);
         return {
           success: true,
           chatId: input.chatId,
-          messageCount: input.messages.length,
+          messageCount: filteredMessages.length,
         };
       } catch (err) {
         logger.error(JSON.stringify(err), "saveMessages endpoint failed");
@@ -336,6 +317,65 @@ export const chatRouter = router({
         };
       } catch (err) {
         logger.error(JSON.stringify(err), "appendUserMessage endpoint failed");
+        throw err;
+      }
+    }),
+
+  // Get chat history for a specific chat
+  getHistory: publicProcedure
+    .input(
+      z.object({
+        chatId: z.string(),
+        lastMessageId: z.string().nullable().optional(),
+        limit: z.number().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const chatId = input.chatId;
+        const messages = await loadUIMessages(chatId);
+
+        // Filter messages based on lastMessageId if provided
+        let filteredMessages = messages;
+        if (input.lastMessageId) {
+          const lastMessageIndex = messages.findIndex(
+            (msg) => msg.id === input.lastMessageId
+          );
+          if (lastMessageIndex !== -1) {
+            filteredMessages = messages.slice(0, lastMessageIndex);
+          }
+        }
+
+        // Apply limit if provided
+        if (input.limit) {
+          filteredMessages = filteredMessages.slice(-input.limit);
+        }
+
+        // Convert UIMessage format to the expected history format
+        const history = filteredMessages.map((msg) => ({
+          id: msg.id,
+          role: msg.role,
+          message: msg.parts
+            .map((part) => {
+              if (part.type === "text") {
+                return part.text;
+              }
+              return JSON.stringify(part);
+            })
+            .join(""),
+          timestamp: msg.createdAt
+            ? Math.floor(msg.createdAt.getTime() / 1000)
+            : Date.now(),
+          context: msg.metadata,
+        }));
+
+        return {
+          chatId: chatId,
+          history,
+          hasMore: false,
+        };
+      } catch (err) {
+        logger.error(JSON.stringify(err), "getHistory endpoint failed");
         throw err;
       }
     }),

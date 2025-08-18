@@ -28,6 +28,8 @@ export const chatController = {
     try {
       const { messages, chatId, model, mode } = await req.json();
 
+      logger.dump({ messages, chatId, model, mode });
+
       if (!chatId || !messages || !model || !mode) {
         return new Response(
           JSON.stringify({
@@ -42,6 +44,22 @@ export const chatController = {
           }
         );
       }
+
+      // Convert simple message format to UIMessage format
+      const uiMessages: UIMessage[] = messages.map((msg: any) => {
+        if (msg.parts) {
+          // Already in UIMessage format
+          return msg;
+        } else {
+          // Convert from simple {role, content} format to UIMessage format
+          return {
+            id: msg.id || generateId(),
+            role: msg.role,
+            parts: [{ type: "text" as const, text: msg.content || "" }],
+            createdAt: new Date(),
+          };
+        }
+      });
 
       const workingDir = process.cwd();
 
@@ -67,7 +85,7 @@ export const chatController = {
         const result = await chatAgent(
           {
             model,
-            messages: convertToModelMessages(messages),
+            messages: convertToModelMessages(uiMessages),
             mode: mode === "write" ? "write" : "ask",
             workingDir,
             tools: allTools,
@@ -83,7 +101,7 @@ export const chatController = {
                   try {
                     const commitMessage = await gitAgent({
                       model,
-                      messages: convertToModelMessages(messages),
+                      messages: convertToModelMessages(uiMessages),
                     });
                     await isoGitService.saveToHistory(
                       workingDir,
@@ -120,7 +138,8 @@ export const chatController = {
 
         // Return the streaming response using AI SDK's toUIMessageStreamResponse
         return result.toUIMessageStreamResponse({
-          originalMessages: messages,
+          headers: CORS_HEADERS,
+          originalMessages: uiMessages,
           generateMessageId: () => generateId(),
           onFinish: async ({ messages: finalMessages }) => {
             try {
@@ -156,7 +175,7 @@ export const chatController = {
           try {
             const commitMessage = await gitAgent({
               model,
-              messages: convertToModelMessages(messages),
+              messages: convertToModelMessages(uiMessages),
             });
             await isoGitService.saveToHistory(workingDir, commitMessage.text);
           } catch (gitError) {

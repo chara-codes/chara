@@ -116,7 +116,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     (state) => state.initializeStore
   );
 
-  const { isConnected, isConnecting, connectionError } = useRunnerConnection();
+  const { isConnected, isConnecting } = useRunnerConnection();
   const connect = useRunnerConnect();
 
   // Also monitor WebSocket connection for comprehensive connection detection
@@ -369,23 +369,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const isLoading = isChatsLoading || isModelsLoading;
   const hasError = chatsLoadError || modelsLoadError;
 
-  // Show server connection view if not connected
-  // This covers both initial connection failure and connection loss during usage
-  const hasAnyConnection = isConnected || wsStatus.connected;
-  const isAnyConnecting = isConnecting || wsStatus.reconnecting;
-  const hasAnyConnectionError = connectionError || wsStatus.error;
+  // Connection status variables (kept for potential future use)
+  // const hasAnyConnection = isConnected || wsStatus.connected;
+  // const isAnyConnecting = isConnecting || wsStatus.reconnecting;
+  // const hasAnyConnectionError = connectionError || wsStatus.error;
 
-  if (
-    !hasAnyConnection &&
-    !isAnyConnecting &&
-    !isLoading &&
-    !connectionLostTimeoutRef.current && // Don't show if we're waiting for timeout
-    (debugInfo.chatStoreInitialized ||
-      debugInfo.modelsStoreInitialized ||
-      hasAnyConnectionError ||
-      // Also show if stores are initialized but we lost connection
-      (!isChatsLoading && !isModelsLoading))
-  ) {
+  // Only show ServerConnectionView when explicitly on that screen
+  if (currentScreen === Screen.SERVER_CONNECTION) {
     return (
       <Container>
         <Content>
@@ -395,11 +385,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     );
   }
 
-  // Show error with options to continue or debug
+  // Only show critical errors if we're stuck and can't proceed
   if (
     hasError &&
     !debugInfo.chatStoreInitialized &&
-    !debugInfo.modelsStoreInitialized
+    !debugInfo.modelsStoreInitialized &&
+    !isLoading &&
+    currentScreen === Screen.CONVERSATION
   ) {
     return (
       <Container>
@@ -439,17 +431,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               >
                 Retry Connection
               </DebugButton>
-              {typeof window !== "undefined" &&
-                window.location.hostname === "localhost" && (
-                  <DebugButton
-                    onClick={() => {
-                      console.log("Forced reload");
-                      window.location.reload();
-                    }}
-                  >
-                    Force Reload
-                  </DebugButton>
-                )}
+              <DebugButton onClick={() => navigateToConversation()}>
+                Continue Anyway
+              </DebugButton>
             </div>
           </ErrorMessage>
         </Content>
@@ -457,7 +441,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     );
   }
 
-  if (isLoading) {
+  // Show loading only during true initial load
+  if (
+    isLoading &&
+    !debugInfo.chatStoreInitialized &&
+    !debugInfo.modelsStoreInitialized &&
+    (isChatsLoading || isModelsLoading)
+  ) {
     return (
       <Container>
         <Header title="Loading..." />
@@ -501,6 +491,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   // Render different screens based on routing state
   const renderCurrentScreen = () => {
     switch (currentScreen) {
+      case Screen.CONVERSATION:
+      case Screen.NEW_THREAD:
+        return <ConversationView />;
+
       case Screen.HISTORY:
         return (
           <HistoryView
@@ -525,18 +519,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       case Screen.TERMINAL: {
         // Sample terminal logs for demonstration
         return <TerminalView onBack={navigateToConversation} />;
-      }
-
-      case Screen.SERVER_CONNECTION: {
-        // Clear any pending connection timeout when manually on SERVER_CONNECTION screen
-        if (connectionLostTimeoutRef.current) {
-          console.log(
-            "Clearing connection timeout - already on SERVER_CONNECTION screen"
-          );
-          clearTimeout(connectionLostTimeoutRef.current);
-          connectionLostTimeoutRef.current = null;
-        }
-        return <ServerConnectionView onBack={navigateToConversation} />;
       }
 
       default:

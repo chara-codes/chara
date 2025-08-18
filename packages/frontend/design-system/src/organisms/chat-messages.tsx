@@ -1,14 +1,25 @@
 "use client";
 
-import type { Message } from "@chara-codes/core";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { ScrollDownIcon } from "../atoms/icons";
 import MessageBubble from "../molecules/message-bubble";
 
+// Message format for display
+interface DisplayMessage {
+  id: string;
+  content: string;
+  isUser: boolean;
+  timestamp?: string;
+  thinkingContent?: string;
+  isThinking?: boolean;
+  contextItems?: any[];
+  toolCalls?: Record<string, any>;
+}
+
 // Update the ChatMessagesProps interface to include handlers for the new buttons
 interface ChatMessagesProps {
-  messages: Message[];
+  messages: DisplayMessage[];
   isResponding?: boolean;
   onDeleteMessage?: (messageId: string) => void;
 }

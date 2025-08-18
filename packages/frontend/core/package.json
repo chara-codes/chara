@@ -17,8 +17,9 @@
     "ttest": "vitest run"
   },
   "dependencies": {
-    "date-fns": "^4.1.0",
+    "@ai-sdk/react": "^2.0.15",
     "@trpc/react-query": "^11.4.3",
+    "date-fns": "^4.1.0",
     "zod": "^3.25.67",
     "zustand": "^5.0.6"
   },

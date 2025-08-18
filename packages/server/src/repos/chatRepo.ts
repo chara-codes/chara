@@ -1,18 +1,20 @@
+import { generateId, UIMessage } from "ai";
 import { eq, sql } from "drizzle-orm";
-import { UIMessage, generateId } from "ai";
 import { db } from "../api/db.ts";
 import { chats, messages } from "../db/schema";
 import { logger } from "../utils/logger";
 
 /** Create a new chat with UIMessage format. */
-export async function createChat(titleSuggestion: string): Promise<{ id: string; title: string; createdAt: number }> {
+export async function createChat(
+  titleSuggestion: string
+): Promise<{ id: string; title: string; createdAt: number }> {
   try {
     const chatId = generateId();
     const [row] = await db
       .insert(chats)
       .values({
         id: chatId,
-        title: titleSuggestion
+        title: titleSuggestion,
       })
       .returning({
         id: chats.id,
@@ -27,20 +29,25 @@ export async function createChat(titleSuggestion: string): Promise<{ id: string;
 }
 
 /** Save UIMessages to database. */
-export async function saveUIMessages(chatId: string, uiMessages: UIMessage[]): Promise<void> {
+export async function saveUIMessages(
+  chatId: string,
+  uiMessages: UIMessage[]
+): Promise<void> {
   try {
     // First, delete existing messages for this chat to avoid duplicates
     await db.delete(messages).where(eq(messages.chatId, chatId));
 
     // Insert all messages
     if (uiMessages.length > 0) {
-      const messageValues = uiMessages.map(msg => ({
+      const messageValues = uiMessages.map((msg) => ({
         id: msg.id,
         chatId,
         parts: JSON.stringify(msg.parts),
         role: msg.role,
         metadata: msg.metadata ? JSON.stringify(msg.metadata) : null,
-        createdAt: msg.createdAt ? Math.floor(msg.createdAt.getTime() / 1000) : sql`CURRENT_TIMESTAMP`,
+        createdAt: msg.createdAt
+          ? Math.floor(msg.createdAt.getTime() / 1000)
+          : sql`CURRENT_TIMESTAMP`,
       }));
 
       await db.insert(messages).values(messageValues);
@@ -51,7 +58,6 @@ export async function saveUIMessages(chatId: string, uiMessages: UIMessage[]): P
       .update(chats)
       .set({ updatedAt: sql`CURRENT_TIMESTAMP` })
       .where(eq(chats.id, chatId));
-
   } catch (err) {
     logger.error(JSON.stringify(err), "saveUIMessages failed");
     throw err;
@@ -262,10 +268,16 @@ export async function getFirstMessageFromRecentChats(options?: {
       if (firstMessage) {
         firstUIMessage = {
           id: firstMessage.id,
-          role: firstMessage.role as 'user' | 'assistant' | 'system',
+          role: firstMessage.role as "user" | "assistant" | "system",
           parts: JSON.parse(firstMessage.parts as string),
-          metadata: firstMessage.metadata ? JSON.parse(firstMessage.metadata as string) : undefined,
-          createdAt: new Date(typeof firstMessage.createdAt === 'number' ? firstMessage.createdAt * 1000 : firstMessage.createdAt),
+          metadata: firstMessage.metadata
+            ? JSON.parse(firstMessage.metadata as string)
+            : undefined,
+          createdAt: new Date(
+            typeof firstMessage.createdAt === "number"
+              ? firstMessage.createdAt * 1000
+              : firstMessage.createdAt
+          ),
         };
       }
 
@@ -283,7 +295,10 @@ export async function getFirstMessageFromRecentChats(options?: {
 }
 
 /** Add a single UIMessage to a chat. */
-export async function addMessageToChat(chatId: string, message: UIMessage): Promise<void> {
+export async function addMessageToChat(
+  chatId: string,
+  message: UIMessage
+): Promise<void> {
   try {
     await db.insert(messages).values({
       id: message.id,
@@ -291,7 +306,9 @@ export async function addMessageToChat(chatId: string, message: UIMessage): Prom
       parts: JSON.stringify(message.parts),
       role: message.role,
       metadata: message.metadata ? JSON.stringify(message.metadata) : null,
-      createdAt: message.createdAt ? Math.floor(message.createdAt.getTime() / 1000) : sql`CURRENT_TIMESTAMP`,
+      createdAt: message.createdAt
+        ? Math.floor(message.createdAt.getTime() / 1000)
+        : sql`CURRENT_TIMESTAMP`,
     });
 
     // Update chat's updatedAt timestamp
@@ -299,7 +316,6 @@ export async function addMessageToChat(chatId: string, message: UIMessage): Prom
       .update(chats)
       .set({ updatedAt: sql`CURRENT_TIMESTAMP` })
       .where(eq(chats.id, chatId));
-
   } catch (err) {
     logger.error(JSON.stringify(err), "addMessageToChat failed");
     throw err;
@@ -307,7 +323,10 @@ export async function addMessageToChat(chatId: string, message: UIMessage): Prom
 }
 
 /** Delete messages from a specific message onwards in a chat. */
-export async function deleteMessagesFromChat(chatId: string, fromMessageId: string) {
+export async function deleteMessagesFromChat(
+  chatId: string,
+  fromMessageId: string
+) {
   try {
     // Get the message to determine its timestamp
     const [messageToDelete] = await db

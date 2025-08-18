@@ -1,8 +1,10 @@
 "use client";
 
+import { useChat } from "@ai-sdk/react";
 import { useChatStore } from "@chara-codes/core";
+import { DefaultChatTransport } from "ai";
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
 import { CharaLogo } from "../atoms/chara-logo";
 import ConversationSuggestions from "../molecules/conversation-suggestions";
@@ -76,12 +78,14 @@ const ConversationContent = styled.div`
 `;
 
 const ConversationView: React.FC = () => {
-  // Use selectors to get only the state we need
-  const activeChat = useChatStore((state) => state.activeChat);
-  const messages = useChatStore((state) => state.messages);
-  const contextItems = useChatStore((state) => state.contextItems);
-  const chats = useChatStore((state) => state.chats);
-  const isResponding = useChatStore((state) => state.isResponding);
+  // Use selectors with fallbacks to prevent loading issues
+  const activeChat = useChatStore((state) => state?.activeChat || null);
+  const contextItems = useChatStore((state) => state?.contextItems || []);
+  const chats = useChatStore((state) => state?.chats || []);
+  const currentMessages = useChatStore((state) => state?.currentMessages || []);
+  const model = useChatStore((state) => state?.model);
+  const mode = useChatStore((state) => state?.mode);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Local state for input message
   const [inputMessage, setInputMessage] = useState("");
@@ -89,13 +93,68 @@ const ConversationView: React.FC = () => {
   // Get store actions using getState to avoid subscription issues
   const chatStore = useChatStore.getState();
 
-  // Memoize handlers to prevent unnecessary re-renders
+  const agentsUrl =
+    import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
+  const api = `${agentsUrl}api/chat`;
+  // Use the AI SDK useChat hook with proper configuration
+  const { sendMessage, messages, stop, setMessages, status } = useChat({
+    id: activeChat || "default",
+    messages: currentMessages,
+    transport: new DefaultChatTransport({
+      api,
+    }),
+  });
+
+  // Initialize store on mount without blocking UI
+  useEffect(() => {
+    try {
+      const store = useChatStore.getState();
+      if (store?.initializeStore) {
+        store.initializeStore().catch((error) => {
+          console.error("Failed to initialize store:", error);
+        });
+      }
+    } catch (error) {
+      console.error("Error during store initialization:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    setIsLoading(status === "streaming");
+  }, [status]);
+
+  // Handle sending messages using useChat hook
   const handleSendMessage = useCallback(
-    (content: string) => {
-      chatStore.sendMessage(content);
-      setInputMessage(""); // Clear input after sending
+    async (content: string) => {
+      if (!content.trim()) return;
+
+      try {
+        let currentChatId = activeChat;
+
+        if (!currentChatId) {
+          // Create new chat if none exists
+          await chatStore.createNewChat();
+          currentChatId = chatStore.activeChat;
+        }
+
+        if (!currentChatId) {
+          throw new Error("Failed to create or get active chat");
+        }
+
+        setInputMessage(""); // Clear input after sending
+
+        // Use sendMessage to send the message
+        sendMessage(
+          { text: content },
+          {
+            body: { mode, model, chatId: activeChat },
+          }
+        );
+      } catch (error) {
+        console.error("Failed to send message:", error);
+      }
     },
-    [chatStore]
+    [activeChat, chatStore, sendMessage]
   );
 
   const handleSelectSuggestion = useCallback((suggestion: string) => {
@@ -129,14 +188,17 @@ const ConversationView: React.FC = () => {
   );
 
   const handleStopResponse = useCallback(() => {
-    chatStore.stopResponse();
-  }, [chatStore]);
+    stop();
+  }, [stop]);
 
   const handleDeleteMessage = useCallback(
     (messageId: string) => {
-      chatStore.deleteMessage(messageId);
+      const updatedMessages = currentMessages.filter(
+        (msg) => msg.id !== messageId
+      );
+      chatStore.setMessages(updatedMessages);
     },
-    [chatStore]
+    [currentMessages, chatStore]
   );
 
   return (
@@ -145,8 +207,28 @@ const ConversationView: React.FC = () => {
         <ChatContent>
           {activeChat || messages.length > 0 ? (
             <ChatMessages
-              messages={messages}
-              isResponding={isResponding}
+              messages={messages.map((msg) => ({
+                id: msg.id,
+                content:
+                  typeof msg.content === "string"
+                    ? msg.content
+                    : Array.isArray((msg as any).parts)
+                    ? (msg as any).parts
+                        .filter((part: any) => part.type === "text")
+                        .map((part: any) => part.text || "")
+                        .join("")
+                    : "",
+                isUser: msg.role === "user",
+                timestamp:
+                  (msg as any).createdAt?.toISOString() ||
+                  (msg as any).timestamp ||
+                  new Date().toISOString(),
+                thinkingContent: (msg as any).thinkingContent,
+                isThinking: (msg as any).isThinking,
+                contextItems: (msg as any).contextItems,
+                toolCalls: (msg as any).toolCalls,
+              }))}
+              isResponding={isLoading}
               onDeleteMessage={handleDeleteMessage}
             />
           ) : (
@@ -156,7 +238,6 @@ const ConversationView: React.FC = () => {
                   <CharaLogo width={200} height={150} />
                   <Title>CharaCodes</Title>
                   <Subtitle>AI Development Tools</Subtitle>
-                  {/* <VersionLabel>1.0.0-alpha</VersionLabel> */}
                 </LogoContainer>
               </EmptyStateMessage>
               <ConversationSuggestions
@@ -176,7 +257,7 @@ const ConversationView: React.FC = () => {
       <InputArea
         onSendMessage={handleSendMessage}
         onAddContext={handleAddContextItem}
-        isResponding={isResponding}
+        isResponding={isLoading}
         onStopResponse={handleStopResponse}
         initialMessage={inputMessage}
       />

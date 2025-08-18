@@ -215,7 +215,7 @@ export async function fetchChatHistory(
   try {
     const client = getVanillaTrpcClient();
     const result = await client.chat.getHistory.query({
-      chatId: parseInt(chatId),
+      chatId: chatId,
       lastMessageId: options?.lastMessageId,
       limit: options?.firstMessageOnly ? 1 : options?.limit,
     });

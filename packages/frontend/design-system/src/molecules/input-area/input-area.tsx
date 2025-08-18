@@ -221,7 +221,7 @@ const InputArea: React.FC<InputAreaProps> = ({
     setIsBeautified(false);
   }, [originalText]);
 
-  const handleSend = () => {
+  const handleSend = useCallback(() => {
     if (message.trim() && !isResponding && !isBeautifyLoading) {
       onSendMessage(message);
       setMessage("");
@@ -230,22 +230,31 @@ const InputArea: React.FC<InputAreaProps> = ({
       // Reset textarea height after clearing message
       setTimeout(adjustTextareaHeight, 0);
     }
-  };
+  }, [
+    message,
+    isResponding,
+    isBeautifyLoading,
+    onSendMessage,
+    adjustTextareaHeight,
+  ]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (
-      e.key === "Enter" &&
-      !e.shiftKey &&
-      !isResponding &&
-      !isLoading &&
-      !isBeautifyLoading
-    ) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (
+        e.key === "Enter" &&
+        !e.shiftKey &&
+        !isResponding &&
+        !isLoading &&
+        !isBeautifyLoading
+      ) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [isResponding, isLoading, isBeautifyLoading, handleSend]
+  );
 
-  const handlePlusClick = () => {
+  const handlePlusClick = useCallback(() => {
     if (plusButtonRef.current && !isLoading && !isBeautifyLoading) {
       setDropdownPosition({
         top: -250,
@@ -255,29 +264,32 @@ const InputArea: React.FC<InputAreaProps> = ({
     if (!isLoading && !isBeautifyLoading) {
       setIsDropdownOpen(!isDropdownOpen);
     }
-  };
+  }, [isLoading, isBeautifyLoading, isDropdownOpen]);
 
-  const handleDropdownClose = () => {
+  const handleDropdownClose = useCallback(() => {
     setIsDropdownOpen(false);
-  };
+  }, []);
 
-  const handleFileSelect = async (file: File) => {
-    const fileData = await readFileContent(file);
-    onAddContext({
-      name: file.name,
-      type: "file",
-      data: fileData.content,
-      mimeType: fileData.mimeType,
-      isBinary: fileData.isBinary,
-    });
-    setIsDropdownOpen(false);
-  };
+  const handleFileSelect = useCallback(
+    async (file: File) => {
+      const fileData = await readFileContent(file);
+      onAddContext({
+        name: file.name,
+        type: "file",
+        data: fileData.content,
+        mimeType: fileData.mimeType,
+        isBinary: fileData.isBinary,
+      });
+      setIsDropdownOpen(false);
+    },
+    [onAddContext]
+  );
 
-  const triggerFileUpload = () => {
+  const triggerFileUpload = useCallback(() => {
     if (fileInputRef.current && !isLoading && !isBeautifyLoading) {
       fileInputRef.current.click();
     }
-  };
+  }, [isLoading, isBeautifyLoading]);
 
   const runnerProcesses = useRunnerProcesses();
 
@@ -288,32 +300,41 @@ const InputArea: React.FC<InputAreaProps> = ({
     runnerProcesses
   );
 
-  const handleDropdownSelect = (item: {
-    id: string;
-    label: string;
-    type: string;
-    action?: () => void;
-  }) => {
-    if (item.action) {
-      return;
-    }
-    onAddContext({
-      name: item.label,
-      type: item.type.toLowerCase(),
-    });
-  };
+  const handleDropdownSelect = useCallback(
+    (item: {
+      id: string;
+      label: string;
+      type: string;
+      action?: () => void;
+    }) => {
+      if (item.action) {
+        return;
+      }
+      onAddContext({
+        name: item.label,
+        type: item.type.toLowerCase(),
+      });
+    },
+    [onAddContext]
+  );
 
   const showBeautifyButton = message.length > 10;
 
-  const isButtonEnabled = (buttonId: string) => {
-    const button = effectiveButtonConfig?.find((b) => b.id === buttonId);
-    return button ? button.enabled : false;
-  };
+  const isButtonEnabled = useCallback(
+    (buttonId: string) => {
+      const button = effectiveButtonConfig?.find((b) => b.id === buttonId);
+      return button ? button.enabled : false;
+    },
+    [effectiveButtonConfig]
+  );
 
-  const getButtonTooltip = (buttonId: string) => {
-    const button = effectiveButtonConfig?.find((b) => b.id === buttonId);
-    return button ? (button.tooltip as string) : "";
-  };
+  const getButtonTooltip = useCallback(
+    (buttonId: string) => {
+      const button = effectiveButtonConfig?.find((b) => b.id === buttonId);
+      return button ? (button.tooltip as string) : "";
+    },
+    [effectiveButtonConfig]
+  );
 
   return (
     <InputContainer
@@ -331,11 +352,14 @@ const InputArea: React.FC<InputAreaProps> = ({
               isResponding ? "AI is responding..." : "Message the agent..."
             }
             value={message}
-            onChange={(e) => {
-              setMessage(e.target.value);
-              userHasEditedRef.current = true; // Mark that user has edited
-              adjustTextareaHeight();
-            }}
+            onChange={useCallback(
+              (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                setMessage(e.target.value);
+                userHasEditedRef.current = true; // Mark that user has edited
+                adjustTextareaHeight();
+              },
+              [adjustTextareaHeight]
+            )}
             onKeyDown={handleKeyDown}
             disabled={isResponding || isLoading || isBeautifyLoading}
           />
