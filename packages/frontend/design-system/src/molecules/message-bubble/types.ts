@@ -2,7 +2,7 @@ import type { ContextItem, MessageContent, ToolCall } from "@chara-codes/core";
 
 export interface MessageBubbleProps {
   id?: string;
-  content: string | MessageContent[];
+  content: string | MessageContent[] | Array<{ type: "text"; text: string }>;
   isUser: boolean;
   timestamp?: string;
   thinkingContent?: string;

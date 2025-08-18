@@ -82,20 +82,37 @@ const GeneratingIndicator = styled.span`
 
 // Helper function to get the main message content (first text part)
 const getMainMessageContent = (
-  content: string | MessageContentType[]
+  content: string | MessageContentType[] | Array<{ type: "text"; text: string }>
 ): string => {
   if (typeof content === "string") {
     return content;
   }
 
-  // Find the first text part
-  const firstTextPart = content.find((part) => part.type === "text");
+  if (!content || !Array.isArray(content)) {
+    return "";
+  }
+
+  // Handle UIMessage parts format
+  if (content.length > 0 && "text" in content[0]) {
+    const firstTextPart = content.find(
+      (part: { type: string; text?: string }) => part.type === "text"
+    );
+    return firstTextPart?.text || "";
+  }
+
+  // Handle MessageContent format
+  const firstTextPart = content.find(
+    (part: MessageContentType) => part.type === "text"
+  );
   return firstTextPart?.text || "";
 };
 
 // Helper function to render main message content
 const renderMainMessageContent = (
-  content: string | MessageContentType[],
+  content:
+    | string
+    | MessageContentType[]
+    | Array<{ type: "text"; text: string }>,
   isUser = false,
   toolCalls?: Record<
     string,
@@ -126,13 +143,12 @@ const renderMainMessageContent = (
         const textPart = cleanedContent.slice(lastIndex, match.index);
         if (textPart.trim()) {
           parts.push(
-            <ReactMarkdown
-              key={`text-${lastIndex}`}
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeHighlight]}
-            >
-              {textPart}
-            </ReactMarkdown>
+            React.createElement(ReactMarkdown as any, {
+              key: `text-${lastIndex}`,
+              remarkPlugins: [remarkGfm],
+              rehypePlugins: [rehypeHighlight],
+              children: textPart,
+            })
           );
         }
       }
@@ -143,10 +159,23 @@ const renderMainMessageContent = (
       const toolCall = toolCalls[toolCallId];
 
       if (toolCall) {
+        const completeToolCall = {
+          id: toolCallId,
+          name: toolCall.name || toolCallType,
+          arguments: (toolCall.arguments as Record<string, unknown>) || {},
+          status:
+            (toolCall.status as
+              | "pending"
+              | "in-progress"
+              | "success"
+              | "error") || "success",
+          result: toolCall.result,
+          timestamp: (toolCall as any).timestamp,
+        } as any;
         parts.push(
           <ToolCallComponent
             key={`toolcall-${toolCallId}`}
-            toolCall={toolCall}
+            toolCall={completeToolCall}
             toolCallId={toolCallId}
             toolCallType={toolCallType}
           />
@@ -161,13 +190,12 @@ const renderMainMessageContent = (
       const remainingText = cleanedContent.slice(lastIndex);
       if (remainingText.trim()) {
         parts.push(
-          <ReactMarkdown
-            key={`text-${lastIndex}`}
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight]}
-          >
-            {remainingText}
-          </ReactMarkdown>
+          React.createElement(ReactMarkdown as any, {
+            key: `text-${lastIndex}`,
+            remarkPlugins: [remarkGfm],
+            rehypePlugins: [rehypeHighlight],
+            children: remainingText,
+          })
         );
       }
     }
@@ -179,14 +207,11 @@ const renderMainMessageContent = (
   }
 
   // Render AI content as Markdown with syntax highlighting if no tool calls found
-  return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeHighlight]}
-    >
-      {cleanedContent}
-    </ReactMarkdown>
-  );
+  return React.createElement(ReactMarkdown as any, {
+    remarkPlugins: [remarkGfm],
+    rehypePlugins: [rehypeHighlight],
+    children: cleanedContent,
+  });
 };
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -309,7 +334,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     : null;
 
   return (
-    <BubbleContainer $isUser={isUser}>
+    <BubbleContainer isUser={isUser}>
       <Bubble $isUser={isUser}>
         {isUser && onDeleteMessage && (
           <DeleteButton
@@ -413,7 +438,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
 
         <MessageContent>
-          {renderMainMessageContent(content, isUser, toolCalls)}
+          {content ? renderMainMessageContent(content, isUser, toolCalls) : ""}
         </MessageContent>
 
         {hasContext && (

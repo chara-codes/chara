@@ -5,19 +5,43 @@ import styled from "styled-components";
 import { ScrollDownIcon } from "../atoms/icons";
 import MessageBubble from "../molecules/message-bubble";
 
-// Message format for display
+// UIMessage-compatible message format for display
 interface DisplayMessage {
   id: string;
-  content: string;
-  isUser: boolean;
+  role: "user" | "assistant" | "system";
+  parts?: Array<{ type: "text"; text: string }>;
+  content?: string; // Backward compatibility
   timestamp?: string;
   thinkingContent?: string;
   isThinking?: boolean;
   contextItems?: any[];
   toolCalls?: Record<string, any>;
+  metadata?: {
+    timestamp?: number;
+    context?: unknown;
+    toolCalls?: unknown;
+    commit?: string;
+  };
 }
 
-// Update the ChatMessagesProps interface to include handlers for the new buttons
+// Helper function to extract content from UIMessage format
+const getMessageContent = (message: DisplayMessage): string => {
+  if (message.content) {
+    return message.content;
+  }
+
+  if (message.parts && message.parts.length > 0) {
+    // Extract text from all parts and join them
+    return message.parts
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join("");
+  }
+
+  return "";
+};
+
+// ChatMessagesProps interface
 interface ChatMessagesProps {
   messages: DisplayMessage[];
   isResponding?: boolean;
@@ -184,16 +208,26 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
           <MessageBubble
             key={message.id}
             id={message.id}
-            content={message.content}
-            isUser={message.isUser}
-            timestamp={message.timestamp}
+            content={getMessageContent(message)}
+            isUser={message.role === "user"}
+            timestamp={
+              message.timestamp ||
+              (message.metadata?.timestamp
+                ? new Date(message.metadata.timestamp).toLocaleString()
+                : undefined)
+            }
             thinkingContent={message.thinkingContent}
             isThinking={message.isThinking}
             contextItems={message.contextItems}
-            toolCalls={message.toolCalls}
+            toolCalls={
+              (message.toolCalls as Record<string, any>) ||
+              (message.metadata?.toolCalls as Record<string, any>)
+            }
             onDeleteMessage={onDeleteMessage}
             isGenerating={
-              isResponding && index === messages.length - 1 && !message.isUser
+              isResponding &&
+              index === messages.length - 1 &&
+              message.role !== "user"
             }
           />
         ))}

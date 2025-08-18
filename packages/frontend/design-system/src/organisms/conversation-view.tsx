@@ -207,27 +207,7 @@ const ConversationView: React.FC = () => {
         <ChatContent>
           {activeChat || messages.length > 0 ? (
             <ChatMessages
-              messages={messages.map((msg) => ({
-                id: msg.id,
-                content:
-                  typeof msg.content === "string"
-                    ? msg.content
-                    : Array.isArray((msg as any).parts)
-                    ? (msg as any).parts
-                        .filter((part: any) => part.type === "text")
-                        .map((part: any) => part.text || "")
-                        .join("")
-                    : "",
-                isUser: msg.role === "user",
-                timestamp:
-                  (msg as any).createdAt?.toISOString() ||
-                  (msg as any).timestamp ||
-                  new Date().toISOString(),
-                thinkingContent: (msg as any).thinkingContent,
-                isThinking: (msg as any).isThinking,
-                contextItems: (msg as any).contextItems,
-                toolCalls: (msg as any).toolCalls,
-              }))}
+              messages={messages}
               isResponding={isLoading}
               onDeleteMessage={handleDeleteMessage}
             />
