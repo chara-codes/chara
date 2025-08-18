@@ -13,11 +13,11 @@ export function convertServerChatToFrontendChat(serverChat: ServerChat): Chat {
 }
 
 interface ServerChat {
-  id: number;
+  id: string;
   title: string;
   createdAt: number;
   updatedAt: number;
-  parentId: number | null;
+  parentId: string | null;
 }
 
 interface ModelsResponse {
@@ -34,7 +34,7 @@ interface ChatsWithPagination {
 export async function fetchChats(_options?: {
   limit?: number;
   offset?: number;
-  parentId?: number | null;
+  parentId?: string | null;
 }): Promise<Chat[]> {
   try {
     const client = getVanillaTrpcClient();
@@ -54,7 +54,7 @@ export async function fetchChats(_options?: {
 export async function fetchChatsWithPagination(options?: {
   limit?: number;
   offset?: number;
-  parentId?: number | null;
+  parentId?: string | null;
 }): Promise<ChatsWithPagination> {
   try {
     const client = getVanillaTrpcClient();
@@ -203,27 +203,41 @@ export async function fetchChatHistory(
   chatId: string;
   history: Array<{
     id: string;
-    message: string;
     role: string;
-    timestamp: number;
-    context?: any;
-    toolCalls?: Record<string, any>;
-    commit?: string;
+    parts: any[];
+    metadata?: any;
+    createdAt?: Date;
   }>;
   hasMore: boolean;
 }> {
   try {
     const client = getVanillaTrpcClient();
-    const result = await client.chat.getHistory.query({
+    const result = await client.chat.getMessages.query({
       chatId: chatId,
-      lastMessageId: options?.lastMessageId,
-      limit: options?.firstMessageOnly ? 1 : options?.limit,
     });
 
+    let messages = result.messages;
+
+    // Apply filtering based on options
+    if (options?.lastMessageId) {
+      const lastMessageIndex = messages.findIndex(
+        (msg) => msg.id === options.lastMessageId
+      );
+      if (lastMessageIndex !== -1) {
+        messages = messages.slice(0, lastMessageIndex);
+      }
+    }
+
+    if (options?.firstMessageOnly) {
+      messages = messages.slice(0, 1);
+    } else if (options?.limit) {
+      messages = messages.slice(-options.limit);
+    }
+
     return {
-      chatId: result.chatId.toString(),
-      history: result.history,
-      hasMore: result.hasMore,
+      chatId: result.chatId,
+      history: messages,
+      hasMore: false, // getMessages doesn't support pagination yet
     };
   } catch (error) {
     console.error("Error fetching chat history via tRPC:", error);
@@ -323,12 +337,10 @@ export async function fetchFirstMessageFromRecentChats(options?: {
     };
     firstMessage: {
       id: string;
-      content: string;
       role: string;
-      timestamp: number;
-      context?: any;
-      commit?: string;
-      toolCalls?: any;
+      parts: any[];
+      metadata?: any;
+      createdAt?: Date;
     } | null;
   }>
 > {
@@ -347,13 +359,11 @@ export async function fetchFirstMessageFromRecentChats(options?: {
       },
       firstMessage: item.firstMessage
         ? {
-            id: item.firstMessage.id.toString(),
-            content: item.firstMessage.content,
+            id: item.firstMessage.id,
             role: item.firstMessage.role,
-            timestamp: item.firstMessage.timestamp,
-            context: item.firstMessage.context,
-            commit: item.firstMessage.commit,
-            toolCalls: item.firstMessage.toolCalls,
+            parts: item.firstMessage.parts,
+            metadata: item.firstMessage.metadata,
+            createdAt: item.firstMessage.createdAt,
           }
         : null,
     }));
@@ -366,12 +376,10 @@ export async function fetchFirstMessageFromRecentChats(options?: {
 // Helper function to get just the first message from a chat
 export async function getFirstMessage(chatId: string): Promise<{
   id: string;
-  message: string;
   role: string;
-  timestamp: number;
-  context?: any;
-  toolCalls?: Record<string, any>;
-  commit?: string;
+  parts: any[];
+  metadata?: any;
+  createdAt?: Date;
 } | null> {
   try {
     const result = await fetchChatHistory(chatId, { firstMessageOnly: true });

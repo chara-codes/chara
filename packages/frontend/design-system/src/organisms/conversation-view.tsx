@@ -154,7 +154,7 @@ const ConversationView: React.FC = () => {
         console.error("Failed to send message:", error);
       }
     },
-    [activeChat, chatStore, sendMessage]
+    [activeChat, chatStore, sendMessage, mode, model]
   );
 
   const handleSelectSuggestion = useCallback((suggestion: string) => {
@@ -193,12 +193,12 @@ const ConversationView: React.FC = () => {
 
   const handleDeleteMessage = useCallback(
     (messageId: string) => {
-      const updatedMessages = currentMessages.filter(
-        (msg) => msg.id !== messageId
-      );
+      const updatedMessages = messages.filter((msg) => msg.id !== messageId);
+      setMessages(updatedMessages);
+      // Also update the store
       chatStore.setMessages(updatedMessages);
     },
-    [currentMessages, chatStore]
+    [messages, setMessages, chatStore]
   );
 
   return (

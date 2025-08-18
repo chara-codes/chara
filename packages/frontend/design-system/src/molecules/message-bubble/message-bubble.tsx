@@ -1,14 +1,11 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown"; // Import ReactMarkdown
-
-import rehypeHighlight from "rehype-highlight"; // Import rehype-highlight for syntax highlighting
-import remarkGfm from "remark-gfm"; // Import remark-gfm for GitHub Flavored Markdown
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import remarkGfm from "remark-gfm";
 import styled from "styled-components";
-import "highlight.js/styles/github.css"; // Import highlight.js CSS theme for syntax highlighting
-
-import type { MessageContent as MessageContentType } from "@chara-codes/core";
+import "highlight.js/styles/github.css";
 import { cleanThinkingTags } from "@chara-codes/core";
 import {
   DocumentationIcon,
@@ -80,44 +77,16 @@ const GeneratingIndicator = styled.span`
 
 // Removed styled from "styled-components" as it's not used directly here after style components moved to styles.tsx
 
-// Helper function to get the main message content (first text part)
-const getMainMessageContent = (
-  content: string | MessageContentType[] | Array<{ type: "text"; text: string }>
-): string => {
-  if (typeof content === "string") {
-    return content;
-  }
-
-  if (!content || !Array.isArray(content)) {
-    return "";
-  }
-
-  // Handle UIMessage parts format
-  if (content.length > 0 && "text" in content[0]) {
-    const firstTextPart = content.find(
-      (part: { type: string; text?: string }) => part.type === "text"
-    );
-    return firstTextPart?.text || "";
-  }
-
-  // Handle MessageContent format
-  const firstTextPart = content.find(
-    (part: MessageContentType) => part.type === "text"
-  );
-  return firstTextPart?.text || "";
+// Helper function to get the main message content from string
+const getMainMessageContent = (content: string): string => {
+  return content;
 };
 
 // Helper function to render main message content
 const renderMainMessageContent = (
-  content:
-    | string
-    | MessageContentType[]
-    | Array<{ type: "text"; text: string }>,
+  content: string,
   isUser = false,
-  toolCalls?: Record<
-    string,
-    { name?: string; status?: string; arguments?: unknown; result?: unknown }
-  >
+  toolCalls?: Record<string, any>
 ) => {
   const mainContent = getMainMessageContent(content);
 
@@ -132,7 +101,7 @@ const renderMainMessageContent = (
   if (toolCalls && Object.keys(toolCalls).length > 0) {
     // Split content by tool call patterns and render accordingly
     const toolCallPattern = /\[toolCall:([^,]+),([^\]]+)\]/g;
-    const parts = [];
+    const contentParts = [];
     let lastIndex = 0;
 
     const matches = [...cleanedContent.matchAll(toolCallPattern)];
@@ -142,7 +111,7 @@ const renderMainMessageContent = (
       if (match.index > lastIndex) {
         const textPart = cleanedContent.slice(lastIndex, match.index);
         if (textPart.trim()) {
-          parts.push(
+          contentParts.push(
             React.createElement(ReactMarkdown as any, {
               key: `text-${lastIndex}`,
               remarkPlugins: [remarkGfm],
@@ -172,7 +141,7 @@ const renderMainMessageContent = (
           result: toolCall.result,
           timestamp: (toolCall as any).timestamp,
         } as any;
-        parts.push(
+        contentParts.push(
           <ToolCallComponent
             key={`toolcall-${toolCallId}`}
             toolCall={completeToolCall}
@@ -189,7 +158,7 @@ const renderMainMessageContent = (
     if (lastIndex < cleanedContent.length) {
       const remainingText = cleanedContent.slice(lastIndex);
       if (remainingText.trim()) {
-        parts.push(
+        contentParts.push(
           React.createElement(ReactMarkdown as any, {
             key: `text-${lastIndex}`,
             remarkPlugins: [remarkGfm],
@@ -201,8 +170,8 @@ const renderMainMessageContent = (
     }
 
     // If we found tool calls, return the processed parts
-    if (parts.length > 0) {
-      return <>{parts}</>;
+    if (contentParts.length > 0) {
+      return <>{contentParts}</>;
     }
   }
 
@@ -225,6 +194,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   toolCalls,
   onDeleteMessage,
   isGenerating,
+  parts,
 }) => {
   const [expandedContextId, setExpandedContextId] = useState<string | null>(
     null
@@ -236,12 +206,29 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const thinkingContentRef = useRef<HTMLDivElement>(null);
 
+  // Ensure parts exist and are properly formatted
+  const ensuredParts = parts && Array.isArray(parts) ? parts : [];
+
+  // Check for reasoning parts in the parts array
+  const reasoningParts = ensuredParts.filter(
+    (part) => part.type === "reasoning"
+  );
+  const reasoningText = reasoningParts.map((part) => part.text).join("\n");
+
+  // Use reasoning parts content if available, otherwise fall back to thinkingContent
+  const finalThinkingContent = reasoningText || thinkingContent;
+  const finalIsThinking =
+    isThinking ||
+    (reasoningParts.length > 0 &&
+      reasoningParts.some((part) => part.state === "streaming"));
+
   const hasContext = contextItems && contextItems.length > 0;
-  const hasThinkingContent = !isUser && (thinkingContent || isThinking);
+  const hasThinkingContent =
+    !isUser && (finalThinkingContent || finalIsThinking);
 
   // Auto-expand when thinking starts, auto-collapse when thinking ends
   useEffect(() => {
-    if (isThinking && isThinkingExpanded && thinkingContentRef.current) {
+    if (finalIsThinking && isThinkingExpanded && thinkingContentRef.current) {
       const scrollToBottom = () => {
         if (thinkingContentRef.current) {
           thinkingContentRef.current.scrollTop =
@@ -249,15 +236,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         }
       };
 
-      // Scroll immediately
       scrollToBottom();
-
-      // Set up interval to continuously scroll during thinking
       const interval = setInterval(scrollToBottom, 100);
-
       return () => clearInterval(interval);
     }
-  }, [isThinking, isThinkingExpanded]);
+  }, [finalIsThinking, isThinkingExpanded]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -315,8 +298,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     const lowerType = type?.toLowerCase();
     switch (lowerType) {
       case "file":
+      case "source-document":
         return <FileIcon />;
       case "link":
+      case "source-url":
         return <LinkIcon />;
       case "text":
         return <TextIcon />;
@@ -413,7 +398,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             >
               <ThinkingLabel onClick={handleThinkingToggle}>
                 <ThinkingIcon />
-                {isThinking ? "Thinking..." : "Thought process"}
+                {finalIsThinking ? "Thinking..." : "Thought process"}
               </ThinkingLabel>
               <ThinkingToggle onClick={handleThinkingToggle}>
                 <ExpandableChevronIcon
@@ -426,12 +411,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 />
               </ThinkingToggle>
             </ThinkingHeader>
-            {(thinkingContent || isThinking) && (
+            {(finalThinkingContent || finalIsThinking) && (
               <ThinkingContent
                 ref={thinkingContentRef}
                 isExpanded={isThinkingExpanded}
               >
-                {thinkingContent || "Processing your request..."}
+                {finalThinkingContent || "Processing your request..."}
               </ThinkingContent>
             )}
           </ThinkingContainer>
@@ -445,29 +430,28 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           <>
             <ContextContainer isUser={isUser}>
               <ContextLabel isUser={isUser}>Using context:</ContextLabel>
-              {Array.isArray(contextItems) &&
-                contextItems?.map((item) => (
-                  <ContextItemWrapper key={item.id}>
-                    <ContextItemComponent
-                      ref={(el) => {
-                        if (el) itemRefs.current.set(item.id, el);
-                      }}
-                      isUser={isUser}
-                      onClick={() => handleContextItemClick(item.id)}
-                      style={{
-                        backgroundColor:
-                          expandedContextId === item.id
-                            ? isUser
-                              ? "#e5e7eb"
-                              : "#d1d5db"
-                            : undefined,
-                      }}
-                    >
-                      {getIcon(item.type)}
-                      {item.name}
-                    </ContextItemComponent>
-                  </ContextItemWrapper>
-                ))}
+              {contextItems?.map((item) => (
+                <ContextItemWrapper key={item.id}>
+                  <ContextItemComponent
+                    ref={(el) => {
+                      if (el) itemRefs.current.set(item.id, el);
+                    }}
+                    isUser={isUser}
+                    onClick={() => handleContextItemClick(item.id)}
+                    style={{
+                      backgroundColor:
+                        expandedContextId === item.id
+                          ? isUser
+                            ? "#e5e7eb"
+                            : "#d1d5db"
+                          : undefined,
+                    }}
+                  >
+                    {getIcon(item.type)}
+                    {item.name}
+                  </ContextItemComponent>
+                </ContextItemWrapper>
+              ))}
             </ContextContainer>
 
             {expandedContextItem && (

@@ -1,49 +1,174 @@
 "use client";
 
+import type { UIMessage } from "ai";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { ScrollDownIcon } from "../atoms/icons";
 import MessageBubble from "../molecules/message-bubble";
 
-// UIMessage-compatible message format for display
-interface DisplayMessage {
-  id: string;
-  role: "user" | "assistant" | "system";
-  parts?: Array<{ type: "text"; text: string }>;
-  content?: string; // Backward compatibility
-  timestamp?: string;
-  thinkingContent?: string;
-  isThinking?: boolean;
-  contextItems?: any[];
-  toolCalls?: Record<string, any>;
-  metadata?: {
-    timestamp?: number;
-    context?: unknown;
-    toolCalls?: unknown;
-    commit?: string;
+// Helper function to ensure message has proper parts structure
+const ensureMessageParts = (message: UIMessage): UIMessage => {
+  // If message already has parts, return as is
+  if (message.parts && Array.isArray(message.parts)) {
+    return message;
+  }
+
+  // If message has content property (legacy format), convert to parts
+  if ((message as any).content) {
+    const content = (message as any).content;
+    const parts: any[] = [];
+
+    if (typeof content === "string") {
+      parts.push({
+        type: "text",
+        text: content,
+      });
+    } else if (Array.isArray(content)) {
+      // Handle array content (legacy MessageContent format)
+      content.forEach((item: any) => {
+        if (typeof item === "string") {
+          parts.push({
+            type: "text",
+            text: item,
+          });
+        } else if (item.type === "text") {
+          parts.push({
+            type: "text",
+            text: item.text || "",
+          });
+        }
+      });
+    }
+
+    return {
+      ...message,
+      parts,
+    };
+  }
+
+  // Fallback: return message with empty parts
+  return {
+    ...message,
+    parts: [],
   };
-}
+};
 
-// Helper function to extract content from UIMessage format
-const getMessageContent = (message: DisplayMessage): string => {
-  if (message.content) {
-    return message.content;
-  }
+// Helper function to extract text content from UIMessage parts
+const getMessageContent = (message: UIMessage): string => {
+  const ensuredMessage = ensureMessageParts(message);
+  return ensuredMessage.parts
+    .filter((part) => part.type === "text")
+    .map((part) => part.text || "")
+    .join("");
+};
 
-  if (message.parts && message.parts.length > 0) {
-    // Extract text from all parts and join them
-    return message.parts
-      .filter((part) => part.type === "text")
-      .map((part) => part.text)
-      .join("");
-  }
+// Helper function to extract context items from parts
+const getContextItems = (message: UIMessage): any[] => {
+  const ensuredMessage = ensureMessageParts(message);
+  return ensuredMessage.parts
+    .filter(
+      (part) =>
+        part.type === "source-url" ||
+        part.type === "source-document" ||
+        part.type === "file"
+    )
+    .map((part) => {
+      if (part.type === "source-url") {
+        return {
+          id: part.sourceId || Math.random().toString(),
+          name: part.title || part.url || "Unknown",
+          type: part.type,
+          url: part.url,
+          data: part,
+        };
+      } else if (part.type === "source-document") {
+        return {
+          id: part.sourceId || Math.random().toString(),
+          name: part.title || part.filename || "Unknown",
+          type: part.type,
+          mediaType: part.mediaType,
+          data: part,
+        };
+      } else if (part.type === "file") {
+        return {
+          id: Math.random().toString(),
+          name: part.filename || "Unknown",
+          type: part.type,
+          url: part.url,
+          mediaType: part.mediaType,
+          data: part,
+        };
+      }
+      return {
+        id: Math.random().toString(),
+        name: "Unknown",
+        type: "unknown",
+        data: part,
+      };
+    });
+};
 
-  return "";
+// Helper function to extract tool calls from parts
+const getToolCalls = (message: UIMessage): Record<string, any> => {
+  const toolCalls: Record<string, any> = {};
+  const ensuredMessage = ensureMessageParts(message);
+
+  ensuredMessage.parts
+    .filter((part) => part.type?.startsWith("tool-"))
+    .forEach((part: any) => {
+      if (part.toolCallId) {
+        if (!toolCalls[part.toolCallId]) {
+          toolCalls[part.toolCallId] = {
+            id: part.toolCallId,
+            name: "",
+            arguments: {},
+            status: "pending",
+            result: undefined,
+          };
+        }
+
+        if (part.type?.includes("call") || part.input) {
+          toolCalls[part.toolCallId] = {
+            ...toolCalls[part.toolCallId],
+            name: part.toolName || toolCalls[part.toolCallId].name,
+            arguments: part.input || {},
+            status: part.state || "pending",
+          };
+        }
+
+        if (part.type?.includes("result") || part.output !== undefined) {
+          toolCalls[part.toolCallId] = {
+            ...toolCalls[part.toolCallId],
+            result: part.output,
+            status: part.state || "success",
+          };
+        }
+      }
+    });
+
+  return toolCalls;
+};
+
+// Helper function to extract thinking content from reasoning parts
+const getThinkingContent = (message: UIMessage): string | undefined => {
+  const ensuredMessage = ensureMessageParts(message);
+  const reasoningParts = ensuredMessage.parts.filter(
+    (part) => part.type === "reasoning"
+  );
+  return reasoningParts.map((part) => part.text).join("\n") || undefined;
+};
+
+// Helper function to check if message is currently thinking
+const isMessageThinking = (message: UIMessage): boolean => {
+  const ensuredMessage = ensureMessageParts(message);
+  return ensuredMessage.parts.some(
+    (part) => part.type === "reasoning" && part.state === "streaming"
+  );
 };
 
 // ChatMessagesProps interface
 interface ChatMessagesProps {
-  messages: DisplayMessage[];
+  messages: UIMessage[];
   isResponding?: boolean;
   onDeleteMessage?: (messageId: string) => void;
 }
@@ -211,24 +336,24 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
             content={getMessageContent(message)}
             isUser={message.role === "user"}
             timestamp={
-              message.timestamp ||
-              (message.metadata?.timestamp
+              message.metadata &&
+              typeof message.metadata === "object" &&
+              "timestamp" in message.metadata &&
+              typeof message.metadata.timestamp === "number"
                 ? new Date(message.metadata.timestamp).toLocaleString()
-                : undefined)
+                : undefined
             }
-            thinkingContent={message.thinkingContent}
-            isThinking={message.isThinking}
-            contextItems={message.contextItems}
-            toolCalls={
-              (message.toolCalls as Record<string, any>) ||
-              (message.metadata?.toolCalls as Record<string, any>)
-            }
+            thinkingContent={getThinkingContent(message)}
+            isThinking={isMessageThinking(message)}
+            contextItems={getContextItems(message)}
+            toolCalls={getToolCalls(message)}
             onDeleteMessage={onDeleteMessage}
             isGenerating={
               isResponding &&
               index === messages.length - 1 &&
               message.role !== "user"
             }
+            parts={ensureMessageParts(message).parts}
           />
         ))}
       </MessagesContainer>

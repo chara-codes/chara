@@ -205,64 +205,8 @@ export const useChatStore = create<ChatState>()(
               result.history.length
             );
 
-            // Convert server message format to UIMessage format
-            const uiMessages: UIMessage[] = result.history.map(
-              (msg: {
-                id: string;
-                message: string;
-                role: string;
-                timestamp: number;
-                context?: unknown;
-                toolCalls?: unknown;
-                commit?: string;
-              }) => {
-                let content: string;
-                try {
-                  // Try to parse message content if it's JSON
-                  const parsed = JSON.parse(msg.message);
-                  if (Array.isArray(parsed)) {
-                    // If it's an array of content parts
-                    return {
-                      id: msg.id,
-                      role: msg.role as "user" | "assistant" | "system",
-                      parts: parsed.map(
-                        (part: {
-                          type?: string;
-                          text?: string;
-                          content?: string;
-                        }) => ({
-                          type: "text" as const,
-                          text: part.text || part.content || "",
-                        })
-                      ),
-                      metadata: {
-                        timestamp: msg.timestamp,
-                        context: msg.context,
-                        toolCalls: msg.toolCalls,
-                        commit: msg.commit,
-                      },
-                    };
-                  }
-                  content = parsed;
-                } catch {
-                  // If parsing fails, treat as plain text
-                  content = msg.message;
-                }
-
-                return {
-                  id: msg.id,
-                  role: msg.role as "user" | "assistant" | "system",
-                  parts: [{ type: "text" as const, text: content as string }],
-                  metadata: {
-                    timestamp: msg.timestamp,
-                    context: msg.context,
-                    toolCalls: msg.toolCalls,
-                    commit: msg.commit,
-                  },
-                };
-              }
-            );
-
+            // Messages are already in UIMessage format from the server
+            const uiMessages: UIMessage[] = result.history;
             set({ currentMessages: uiMessages, loadError: null });
           } catch (error) {
             console.error("Chat Store: Failed to load chat history:", error);
