@@ -8,7 +8,6 @@ import { chatRouter } from "./api/routes/chat";
 import { filesRouter } from "./api/routes/files";
 import { instructionsRouter } from "./api/routes/instructions";
 import { linksRouter } from "./api/routes/links";
-import { messagesRouter } from "./api/routes/messages";
 import { stacksRouter } from "./api/routes/stacks";
 import { subscription } from "./api/routes/subscription";
 import { logger } from "./utils/logger";
@@ -21,7 +20,6 @@ const appRouter = t.router({
   chat: chatRouter,
   lnks: linksRouter,
   stacks: stacksRouter,
-  messages: messagesRouter,
   events: subscription,
   instructions: instructionsRouter,
   files: filesRouter,

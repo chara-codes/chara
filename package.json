@@ -24,9 +24,9 @@
     "protobufjs"
   ],
   "dependencies": {
-    "@changesets/cli": "^2.29.5",
+    "@changesets/cli": "^2.29.6",
     "http-proxy": "^1.18.1",
     "pretty-bytes": "^7.0.1",
-    "turbo": "^2.5.5"
+    "turbo": "^2.5.6"
   }
 }
