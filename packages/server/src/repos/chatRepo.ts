@@ -1,4 +1,4 @@
-import { generateId, UIMessage } from "ai";
+import { generateId, type UIMessage } from "ai";
 import { eq, sql } from "drizzle-orm";
 import { db } from "../api/db.ts";
 import { chats, messages } from "../db/schema";
@@ -31,7 +31,7 @@ export async function createChat(
 /** Save UIMessages to database. */
 export async function saveUIMessages(
   chatId: string,
-  uiMessages: UIMessage[]
+  uiMessages: (UIMessage & { createdAt?: Date | string })[]
 ): Promise<void> {
   try {
     // First, delete existing messages for this chat to avoid duplicates
@@ -39,16 +39,43 @@ export async function saveUIMessages(
 
     // Insert all messages
     if (uiMessages.length > 0) {
-      const messageValues = uiMessages.map((msg) => ({
-        id: msg.id,
-        chatId,
-        parts: JSON.stringify(msg.parts),
-        role: msg.role,
-        metadata: msg.metadata ? JSON.stringify(msg.metadata) : null,
-        createdAt: msg.createdAt
-          ? Math.floor(msg.createdAt.getTime() / 1000)
-          : sql`CURRENT_TIMESTAMP`,
-      }));
+      const messageValues = uiMessages.map((msg: any) => {
+        let createdAtValue: any;
+
+        if (msg.createdAt) {
+          // Handle both Date objects and date strings
+          if (msg.createdAt instanceof Date) {
+            createdAtValue = Math.floor(msg.createdAt.getTime() / 1000);
+          } else if (typeof msg.createdAt === "string") {
+            const date = new Date(msg.createdAt);
+            if (!Number.isNaN(date.getTime())) {
+              createdAtValue = Math.floor(date.getTime() / 1000);
+            } else {
+              logger.warn(
+                `Invalid date string for message ${msg.id}: ${msg.createdAt}`
+              );
+              createdAtValue = sql`CURRENT_TIMESTAMP`;
+            }
+          } else {
+            logger.warn(
+              `Unexpected createdAt type for message ${msg.id}:`,
+              typeof msg.createdAt
+            );
+            createdAtValue = sql`CURRENT_TIMESTAMP`;
+          }
+        } else {
+          createdAtValue = sql`CURRENT_TIMESTAMP`;
+        }
+
+        return {
+          id: msg.id,
+          chatId,
+          parts: JSON.stringify(msg.parts),
+          role: msg.role,
+          metadata: msg.metadata ? JSON.stringify(msg.metadata) : null,
+          createdAt: createdAtValue,
+        };
+      });
 
       await db.insert(messages).values(messageValues);
     }
@@ -65,7 +92,9 @@ export async function saveUIMessages(
 }
 
 /** Load UIMessages from database. */
-export async function loadUIMessages(chatId: string): Promise<UIMessage[]> {
+export async function loadUIMessages(
+  chatId: string
+): Promise<(UIMessage & { createdAt?: Date })[]> {
   try {
     const result = await db
       .select()
@@ -73,12 +102,16 @@ export async function loadUIMessages(chatId: string): Promise<UIMessage[]> {
       .where(eq(messages.chatId, chatId))
       .orderBy(messages.createdAt);
 
-    return result.map(msg => ({
+    return result.map((msg) => ({
       id: msg.id,
-      role: msg.role as 'user' | 'assistant' | 'system',
-      parts: JSON.parse(msg.parts as string),
+      role: msg.role as "user" | "assistant" | "system",
+      parts: JSON.parse(msg.parts as string).filter(
+        (part: any) => part.type !== "step-start"
+      ),
       metadata: msg.metadata ? JSON.parse(msg.metadata as string) : undefined,
-      createdAt: new Date(typeof msg.createdAt === 'number' ? msg.createdAt * 1000 : msg.createdAt),
+      createdAt: new Date(
+        typeof msg.createdAt === "number" ? msg.createdAt * 1000 : msg.createdAt
+      ),
     }));
   } catch (err) {
     logger.error(JSON.stringify(err), "loadUIMessages failed");
@@ -269,7 +302,9 @@ export async function getFirstMessageFromRecentChats(options?: {
         firstUIMessage = {
           id: firstMessage.id,
           role: firstMessage.role as "user" | "assistant" | "system",
-          parts: JSON.parse(firstMessage.parts as string),
+          parts: JSON.parse(firstMessage.parts as string).filter(
+            (part: any) => part.type !== "step-start"
+          ),
           metadata: firstMessage.metadata
             ? JSON.parse(firstMessage.metadata as string)
             : undefined,
@@ -278,7 +313,7 @@ export async function getFirstMessageFromRecentChats(options?: {
               ? firstMessage.createdAt * 1000
               : firstMessage.createdAt
           ),
-        };
+        } as any;
       }
 
       result.push({
@@ -297,17 +332,23 @@ export async function getFirstMessageFromRecentChats(options?: {
 /** Add a single UIMessage to a chat. */
 export async function addMessageToChat(
   chatId: string,
-  message: UIMessage
+  message: UIMessage & { createdAt?: Date | string }
 ): Promise<void> {
   try {
+    const msgAny = message as any;
     await db.insert(messages).values({
       id: message.id,
       chatId,
       parts: JSON.stringify(message.parts),
       role: message.role,
       metadata: message.metadata ? JSON.stringify(message.metadata) : null,
-      createdAt: message.createdAt
-        ? Math.floor(message.createdAt.getTime() / 1000)
+      createdAt: msgAny.createdAt
+        ? Math.floor(
+            (msgAny.createdAt instanceof Date
+              ? msgAny.createdAt
+              : new Date(msgAny.createdAt)
+            ).getTime() / 1000
+          )
         : sql`CURRENT_TIMESTAMP`,
     });
 

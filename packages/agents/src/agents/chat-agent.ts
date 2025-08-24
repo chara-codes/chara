@@ -2,6 +2,7 @@ import {
   generateObject,
   NoSuchToolError,
   smoothStream,
+  stepCountIs,
   streamText,
   type ModelMessage,
   type StepResult,
@@ -136,6 +137,8 @@ export const chatAgent = async (
       delayInMs: 20, // optional: defaults to 10ms
       chunking: "line", // optional: defaults to 'word'
     }),
+    // Stop after 5 steps
+    stopWhen: stepCountIs(100),
     messages: cleanedMessages,
     onFinish: (result) => {
       if (onFinish) {

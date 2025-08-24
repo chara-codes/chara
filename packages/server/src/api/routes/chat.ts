@@ -1,4 +1,4 @@
-import { UIMessage } from "ai";
+import type { UIMessage } from "ai";
 import { z } from "zod";
 import {
   addMessageToChat,
@@ -27,7 +27,22 @@ const UIMessageSchema = z.object({
   role: z.enum(["user", "assistant", "system"]),
   parts: z.array(UIMessagePartSchema),
   metadata: z.record(z.unknown()).optional(),
-  createdAt: z.date().optional(),
+  createdAt: z
+    .union([z.date(), z.string(), z.undefined()])
+    .optional()
+    .transform((val) => {
+      if (val === undefined || val === null) {
+        return undefined;
+      }
+      if (typeof val === "string") {
+        const date = new Date(val);
+        return Number.isNaN(date.getTime()) ? undefined : date;
+      }
+      if (val instanceof Date) {
+        return Number.isNaN(val.getTime()) ? undefined : val;
+      }
+      return undefined;
+    }),
 });
 
 export const chatRouter = router({
@@ -41,9 +56,14 @@ export const chatRouter = router({
     .query(async ({ input }) => {
       try {
         const messages = await loadUIMessages(input.chatId);
+        // Filter out step-start parts from loaded messages
+        const filteredMessages = messages.map((msg) => ({
+          ...msg,
+          parts: msg.parts.filter((part: any) => part.type !== "step-start"),
+        }));
         return {
           chatId: input.chatId,
-          messages,
+          messages: filteredMessages,
         };
       } catch (err) {
         logger.error(JSON.stringify(err), "getMessages endpoint failed");
@@ -172,11 +192,14 @@ export const chatRouter = router({
     .mutation(async ({ input }) => {
       try {
         // Filter messages to only include valid parts for storage
-        const filteredMessages = input.messages.filter(
-          (msg) => msg.parts.length > 0
-        ); // Only save messages with valid parts
+        const filteredMessages = input.messages
+          .map((msg) => ({
+            ...msg,
+            parts: msg.parts.filter((part) => part.type !== "step-start"),
+          }))
+          .filter((msg) => msg.parts.length > 0); // Only save messages with valid parts
 
-        await saveUIMessages(input.chatId, filteredMessages);
+        await saveUIMessages(input.chatId, filteredMessages as any);
         return {
           success: true,
           chatId: input.chatId,
@@ -198,7 +221,7 @@ export const chatRouter = router({
     )
     .mutation(async ({ input }) => {
       try {
-        await addMessageToChat(input.chatId, input.message);
+        await addMessageToChat(input.chatId, input.message as any);
         return {
           success: true,
           chatId: input.chatId,
@@ -265,7 +288,7 @@ export const chatRouter = router({
 
         // For now, just save the messages and return success
         // The actual streaming would be handled by the chat processor
-        await saveUIMessages(input.chatId, input.messages);
+        await saveUIMessages(input.chatId, input.messages as any);
 
         return {
           success: true,
@@ -295,7 +318,7 @@ export const chatRouter = router({
         const existingMessages = await loadUIMessages(input.chatId);
 
         // Create new user message
-        const userMessage: UIMessage = {
+        const userMessage: any = {
           id: `msg_${Date.now()}_${Math.random().toString(36).substring(2)}`,
           role: "user",
           parts: [{ type: "text", text: input.text }],
@@ -364,7 +387,7 @@ export const chatRouter = router({
             })
             .join(""),
           timestamp: msg.createdAt
-            ? Math.floor(msg.createdAt.getTime() / 1000)
+            ? Math.floor((msg as any).createdAt.getTime() / 1000)
             : Date.now(),
           context: msg.metadata,
         }));

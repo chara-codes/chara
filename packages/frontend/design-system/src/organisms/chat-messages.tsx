@@ -8,9 +8,12 @@ import MessageBubble from "../molecules/message-bubble";
 
 // Helper function to ensure message has proper parts structure
 const ensureMessageParts = (message: UIMessage): UIMessage => {
-  // If message already has parts, return as is
+  // If message already has parts, filter out step-start and return
   if (message.parts && Array.isArray(message.parts)) {
-    return message;
+    return {
+      ...message,
+      parts: message.parts.filter((part) => part.type !== "step-start"),
+    };
   }
 
   // If message has content property (legacy format), convert to parts
@@ -68,9 +71,10 @@ const getContextItems = (message: UIMessage): any[] => {
   return ensuredMessage.parts
     .filter(
       (part) =>
-        part.type === "source-url" ||
-        part.type === "source-document" ||
-        part.type === "file"
+        part.type !== "step-start" &&
+        (part.type === "source-url" ||
+          part.type === "source-document" ||
+          part.type === "file")
     )
     .map((part) => {
       if (part.type === "source-url") {
@@ -114,7 +118,9 @@ const getToolCalls = (message: UIMessage): Record<string, any> => {
   const ensuredMessage = ensureMessageParts(message);
 
   ensuredMessage.parts
-    .filter((part) => part.type?.startsWith("tool-"))
+    .filter(
+      (part) => part.type?.startsWith("tool-") && part.type !== "step-start"
+    )
     .forEach((part: any) => {
       if (part.toolCallId) {
         if (!toolCalls[part.toolCallId]) {
@@ -267,7 +273,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
     if (!messagesContainerRef.current) return true;
     const { scrollTop, scrollHeight, clientHeight } =
       messagesContainerRef.current;
-    return scrollTop + clientHeight >= scrollHeight - 150;
+    return scrollTop + clientHeight >= scrollHeight - 300;
   }, []);
 
   // Scroll to bottom
