@@ -3,6 +3,8 @@
 import React, { useCallback, useState } from "react";
 import styled from "styled-components";
 import { TrashIcon } from "../../atoms/icons";
+import { isDebugMode } from "../../utils/debug";
+import DebugMessage from "./debug-message";
 import { PartRenderer } from "./parts";
 import {
   Bubble,
@@ -223,6 +225,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
 
         <MessageContent>
+          {isDebugMode() && <DebugMessage parts={finalParts} messageId={id} />}
           <PartRenderer
             parts={finalParts}
             isUser={isUser}

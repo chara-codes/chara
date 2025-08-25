@@ -1,11 +1,67 @@
 "use client";
 
 import React from "react";
+import styled from "styled-components";
+import { isDebugMode } from "../../../utils/debug";
 import ToolCallComponent from "../tool-call-component";
 import ContextPart from "./context-part";
+import DebugPart from "./debug-part";
 import ReasoningPart from "./reasoning-part";
 import TextPart from "./text-part";
 import ToolCallPart from "./tool-call-part";
+
+// Styled components for step-start parts
+const StepStartContainer = styled.div`
+  background: #f8f9fa;
+  border: 1px dashed #d1d5db;
+  border-radius: 3px;
+  padding: 6px;
+  margin: 2px 0;
+  font-size: 10px;
+  color: #6b7280;
+  font-family: monospace;
+  position: relative;
+  opacity: 0.7;
+`;
+
+const StepStartLabel = styled.div`
+  position: absolute;
+  top: -6px;
+  left: 6px;
+  background: #9ca3af;
+  color: white;
+  padding: 1px 4px;
+  font-size: 8px;
+  font-weight: 500;
+  border-radius: 2px;
+`;
+
+const StepStartContent = styled.div`
+  margin-top: 6px;
+`;
+
+const StepStartDetails = styled.pre`
+  margin: 4px 0 0 0;
+  white-space: pre-wrap;
+  font-size: 9px;
+  color: #9ca3af;
+`;
+
+const UnknownPartContainer = styled.div`
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px;
+  margin: 4px 0;
+  font-size: 12px;
+  color: #6b7280;
+  font-family: monospace;
+`;
+
+const UnknownPartDetails = styled.pre`
+  margin: 4px 0 0 0;
+  white-space: pre-wrap;
+`;
 
 export interface Part {
   type: string;
@@ -13,11 +69,11 @@ export interface Part {
   toolName?: string;
   state?: string;
   status?: string;
-  arguments?: Record<string, any>;
-  input?: any;
-  args?: any;
-  result?: any;
-  output?: any;
+  arguments?: Record<string, unknown>;
+  input?: unknown;
+  args?: unknown;
+  result?: unknown;
+  output?: unknown;
   error?: string;
   text?: string;
   title?: string;
@@ -28,7 +84,7 @@ export interface Part {
   mediaType?: string;
   size?: number;
   lastModified?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface PartRendererProps {
@@ -36,6 +92,7 @@ export interface PartRendererProps {
   isUser?: boolean;
   onReasoningToggle?: (index: number) => void;
   expandedReasoningIndex?: number;
+  showDebug?: boolean;
 }
 
 const PartRenderer: React.FC<PartRendererProps> = ({
@@ -43,18 +100,28 @@ const PartRenderer: React.FC<PartRendererProps> = ({
   isUser = false,
   onReasoningToggle,
   expandedReasoningIndex,
+  showDebug,
 }) => {
   if (!parts || !Array.isArray(parts) || parts.length === 0) {
     return null;
   }
 
+  // Check if debug mode is enabled globally or via prop
+  const debugModeEnabled = showDebug ?? isDebugMode();
+
+  // In debug mode, show all parts including step-start
+  // In normal mode, filter out step-start parts
+  const partsToRender = debugModeEnabled
+    ? parts
+    : parts.filter((part) => part.type !== "step-start");
+
   return (
     <>
-      {parts
-        .filter((part) => part.type !== "step-start")
-        .map((part, index) => {
-          const key = `part-${index}-${part.type}`;
+      {partsToRender.map((part, index) => {
+        const key = `part-${index}-${part.type}`;
 
+        // Render the main part element
+        const partElement = (() => {
           // Check if this part has a toolCallId - if so, render as specialized tool block
           if (part.toolCallId && typeof part.toolCallId === "string") {
             let toolName = "";
@@ -93,7 +160,10 @@ const PartRenderer: React.FC<PartRendererProps> = ({
               id: part.toolCallId,
               name: toolName,
               status,
-              arguments: part.arguments || part.input || part.args || {},
+              arguments: (part.arguments ||
+                part.input ||
+                part.args ||
+                {}) as Record<string, unknown>,
               result: part.result || part.output || {},
             };
 
@@ -120,7 +190,7 @@ const PartRenderer: React.FC<PartRendererProps> = ({
                 <ReasoningPart
                   key={key}
                   text={part.text}
-                  state={part.state as any}
+                  state={part.state as "complete" | "streaming"}
                   isExpanded={expandedReasoningIndex === index}
                   onToggle={() => onReasoningToggle?.(index)}
                 />
@@ -132,8 +202,8 @@ const PartRenderer: React.FC<PartRendererProps> = ({
                   key={key}
                   toolName={part.toolName || "Unknown Tool"}
                   toolCallId={part.toolCallId || `tool-${index}`}
-                  input={part.input}
-                  state={part.state as any}
+                  input={part.input as Record<string, unknown>}
+                  state={part.state as "pending" | "success" | "error"}
                 />
               );
 
@@ -146,7 +216,10 @@ const PartRenderer: React.FC<PartRendererProps> = ({
                   output={part.output}
                   error={part.error}
                   state={
-                    (part.state || (part.error ? "error" : "success")) as any
+                    (part.state || (part.error ? "error" : "success")) as
+                      | "pending"
+                      | "success"
+                      | "error"
                   }
                 />
               );
@@ -192,6 +265,22 @@ const PartRenderer: React.FC<PartRendererProps> = ({
                 />
               );
 
+            case "step-start":
+              // Special handling for step-start parts in debug mode
+              return (
+                <StepStartContainer key={key}>
+                  <StepStartLabel>workflow</StepStartLabel>
+                  <StepStartContent>
+                    {part.text || "Step marker"}
+                  </StepStartContent>
+                  {Object.keys(part).length > 2 && (
+                    <StepStartDetails>
+                      {JSON.stringify(part, null, 2)}
+                    </StepStartDetails>
+                  )}
+                </StepStartContainer>
+              );
+
             default:
               // For unknown part types, try to render as text if possible
               if (part.text) {
@@ -206,27 +295,24 @@ const PartRenderer: React.FC<PartRendererProps> = ({
 
               // If no text, render as a generic debug view
               return (
-                <div
-                  key={key}
-                  style={{
-                    background: "#f3f4f6",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "6px",
-                    padding: "8px",
-                    margin: "4px 0",
-                    fontSize: "12px",
-                    color: "#6b7280",
-                    fontFamily: "monospace",
-                  }}
-                >
+                <UnknownPartContainer key={key}>
                   <strong>Unknown part type:</strong> {part.type}
-                  <pre style={{ margin: "4px 0 0 0", whiteSpace: "pre-wrap" }}>
+                  <UnknownPartDetails>
                     {JSON.stringify(part, null, 2)}
-                  </pre>
-                </div>
+                  </UnknownPartDetails>
+                </UnknownPartContainer>
               );
           }
-        })}
+        })();
+
+        // Return the part element with optional debug wrapper
+        return (
+          <React.Fragment key={key}>
+            {partElement}
+            {debugModeEnabled && <DebugPart part={part} index={index} />}
+          </React.Fragment>
+        );
+      })}
     </>
   );
 };

@@ -8,11 +8,10 @@ import MessageBubble from "../molecules/message-bubble";
 
 // Helper function to ensure message has proper parts structure
 const ensureMessageParts = (message: UIMessage): UIMessage => {
-  // If message already has parts, filter out step-start and return
   if (message.parts && Array.isArray(message.parts)) {
     return {
       ...message,
-      parts: message.parts.filter((part) => part.type !== "step-start"),
+      parts: message.parts,
     };
   }
 
@@ -59,57 +58,46 @@ const ensureMessageParts = (message: UIMessage): UIMessage => {
 // Helper function to extract text content from UIMessage parts
 const getMessageContent = (message: UIMessage): string => {
   const ensuredMessage = ensureMessageParts(message);
-  return ensuredMessage.parts
-    .filter((part) => part.type === "text")
-    .map((part) => part.text || "")
-    .join("");
+  return ensuredMessage.parts.map((part) => part.text || "").join("");
 };
 
 // Helper function to extract context items from parts
 const getContextItems = (message: UIMessage): any[] => {
   const ensuredMessage = ensureMessageParts(message);
-  return ensuredMessage.parts
-    .filter(
-      (part) =>
-        part.type !== "step-start" &&
-        (part.type === "source-url" ||
-          part.type === "source-document" ||
-          part.type === "file")
-    )
-    .map((part) => {
-      if (part.type === "source-url") {
-        return {
-          id: part.sourceId || Math.random().toString(),
-          name: part.title || part.url || "Unknown",
-          type: part.type,
-          url: part.url,
-          data: part,
-        };
-      } else if (part.type === "source-document") {
-        return {
-          id: part.sourceId || Math.random().toString(),
-          name: part.title || part.filename || "Unknown",
-          type: part.type,
-          mediaType: part.mediaType,
-          data: part,
-        };
-      } else if (part.type === "file") {
-        return {
-          id: Math.random().toString(),
-          name: part.filename || "Unknown",
-          type: part.type,
-          url: part.url,
-          mediaType: part.mediaType,
-          data: part,
-        };
-      }
+  return ensuredMessage.parts.map((part) => {
+    if (part.type === "source-url") {
       return {
-        id: Math.random().toString(),
-        name: "Unknown",
-        type: "unknown",
+        id: part.sourceId || Math.random().toString(),
+        name: part.title || part.url || "Unknown",
+        type: part.type,
+        url: part.url,
         data: part,
       };
-    });
+    } else if (part.type === "source-document") {
+      return {
+        id: part.sourceId || Math.random().toString(),
+        name: part.title || part.filename || "Unknown",
+        type: part.type,
+        mediaType: part.mediaType,
+        data: part,
+      };
+    } else if (part.type === "file") {
+      return {
+        id: Math.random().toString(),
+        name: part.filename || "Unknown",
+        type: part.type,
+        url: part.url,
+        mediaType: part.mediaType,
+        data: part,
+      };
+    }
+    return {
+      id: Math.random().toString(),
+      name: "Unknown",
+      type: "unknown",
+      data: part,
+    };
+  });
 };
 
 // Helper function to extract tool calls from parts
@@ -117,40 +105,36 @@ const getToolCalls = (message: UIMessage): Record<string, any> => {
   const toolCalls: Record<string, any> = {};
   const ensuredMessage = ensureMessageParts(message);
 
-  ensuredMessage.parts
-    .filter(
-      (part) => part.type?.startsWith("tool-") && part.type !== "step-start"
-    )
-    .forEach((part: any) => {
-      if (part.toolCallId) {
-        if (!toolCalls[part.toolCallId]) {
-          toolCalls[part.toolCallId] = {
-            id: part.toolCallId,
-            name: "",
-            arguments: {},
-            status: "pending",
-            result: undefined,
-          };
-        }
-
-        if (part.type?.includes("call") || part.input) {
-          toolCalls[part.toolCallId] = {
-            ...toolCalls[part.toolCallId],
-            name: part.toolName || toolCalls[part.toolCallId].name,
-            arguments: part.input || {},
-            status: part.state || "pending",
-          };
-        }
-
-        if (part.type?.includes("result") || part.output !== undefined) {
-          toolCalls[part.toolCallId] = {
-            ...toolCalls[part.toolCallId],
-            result: part.output,
-            status: part.state || "success",
-          };
-        }
+  ensuredMessage.parts.forEach((part: any) => {
+    if (part.toolCallId) {
+      if (!toolCalls[part.toolCallId]) {
+        toolCalls[part.toolCallId] = {
+          id: part.toolCallId,
+          name: "",
+          arguments: {},
+          status: "pending",
+          result: undefined,
+        };
       }
-    });
+
+      if (part.type?.includes("call") || part.input) {
+        toolCalls[part.toolCallId] = {
+          ...toolCalls[part.toolCallId],
+          name: part.toolName || toolCalls[part.toolCallId].name,
+          arguments: part.input || {},
+          status: part.state || "pending",
+        };
+      }
+
+      if (part.type?.includes("result") || part.output !== undefined) {
+        toolCalls[part.toolCallId] = {
+          ...toolCalls[part.toolCallId],
+          result: part.output,
+          status: part.state || "success",
+        };
+      }
+    }
+  });
 
   return toolCalls;
 };
@@ -158,9 +142,7 @@ const getToolCalls = (message: UIMessage): Record<string, any> => {
 // Helper function to extract thinking content from reasoning parts
 const getThinkingContent = (message: UIMessage): string | undefined => {
   const ensuredMessage = ensureMessageParts(message);
-  const reasoningParts = ensuredMessage.parts.filter(
-    (part) => part.type === "reasoning"
-  );
+  const reasoningParts = ensuredMessage.parts;
   return reasoningParts.map((part) => part.text).join("\n") || undefined;
 };
 
