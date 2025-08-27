@@ -149,6 +149,15 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     approved: true,
   },
   {
+    id: "deepseek/deepseek-chat-v3.1",
+    name: "DeepSeek: DeepSeek V3.1",
+    provider: "openrouter",
+    contextSize: 163840,
+    hasTools: true,
+    recommended: true,
+    approved: true,
+  },
+  {
     id: "openai/gpt-5",
     name: "GPT-5",
     provider: "openrouter",

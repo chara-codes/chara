@@ -169,8 +169,17 @@ const PreviewContent = styled.div`
   overflow-y: auto;
 `;
 
+const ImagePreview = styled.img`
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 4px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+`;
+
 export interface ContextPartProps {
-  type: "source-url" | "source-document" | "file";
+  type: "source-url" | "source-document" | "file" | "data";
   title?: string;
   filename?: string;
   url?: string;
@@ -206,6 +215,8 @@ const ContextPart: React.FC<ContextPartProps> = ({
         return <DocumentationIcon />;
       case "file":
         return <FileIcon />;
+      case "data":
+        return <TextIcon />;
       default:
         return <TextIcon />;
     }
@@ -314,15 +325,27 @@ const ContextPart: React.FC<ContextPartProps> = ({
           </SectionContent>
         </DetailsSection>
 
-        {content && (
+        {(content ||
+          (type === "file" && mediaType?.startsWith("image/") && url)) && (
           <DetailsSection>
             <SectionTitle>Preview</SectionTitle>
             <SectionContent>
-              <PreviewContent>
-                {content.length > 1000
-                  ? `${content.substring(0, 1000)}...`
-                  : content}
-              </PreviewContent>
+              {type === "file" && mediaType?.startsWith("image/") && url ? (
+                <ImagePreview
+                  src={`data:${mediaType};base64,${url}`}
+                  alt={filename || "Image preview"}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                  }}
+                />
+              ) : (
+                <PreviewContent>
+                  {content && content.length > 1000
+                    ? `${content.substring(0, 1000)}...`
+                    : content}
+                </PreviewContent>
+              )}
             </SectionContent>
           </DetailsSection>
         )}

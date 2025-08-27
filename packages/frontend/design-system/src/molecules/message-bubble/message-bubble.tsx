@@ -65,33 +65,31 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   // Ensure parts exist and are properly formatted
   const ensuredParts = parts && Array.isArray(parts) ? parts : [];
 
-  // Create fallback parts from legacy props if no parts provided
+  // Create fallback parts from legacy props only if no parts provided
   const fallbackParts = [];
 
-  // Add content as text part if available
-  if (content && !ensuredParts.some((part) => part.type === "text")) {
-    fallbackParts.push({
-      type: "text",
-      text: content,
-    });
-  }
+  // Only add fallback parts if we have no parts at all
+  if (ensuredParts.length === 0) {
+    // Add content as text part if available
+    if (content) {
+      fallbackParts.push({
+        type: "text",
+        text: content,
+      });
+    }
 
-  // Add thinking content as reasoning part if available
-  if (
-    thinkingContent &&
-    !ensuredParts.some((part) => part.type === "reasoning")
-  ) {
-    fallbackParts.push({
-      type: "reasoning",
-      text: thinkingContent,
-      state: isThinking ? "streaming" : "complete",
-    });
-  }
+    // Add thinking content as reasoning part if available
+    if (thinkingContent) {
+      fallbackParts.push({
+        type: "reasoning",
+        text: thinkingContent,
+        state: isThinking ? "streaming" : "complete",
+      });
+    }
 
-  // Add context items as context parts if available
-  if (contextItems && contextItems.length > 0) {
-    contextItems.forEach((item) => {
-      if (!ensuredParts.some((part: any) => part.sourceId === item.id)) {
+    // Add context items as context parts if available
+    if (contextItems && contextItems.length > 0) {
+      contextItems.forEach((item) => {
         fallbackParts.push({
           type: item.type || "source-document",
           title: item.name,
@@ -99,10 +97,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           url: item.url,
           sourceId: item.id,
           mediaType: item.mediaType,
+          content: item.content,
           ...item.data,
         });
-      }
-    });
+      });
+    }
   }
 
   // Add tool calls as tool parts if available
@@ -132,7 +131,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     });
   }
 
-  // Use ensured parts or fallback parts
+  // Use ensured parts if available, otherwise use fallback parts
   const finalParts = ensuredParts.length > 0 ? ensuredParts : fallbackParts;
 
   const handleDeleteClick = useCallback(() => {

@@ -56,48 +56,76 @@ const ensureMessageParts = (message: UIMessage): UIMessage => {
 };
 
 // Helper function to extract text content from UIMessage parts
+// For multi-part messages, only extract text from actual text parts
 const getMessageContent = (message: UIMessage): string => {
   const ensuredMessage = ensureMessageParts(message);
-  return ensuredMessage.parts.map((part) => part.text || "").join("");
+  return ensuredMessage.parts
+    .filter((part) => part.type === "text")
+    .map((part) => part.text || "")
+    .join("");
 };
 
 // Helper function to extract context items from parts
+// Only extract non-text parts as context items
 const getContextItems = (message: UIMessage): any[] => {
   const ensuredMessage = ensureMessageParts(message);
-  return ensuredMessage.parts.map((part) => {
-    if (part.type === "source-url") {
-      return {
-        id: part.sourceId || Math.random().toString(),
-        name: part.title || part.url || "Unknown",
-        type: part.type,
-        url: part.url,
-        data: part,
-      };
-    } else if (part.type === "source-document") {
-      return {
-        id: part.sourceId || Math.random().toString(),
-        name: part.title || part.filename || "Unknown",
-        type: part.type,
-        mediaType: part.mediaType,
-        data: part,
-      };
-    } else if (part.type === "file") {
+  return ensuredMessage.parts
+    .filter(
+      (part) =>
+        part.type !== "text" &&
+        part.type !== "reasoning" &&
+        !part.type?.startsWith("tool-") &&
+        part.type !== "tool-call" &&
+        part.type !== "tool-result" &&
+        !(part as any).toolCallId
+    )
+    .map((part) => {
+      if (part.type === "source-url") {
+        return {
+          id: part.sourceId || Math.random().toString(),
+          name: part.title || part.url || "Unknown",
+          type: part.type,
+          url: part.url,
+          content: (part as any).content,
+          data: part,
+        };
+      } else if (part.type === "source-document") {
+        return {
+          id: part.sourceId || Math.random().toString(),
+          name: part.title || part.filename || "Unknown",
+          type: part.type,
+          mediaType: part.mediaType,
+          content: (part as any).content,
+          data: part,
+        };
+      } else if (part.type === "file") {
+        return {
+          id: Math.random().toString(),
+          name: part.filename || "Unknown",
+          type: part.type,
+          url: part.url,
+          mediaType: part.mediaType,
+          content: part.url, // Use url as content for compatibility
+          data: part,
+        };
+      } else if (part.type?.startsWith("data-")) {
+        return {
+          id: Math.random().toString(),
+          name: (part as any).data?.filename || "Unknown",
+          type: "data",
+          mediaType: (part as any).data?.mimeType,
+          content: (part as any).data?.content,
+          data: part,
+        };
+      }
       return {
         id: Math.random().toString(),
-        name: part.filename || "Unknown",
-        type: part.type,
-        url: part.url,
-        mediaType: part.mediaType,
+        name: "Unknown",
+        type: "unknown",
         data: part,
       };
-    }
-    return {
-      id: Math.random().toString(),
-      name: "Unknown",
-      type: "unknown",
-      data: part,
-    };
-  });
+    })
+    .filter((item) => item !== null);
 };
 
 // Helper function to extract tool calls from parts
@@ -142,8 +170,11 @@ const getToolCalls = (message: UIMessage): Record<string, any> => {
 // Helper function to extract thinking content from reasoning parts
 const getThinkingContent = (message: UIMessage): string | undefined => {
   const ensuredMessage = ensureMessageParts(message);
-  const reasoningParts = ensuredMessage.parts;
-  return reasoningParts.map((part) => part.text).join("\n") || undefined;
+  const reasoningParts = ensuredMessage.parts.filter(
+    (part) => part.type === "reasoning"
+  );
+  const content = reasoningParts.map((part) => part.text).join("\n");
+  return content || undefined;
 };
 
 // Helper function to check if message is currently thinking

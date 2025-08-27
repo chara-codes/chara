@@ -27,9 +27,6 @@ export const chatController = {
   POST: async (req: Request) => {
     try {
       const { messages, chatId, model, mode } = await req.json();
-
-      logger.dump({ messages, chatId, model, mode });
-
       if (!chatId || !messages || !model || !mode) {
         return new Response(
           JSON.stringify({
@@ -81,11 +78,16 @@ export const chatController = {
           mode === "write" ? chatToolsWriteMode : chatToolsAskMode;
         const allTools = { ...localChatTools, ...mcpTools };
 
+        const modelMessages = convertToModelMessages(uiMessages);
+
+        logger.dump(uiMessages);
+        logger.dump(modelMessages);
+
         // Start chat agent
         const result = await chatAgent(
           {
             model,
-            messages: convertToModelMessages(uiMessages),
+            messages: modelMessages,
             mode: mode === "write" ? "write" : "ask",
             workingDir,
             tools: allTools,

@@ -84,6 +84,7 @@ export interface Part {
   mediaType?: string;
   size?: number;
   lastModified?: string;
+  data?: any;
   [key: string]: unknown;
 }
 
@@ -114,6 +115,11 @@ const PartRenderer: React.FC<PartRendererProps> = ({
   const partsToRender = debugModeEnabled
     ? parts
     : parts.filter((part) => part.type !== "step-start");
+
+  // Find the index of the first text part for user messages
+  const firstTextPartIndex = isUser
+    ? partsToRender.findIndex((part) => part.type === "text")
+    : -1;
 
   return (
     <>
@@ -181,9 +187,26 @@ const PartRenderer: React.FC<PartRendererProps> = ({
           // Handle regular parts (non-tool calls)
           switch (part.type) {
             case "text":
-              return (
-                <TextPart key={key} text={part.text || ""} isUser={isUser} />
-              );
+              // For user messages, only render the first text part as text
+              // Additional text parts should be rendered as context parts
+              if (isUser && index !== firstTextPartIndex) {
+                const textPartNumber =
+                  partsToRender.slice(0, index).filter((p) => p.type === "text")
+                    .length + 1;
+                return (
+                  <ContextPart
+                    key={key}
+                    type="data"
+                    filename={`Additional Text Part ${textPartNumber}`}
+                    content={part.text || ""}
+                    mediaType="text/plain"
+                  />
+                );
+              } else {
+                return (
+                  <TextPart key={key} text={part.text || ""} isUser={isUser} />
+                );
+              }
 
             case "reasoning":
               return (
@@ -282,6 +305,18 @@ const PartRenderer: React.FC<PartRendererProps> = ({
               );
 
             default:
+              // Handle DataUIPart types (data-*)
+              if (part.type?.startsWith("data-") && part.data) {
+                return (
+                  <ContextPart
+                    key={key}
+                    type="data"
+                    filename={part.data.filename}
+                    content={part.data.content}
+                    mediaType={part.data.mimeType}
+                  />
+                );
+              }
               // For unknown part types, try to render as text if possible
               if (part.text) {
                 return (

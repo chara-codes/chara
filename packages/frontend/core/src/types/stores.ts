@@ -46,6 +46,7 @@ export type ContextItem = {
   data?: unknown;
   content?: string; // File content (text or base64 for binary files)
   mimeType?: string; // MIME type of the file
+  isBinary?: boolean; // Whether the content is binary data
 };
 
 export type ChatMode = "write" | "ask" | "none";

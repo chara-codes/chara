@@ -1,8 +1,9 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useChatStore } from "@chara-codes/core";
+import { useChatStore, type InputContextItem } from "@chara-codes/core";
 import { DefaultChatTransport } from "ai";
+import type { DataUIPart, FileUIPart, TextUIPart } from "ai";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
@@ -143,18 +144,66 @@ const ConversationView: React.FC = () => {
 
         setInputMessage(""); // Clear input after sending
 
-        // Use sendMessage to send the message
+        // Create message parts array starting with text
+        const parts: Array<
+          TextUIPart | FileUIPart | DataUIPart<Record<string, unknown>>
+        > = [{ type: "text", text: content } as TextUIPart];
+
+        // Add context items as proper UIMessage parts
+        if (contextItems.length > 0) {
+          for (const item of contextItems) {
+            console.log(item);
+            if (item.type === "file" && item.data) {
+              // For files, use FileUIPart structure
+              parts.push({
+                type: "file",
+                mediaType: item.mimeType || "application/octet-stream",
+                filename: item.name,
+                url: item.data, // content should be data URL
+              } as FileUIPart);
+            } else if (item.type === "image" && item.data) {
+              // For images, use FileUIPart structure
+              parts.push({
+                type: "file",
+                mediaType: item.mimeType || "image/png",
+                filename: item.name || "image.png",
+                url: item.data, // data should be data URL
+              } as FileUIPart);
+            } else if (item.data || item.content) {
+              // For other data, create a data URL and use FileUIPart
+              const dataContent =
+                typeof item.data === "string"
+                  ? item.data
+                  : typeof item.content === "string"
+                  ? item.content
+                  : JSON.stringify(item.data || item.content, null, 2);
+
+              parts.push({
+                type: "text",
+                text: dataContent,
+              });
+            }
+          }
+        }
+
+        // Send message using UIMessage structure
         sendMessage(
-          { text: content },
+          {
+            role: "user",
+            parts: parts,
+          },
           {
             body: { mode, model, chatId: activeChat },
           }
         );
+
+        // Clear context items after sending
+        chatStore.clearContextItems();
       } catch (error) {
         console.error("Failed to send message:", error);
       }
     },
-    [activeChat, chatStore, sendMessage, mode, model]
+    [activeChat, chatStore, sendMessage, mode, model, contextItems]
   );
 
   const handleSelectSuggestion = useCallback((suggestion: string) => {
@@ -181,8 +230,14 @@ const ConversationView: React.FC = () => {
   );
 
   const handleAddContextItem = useCallback(
-    (item: { name: string; type: string; data?: unknown }) => {
-      chatStore.addContextItem(item);
+    (item: InputContextItem) => {
+      chatStore.addContextItem({
+        name: item.name,
+        type: item.type,
+        data: item.data,
+        mimeType: item.mimeType,
+        isBinary: item.isBinary,
+      });
     },
     [chatStore]
   );
