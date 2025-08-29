@@ -136,6 +136,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
   // Get chat store state
   const chats = useChatStore((state) => state.chats);
+  const activeChat = useChatStore((state) => state.activeChat);
+  const currentMessages = useChatStore((state) => state.currentMessages);
   const isChatsLoading = useChatStore((state) => state.isLoading);
   const chatsLoadError = useChatStore((state) => state.loadError);
 
@@ -166,9 +168,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   );
 
   const handleNewChat = useCallback(() => {
+    // Don't create a new chat if the current chat is already "New Chat" with no messages
+    if (activeChat) {
+      const currentChat = chats.find((chat) => chat.id === activeChat);
+      const hasNoMessages =
+        currentMessages.length === 0 &&
+        (!currentChat || currentChat.messages.length === 0);
+
+      if (currentChat?.title === "New Chat" && hasNoMessages) {
+        // Just navigate to conversation view without creating a new chat
+        navigateToConversation();
+        return;
+      }
+    }
+
     chatStore.createNewChat("New Chat");
     navigateToConversation();
-  }, [chatStore, navigateToConversation]);
+  }, [chatStore, navigateToConversation, activeChat, chats, currentMessages]);
 
   // Initialize stores when component mounts
   useEffect(() => {
