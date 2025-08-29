@@ -111,6 +111,11 @@ const ConversationView: React.FC = () => {
     }),
   });
 
+  // Sync messages from store to useChat hook
+  useEffect(() => {
+    setMessages(currentMessages);
+  }, [currentMessages, setMessages]);
+
   // Initialize store on mount without blocking UI
   useEffect(() => {
     try {
