@@ -1,7 +1,11 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useChatStore, type InputContextItem } from "@chara-codes/core";
+import {
+  generateTitleWithFallback,
+  useChatStore,
+  type InputContextItem,
+} from "@chara-codes/core";
 import { DefaultChatTransport } from "ai";
 import type { DataUIPart, FileUIPart, TextUIPart } from "ai";
 import type React from "react";
@@ -97,6 +101,7 @@ const ConversationView: React.FC = () => {
   const agentsUrl =
     import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
   const api = `${agentsUrl}api/chat`;
+
   // Use the AI SDK useChat hook with proper configuration
   const { sendMessage, messages, stop, setMessages, status } = useChat({
     id: activeChat || "default",
@@ -133,9 +138,15 @@ const ConversationView: React.FC = () => {
         let currentChatId = activeChat;
 
         if (!currentChatId) {
-          // Create new chat if none exists
-          await chatStore.createNewChat();
-          currentChatId = chatStore.activeChat;
+          // Create new chat if none exists, use content as title
+          const title = generateTitleWithFallback(content);
+          currentChatId = await chatStore.createNewChat(title);
+        } else {
+          // Update chat title from first message if it's "New Chat"
+          await chatStore.updateChatTitleFromFirstMessage(
+            currentChatId,
+            content
+          );
         }
 
         if (!currentChatId) {
@@ -260,7 +271,7 @@ const ConversationView: React.FC = () => {
     <ConversationContainer>
       <ConversationContent>
         <ChatContent>
-          {activeChat || messages.length > 0 ? (
+          {messages.length > 0 ? (
             <ChatMessages
               messages={messages}
               isResponding={isLoading}
@@ -281,7 +292,7 @@ const ConversationView: React.FC = () => {
             </EmptyStateContainer>
           )}
         </ChatContent>
-        {!activeChat && messages.length === 0 && (
+        {messages.length === 0 && (
           <RecentHistory chats={chats} onSelectChat={handleSelectChat} />
         )}
       </ConversationContent>

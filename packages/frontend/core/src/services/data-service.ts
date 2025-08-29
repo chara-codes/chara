@@ -125,6 +125,33 @@ export async function createChat(title: string): Promise<Chat> {
   }
 }
 
+// Function to update a chat (title and/or status)
+export async function updateChat(
+  chatId: string,
+  updates: {
+    title?: string;
+    status?: "idle" | "in_progress" | "completed" | "error";
+  }
+): Promise<Chat> {
+  try {
+    const client = getVanillaTrpcClient();
+    const result = await client.chat.updateChat.mutate({
+      chatId,
+      ...updates,
+    });
+
+    return {
+      id: result.id.toString(),
+      title: result.title,
+      timestamp: result.updatedAt.toString(),
+      messages: [],
+    };
+  } catch (error) {
+    console.error("Error updating chat via tRPC:", error);
+    throw error;
+  }
+}
+
 // Function to save a message to a chat
 export async function saveMessage(
   chatId: string,

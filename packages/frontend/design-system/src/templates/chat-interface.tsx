@@ -166,7 +166,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   );
 
   const handleNewChat = useCallback(() => {
-    chatStore.createNewChat();
+    chatStore.createNewChat("New Chat");
     navigateToConversation();
   }, [chatStore, navigateToConversation]);
 

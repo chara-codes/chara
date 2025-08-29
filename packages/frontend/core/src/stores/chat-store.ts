@@ -9,8 +9,28 @@ import {
   fetchChats,
   getSuggestedPrompts,
   resetToCommit,
+  updateChat,
 } from "../services";
 import type { Chat, ChatMode, ContextItem } from "../types";
+import {
+  generateTitleFromContent,
+  isDefaultChatTitle,
+} from "../utils/chat-utils";
+
+/**
+ * Interface for messages returned from the server
+ */
+interface ServerMessage {
+  id: string;
+  role: string;
+  parts: Array<{
+    type: string;
+    text?: string;
+    [key: string]: unknown;
+  }>;
+  metadata?: Record<string, unknown>;
+  createdAt?: Date;
+}
 
 /**
  * Chat store state interface using AI SDK patterns
@@ -32,7 +52,18 @@ interface ChatState {
   // Actions
   initializeStore: () => Promise<void>;
   setActiveChat: (chatId: string | null) => Promise<void>;
-  createNewChat: () => Promise<void>;
+  createNewChat: (title: string) => Promise<string>;
+  updateChat: (
+    chatId: string,
+    updates: {
+      title?: string;
+      status?: "idle" | "in_progress" | "completed" | "error";
+    }
+  ) => Promise<void>;
+  updateChatTitleFromFirstMessage: (
+    chatId: string,
+    messageContent: string
+  ) => Promise<void>;
   addContextItem: (item: Omit<ContextItem, "id">) => void;
   removeContextItem: (id: string) => void;
   setMode: (mode: ChatMode) => void;
@@ -170,10 +201,10 @@ export const useChatStore = create<ChatState>()(
           }
         },
 
-        createNewChat: async () => {
+        createNewChat: async (title: string = "New Chat") => {
           console.log("Chat Store: Creating new chat...");
           try {
-            const newChat = await createChat("New Chat");
+            const newChat = await createChat(title);
             console.log("Chat Store: New chat created:", newChat);
 
             // Add to chats list
@@ -185,6 +216,7 @@ export const useChatStore = create<ChatState>()(
             }));
 
             console.log("Chat Store: New chat set as active");
+            return newChat.id;
           } catch (error) {
             console.error("Chat Store: Failed to create new chat:", error);
             set({
@@ -193,6 +225,106 @@ export const useChatStore = create<ChatState>()(
                   ? error.message
                   : "Failed to create new chat",
             });
+            throw error;
+          }
+        },
+
+        updateChat: async (
+          chatId: string,
+          updates: {
+            title?: string;
+            status?: "idle" | "in_progress" | "completed" | "error";
+          }
+        ) => {
+          console.log("Chat Store: Updating chat:", chatId, updates);
+          try {
+            const updatedChat = await updateChat(chatId, updates);
+            console.log("Chat Store: Chat updated successfully:", updatedChat);
+
+            // Update the chat in the store
+            set((state) => ({
+              chats: state.chats.map((chat) =>
+                chat.id === chatId
+                  ? {
+                      ...chat,
+                      title: updatedChat.title,
+                      timestamp: updatedChat.timestamp,
+                    }
+                  : chat
+              ),
+              loadError: null,
+            }));
+          } catch (error) {
+            console.error("Chat Store: Failed to update chat:", error);
+            set({
+              loadError:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to update chat",
+            });
+            throw error;
+          }
+        },
+
+        updateChatTitleFromFirstMessage: async (
+          chatId: string,
+          messageContent: string
+        ) => {
+          console.log(
+            "Chat Store: Checking if title should be updated for chat:",
+            chatId
+          );
+          try {
+            const { chats, currentMessages, activeChat } = get();
+            const chat = chats.find((c) => c.id === chatId);
+
+            if (!chat) {
+              console.log("Chat Store: Chat not found, skipping title update");
+              return;
+            }
+
+            if (!isDefaultChatTitle(chat.title)) {
+              console.log(
+                "Chat Store: Chat title is not default, skipping update"
+              );
+              return;
+            }
+
+            // Check if this is the first message by checking local messages first
+            let messageCount = 0;
+            if (activeChat === chatId && currentMessages.length > 0) {
+              messageCount = currentMessages.length;
+            } else {
+              // Fallback to API call if not in current chat or no local messages
+              const result = await fetchChatHistory(chatId);
+              messageCount = result.history.length;
+            }
+
+            if (messageCount > 1) {
+              console.log(
+                "Chat Store: Chat already has messages, skipping title update"
+              );
+              return;
+            }
+
+            // Generate title from message content
+            const title = generateTitleFromContent(messageContent);
+
+            if (title.length === 0) {
+              console.log(
+                "Chat Store: Empty message content, skipping title update"
+              );
+              return;
+            }
+
+            console.log("Chat Store: Updating chat title to:", title);
+            await get().updateChat(chatId, { title });
+          } catch (error) {
+            console.error(
+              "Chat Store: Failed to update chat title from first message:",
+              error
+            );
+            // Don't throw error - this is a non-critical operation
           }
         },
 
@@ -205,8 +337,14 @@ export const useChatStore = create<ChatState>()(
               result.history.length
             );
 
-            // Messages are already in UIMessage format from the server
-            const uiMessages: UIMessage[] = result.history;
+            // Convert server messages to proper UIMessage format with typed roles
+            const uiMessages: UIMessage[] = result.history.map(
+              (msg: ServerMessage) => ({
+                ...msg,
+                role: msg.role as "system" | "user" | "assistant",
+                parts: msg.parts as any, // Cast to satisfy UIMessage type requirements
+              })
+            );
             set({ currentMessages: uiMessages, loadError: null });
           } catch (error) {
             console.error("Chat Store: Failed to load chat history:", error);
