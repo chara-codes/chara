@@ -901,14 +901,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
               <span>Lines changed:</span>
               <span>{addedLines + removedLines}</span>
             </StatItem>
-            {status === "generating" && newContent.length > 0 && (
-              <StatItem>
-                <span>Progress:</span>
-                <span>
-                  {Math.round((currentIndex / newContent.length) * 100)}%
-                </span>
-              </StatItem>
-            )}
           </DiffStats>
 
           <DiffContent
@@ -972,7 +964,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
               </span>
             )}
             <StatusBadge $status={status}>
-              {" "}
               {status === "generating"
                 ? "Generating..."
                 : status === "error"
