@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 import type React from "react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   Diff,
   Hunk,
@@ -12,7 +12,7 @@ import {
   type HunkData,
 } from "react-diff-view";
 import "react-diff-view/style/index.css";
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import { FileIcon } from "../../atoms";
 
 // Helper function to create unified diff text from old and new content
@@ -227,6 +227,18 @@ const DiffContent = styled.div<{ maxHeight: number; viewMode: ViewMode }>`
   display: ${({ viewMode }) => (viewMode === "collapsed" ? "none" : "block")};
 `;
 
+const pulseAnimation = keyframes`
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+`;
+
 const StatusBadge = styled.div<{
   $status: "generating" | "complete" | "error";
 }>`
@@ -263,6 +275,13 @@ const StatusBadge = styled.div<{
         return "#6b7280";
     }
   }};
+
+  animation: ${({ $status }) =>
+    $status === "generating"
+      ? css`
+          ${pulseAnimation} 1.5s ease-in-out infinite
+        `
+      : "none"};
 `;
 
 const DiffStats = styled.div<{ viewMode: ViewMode }>`
@@ -487,6 +506,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     const [displayedNewContent, setDisplayedNewContent] = useState("");
     const [currentIndex, setCurrentIndex] = useState(0);
     const [viewMode, setViewMode] = useState<ViewMode>("collapsed");
+    const diffContentRef = useRef<HTMLDivElement>(null);
 
     // Extract data from toolCall
     const args = toolCall.arguments;
@@ -495,7 +515,9 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     const filePath = args?.path || "unknown";
     const mode = args?.mode || "unknown";
     const operation = result?.operation || mode;
-    const isGenerating = !args?.path || toolCall.status === "generating";
+    const status = toolCall.result?.status || "generating";
+
+    console.log(toolCall);
 
     let oldContent = "";
     let newContent = "";
@@ -522,7 +544,8 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     }
 
     // Calculate content to use for display
-    const contentToUse = isGenerating ? displayedNewContent : newContent;
+    const contentToUse =
+      status === "generating" ? displayedNewContent : newContent;
 
     // Calculate stats with useMemo to avoid recalculation
     const { addedLines, removedLines } = useMemo(
@@ -532,7 +555,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
 
     // Streaming animation effect
     useEffect(() => {
-      if (isGenerating && currentIndex < newContent.length) {
+      if (status === "generating" && currentIndex < newContent.length) {
         const timer = setTimeout(() => {
           setDisplayedNewContent(newContent.slice(0, currentIndex + 1));
           setCurrentIndex(currentIndex + 1);
@@ -541,15 +564,27 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
         return () => clearTimeout(timer);
       }
 
-      if (!isGenerating) {
+      if (status !== "generating") {
         setDisplayedNewContent(newContent);
         setCurrentIndex(newContent.length);
       }
-    }, [newContent, currentIndex, isGenerating, streamingSpeed]);
+    }, [newContent, currentIndex, status, streamingSpeed]);
+
+    // Auto-scroll to bottom when expanded and generating
+    useEffect(() => {
+      if (
+        status === "generating" &&
+        viewMode !== "collapsed" &&
+        diffContentRef.current
+      ) {
+        const scrollContainer = diffContentRef.current;
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }, [status, viewMode]);
 
     // Reset when content changes completely
     useEffect(() => {
-      if (!isGenerating) {
+      if (status !== "generating") {
         setDisplayedNewContent(newContent);
         setCurrentIndex(newContent.length);
       } else {
@@ -558,7 +593,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
           setDisplayedNewContent("");
         }
       }
-    }, [newContent, currentIndex, isGenerating]);
+    }, [newContent, currentIndex, status]);
 
     // Validate extracted data after hooks
     if (!filePath || typeof filePath !== "string") {
@@ -570,8 +605,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
       console.warn("DiffBlock: newContent must be a string");
       return null;
     }
-
-    const status = isGenerating ? "generating" : "complete";
 
     // Get file extension for display
     const getFileExtension = (path: string): string => {
@@ -841,7 +874,11 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
                 </span>
               )}
               <StatusBadge $status={status}>
-                {isGenerating ? "Generating..." : "Complete"}
+                {status === "generating"
+                  ? "Generating..."
+                  : status === "error"
+                  ? "Error"
+                  : "Complete"}
               </StatusBadge>
             </DiffTitle>
             <DiffActions>
@@ -864,7 +901,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
               <span>Lines changed:</span>
               <span>{addedLines + removedLines}</span>
             </StatItem>
-            {isGenerating && newContent.length > 0 && (
+            {status === "generating" && newContent.length > 0 && (
               <StatItem>
                 <span>Progress:</span>
                 <span>
@@ -874,7 +911,11 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
             )}
           </DiffStats>
 
-          <DiffContent maxHeight={maxHeight} viewMode={viewMode}>
+          <DiffContent
+            ref={diffContentRef}
+            maxHeight={maxHeight}
+            viewMode={viewMode}
+          >
             <StreamingContainer>
               <DiffViewWrapper>
                 <Diff
@@ -888,7 +929,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
                   }
                 </Diff>
               </DiffViewWrapper>
-              {isGenerating && <StreamingCursor>|</StreamingCursor>}
+              {status === "generating" && <StreamingCursor>|</StreamingCursor>}
             </StreamingContainer>
           </DiffContent>
 
@@ -931,7 +972,12 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
               </span>
             )}
             <StatusBadge $status={status}>
-              {isGenerating ? "Generating..." : "Complete"}
+              {" "}
+              {status === "generating"
+                ? "Generating..."
+                : status === "error"
+                ? "Error"
+                : "Complete"}
             </StatusBadge>
           </DiffTitle>
           <DiffActions>
@@ -954,17 +1000,13 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
             <span>Lines changed:</span>
             <span>{addedLines + removedLines}</span>
           </StatItem>
-          {isGenerating && newContent.length > 0 && (
-            <StatItem>
-              <span>Progress:</span>
-              <span>
-                {Math.round((currentIndex / newContent.length) * 100)}%
-              </span>
-            </StatItem>
-          )}
         </DiffStats>
 
-        <DiffContent maxHeight={maxHeight} viewMode={viewMode}>
+        <DiffContent
+          ref={diffContentRef}
+          maxHeight={maxHeight}
+          viewMode={viewMode}
+        >
           <StreamingContainer>
             <DiffViewWrapper>
               <Diff
@@ -978,7 +1020,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
                 }
               </Diff>
             </DiffViewWrapper>
-            {isGenerating && <StreamingCursor>|</StreamingCursor>}
+            {status === "generating" && <StreamingCursor>|</StreamingCursor>}
           </StreamingContainer>
         </DiffContent>
 

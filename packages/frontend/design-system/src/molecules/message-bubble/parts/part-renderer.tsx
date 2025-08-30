@@ -148,24 +148,10 @@ const PartRenderer: React.FC<PartRendererProps> = ({
             }
 
             // Create a tool call object compatible with the ToolCallComponent
-            const rawStatus = part.state || part.status || "success";
-            let status: "pending" | "in-progress" | "success" | "error" =
-              "success";
-
-            if (rawStatus === "generating" || rawStatus === "streaming") {
-              status = "in-progress";
-            } else if (rawStatus === "error" || rawStatus === "failed") {
-              status = "error";
-            } else if (rawStatus === "pending") {
-              status = "pending";
-            } else {
-              status = "success";
-            }
-
             const toolCall = {
               id: part.toolCallId,
               name: toolName,
-              status,
+              status: part.status,
               arguments: (part.arguments ||
                 part.input ||
                 part.args ||
