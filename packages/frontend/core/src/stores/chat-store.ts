@@ -202,7 +202,6 @@ export const useChatStore = create<ChatState>()(
         },
 
         createNewChat: async (title: string = "New Chat") => {
-          console.log("Chat Store: Creating new chat...");
           try {
             const newChat = await createChat(title);
             console.log("Chat Store: New chat created:", newChat);
@@ -215,7 +214,6 @@ export const useChatStore = create<ChatState>()(
               loadError: null,
             }));
 
-            console.log("Chat Store: New chat set as active");
             return newChat.id;
           } catch (error) {
             console.error("Chat Store: Failed to create new chat:", error);

@@ -182,9 +182,28 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       }
     }
 
+    // Check if the last created chat in history is "New Chat" with no messages
+    // Since chats are ordered with newest first, check the first chat in the array
+    const lastCreatedChat = chats[0];
+    if (
+      lastCreatedChat?.title === "New Chat" &&
+      lastCreatedChat.messages.length === 0
+    ) {
+      // Switch to the last created "New Chat" instead of creating a new one
+      handleSelectChatFromHistory(lastCreatedChat.id);
+      return;
+    }
+
     chatStore.createNewChat("New Chat");
     navigateToConversation();
-  }, [chatStore, navigateToConversation, activeChat, chats, currentMessages]);
+  }, [
+    chatStore,
+    navigateToConversation,
+    activeChat,
+    chats,
+    currentMessages,
+    handleSelectChatFromHistory,
+  ]);
 
   // Initialize stores when component mounts
   useEffect(() => {
