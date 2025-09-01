@@ -149,6 +149,15 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     approved: true,
   },
   {
+    id: "x-ai/grok-code-fast-1",
+    name: "xAI: Grok Code Fast",
+    provider: "openrouter",
+    contextSize: 256000,
+    hasTools: true,
+    recommended: false,
+    approved: true,
+  },
+  {
     id: "deepseek/deepseek-chat-v3.1",
     name: "DeepSeek: DeepSeek V3.1",
     provider: "openrouter",

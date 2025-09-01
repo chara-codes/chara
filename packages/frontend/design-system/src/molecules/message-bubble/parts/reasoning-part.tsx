@@ -4,12 +4,11 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { ExpandableChevronIcon } from "../../../atoms/icons/expandable-chevron-icon";
 import { ThinkingIcon } from "../../../atoms/icons/thinking-icon";
+import { theme } from "../../../theme/theme";
 
 const ReasoningContainer = styled.div<{ isExpanded: boolean }>`
-  background: rgba(147, 51, 234, 0.05);
-  border: 1px solid rgba(147, 51, 234, 0.2);
+  width: 100%;
   border-radius: 8px;
-  margin: 8px 0;
   overflow: hidden;
   transition: all 0.2s ease;
 `;
@@ -18,23 +17,17 @@ const ReasoningHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: rgba(147, 51, 234, 0.08);
+  padding: 8px 0;
   cursor: pointer;
   user-select: none;
-
-  &:hover {
-    background: rgba(147, 51, 234, 0.12);
-  }
 `;
 
 const ReasoningLabel = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #7c3aed;
+  font-size: 10px;
+  color: ${theme.colors.textSecondary};
 
   svg {
     width: 14px;
@@ -48,11 +41,12 @@ const ReasoningToggle = styled.div`
   justify-content: center;
   width: 20px;
   height: 20px;
+  color: ${theme.colors.textSecondary};
   border-radius: 4px;
   transition: background-color 0.2s ease;
 
   &:hover {
-    background: rgba(147, 51, 234, 0.15);
+    color: #000;
   }
 `;
 
@@ -60,21 +54,19 @@ const ReasoningContent = styled.div<{ isExpanded: boolean }>`
   max-height: ${({ isExpanded }) => (isExpanded ? "300px" : "0")};
   overflow-y: auto;
   transition: max-height 0.3s ease;
-  background: rgba(147, 51, 234, 0.02);
 `;
 
 const ReasoningText = styled.div`
   padding: 12px;
   font-size: 13px;
   line-height: 1.5;
-  color: #4c1d95;
+  color: ${theme.colors.textSecondary};
   white-space: pre-wrap;
   word-wrap: break-word;
-  border-top: 1px solid rgba(147, 51, 234, 0.1);
 `;
 
 const StreamingIndicator = styled.span`
-  color: #7c3aed;
+  color: ${theme.colors.textSecondary};
 
   &::after {
     content: "";
