@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import ReactMarkdown, { type Options } from "react-markdown";
+import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
 import styled from "styled-components";

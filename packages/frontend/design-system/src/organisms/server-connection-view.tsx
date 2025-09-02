@@ -210,30 +210,6 @@ const StatusIndicator = styled.div<{ $isConnecting: boolean }>`
   }
 `;
 
-const TroubleshootingSection = styled.div`
-  background-color: ${({ theme }) =>
-    (theme as Theme).colors.backgroundSecondary};
-  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
-  border-radius: ${({ theme }) => (theme as Theme).borderRadius.lg};
-  padding: 20px;
-  margin-top: ${({ theme }) => (theme as Theme).spacing.lg};
-  max-width: 600px;
-  width: 100%;
-  text-align: left;
-  box-shadow: ${({ theme }) => (theme as Theme).shadows.sm};
-`;
-
-const TroubleshootingTitle = styled.h4`
-  font-size: ${({ theme }) => (theme as Theme).typography.fontSize.sm};
-  color: ${({ theme }) => (theme as Theme).colors.text};
-  margin-bottom: 12px;
-  font-weight: ${({ theme }) =>
-    (theme as Theme).typography.fontWeight.semibold};
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => (theme as Theme).spacing.sm};
-`;
-
 const IconContainer = styled.div`
   background: linear-gradient(
     135deg,
@@ -250,18 +226,6 @@ const IconContainer = styled.div`
   border: 3px solid ${({ theme }) => (theme as Theme).colors.border};
 `;
 
-const ErrorMessage = styled.div`
-  color: ${({ theme }) => (theme as Theme).colors.error};
-  font-size: ${({ theme }) => (theme as Theme).typography.fontSize.xs};
-  margin-bottom: ${({ theme }) => (theme as Theme).spacing.sm};
-`;
-
-const ErrorMessageWs = styled.div`
-  color: ${({ theme }) => (theme as Theme).colors.error};
-  font-size: ${({ theme }) => (theme as Theme).typography.fontSize.xs};
-  margin-bottom: ${({ theme }) => (theme as Theme).spacing.md};
-`;
-
 interface ServerConnectionViewProps {
   onBack: () => void;
 }
@@ -269,7 +233,7 @@ interface ServerConnectionViewProps {
 const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
   onBack,
 }) => {
-  const { isConnected, isConnecting, connectionError } = useRunnerConnection();
+  const { isConnected, isConnecting } = useRunnerConnection();
   const connect = useRunnerConnect();
   const wsStatus = useWebSocketStatus();
   const [copyFeedback, setCopyFeedback] = useState<string>("");
