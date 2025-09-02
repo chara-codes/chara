@@ -1,15 +1,22 @@
 import { existsSync } from "fs";
-import { readFile, writeFile } from "fs/promises";
+import { mkdir, readFile, writeFile } from "fs/promises";
+import { dirname } from "path";
 import { tool } from "ai";
 import z from "zod";
 
 export const editFile = tool({
-  description: `This is a tool for making edits to existing files. For creating new files or completely overwriting files, use the write_file tool instead. For moving or renaming files, use the terminal tool with the 'mv' command.
+  description: `This is a tool for making edits to existing files. For moving or renaming files, use the terminal tool with the 'mv' command. For creating new files use 'write-file' tool.
 
-Before using this tool:
+This tool replaces text within a file by finding an exact match for the old_string and replacing it with new_string. For precise targeting, include sufficient context around the change.
 
-1. Use the read_file tool to understand the file's contents and context
-2. Ensure the file exists - this tool only works with existing files`,
+Requirements:
+1. old_string MUST be the exact literal text to replace (including all whitespace, indentation, newlines)
+2. new_string MUST be the exact literal text to replace old_string with
+3. For single replacements, include at least 3 lines of context BEFORE and AFTER the target text
+4. Match whitespace and indentation precisely
+5. Use empty old_string to create a new file
+
+Before using this tool, use the read_file tool to examine the file's current content.`,
 
   inputSchema: z.object({
     path: z.string().describe(
@@ -27,108 +34,202 @@ frontend/db.js
 </example>`
     ),
 
-    edits: z
-      .array(
-        z.object({
-          oldText: z
-            .string()
-            .describe("Text to search for - must match exactly"),
-          newText: z.string().describe("Text to replace with"),
-        })
-      )
-      .describe("Array of edit operations to apply to the file"),
+    old_string: z.string().describe(
+      `The exact literal text to replace. Must match exactly including whitespace and indentation.
+For new files, use an empty string.
+For edits, include sufficient context (3+ lines before and after) to uniquely identify the location.`
+    ),
+
+    new_string: z.string().describe(
+      `The exact literal text to replace old_string with.
+Ensure the resulting code is correct and properly indented.`
+    ),
+
+    expected_occurrences: z
+      .number()
+      .optional()
+      .describe(
+        `Number of occurrences expected to be replaced. Defaults to 1.
+Use when you want to replace multiple occurrences of the same text.`
+      ),
   }),
 
-  execute: async ({ path, edits }) => {
+  execute: async ({
+    path,
+    old_string,
+    new_string,
+    expected_occurrences = 1,
+  }) => {
     try {
-      // Parse edits if it's a JSON string
-      let parsedEdits: Array<{ oldText: string; newText: string }>;
-      if (typeof edits === "string") {
+      const isNewFile = old_string === "";
+      let currentContent: string | null = null;
+      let fileExists = false;
+
+      // Check if file exists and read content
+      try {
+        if (existsSync(path)) {
+          currentContent = await readFile(path, "utf8");
+          // Normalize line endings to LF for consistent processing
+          currentContent = currentContent.replace(/\r\n/g, "\n");
+          fileExists = true;
+        }
+      } catch (error) {
+        return {
+          status: "error",
+          message: `Failed to read file: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+          operation: "read",
+          path,
+        };
+      }
+
+      // Handle new file creation
+      if (isNewFile && !fileExists) {
         try {
-          parsedEdits = JSON.parse(edits);
-        } catch (parseError) {
+          // Ensure parent directories exist
+          await mkdir(dirname(path), { recursive: true });
+          await writeFile(path, new_string, "utf8");
+
+          return {
+            status: "success",
+            message: `Successfully created new file: ${path}`,
+            operation: "created",
+            path,
+            diff: `+ ${new_string.split("\n").length} lines added`,
+          };
+        } catch (error) {
           return {
             status: "error",
-            message: `Invalid JSON in edits parameter: ${
-              parseError instanceof Error
-                ? parseError.message
-                : String(parseError)
+            message: `Failed to create file: ${
+              error instanceof Error ? error.message : String(error)
             }`,
-            operation: "edit",
+            operation: "create",
             path,
           };
         }
-      } else {
-        parsedEdits = edits!;
       }
 
-      // Validate that edits are provided
-      if (!parsedEdits || parsedEdits.length === 0) {
+      // Handle attempt to create file that already exists
+      if (isNewFile && fileExists) {
         return {
           status: "error",
-          message:
-            "'edits' parameter is required and must contain at least one edit",
+          message: `Cannot create file: ${path} already exists. Use non-empty old_string to edit existing files.`,
+          operation: "create",
+          path,
+        };
+      }
+
+      // Handle editing non-existent file
+      if (!isNewFile && !fileExists) {
+        return {
+          status: "error",
+          message: `Cannot edit file: ${path} does not exist. Use empty old_string to create new files.`,
           operation: "edit",
           path,
         };
       }
 
-      const fileExists = existsSync(path);
-
-      // Validate file exists
-      if (!fileExists) {
+      // At this point we're editing an existing file
+      if (currentContent === null) {
         return {
           status: "error",
-          message: `Cannot edit file: ${path} does not exist. Use write_file tool to create new files.`,
+          message: `Failed to read content of existing file: ${path}`,
           operation: "edit",
           path,
         };
       }
 
-      const originalContent = await readFile(path, "utf8");
-      let modifiedContent = originalContent;
+      // Check for exact matches
+      const occurrences = countOccurrences(currentContent, old_string);
 
-      // Apply edits sequentially
-      for (const edit of parsedEdits) {
-        const { oldText, newText } = edit;
+      if (occurrences === 0) {
+        // Try flexible matching with whitespace normalization
+        const flexibleResult = tryFlexibleReplace(
+          currentContent,
+          old_string,
+          new_string
+        );
 
-        if (!modifiedContent.includes(oldText)) {
-          // Try line-by-line matching with normalized whitespace
-          const success = tryFlexibleMatch(modifiedContent, oldText, newText);
-          if (success.matched) {
-            modifiedContent = success.content;
-            continue;
+        if (flexibleResult.success) {
+          const newContent = flexibleResult.content;
+
+          if (newContent === currentContent) {
+            return {
+              status: "success",
+              message: `No changes made to ${path} - content is identical`,
+              operation: "no-change",
+              path,
+              diff: "No changes",
+            };
           }
 
+          await writeFile(path, newContent, "utf8");
+          const diff = createDiff(currentContent, newContent);
+
           return {
-            status: "error",
-            message: `Could not find exact match for edit:\n${oldText}\n\nIn file: ${path}`,
-            operation: "edit",
+            status: "success",
+            message: `Successfully edited ${path} (flexible matching applied)`,
+            operation: "edited",
             path,
+            diff: diff || "Changes applied",
           };
         }
 
-        modifiedContent = modifiedContent.replaceAll(oldText, newText);
+        return {
+          status: "error",
+          message: `Could not find exact match for old_string in ${path}:\n${old_string}\n\nThe text may not exist or may have different whitespace/indentation. Use read_file to verify the current content.`,
+          operation: "edit",
+          path,
+          suggestion:
+            "Include more context lines around the target text and ensure exact whitespace matching.",
+        };
       }
 
-      if (modifiedContent === originalContent) {
+      if (occurrences !== expected_occurrences) {
+        return {
+          status: "error",
+          message: `Expected ${expected_occurrences} occurrence(s) but found ${occurrences} in ${path}`,
+          operation: "edit",
+          path,
+          suggestion:
+            occurrences > expected_occurrences
+              ? "Add more context to old_string to make it more specific"
+              : "Check if the text exists or adjust expected_occurrences",
+        };
+      }
+
+      // Check if old_string and new_string are identical
+      if (old_string === new_string) {
         return {
           status: "success",
-          message: `No changes made to ${path}`,
+          message: `No changes made to ${path} - old_string and new_string are identical`,
           operation: "no-change",
           path,
           diff: "No changes",
         };
       }
 
-      await writeFile(path, modifiedContent, "utf8");
+      // Apply the replacement
+      const newContent = currentContent.replaceAll(old_string, new_string);
 
-      const diff = createDiff(originalContent, modifiedContent);
-      const result = `Successfully edited ${path}`;
+      if (newContent === currentContent) {
+        return {
+          status: "success",
+          message: `No changes made to ${path} - content is identical after replacement`,
+          operation: "no-change",
+          path,
+          diff: "No changes",
+        };
+      }
+
+      // Write the modified content
+      await writeFile(path, newContent, "utf8");
+      const diff = createDiff(currentContent, newContent);
 
       return {
         status: "success",
-        message: result,
+        message: `Successfully edited ${path} (${occurrences} replacement(s))`,
         operation: "edited",
         path,
         diff: diff || "Changes applied",
@@ -146,13 +247,20 @@ frontend/db.js
   },
 });
 
-function tryFlexibleMatch(
+function countOccurrences(content: string, searchString: string): number {
+  if (searchString === "") return 0;
+  return content.split(searchString).length - 1;
+}
+
+function tryFlexibleReplace(
   content: string,
   oldText: string,
   newText: string
-): { matched: boolean; content: string } {
-  const oldLines = oldText.split("\n");
+): { success: boolean; content: string } {
+  if (oldText === "") return { success: false, content };
+
   const contentLines = content.split("\n");
+  const oldLines = oldText.split("\n");
 
   for (let i = 0; i <= contentLines.length - oldLines.length; i++) {
     const potentialMatch = contentLines.slice(i, i + oldLines.length);
@@ -160,57 +268,87 @@ function tryFlexibleMatch(
     // Compare lines with normalized whitespace
     const isMatch = oldLines.every((oldLine, j) => {
       const contentLine = potentialMatch[j];
-      return contentLine !== undefined && oldLine.trim() === contentLine.trim();
+      if (contentLine === undefined) return false;
+
+      // Normalize whitespace for comparison
+      const normalizedOld = oldLine.trim();
+      const normalizedContent = contentLine.trim();
+
+      return normalizedOld === normalizedContent;
     });
 
     if (isMatch) {
-      // Preserve original indentation of first line
-      const currentLine = contentLines[i];
-      if (currentLine === undefined) continue;
+      // Preserve original indentation of the first line
+      const firstContentLine = contentLines[i];
+      if (firstContentLine === undefined) continue;
 
-      const originalIndent = currentLine.match(/^\s*/)?.[0] || "";
-      const newLines = newText.split("\n").map((line, j) => {
-        if (j === 0) return originalIndent + line.trimStart();
+      const originalIndent = firstContentLine.match(/^\s*/)?.[0] || "";
+      const newLines = newText.split("\n");
 
-        // For subsequent lines, try to preserve relative indentation
-        const oldIndent = oldLines[j]?.match(/^\s*/)?.[0] || "";
-        const newIndent = line.match(/^\s*/)?.[0] || "";
-
-        if (oldIndent && newIndent) {
-          const relativeIndent = newIndent.length - oldIndent.length;
-          return (
-            originalIndent +
-            " ".repeat(Math.max(0, relativeIndent)) +
-            line.trimStart()
-          );
+      // Apply original indentation to new lines
+      const indentedNewLines = newLines.map((line, index) => {
+        if (index === 0) {
+          return originalIndent + line.trimStart();
         }
-        return line;
+
+        // For subsequent lines, preserve relative indentation from original context
+        const oldLineIndent = oldLines[index]?.match(/^\s*/)?.[0] || "";
+        const newLineIndent = line.match(/^\s*/)?.[0] || "";
+
+        if (oldLines[index] !== undefined) {
+          // Calculate the relative indentation difference
+          const baseIndentLevel = oldLines[0]?.match(/^\s*/)?.[0]?.length || 0;
+          const currentOldIndentLevel = oldLineIndent.length;
+          const relativeIndent = currentOldIndentLevel - baseIndentLevel;
+
+          // Apply the same relative indentation to the new line
+          const targetIndent = originalIndent.length + relativeIndent;
+          return " ".repeat(Math.max(0, targetIndent)) + line.trimStart();
+        }
+
+        // For new lines beyond the original pattern, maintain the same indent as the replacement context
+        return originalIndent + line.trimStart();
       });
 
-      contentLines.splice(i, oldLines.length, ...newLines);
-      return { matched: true, content: contentLines.join("\n") };
+      // Replace the matched lines
+      contentLines.splice(i, oldLines.length, ...indentedNewLines);
+      return { success: true, content: contentLines.join("\n") };
     }
   }
 
-  return { matched: false, content };
+  return { success: false, content };
 }
 
 function createDiff(original: string, modified: string): string {
   const originalLines = original.split("\n");
   const modifiedLines = modified.split("\n");
 
-  let diff = "";
   const maxLines = Math.max(originalLines.length, modifiedLines.length);
+  const diffLines: string[] = [];
+
+  let addedLines = 0;
+  let removedLines = 0;
 
   for (let i = 0; i < maxLines; i++) {
-    const origLine = originalLines[i] || "";
-    const modLine = modifiedLines[i] || "";
+    const origLine = originalLines[i];
+    const modLine = modifiedLines[i];
 
     if (origLine !== modLine) {
-      if (origLine) diff += `- ${origLine}\n`;
-      if (modLine) diff += `+ ${modLine}\n`;
+      if (origLine !== undefined) {
+        diffLines.push(`- ${origLine}`);
+        removedLines++;
+      }
+      if (modLine !== undefined) {
+        diffLines.push(`+ ${modLine}`);
+        addedLines++;
+      }
     }
   }
 
-  return diff;
+  if (diffLines.length === 0) {
+    return "No changes";
+  }
+
+  const summary = `Changes: +${addedLines} -${removedLines} lines\n`;
+  return summary + diffLines.join("\n");
 }
