@@ -16,7 +16,7 @@
     "clean": "rm -rf node_modules packages/*/node_modules packages/*/*/node_modules bun.lock packages/*/bun.lock"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.20",
+    "@types/bun": "^1.2.21",
     "@types/http-proxy": "^1.17.16"
   },
   "trustedDependencies": [
