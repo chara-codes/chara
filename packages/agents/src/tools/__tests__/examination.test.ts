@@ -12,7 +12,7 @@ describe("examination", () => {
   let projectSummaryResult: string;
   let cleanFileResult: string;
 
-  // Reduce setup/teardown overhead by only running once for all tests
+  // Create test directory once and change to it for examination execution
   beforeAll(async () => {
     await mkdir(testDir, { recursive: true });
     process.chdir(testDir);
@@ -48,6 +48,7 @@ describe("examination", () => {
   });
 
   afterAll(async () => {
+    // Ensure we're back to original directory
     process.chdir(originalCwd);
     if (existsSync(testDir)) {
       await rm(testDir, { recursive: true, force: true });

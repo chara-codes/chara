@@ -212,6 +212,7 @@ describe("directory tool", () => {
   let readdirSpy: any;
   let statSpy: any;
   let ignoreWalkSpy: any;
+  let cwdSpy: any;
 
   beforeEach(async () => {
     mockFS.reset();
@@ -242,7 +243,7 @@ describe("directory tool", () => {
     );
 
     // Mock process.cwd to return our test directory
-    spyOn(process, "cwd").mockReturnValue(mockFS.getTestPath());
+    cwdSpy = spyOn(process, "cwd").mockReturnValue(mockFS.getTestPath());
   });
 
   afterEach(() => {
@@ -250,6 +251,7 @@ describe("directory tool", () => {
     readdirSpy?.mockRestore();
     statSpy?.mockRestore();
     ignoreWalkSpy?.mockRestore();
+    cwdSpy?.mockRestore();
   });
 
   describe("list operation", () => {
