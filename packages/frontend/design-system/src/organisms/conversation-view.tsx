@@ -103,7 +103,7 @@ const ConversationView: React.FC = () => {
   const api = `${agentsUrl}api/chat`;
 
   // Use the AI SDK useChat hook with proper configuration
-  const { sendMessage, messages, stop, setMessages, status } = useChat({
+  const { sendMessage, messages, stop, setMessages, status, error } = useChat({
     id: activeChat || "default",
     messages: currentMessages,
     transport: new DefaultChatTransport({
@@ -133,6 +133,43 @@ const ConversationView: React.FC = () => {
   useEffect(() => {
     setIsLoading(status === "streaming");
   }, [status]);
+
+  // Add error message to chat
+  useEffect(() => {
+    if (error) {
+      setMessages((currentMessages) => {
+        const lastMessage = currentMessages[currentMessages.length - 1];
+
+        // If last message is from assistant, add error part to it
+        if (lastMessage && lastMessage.role === "assistant") {
+          // Avoid adding duplicate error parts
+          if (lastMessage.parts?.some((part) => part.type === "error")) {
+            return currentMessages;
+          }
+          return [
+            ...currentMessages.slice(0, -1),
+            {
+              ...lastMessage,
+              parts: [
+                ...(lastMessage.parts || []),
+                { type: "error", error: { message: error.message } },
+              ],
+            },
+          ];
+        }
+
+        // Otherwise, create a new assistant message with the error
+        return [
+          ...currentMessages,
+          {
+            id: `error-${Date.now()}`,
+            role: "assistant",
+            parts: [{ type: "error", error: { message: error.message } }],
+          },
+        ];
+      });
+    }
+  }, [error, setMessages]);
 
   // Handle sending messages using useChat hook
   const handleSendMessage = useCallback(

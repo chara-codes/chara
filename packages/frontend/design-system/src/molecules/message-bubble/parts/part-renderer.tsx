@@ -6,6 +6,7 @@ import { isDebugMode } from "../../../utils/debug";
 import ToolCallComponent from "../tool-call-component";
 import ContextPart from "./context-part";
 import DebugPart from "./debug-part";
+import ErrorPart from "./error-part";
 import ReasoningPart from "./reasoning-part";
 import TextPart from "./text-part";
 import ToolCallPart from "./tool-call-part";
@@ -193,6 +194,10 @@ const PartRenderer: React.FC<PartRendererProps> = ({
                   <TextPart key={key} text={part.text || ""} isUser={isUser} />
                 );
               }
+            case "error":
+              return (
+                <ErrorPart key={key} error={part.error || "Unknown error"} />
+              );
 
             case "reasoning":
               return (
