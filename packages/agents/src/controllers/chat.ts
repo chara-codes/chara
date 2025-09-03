@@ -80,9 +80,6 @@ export const chatController = {
 
         const modelMessages = convertToModelMessages(uiMessages);
 
-        logger.dump(uiMessages);
-        logger.dump(modelMessages);
-
         // Start chat agent
         const result = await chatAgent(
           {
@@ -94,8 +91,8 @@ export const chatController = {
             callbacks: {
               onStepFinish: async (stepResult) => {
                 logger.debug(`Step completed for chat ${chatId}:`, {
-                  text: stepResult.text,
-                  toolCalls: stepResult.toolCalls?.length || 0,
+                  text: stepResult?.text,
+                  toolCalls: stepResult?.toolCalls?.length || 0,
                 });
               },
               onFinish: async () => {
