@@ -1,3 +1,4 @@
+import { codeGrep } from "./code-grep";
 import { devServer } from "./dev-server";
 import { directory } from "./directory";
 import { editFile } from "./edit-file";
@@ -25,6 +26,7 @@ export const chatToolsWriteMode = {
   find,
   directory,
   grep,
+  "code-grep": codeGrep,
   fetch: fetchTool,
   terminal,
   thinking,
@@ -37,6 +39,7 @@ export const chatToolsWriteMode = {
 export const chatToolsAskMode = {
   "read-file": readFile,
   "file-system": fileSystem,
+  "code-grep": codeGrep,
   grep,
   find,
   fetch: fetchTool,

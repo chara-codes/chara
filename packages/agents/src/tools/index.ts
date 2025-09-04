@@ -1,3 +1,4 @@
+import { codeGrep } from "./code-grep";
 import { devServer } from "./dev-server";
 import { directory } from "./directory";
 import { editFile } from "./edit-file";
@@ -38,6 +39,7 @@ export const modernTools = {
   fetch: fetchTool,
   terminal: terminal,
   grep: grep,
+  "code-grep": codeGrep,
   thinking: thinking,
   "dev-server": devServer,
   examination: examination,
@@ -57,6 +59,7 @@ export const tools = {
   fetch: fetchTool,
   terminal: terminal,
   grep: grep,
+  "code-grep": codeGrep,
   thinking: thinking,
   "dev-server": devServer,
   examination: examination,
