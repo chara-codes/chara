@@ -208,14 +208,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   // Initialize stores when component mounts
   useEffect(() => {
     const initializeStores = async () => {
-      console.log("ChatInterface: Starting store initialization...");
-
       // Initialize chat store
       try {
-        console.log("ChatInterface: Initializing chat store...");
         await initializeChatStore();
         setDebugInfo((prev) => ({ ...prev, chatStoreInitialized: true }));
-        console.log("ChatInterface: Chat store initialized successfully");
       } catch (error) {
         const errorMsg =
           error instanceof Error ? error.message : "Unknown error";
@@ -228,10 +224,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
       // Initialize models store
       try {
-        console.log("ChatInterface: Initializing models store...");
         await initializeModelsStore();
         setDebugInfo((prev) => ({ ...prev, modelsStoreInitialized: true }));
-        console.log("ChatInterface: Models store initialized successfully");
       } catch (error) {
         const errorMsg =
           error instanceof Error ? error.message : "Unknown error";
@@ -304,31 +298,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
             currentScreen !== Screen.SERVER_CONNECTION &&
             (debugInfo.chatStoreInitialized || debugInfo.modelsStoreInitialized)
           ) {
-            console.log(
-              "Connection still lost after delay (Runner:",
-              !isConnected,
-              ", WebSocket:",
-              !wsStatus.connected,
-              "), navigating to SERVER_CONNECTION screen"
-            );
             navigateToServerConnection();
-          } else {
-            console.log(
-              "Connection recovered during delay or already on correct screen, skipping navigation"
-            );
           }
           connectionLostTimeoutRef.current = null;
         }, 500); // 0.5 second delay
       }
     } else if (connectionRestored && connectionLostTimeoutRef.current) {
       // Connection was restored before timeout, cancel the navigation
-      console.log(
-        "Connection restored before timeout (Runner:",
-        hasRunnerConnection,
-        ", WebSocket:",
-        hasWsConnection,
-        "), canceling navigation to SERVER_CONNECTION"
-      );
       clearTimeout(connectionLostTimeoutRef.current);
       connectionLostTimeoutRef.current = null;
     }
@@ -362,13 +338,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       currentScreen === Screen.SERVER_CONNECTION &&
       (debugInfo.chatStoreInitialized || debugInfo.modelsStoreInitialized)
     ) {
-      console.log(
-        "Connection restored (Runner:",
-        isConnected,
-        ", WebSocket:",
-        wsStatus.connected,
-        "), navigating back to conversation"
-      );
       navigateToConversation();
     }
   }, [

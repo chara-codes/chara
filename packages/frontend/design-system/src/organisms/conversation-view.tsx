@@ -137,6 +137,7 @@ const ConversationView: React.FC = () => {
   // Add error message to chat
   useEffect(() => {
     if (error) {
+      console.log(error);
       setMessages((currentMessages) => {
         const lastMessage = currentMessages[currentMessages.length - 1];
 

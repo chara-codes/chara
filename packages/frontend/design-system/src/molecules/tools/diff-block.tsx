@@ -87,14 +87,8 @@ function convertSimpleDiffToUnified(
     simpleDiff.includes("+++") &&
     simpleDiff.includes("@@")
   ) {
-    console.log("Diff is already in unified format");
     return simpleDiff;
   }
-
-  console.log(
-    "Converting simple diff to unified format, input length:",
-    simpleDiff.length
-  );
 
   const lines = simpleDiff.split("\n");
   const removedLines: string[] = [];
@@ -127,7 +121,6 @@ function convertSimpleDiffToUnified(
   }
 
   const result = diffLines.join("\n");
-  console.log("Converted diff result:", result);
   return result;
 }
 
@@ -517,8 +510,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     const operation = result?.operation || mode;
     const status = toolCall.result?.status || "generating";
 
-    console.log(toolCall);
-
     let oldContent = "";
     let newContent = "";
 
@@ -654,11 +645,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
         return [];
       }
 
-      console.log(
-        "Attempting to parse diff text:",
-        diffText.substring(0, 200) + "..."
-      );
-
       try {
         const parsedFiles = parseDiff(diffText);
         if (!Array.isArray(parsedFiles)) {
@@ -693,8 +679,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
 
           return true;
         });
-
-        console.log("Successfully parsed", validFiles.length, "valid files");
         return validFiles;
       } catch (error) {
         console.error("Failed to parse diff:", error);
@@ -711,7 +695,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
       diffFiles = safeParseDiff(unifiedDiff);
       if (diffFiles.length === 0) {
         // Fallback to creating diff from content
-        console.log("Fallback: creating diff from content");
         const diffText = createDiffFromContent(
           oldContent,
           contentToUse,
@@ -725,7 +708,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
           console.error("New content length:", contentToUse.length);
 
           // Final fallback: create a simple diff display without parseDiff
-          console.log("Using final fallback: simple diff display");
           diffFiles = [
             {
               hunks: [
@@ -773,7 +755,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
         console.error("Failed to create diff from content");
 
         // Final fallback: create a simple diff display without parseDiff
-        console.log("Using final fallback: simple diff display");
         diffFiles = [
           {
             hunks: [

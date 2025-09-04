@@ -130,17 +130,10 @@ export const useChatStore = create<ChatState>()(
         loadError: null,
 
         initializeStore: async () => {
-          console.log("Chat Store: Starting initialization...");
           set({ isLoading: true, loadError: null });
 
           try {
-            console.log("Chat Store: Fetching chats...");
             const chats = await fetchChats();
-            console.log(
-              "Chat Store: Chats fetched successfully, count:",
-              chats.length
-            );
-
             set({
               chats: chats.length > 0 ? chats : [],
               isLoading: false,
@@ -149,15 +142,8 @@ export const useChatStore = create<ChatState>()(
             // Load messages for persisted activeChat
             const currentState = get();
             if (currentState.activeChat) {
-              console.log(
-                "Chat Store: Found persisted activeChat, loading messages for:",
-                currentState.activeChat
-              );
               try {
                 await get().loadChatHistory(currentState.activeChat);
-                console.log(
-                  "Chat Store: Messages loaded for persisted activeChat"
-                );
               } catch (error) {
                 console.error(
                   "Chat Store: Failed to load messages for persisted activeChat:",
@@ -167,8 +153,6 @@ export const useChatStore = create<ChatState>()(
                 set({ activeChat: null });
               }
             }
-
-            console.log("Chat Store: Initialization completed successfully");
           } catch (error) {
             console.error("Chat Store: Failed to initialize:", error);
             set({
@@ -182,10 +166,7 @@ export const useChatStore = create<ChatState>()(
         },
 
         setActiveChat: async (chatId: string | null) => {
-          console.log("Chat Store: Setting active chat to:", chatId);
-
           if (chatId === get().activeChat) {
-            console.log("Chat Store: Chat already active, skipping");
             return;
           }
 
@@ -204,8 +185,6 @@ export const useChatStore = create<ChatState>()(
         createNewChat: async (title: string = "New Chat") => {
           try {
             const newChat = await createChat(title);
-            console.log("Chat Store: New chat created:", newChat);
-
             // Add to chats list
             set((state) => ({
               chats: [newChat, ...state.chats],
@@ -234,10 +213,8 @@ export const useChatStore = create<ChatState>()(
             status?: "idle" | "in_progress" | "completed" | "error";
           }
         ) => {
-          console.log("Chat Store: Updating chat:", chatId, updates);
           try {
             const updatedChat = await updateChat(chatId, updates);
-            console.log("Chat Store: Chat updated successfully:", updatedChat);
 
             // Update the chat in the store
             set((state) => ({
@@ -268,23 +245,15 @@ export const useChatStore = create<ChatState>()(
           chatId: string,
           messageContent: string
         ) => {
-          console.log(
-            "Chat Store: Checking if title should be updated for chat:",
-            chatId
-          );
           try {
             const { chats, currentMessages, activeChat } = get();
             const chat = chats.find((c) => c.id === chatId);
 
             if (!chat) {
-              console.log("Chat Store: Chat not found, skipping title update");
               return;
             }
 
             if (!isDefaultChatTitle(chat.title)) {
-              console.log(
-                "Chat Store: Chat title is not default, skipping update"
-              );
               return;
             }
 
@@ -299,9 +268,6 @@ export const useChatStore = create<ChatState>()(
             }
 
             if (messageCount > 1) {
-              console.log(
-                "Chat Store: Chat already has messages, skipping title update"
-              );
               return;
             }
 
@@ -309,13 +275,9 @@ export const useChatStore = create<ChatState>()(
             const title = generateTitleFromContent(messageContent);
 
             if (title.length === 0) {
-              console.log(
-                "Chat Store: Empty message content, skipping title update"
-              );
               return;
             }
 
-            console.log("Chat Store: Updating chat title to:", title);
             await get().updateChat(chatId, { title });
           } catch (error) {
             console.error(
@@ -327,14 +289,8 @@ export const useChatStore = create<ChatState>()(
         },
 
         loadChatHistory: async (chatId: string) => {
-          console.log("Chat Store: Loading chat history for:", chatId);
           try {
             const result = await fetchChatHistory(chatId);
-            console.log(
-              "Chat Store: Chat history loaded, message count:",
-              result.history.length
-            );
-
             // Convert server messages to proper UIMessage format with typed roles
             const uiMessages: UIMessage[] = result.history.map(
               (msg: ServerMessage) => ({
@@ -361,8 +317,6 @@ export const useChatStore = create<ChatState>()(
         },
 
         onChatFinish: async (message: UIMessage) => {
-          console.log("Chat Store: Chat finished, saving message:", message.id);
-
           const { activeChat, chats } = get();
           if (!activeChat) {
             console.warn("Chat Store: No active chat to save message to");
@@ -378,7 +332,6 @@ export const useChatStore = create<ChatState>()(
             );
 
             set({ chats: updatedChats });
-            console.log("Chat Store: Message saved and chat updated");
           } catch (error) {
             console.error(
               "Chat Store: Failed to update chat after message:",
@@ -431,12 +384,10 @@ export const useChatStore = create<ChatState>()(
         },
 
         setMode: (mode: ChatMode) => {
-          console.log("Chat Store: Setting mode to:", mode);
           set({ mode });
         },
 
         setModel: (model: string) => {
-          console.log("Chat Store: Setting model to:", model);
           set({ model });
         },
 
@@ -461,10 +412,6 @@ export const useChatStore = create<ChatState>()(
         resetToCommit: async (commitHash: string) => {
           try {
             await resetToCommit(commitHash);
-            console.log(
-              "Chat Store: Successfully reset to commit:",
-              commitHash
-            );
           } catch (error) {
             console.error("Chat Store: Failed to reset to commit:", error);
             throw error;
