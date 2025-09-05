@@ -177,7 +177,7 @@ export const StyledInput = styled.textarea`
   padding: 6px 0;
   width: 100%;
   min-height: 24px;
-  max-height: 150px;
+  max-height: 300px;
   border: none;
   outline: none;
   resize: none;

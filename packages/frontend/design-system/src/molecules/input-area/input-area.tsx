@@ -151,10 +151,14 @@ const InputArea: React.FC<InputAreaProps> = ({
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;
     if (textarea) {
+      // Force browser to recalculate layout
       textarea.style.height = "auto";
+      // Force reflow to ensure accurate scrollHeight
+      void textarea.offsetHeight;
       const scrollHeight = textarea.scrollHeight;
-      const maxHeight = 150;
-      textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+      const maxHeight = 300;
+      const newHeight = Math.min(scrollHeight, maxHeight);
+      textarea.style.height = `${newHeight}px`;
       textarea.style.overflowY = scrollHeight > maxHeight ? "auto" : "hidden";
     }
   }, []);
@@ -162,6 +166,15 @@ const InputArea: React.FC<InputAreaProps> = ({
   useEffect(() => {
     adjustTextareaHeight();
   }, [adjustTextareaHeight]);
+
+  // Fallback: adjust height whenever message changes
+  useEffect(() => {
+    if (message) {
+      requestAnimationFrame(() => {
+        adjustTextareaHeight();
+      });
+    }
+  }, [message, adjustTextareaHeight]);
 
   // Track if user has edited the message to prevent overriding user input
   const userHasEditedRef = useRef(false);
@@ -178,7 +191,10 @@ const InputArea: React.FC<InputAreaProps> = ({
       setIsBeautified(false);
       lastInitialMessageRef.current = initialMessage;
       userHasEditedRef.current = false; // Reset edit flag for new suggestion
-      setTimeout(adjustTextareaHeight, 0);
+      // Use requestAnimationFrame to ensure DOM has updated before adjusting height
+      requestAnimationFrame(() => {
+        adjustTextareaHeight();
+      });
     }
   }, [initialMessage, adjustTextareaHeight]);
 
@@ -203,10 +219,14 @@ const InputArea: React.FC<InputAreaProps> = ({
         setMessage(originalText);
       }
       setIsBeautified(false);
+      // Adjust height after reverting to original text
+      requestAnimationFrame(() => {
+        adjustTextareaHeight();
+      });
     } catch (error) {
       console.error("Error stopping beautification:", error);
     }
-  }, [stopBeautify, originalText]);
+  }, [stopBeautify, originalText, adjustTextareaHeight]);
 
   const handleUndo = useCallback(() => {
     try {
@@ -217,10 +237,14 @@ const InputArea: React.FC<InputAreaProps> = ({
       if (clearBeautifier) {
         clearBeautifier();
       }
+      // Adjust height after undoing beautification
+      requestAnimationFrame(() => {
+        adjustTextareaHeight();
+      });
     } catch (error) {
       console.error("Error undoing beautification:", error);
     }
-  }, [originalText, clearBeautifier]);
+  }, [originalText, clearBeautifier, adjustTextareaHeight]);
 
   const handleSend = useCallback(() => {
     if (message.trim() && !isResponding && !isBeautifying) {
@@ -232,7 +256,9 @@ const InputArea: React.FC<InputAreaProps> = ({
       }
       userHasEditedRef.current = false; // Reset edit flag after sending
       // Reset textarea height after clearing message
-      setTimeout(adjustTextareaHeight, 0);
+      requestAnimationFrame(() => {
+        adjustTextareaHeight();
+      });
     }
   }, [
     message,
@@ -338,7 +364,12 @@ const InputArea: React.FC<InputAreaProps> = ({
     if (hasBeautifierResult && beautifierResult) {
       setMessage(beautifierResult);
       setIsBeautified(true);
-      setTimeout(adjustTextareaHeight, 0);
+      // Use double requestAnimationFrame to ensure DOM has fully updated
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          adjustTextareaHeight();
+        });
+      });
     }
   }, [hasBeautifierResult, beautifierResult, adjustTextareaHeight]);
 
