@@ -465,7 +465,7 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
             {displayedOutput ||
               (status === "pending" ? "Waiting to execute..." : "No output")}
             <LoadingIndicator
-              isGenerating={isGenerating && status === "in-progress"}
+              $isGenerating={isGenerating && status === "in-progress"}
             >
               |
             </LoadingIndicator>
