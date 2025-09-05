@@ -3,8 +3,8 @@
 import {
   BrowserContext,
   readFileContent,
-  useChatStore,
   useRunnerProcesses,
+  useSimpleBeautifier,
   useUIStore,
   type InputAreaProps,
 } from "@chara-codes/core";
@@ -107,9 +107,20 @@ const InputArea: React.FC<InputAreaProps> = ({
   const { browser, sentMessageToApp } = useContext(BrowserContext);
   // Use the context-aware hook to get buttonConfig from the store
   const storeButtonConfig = useUIStore((state) => state.inputButtonConfig);
-  const beautifyPromptStream = useChatStore(
-    (state) => state.beautifyPromptStream
-  );
+
+  // Use the new beautifier hook - always call the hook unconditionally
+  const beautifierHook = useSimpleBeautifier();
+
+  const {
+    setPrompt: setBeautifierPrompt,
+    isBeautifying,
+    result: beautifierResult,
+    error: beautifierError,
+    beautify,
+    stop: stopBeautify,
+    clear: clearBeautifier,
+    hasResult: hasBeautifierResult,
+  } = beautifierHook;
 
   // If buttonConfig prop is provided, it overrides the store's config.
   // Otherwise, use the config from the store.
@@ -124,7 +135,6 @@ const InputArea: React.FC<InputAreaProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [originalText, setOriginalText] = useState<string>("");
   const [isBeautified, setIsBeautified] = useState(false);
-  const [isBeautifyLoading, setIsBeautifyLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { startElementSelection } = useElementSelector(onAddContext);
@@ -175,57 +185,51 @@ const InputArea: React.FC<InputAreaProps> = ({
   const beautifyText = useCallback(() => {
     if (!message.trim()) return;
 
-    const currentMessage = message;
-    setIsBeautifyLoading(true);
-    setOriginalText(currentMessage);
+    try {
+      setOriginalText(message);
+      setBeautifierPrompt(message);
+      beautify();
+    } catch (error) {
+      console.error("Error starting beautification:", error);
+    }
+  }, [message, setBeautifierPrompt, beautify]);
 
-    // Clear the current message to show streaming effect
-    setMessage("");
-
-    beautifyPromptStream(
-      currentMessage,
-      // onTextDelta - update message in real-time
-      (delta: string) => {
-        setMessage((prev) => prev + delta);
-        // Trigger height adjustment after each delta
-        setTimeout(() => {
-          const textarea = textareaRef.current;
-          if (textarea) {
-            textarea.style.height = "auto";
-            const scrollHeight = textarea.scrollHeight;
-            const maxHeight = 150;
-            textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
-            textarea.style.overflowY =
-              scrollHeight > maxHeight ? "auto" : "hidden";
-          }
-        }, 0);
-      },
-      // onComplete - finalize the beautification
-      (finalText: string) => {
-        setMessage(finalText);
-        setIsBeautified(true);
-        setIsBeautifyLoading(false);
-      },
-      // onError - handle errors
-      (error: Error) => {
-        console.error("Failed to beautify text:", error);
-        // Revert to original text on error
-        setMessage(currentMessage);
-        setIsBeautifyLoading(false);
+  const handleStopBeautify = useCallback(() => {
+    try {
+      if (stopBeautify) {
+        stopBeautify();
       }
-    );
-  }, [message, beautifyPromptStream]);
+      if (originalText) {
+        setMessage(originalText);
+      }
+      setIsBeautified(false);
+    } catch (error) {
+      console.error("Error stopping beautification:", error);
+    }
+  }, [stopBeautify, originalText]);
 
   const handleUndo = useCallback(() => {
-    setMessage(originalText);
-    setIsBeautified(false);
-  }, [originalText]);
+    try {
+      if (originalText) {
+        setMessage(originalText);
+      }
+      setIsBeautified(false);
+      if (clearBeautifier) {
+        clearBeautifier();
+      }
+    } catch (error) {
+      console.error("Error undoing beautification:", error);
+    }
+  }, [originalText, clearBeautifier]);
 
   const handleSend = useCallback(() => {
-    if (message.trim() && !isResponding && !isBeautifyLoading) {
+    if (message.trim() && !isResponding && !isBeautifying) {
       onSendMessage(message);
       setMessage("");
       setIsBeautified(false);
+      if (clearBeautifier) {
+        clearBeautifier();
+      }
       userHasEditedRef.current = false; // Reset edit flag after sending
       // Reset textarea height after clearing message
       setTimeout(adjustTextareaHeight, 0);
@@ -233,9 +237,10 @@ const InputArea: React.FC<InputAreaProps> = ({
   }, [
     message,
     isResponding,
-    isBeautifyLoading,
+    isBeautifying,
     onSendMessage,
     adjustTextareaHeight,
+    clearBeautifier,
   ]);
 
   const handleKeyDown = useCallback(
@@ -245,26 +250,26 @@ const InputArea: React.FC<InputAreaProps> = ({
         !e.shiftKey &&
         !isResponding &&
         !isLoading &&
-        !isBeautifyLoading
+        !isBeautifying
       ) {
         e.preventDefault();
         handleSend();
       }
     },
-    [isResponding, isLoading, isBeautifyLoading, handleSend]
+    [isResponding, isLoading, isBeautifying, handleSend]
   );
 
   const handlePlusClick = useCallback(() => {
-    if (plusButtonRef.current && !isLoading && !isBeautifyLoading) {
+    if (plusButtonRef.current && !isLoading && !isBeautifying) {
       setDropdownPosition({
         top: -250,
         left: 0,
       });
     }
-    if (!isLoading && !isBeautifyLoading) {
+    if (!isLoading && !isBeautifying) {
       setIsDropdownOpen(!isDropdownOpen);
     }
-  }, [isLoading, isBeautifyLoading, isDropdownOpen]);
+  }, [isLoading, isBeautifying, isDropdownOpen]);
 
   const handleDropdownClose = useCallback(() => {
     setIsDropdownOpen(false);
@@ -286,10 +291,10 @@ const InputArea: React.FC<InputAreaProps> = ({
   );
 
   const triggerFileUpload = useCallback(() => {
-    if (fileInputRef.current && !isLoading && !isBeautifyLoading) {
+    if (fileInputRef.current && !isLoading && !isBeautifying) {
       fileInputRef.current.click();
     }
-  }, [isLoading, isBeautifyLoading]);
+  }, [isLoading, isBeautifying]);
 
   const runnerProcesses = useRunnerProcesses();
 
@@ -328,6 +333,27 @@ const InputArea: React.FC<InputAreaProps> = ({
     [effectiveButtonConfig]
   );
 
+  // Update message when beautifier result changes
+  useEffect(() => {
+    if (hasBeautifierResult && beautifierResult) {
+      setMessage(beautifierResult);
+      setIsBeautified(true);
+      setTimeout(adjustTextareaHeight, 0);
+    }
+  }, [hasBeautifierResult, beautifierResult, adjustTextareaHeight]);
+
+  // Handle beautifier errors
+  useEffect(() => {
+    if (beautifierError) {
+      console.error("Failed to beautify text:", beautifierError);
+      // Revert to original text on error
+      if (originalText) {
+        setMessage(originalText);
+      }
+      setIsBeautified(false);
+    }
+  }, [beautifierError, originalText]);
+
   const getButtonTooltip = useCallback(
     (buttonId: string) => {
       const button = effectiveButtonConfig?.find((b) => b.id === buttonId);
@@ -339,11 +365,11 @@ const InputArea: React.FC<InputAreaProps> = ({
   return (
     <InputContainer
       style={{
-        opacity: isLoading || isBeautifyLoading ? 0.7 : 1,
+        opacity: isLoading || isBeautifying ? 0.7 : 1,
         position: "relative",
       }}
     >
-      {(isLoading || isBeautifyLoading) && <LoadingLine />}
+      {(isLoading || isBeautifying) && <LoadingLine />}
       <InputWrapper>
         <InputControls>
           <StyledInput
@@ -361,7 +387,7 @@ const InputArea: React.FC<InputAreaProps> = ({
               [adjustTextareaHeight]
             )}
             onKeyDown={handleKeyDown}
-            disabled={isResponding || isLoading || isBeautifyLoading}
+            disabled={isResponding || isLoading || isBeautifying}
           />
           <ButtonsRow>
             {isButtonEnabled("add-context") && (
@@ -373,7 +399,7 @@ const InputArea: React.FC<InputAreaProps> = ({
                 >
                   <RoundedIconButton
                     onClick={handlePlusClick}
-                    disabled={isResponding || isLoading || isBeautifyLoading}
+                    disabled={isResponding || isLoading || isBeautifying}
                     aria-label="Add context"
                   >
                     <PlusIcon />
@@ -389,7 +415,7 @@ const InputArea: React.FC<InputAreaProps> = ({
               >
                 <RoundedIconButton
                   onClick={startSelection}
-                  disabled={isResponding || isLoading || isBeautifyLoading}
+                  disabled={isResponding || isLoading || isBeautifying}
                   aria-label="Select element"
                 >
                   <PointerIcon />
@@ -404,7 +430,7 @@ const InputArea: React.FC<InputAreaProps> = ({
               >
                 <RoundedIconButton
                   onClick={triggerFileUpload}
-                  disabled={isResponding || isLoading || isBeautifyLoading}
+                  disabled={isResponding || isLoading || isBeautifying}
                   aria-label="Upload file"
                 >
                   <ClipIcon />
@@ -413,31 +439,47 @@ const InputArea: React.FC<InputAreaProps> = ({
             )}
             <AnimatedButton isVisible={showBeautifyButton}>
               <Tooltip
-                text={isBeautified ? "Undo beautify" : "Beautify text"}
+                text={
+                  isBeautifying
+                    ? "Stop beautify"
+                    : isBeautified
+                    ? "Undo beautify"
+                    : "Beautify text"
+                }
                 position="top"
                 delay={500}
               >
                 <RoundedIconButton
-                  onClick={isBeautified ? handleUndo : beautifyText}
-                  disabled={
-                    isResponding ||
-                    isLoading ||
-                    isBeautifyLoading ||
-                    (!isBeautified && !message.trim())
+                  onClick={
+                    isBeautifying
+                      ? handleStopBeautify
+                      : isBeautified
+                      ? handleUndo
+                      : beautifyText
                   }
-                  aria-label={isBeautified ? "Undo beautify" : "Beautify text"}
+                  disabled={isBeautifying}
+                  aria-label={
+                    isBeautifying
+                      ? "Stop beautify"
+                      : isBeautified
+                      ? "Undo beautify"
+                      : "Beautify text"
+                  }
                 >
-                  {isBeautified ? <UndoIcon /> : <BeautifyIcon />}
+                  {isBeautifying ? (
+                    <StopIcon />
+                  ) : isBeautified ? (
+                    <UndoIcon />
+                  ) : (
+                    <BeautifyIcon />
+                  )}
                 </RoundedIconButton>
               </Tooltip>
             </AnimatedButton>
             <DropdownMenu
               items={dropdownItems}
               isOpen={
-                isDropdownOpen &&
-                !isResponding &&
-                !isLoading &&
-                !isBeautifyLoading
+                isDropdownOpen && !isResponding && !isLoading && !isBeautifying
               }
               onClose={handleDropdownClose}
               position={dropdownPosition}
@@ -455,7 +497,7 @@ const InputArea: React.FC<InputAreaProps> = ({
         <SendButton
           onClick={isResponding ? onStopResponse : handleSend}
           $isResponding={isResponding}
-          disabled={isLoading || isBeautifyLoading}
+          disabled={isLoading || isBeautifying}
           aria-label={isResponding ? "Stop response" : "Send message"}
         >
           {isResponding ? (

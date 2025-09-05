@@ -1,6 +1,7 @@
 "use client";
 
-import type { UIMessage } from "ai";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import {
@@ -78,6 +79,13 @@ interface ChatState {
     onComplete: (finalText: string) => void,
     onError: (error: Error) => void
   ) => void;
+
+  // Get configuration for beautify chat using useChat hook
+  getBeautifyChatConfig: () => {
+    api: string;
+    transport: DefaultChatTransport<UIMessage>;
+    generateId: () => string;
+  };
 
   // Chat hook integration
   getChatConfig: () => {
@@ -296,7 +304,7 @@ export const useChatStore = create<ChatState>()(
               (msg: ServerMessage) => ({
                 ...msg,
                 role: msg.role as "system" | "user" | "assistant",
-                parts: msg.parts as any, // Cast to satisfy UIMessage type requirements
+                parts: msg.parts as UIMessage["parts"], // Cast to satisfy UIMessage type requirements
               })
             );
             set({ currentMessages: uiMessages, loadError: null });
@@ -316,7 +324,7 @@ export const useChatStore = create<ChatState>()(
           set({ currentMessages: messages });
         },
 
-        onChatFinish: async (message: UIMessage) => {
+        onChatFinish: async (_message: UIMessage) => {
           const { activeChat, chats } = get();
           if (!activeChat) {
             console.warn("Chat Store: No active chat to save message to");
@@ -424,7 +432,14 @@ export const useChatStore = create<ChatState>()(
           onComplete: (finalText: string) => void,
           onError: (error: Error) => void
         ) => {
-          // Implementation for beautifying prompts using streaming
+          // This function provides configuration for components to use with useChat
+          // The actual implementation should be done in React components using useBeautifyChat hook
+
+          console.warn(
+            "beautifyPromptStream: Consider using useBeautifyChat hook in React components for better integration with AI SDK"
+          );
+
+          // Fallback implementation using fetch for backward compatibility
           const agentsUrl =
             import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
           const beautifyUrl = `${agentsUrl}api/beautify`;
@@ -450,14 +465,38 @@ export const useChatStore = create<ChatState>()(
               }
 
               let fullText = "";
+              const decoder = new TextDecoder();
+
               try {
                 while (true) {
                   const { done, value } = await reader.read();
                   if (done) break;
 
-                  const chunk = new TextDecoder().decode(value);
-                  fullText += chunk;
-                  onTextDelta(chunk);
+                  const chunk = decoder.decode(value, { stream: true });
+
+                  // Handle AI SDK UI stream format
+                  const lines = chunk.split("\n").filter((line) => line.trim());
+
+                  for (const line of lines) {
+                    try {
+                      const data = JSON.parse(line);
+
+                      // Handle UIMessage format from AI SDK
+                      if (data.type === "text-delta" && data.textDelta) {
+                        const delta = data.textDelta;
+                        fullText += delta;
+                        onTextDelta(delta);
+                      } else if (data.type === "finish") {
+                        break;
+                      }
+                    } catch {
+                      // Skip malformed JSON or handle plain text chunks
+                      if (chunk.trim()) {
+                        fullText += chunk;
+                        onTextDelta(chunk);
+                      }
+                    }
+                  }
                 }
                 onComplete(fullText);
               } finally {
@@ -470,6 +509,31 @@ export const useChatStore = create<ChatState>()(
                 error instanceof Error ? error : new Error(String(error))
               );
             });
+        },
+
+        // Get configuration for beautify chat using useChat hook
+        getBeautifyChatConfig: () => {
+          const { model } = get();
+          const agentsUrl =
+            import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
+          const beautifyUrl = `${agentsUrl}api/beautify`;
+
+          return {
+            api: beautifyUrl,
+            transport: new DefaultChatTransport({
+              api: beautifyUrl,
+              body: {
+                model,
+              },
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }),
+            generateId: () =>
+              `beautify_${Date.now()}_${Math.random()
+                .toString(36)
+                .substring(2)}`,
+          };
         },
       }),
       {
@@ -537,6 +601,51 @@ export const getChatHookConfig = (
     generateId: () =>
       `msg_${Date.now()}_${Math.random().toString(36).substring(2)}`,
     onFinish,
+  };
+};
+
+/**
+ * Hook for beautifying prompts using useChat from AI SDK
+ * This provides a React hook interface for prompt beautification with streaming
+ *
+ * Usage:
+ * ```ts
+ * const beautifyChat = useBeautifyChat();
+ *
+ * const handleBeautify = () => {
+ *   beautifyChat.sendMessage({ text: "Make this prompt better" });
+ * };
+ *
+ * // Monitor streaming updates
+ * useEffect(() => {
+ *   const lastMessage = beautifyChat.messages[beautifyChat.messages.length - 1];
+ *   if (lastMessage?.role === "assistant") {
+ *     // Handle streaming text updates
+ *     const text = lastMessage.parts
+ *       .filter(part => part.type === "text")
+ *       .map(part => part.text)
+ *       .join("");
+ *     // Update UI with text
+ *   }
+ * }, [beautifyChat.messages]);
+ * ```
+ */
+export const useBeautifyChat = () => {
+  const store = useChatStore();
+  const config = store.getBeautifyChatConfig();
+
+  const chatHook = useChat({
+    transport: config.transport,
+    generateId: config.generateId,
+  });
+
+  return {
+    ...chatHook,
+    beautifyPrompt: (prompt: string) => {
+      return chatHook.sendMessage({
+        text: prompt,
+      });
+    },
   };
 };
 

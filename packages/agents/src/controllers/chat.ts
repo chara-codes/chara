@@ -73,6 +73,22 @@ export const chatController = {
         // Initialize git repository for this working directory
         await isoGitService.getLastCommit(workingDir);
 
+        // Save chat messages to database
+        const saveChatMessages = async (
+          chatId: string,
+          messages: UIMessage[]
+        ): Promise<void> => {
+          try {
+            await trpc.chat.saveMessages.mutate({
+              chatId,
+              messages: messages as any,
+            });
+          } catch (error) {
+            logger.error("Failed to save chat:", error);
+            throw error;
+          }
+        };
+
         // Combine tools
         const localChatTools =
           mode === "write" ? chatToolsWriteMode : chatToolsAskMode;
@@ -118,22 +134,6 @@ export const chatController = {
           },
           { abortSignal: controller.signal }
         );
-
-        // Save chat messages to database
-        const saveChatMessages = async (
-          chatId: string,
-          messages: UIMessage[]
-        ): Promise<void> => {
-          try {
-            await trpc.chat.saveMessages.mutate({
-              chatId,
-              messages: messages as any,
-            });
-          } catch (error) {
-            logger.error("Failed to save chat:", error);
-            throw error;
-          }
-        };
 
         // Return the streaming response using AI SDK's toUIMessageStreamResponse
         return result.toUIMessageStreamResponse({
