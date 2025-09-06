@@ -8,6 +8,7 @@ export interface InputAreaProps {
   isLoading?: boolean;
   buttonConfig?: ButtonConfig[];
   initialMessage?: string;
+  chatId?: string;
 }
 
 export interface InputContextItem {

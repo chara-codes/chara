@@ -349,6 +349,7 @@ const ConversationView: React.FC = () => {
         isResponding={isLoading}
         onStopResponse={handleStopResponse}
         initialMessage={inputMessage}
+        chatId={activeChat || undefined}
       />
       <Footer />
     </ConversationContainer>

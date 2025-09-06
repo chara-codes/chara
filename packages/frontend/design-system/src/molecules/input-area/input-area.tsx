@@ -103,13 +103,11 @@ const InputArea: React.FC<InputAreaProps> = ({
   },
   buttonConfig, // Prop for button config
   initialMessage,
+  chatId,
 }) => {
   const { browser, sentMessageToApp } = useContext(BrowserContext);
   // Use the context-aware hook to get buttonConfig from the store
   const storeButtonConfig = useUIStore((state) => state.inputButtonConfig);
-
-  // Use the new beautifier hook - always call the hook unconditionally
-  const beautifierHook = useSimpleBeautifier();
 
   const {
     setPrompt: setBeautifierPrompt,
@@ -120,7 +118,7 @@ const InputArea: React.FC<InputAreaProps> = ({
     stop: stopBeautify,
     clear: clearBeautifier,
     hasResult: hasBeautifierResult,
-  } = beautifierHook;
+  } = useSimpleBeautifier();
 
   // If buttonConfig prop is provided, it overrides the store's config.
   // Otherwise, use the config from the store.
@@ -170,6 +168,7 @@ const InputArea: React.FC<InputAreaProps> = ({
   // Track if user has edited the message to prevent overriding user input
   const userHasEditedRef = useRef(false);
   const lastInitialMessageRef = useRef<string | undefined>(undefined);
+  const lastChatIdRef = useRef<string | undefined>(chatId);
 
   // Handle initialMessage prop - only apply if it's new and user hasn't edited
   useEffect(() => {
@@ -376,6 +375,28 @@ const InputArea: React.FC<InputAreaProps> = ({
     }
   }, [beautifierError, originalText]);
 
+  // Clean beautifier when chat changes
+  // This ensures that when a user switches to another chat, the beautifier state is reset
+  // preventing beautified text from carrying over to different conversations
+  useEffect(() => {
+    if (chatId && chatId !== lastChatIdRef.current) {
+      // Clear beautifier state
+      if (clearBeautifier) {
+        clearBeautifier();
+      }
+
+      // Reset local state
+      setIsBeautified(false);
+      setOriginalText("");
+
+      // Update the ref to track the new chat
+      lastChatIdRef.current = chatId;
+
+      // Reset user edit flag for new chat
+      userHasEditedRef.current = false;
+    }
+  }, [chatId, clearBeautifier]);
+
   const getButtonTooltip = useCallback(
     (buttonId: string) => {
       const button = effectiveButtonConfig?.find((b) => b.id === buttonId);
@@ -393,147 +414,147 @@ const InputArea: React.FC<InputAreaProps> = ({
     >
       {(isLoading || isBeautifying) && <LoadingLine />}
       <InputWrapper>
-          <InputControls>
-            <StyledInput
-              ref={textareaRef}
-              placeholder={
-                isResponding ? "AI is responding..." : "Message the agent..."
-              }
-              value={message}
-              onChange={useCallback(
-                (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                  setMessage(e.target.value);
-                  userHasEditedRef.current = true; // Mark that user has edited
-                  adjustTextareaHeight();
-                },
-                [adjustTextareaHeight]
-              )}
-              onKeyDown={handleKeyDown}
-              disabled={isResponding || isLoading || isBeautifying}
-            />
-            <ButtonsRow>
-          {isButtonEnabled("add-context") && (
-            <div ref={plusButtonRef}>
+        <InputControls>
+          <StyledInput
+            ref={textareaRef}
+            placeholder={
+              isResponding ? "AI is responding..." : "Message the agent..."
+            }
+            value={message}
+            onChange={useCallback(
+              (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                setMessage(e.target.value);
+                userHasEditedRef.current = true; // Mark that user has edited
+                adjustTextareaHeight();
+              },
+              [adjustTextareaHeight]
+            )}
+            onKeyDown={handleKeyDown}
+            disabled={isResponding || isLoading || isBeautifying}
+          />
+          <ButtonsRow>
+            {isButtonEnabled("add-context") && (
+              <div ref={plusButtonRef}>
+                <Tooltip
+                  text={getButtonTooltip("add-context")}
+                  position="top"
+                  delay={500}
+                >
+                  <RoundedIconButton
+                    onClick={handlePlusClick}
+                    disabled={isResponding || isLoading || isBeautifying}
+                    aria-label="Add context"
+                  >
+                    <PlusIcon />
+                  </RoundedIconButton>
+                </Tooltip>
+              </div>
+            )}
+            {isButtonEnabled("select-element") && (
               <Tooltip
-                text={getButtonTooltip("add-context")}
+                text={getButtonTooltip("select-element")}
                 position="top"
                 delay={500}
               >
                 <RoundedIconButton
-                  onClick={handlePlusClick}
+                  onClick={startSelection}
                   disabled={isResponding || isLoading || isBeautifying}
-                  aria-label="Add context"
+                  aria-label="Select element"
                 >
-                  <PlusIcon />
+                  <PointerIcon />
                 </RoundedIconButton>
               </Tooltip>
-            </div>
-          )}
-          {isButtonEnabled("select-element") && (
-            <Tooltip
-              text={getButtonTooltip("select-element")}
-              position="top"
-              delay={500}
-            >
-              <RoundedIconButton
-                onClick={startSelection}
-                disabled={isResponding || isLoading || isBeautifying}
-                aria-label="Select element"
+            )}
+            {isButtonEnabled("upload-file") && (
+              <Tooltip
+                text={getButtonTooltip("upload-file")}
+                position="top"
+                delay={500}
               >
-                <PointerIcon />
-              </RoundedIconButton>
-            </Tooltip>
-          )}
-          {isButtonEnabled("upload-file") && (
-            <Tooltip
-              text={getButtonTooltip("upload-file")}
-              position="top"
-              delay={500}
-            >
-              <RoundedIconButton
-                onClick={triggerFileUpload}
-                disabled={isResponding || isLoading || isBeautifying}
-                aria-label="Upload file"
-              >
-                <ClipIcon />
-              </RoundedIconButton>
-            </Tooltip>
-          )}
-          <AnimatedButton isVisible={showBeautifyButton}>
-            <Tooltip
-              text={
-                isBeautifying
-                  ? "Stop beautify"
-                  : isBeautified
-                  ? "Undo beautify"
-                  : "Beautify text"
-              }
-              position="top"
-              delay={500}
-            >
-              <RoundedIconButton
-                onClick={
-                  isBeautifying
-                    ? handleStopBeautify
-                    : isBeautified
-                    ? handleUndo
-                    : beautifyText
-                }
-                disabled={isBeautifying}
-                aria-label={
+                <RoundedIconButton
+                  onClick={triggerFileUpload}
+                  disabled={isResponding || isLoading || isBeautifying}
+                  aria-label="Upload file"
+                >
+                  <ClipIcon />
+                </RoundedIconButton>
+              </Tooltip>
+            )}
+            <AnimatedButton isVisible={showBeautifyButton}>
+              <Tooltip
+                text={
                   isBeautifying
                     ? "Stop beautify"
                     : isBeautified
                     ? "Undo beautify"
                     : "Beautify text"
                 }
+                position="top"
+                delay={500}
               >
-                {isBeautifying ? (
-                  <StopIcon />
-                ) : isBeautified ? (
-                  <UndoIcon />
-                ) : (
-                  <BeautifyIcon />
-                )}
-              </RoundedIconButton>
-            </Tooltip>
-          </AnimatedButton>
-          <DropdownMenu
-            items={dropdownItems}
-            isOpen={
-              isDropdownOpen && !isResponding && !isLoading && !isBeautifying
-            }
-            onClose={handleDropdownClose}
-            position={dropdownPosition}
-            onSelect={handleDropdownSelect}
-          />
-          <FileInput onFileSelect={handleFileSelect} ref={fileInputRef} />
-        </ButtonsRow>
-          </InputControls>
-        </InputWrapper>
-        <Tooltip
-          text={isResponding ? "Stop response" : "Send message"}
-          position="left"
-          delay={500}
+                <RoundedIconButton
+                  onClick={
+                    isBeautifying
+                      ? handleStopBeautify
+                      : isBeautified
+                      ? handleUndo
+                      : beautifyText
+                  }
+                  disabled={isBeautifying}
+                  aria-label={
+                    isBeautifying
+                      ? "Stop beautify"
+                      : isBeautified
+                      ? "Undo beautify"
+                      : "Beautify text"
+                  }
+                >
+                  {isBeautifying ? (
+                    <StopIcon />
+                  ) : isBeautified ? (
+                    <UndoIcon />
+                  ) : (
+                    <BeautifyIcon />
+                  )}
+                </RoundedIconButton>
+              </Tooltip>
+            </AnimatedButton>
+            <DropdownMenu
+              items={dropdownItems}
+              isOpen={
+                isDropdownOpen && !isResponding && !isLoading && !isBeautifying
+              }
+              onClose={handleDropdownClose}
+              position={dropdownPosition}
+              onSelect={handleDropdownSelect}
+            />
+            <FileInput onFileSelect={handleFileSelect} ref={fileInputRef} />
+          </ButtonsRow>
+        </InputControls>
+      </InputWrapper>
+      <Tooltip
+        text={isResponding ? "Stop response" : "Send message"}
+        position="left"
+        delay={500}
+      >
+        <SendButton
+          onClick={isResponding ? onStopResponse : handleSend}
+          $isResponding={isResponding}
+          disabled={isLoading || isBeautifying}
+          aria-label={isResponding ? "Stop response" : "Send message"}
         >
-          <SendButton
-            onClick={isResponding ? onStopResponse : handleSend}
-            $isResponding={isResponding}
-            disabled={isLoading || isBeautifying}
-            aria-label={isResponding ? "Stop response" : "Send message"}
-          >
-            {isResponding ? (
-              <>
-                <StopIcon />
-                <LoaderContainer>
-                  <Loader />
-                </LoaderContainer>
-              </>
-            ) : (
-              <SendIcon />
-            )}
-          </SendButton>
-        </Tooltip>
+          {isResponding ? (
+            <>
+              <StopIcon />
+              <LoaderContainer>
+                <Loader />
+              </LoaderContainer>
+            </>
+          ) : (
+            <SendIcon />
+          )}
+        </SendButton>
+      </Tooltip>
     </InputContainer>
   );
 };
