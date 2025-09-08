@@ -23,9 +23,9 @@ export const beautifyAgent = async (
       {
         role: "system",
         content:
-          "Use provided messages to generate a better implementation-focused prompt. Limit the response to 300 symbols, make it actionable for development, and use plain text only. Prioritize clarity and practical instructions.",
+          "Use provided messages to generate a better implementation-focused prompt.  Limit the response to 300 symbols, make it actionable for development, and use plain text only. Prioritize clarity and practical instructions.",
       },
-      ...messages,
+      messages[messages.length - 1] as any,
     ],
     onError: (err) => {
       logger.dump(err);

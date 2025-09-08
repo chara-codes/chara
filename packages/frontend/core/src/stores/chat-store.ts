@@ -85,6 +85,7 @@ interface ChatState {
     api: string;
     transport: DefaultChatTransport<UIMessage>;
     generateId: () => string;
+    id?: string;
   };
 
   // Chat hook integration
@@ -513,7 +514,7 @@ export const useChatStore = create<ChatState>()(
 
         // Get configuration for beautify chat using useChat hook
         getBeautifyChatConfig: () => {
-          const { model } = get();
+          const { model, activeChat } = get();
           const agentsUrl =
             import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
           const beautifyUrl = `${agentsUrl}api/beautify`;
@@ -524,6 +525,7 @@ export const useChatStore = create<ChatState>()(
               api: beautifyUrl,
               body: {
                 model,
+                chatId: activeChat,
               },
               headers: {
                 "Content-Type": "application/json",
@@ -533,6 +535,7 @@ export const useChatStore = create<ChatState>()(
               `beautify_${Date.now()}_${Math.random()
                 .toString(36)
                 .substring(2)}`,
+            id: activeChat || undefined,
           };
         },
       }),
@@ -637,6 +640,7 @@ export const useBeautifyChat = () => {
   const chatHook = useChat({
     transport: config.transport,
     generateId: config.generateId,
+    id: config.id,
   });
 
   return {

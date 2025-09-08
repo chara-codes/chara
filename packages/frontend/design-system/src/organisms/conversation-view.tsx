@@ -9,7 +9,7 @@ import {
 import { DefaultChatTransport } from "ai";
 import type { DataUIPart, FileUIPart, TextUIPart } from "ai";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { CharaLogo } from "../atoms/chara-logo";
 import ConversationSuggestions from "../molecules/conversation-suggestions";
@@ -95,6 +95,9 @@ const ConversationView: React.FC = () => {
   // Local state for input message
   const [inputMessage, setInputMessage] = useState("");
 
+  // Track processed errors to prevent infinite loops
+  const processedErrorsRef = useRef(new Set<string>());
+
   // Get store actions using getState to avoid subscription issues
   const chatStore = useChatStore.getState();
 
@@ -134,10 +137,19 @@ const ConversationView: React.FC = () => {
     setIsLoading(status === "streaming");
   }, [status]);
 
-  // Add error message to chat
+  // Add error message to chat - stabilized to prevent infinite loops
   useEffect(() => {
     if (error) {
+      const errorKey = `${error.message}-${Date.now()}`;
+
+      // Check if we've already processed this error to prevent duplicates
+      if (processedErrorsRef.current.has(error.message)) {
+        return;
+      }
+
       console.log(error);
+      processedErrorsRef.current.add(error.message);
+
       setMessages((currentMessages) => {
         const lastMessage = currentMessages[currentMessages.length - 1];
 
@@ -170,12 +182,15 @@ const ConversationView: React.FC = () => {
         ];
       });
     }
-  }, [error, setMessages]);
+  }, [error]);
 
   // Handle sending messages using useChat hook
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!content.trim()) return;
+
+      // Clear processed errors when sending a new message
+      processedErrorsRef.current.clear();
 
       try {
         let currentChatId = activeChat;
