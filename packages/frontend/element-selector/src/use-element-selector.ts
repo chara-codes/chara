@@ -149,6 +149,17 @@ export const useElementSelector = (
       setSelectedElement(element);
       setShowCommentModal(true);
 
+      // Clean up selection UI before showing modal
+      if (uiRef.current) {
+        console.log("🧹 Cleaning up selection UI before modal");
+        // Remove all highlights from elements
+        uiRef.current.removeHighlights();
+        // Hide tag display
+        uiRef.current.hideTagDisplay();
+        // Hide selection UI elements (cursor follower, guide, etc.)
+        uiRef.current.hideSelectionUI();
+      }
+
       // Pause selection handlers while modal is open
       if (selectionHandlersRef.current) {
         console.log("⏸️ Pausing selection handlers for modal");

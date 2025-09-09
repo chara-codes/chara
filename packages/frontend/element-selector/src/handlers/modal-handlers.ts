@@ -47,16 +47,10 @@ export class ModalHandlers {
     }
 
     try {
-      // Validate comment
+      // Trim comment (allow empty comments)
       const trimmedComment = comment.trim();
-      if (!trimmedComment) {
-        this.showValidationError(
-          "Please enter a comment before adding the element."
-        );
-        return;
-      }
 
-      // Create element context item
+      // Create element context item (comment can be empty)
       const elementInfo = this.createElementContextItem(
         this.currentElement,
         this.currentComponentInfo,
@@ -217,15 +211,9 @@ export class ModalHandlers {
   } {
     const trimmed = comment.trim();
 
-    if (!trimmed) {
-      return { isValid: false, error: "Comment cannot be empty" };
-    }
-
-    if (trimmed.length < 2) {
-      return {
-        isValid: false,
-        error: "Comment must be at least 2 characters long",
-      };
+    // Allow empty comments
+    if (trimmed.length === 0) {
+      return { isValid: true };
     }
 
     if (trimmed.length > 500) {

@@ -128,7 +128,7 @@ export class CommentModal {
     });
 
     const title = createElement("h3", {
-      textContent: "Add Comment to Element",
+      textContent: "Add Element to Context",
       styles: {
         margin: "0",
         fontSize: "16px",
@@ -226,7 +226,7 @@ export class CommentModal {
     });
 
     const label = createElement("label", {
-      textContent: "Comment",
+      textContent: "Comment (Optional)",
       attributes: {
         for: "element-comment-input",
       },
@@ -243,7 +243,7 @@ export class CommentModal {
       id: "element-comment-input",
       attributes: {
         type: "text",
-        placeholder: "Add your comment about this element...",
+        placeholder: "Optional: Add your comment about this element...",
       },
       styles: UI_ELEMENT_STYLES.input,
       eventListeners: {
