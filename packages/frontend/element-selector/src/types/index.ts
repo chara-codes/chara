@@ -9,7 +9,7 @@ export interface ComponentInfo {
   /** Whether the element is part of a React component */
   isReactComponent: boolean;
   /** The framework the component belongs to */
-  framework?: 'react' | 'vue' | 'angular' | 'unknown';
+  framework?: "react" | "vue" | "angular" | "unknown";
 }
 
 /**
@@ -62,8 +62,10 @@ export interface ElementContextItem {
     tagName: string;
     id: string;
     className: string;
-    textContent: string;
+    content: string;
     html: string;
+    styles: string;
+    url?: string;
     comment: string;
     component: ComponentInfo;
   };

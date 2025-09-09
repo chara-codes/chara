@@ -1,0 +1,56 @@
+{
+  "name": "@chara-codes/element-selector",
+  "version": "0.1.28",
+  "description": "Element selector hook utilities for Chara frontend applications",
+  "author": "Chara Team",
+  "license": "Apache-2.0",
+  "type": "module",
+  "private": true,
+  "main": "./src/index.cjs",
+  "module": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "require": "./src/index.cjs",
+      "types": "./src/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@chara-codes/core": "workspace:*",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.17",
+    "@types/node": "^22.15.33",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4",
+    "tsup": "^8.5.0",
+    "eslint": "^9.30.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/frontend/element-selector"
+  },
+  "keywords": [
+    "chara",
+    "frontend",
+    "element-selector",
+    "react",
+    "hook",
+    "dom",
+    "selection",
+    "component-detection"
+  ]
+}

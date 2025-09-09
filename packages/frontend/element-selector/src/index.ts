@@ -1,5 +1,9 @@
-// Import ComponentDetectionService separately for type annotations
-import { ComponentDetectionService } from "./services/component-detection";
+// Import ComponentDetectionService and componentDetectionService separately for type annotations
+import { ElementSelectorUI } from "./components/element-selector-ui";
+import {
+  ComponentDetectionService,
+  componentDetectionService,
+} from "./services/component-detection";
 
 /**
  * Element Selector Module
@@ -17,7 +21,7 @@ import { ComponentDetectionService } from "./services/component-detection";
  *
  * @example
  * ```ts
- * import { useElementSelector } from './hooks/element-selector';
+ * import { useElementSelector } from '@chara-codes/element-selector';
  *
  * function MyComponent() {
  *   const { startElementSelection, isSelectingElement } = useElementSelector(
@@ -84,8 +88,6 @@ export {
   hasAnyClass,
   getElementsByClass,
   findClosestParent,
-  getElementText,
-  getElementHTML,
   isElementVisible,
   scrollIntoViewIfNeeded,
   generateElementSelector,
@@ -114,6 +116,8 @@ export {
   createAnimationKeyframes,
   positionRelativeTo,
 } from "./utils/style-utils";
+
+export { getAppliedCss } from "./utils/css-styles";
 
 // Constants
 export const ELEMENT_SELECTOR_VERSION = "2.0.0";

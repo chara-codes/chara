@@ -1,19 +1,21 @@
-import { ComponentInfo } from '../../types';
-import { BaseComponentDetector } from './base-detector';
+import { ComponentInfo } from "../../types";
+import { BaseComponentDetector } from "./base-detector";
 
 /**
  * Vue-specific component detector
  * Detects Vue components by analyzing Vue internals and component instances
  */
 export class VueComponentDetector extends BaseComponentDetector {
-  framework = 'vue';
+  framework = "vue";
 
   /**
    * Check if this detector can handle the given element
    * Looks for Vue-specific properties on the element
    */
   canDetect(element: HTMLElement): boolean {
-    return this.findVueInternalKey(element) !== undefined || this.hasVueData(element);
+    return (
+      this.findVueInternalKey(element) !== undefined || this.hasVueData(element)
+    );
   }
 
   /**
@@ -21,7 +23,7 @@ export class VueComponentDetector extends BaseComponentDetector {
    */
   detectComponent(element: HTMLElement): Partial<ComponentInfo> {
     const result: Partial<ComponentInfo> = {
-      framework: 'vue' as const,
+      framework: "vue" as const,
       isReactComponent: false, // Vue components are not React components
     };
 
@@ -34,45 +36,52 @@ export class VueComponentDetector extends BaseComponentDetector {
       }
 
       // Try Vue 3 specific detection
-      if (!result.componentName || result.componentName === 'Unknown') {
+      if (!result.componentName || result.componentName === "Unknown") {
         const vue3Info = this.extractFromVue3Instance(element);
         Object.assign(result, vue3Info);
       }
 
       // Fall back to common detection methods if Vue internals don't provide enough info
-      if (!result.componentName || result.componentName === 'Unknown') {
+      if (!result.componentName || result.componentName === "Unknown") {
         const dataInfo = this.extractFromDataAttributes(element);
         Object.assign(result, dataInfo);
       }
 
-      if (!result.componentName || result.componentName === 'Unknown') {
+      if (!result.componentName || result.componentName === "Unknown") {
         const classInfo = this.extractFromClassNames(element);
         Object.assign(result, classInfo);
       }
 
-      if (!result.componentName || result.componentName === 'Unknown') {
+      if (!result.componentName || result.componentName === "Unknown") {
         const idInfo = this.extractFromId(element);
         Object.assign(result, idInfo);
       }
 
-      if (!result.componentName || result.componentName === 'Unknown') {
+      if (!result.componentName || result.componentName === "Unknown") {
         const parentInfo = this.extractFromParents(element);
         Object.assign(result, parentInfo);
       }
 
       // Generate default path if we have a component name but no path
-      if (result.componentName && result.componentName !== 'Unknown' && !result.componentPath) {
-        result.componentPath = this.generateDefaultPath(result.componentName, 'vue');
+      if (
+        result.componentName &&
+        result.componentName !== "Unknown" &&
+        !result.componentPath
+      ) {
+        result.componentPath = this.generateDefaultPath(
+          result.componentName,
+          "vue"
+        );
       }
 
       // Set default values
       if (!result.componentName) {
-        result.componentName = 'Unknown';
+        result.componentName = "Unknown";
       }
     } catch (error) {
-      console.error('Error detecting Vue component information:', error);
-      result.componentName = 'Unknown';
-      result.componentPath = '';
+      console.error("Error detecting Vue component information:", error);
+      result.componentName = "Unknown";
+      result.componentPath = "";
     }
 
     return result;
@@ -84,10 +93,10 @@ export class VueComponentDetector extends BaseComponentDetector {
   private findVueInternalKey(element: HTMLElement): string | undefined {
     return Object.keys(element).find(
       (key) =>
-        key.startsWith('__vue__') ||
-        key.startsWith('__vueParentComponent') ||
-        key.startsWith('_vnode') ||
-        key.startsWith('__VUE__')
+        key.startsWith("__vue__") ||
+        key.startsWith("__vueParentComponent") ||
+        key.startsWith("_vnode") ||
+        key.startsWith("__VUE__")
     );
   }
 
@@ -97,10 +106,10 @@ export class VueComponentDetector extends BaseComponentDetector {
   private hasVueData(element: HTMLElement): boolean {
     // Check for Vue-specific data attributes
     return !!(
-      element.getAttribute('data-v-') ||
-      element.getAttribute('v-') ||
-      Array.from(element.attributes).some(attr =>
-        attr.name.startsWith('data-v-') || attr.name.startsWith('v-')
+      element.getAttribute("data-v-") ||
+      element.getAttribute("v-") ||
+      Array.from(element.attributes).some(
+        (attr) => attr.name.startsWith("data-v-") || attr.name.startsWith("v-")
       )
     );
   }
@@ -108,7 +117,10 @@ export class VueComponentDetector extends BaseComponentDetector {
   /**
    * Extract component information from Vue 2 instance
    */
-  private extractFromVueInstance(element: HTMLElement, vueKey: string): Partial<ComponentInfo> {
+  private extractFromVueInstance(
+    element: HTMLElement,
+    vueKey: string
+  ): Partial<ComponentInfo> {
     const result: Partial<ComponentInfo> = {};
 
     try {
@@ -128,16 +140,23 @@ export class VueComponentDetector extends BaseComponentDetector {
         }
         // Component name from file path (if available)
         else if (vueInstance.$options.__file) {
-          const fileName = vueInstance.$options.__file.split('/').pop()?.replace('.vue', '');
+          const fileName = vueInstance.$options.__file
+            .split("/")
+            .pop()
+            ?.replace(".vue", "");
           if (fileName) {
-            result.componentName = fileName.charAt(0).toUpperCase() + fileName.slice(1);
+            result.componentName =
+              fileName.charAt(0).toUpperCase() + fileName.slice(1);
           }
         }
       }
 
       // Try to get component name from constructor
       if (!result.componentName && vueInstance.constructor) {
-        if (vueInstance.constructor.name && vueInstance.constructor.name !== 'Vue') {
+        if (
+          vueInstance.constructor.name &&
+          vueInstance.constructor.name !== "Vue"
+        ) {
           result.componentName = vueInstance.constructor.name;
         }
       }
@@ -147,7 +166,7 @@ export class VueComponentDetector extends BaseComponentDetector {
         result.componentPath = vueInstance.$options.__file;
       }
     } catch (error) {
-      console.error('Error extracting from Vue instance:', error);
+      console.error("Error extracting from Vue instance:", error);
     }
 
     return result;
@@ -156,7 +175,9 @@ export class VueComponentDetector extends BaseComponentDetector {
   /**
    * Extract component information from Vue 3 instance
    */
-  private extractFromVue3Instance(element: HTMLElement): Partial<ComponentInfo> {
+  private extractFromVue3Instance(
+    element: HTMLElement
+  ): Partial<ComponentInfo> {
     const result: Partial<ComponentInfo> = {};
 
     try {
@@ -183,61 +204,36 @@ export class VueComponentDetector extends BaseComponentDetector {
       }
 
       // Check for Vue 3 scoped CSS attributes
-      const scopedAttributes = Array.from(element.attributes).filter(attr =>
-        attr.name.startsWith('data-v-')
+      const scopedAttributes = Array.from(element.attributes).filter((attr) =>
+        attr.name.startsWith("data-v-")
       );
 
       if (scopedAttributes.length > 0 && !result.componentName) {
         // Extract potential component name from scoped CSS hash
-        const scopedId = scopedAttributes[0].name.replace('data-v-', '');
+        const scopedId = scopedAttributes[0].name.replace("data-v-", "");
         result.componentName = `ScopedComponent_${scopedId}`;
       }
     } catch (error) {
-      console.error('Error extracting from Vue 3 instance:', error);
+      console.error("Error extracting from Vue 3 instance:", error);
     }
 
     return result;
   }
 
   /**
-   * Check for Vue DevTools data
-   */
-  private hasVueDevToolsData(element: HTMLElement): boolean {
-    // Check for Vue DevTools specific data
-    return !!(
-      element.getAttribute('data-vue-component') ||
-      element.getAttribute('data-vue-meta') ||
-      // @ts-expect-error - accessing dynamic properties
-      element.__VUE_DEVTOOLS_GLOBAL_HOOK__
-    );
-  }
-
-  /**
-   * Extract Vue directive information
-   */
-  private extractDirectives(element: HTMLElement): string[] {
-    const directives: string[] = [];
-
-    Array.from(element.attributes).forEach(attr => {
-      if (attr.name.startsWith('v-') || attr.name.startsWith(':') || attr.name.startsWith('@')) {
-        directives.push(attr.name);
-      }
-    });
-
-    return directives;
-  }
-
-  /**
    * Override path generation for Vue components
    */
-  protected generateDefaultPath(componentName: string, extension = 'vue'): string {
-    if (!componentName || componentName === 'Unknown') {
-      return '';
+  protected generateDefaultPath(
+    componentName: string,
+    extension = "vue"
+  ): string {
+    if (!componentName || componentName === "Unknown") {
+      return "";
     }
 
     // Convert PascalCase to kebab-case for the file path
     const kebabCase = componentName
-      .replace(/([a-z])([A-Z])/g, '$1-$2')
+      .replace(/([a-z])([A-Z])/g, "$1-$2")
       .toLowerCase();
 
     return `components/${kebabCase}.${extension}`;

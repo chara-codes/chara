@@ -1,12 +1,12 @@
-import { ComponentInfo } from '../../types';
-import { BaseComponentDetector } from './base-detector';
+import { ComponentInfo } from "../../types";
+import { BaseComponentDetector } from "./base-detector";
 
 /**
  * React-specific component detector
  * Detects React components by analyzing React internals and fiber nodes
  */
 export class ReactComponentDetector extends BaseComponentDetector {
-  framework = 'react';
+  framework = "react";
 
   /**
    * Check if this detector can handle the given element
@@ -21,7 +21,7 @@ export class ReactComponentDetector extends BaseComponentDetector {
    */
   detectComponent(element: HTMLElement): Partial<ComponentInfo> {
     const result: Partial<ComponentInfo> = {
-      framework: 'react' as const,
+      framework: "react" as const,
       isReactComponent: true,
     };
 
@@ -34,39 +34,43 @@ export class ReactComponentDetector extends BaseComponentDetector {
       }
 
       // Fall back to common detection methods if React internals don't provide enough info
-      if (!result.componentName || result.componentName === 'Unknown') {
+      if (!result.componentName || result.componentName === "Unknown") {
         const dataInfo = this.extractFromDataAttributes(element);
         Object.assign(result, dataInfo);
       }
 
-      if (!result.componentName || result.componentName === 'Unknown') {
+      if (!result.componentName || result.componentName === "Unknown") {
         const classInfo = this.extractFromClassNames(element);
         Object.assign(result, classInfo);
       }
 
-      if (!result.componentName || result.componentName === 'Unknown') {
+      if (!result.componentName || result.componentName === "Unknown") {
         const idInfo = this.extractFromId(element);
         Object.assign(result, idInfo);
       }
 
-      if (!result.componentName || result.componentName === 'Unknown') {
+      if (!result.componentName || result.componentName === "Unknown") {
         const parentInfo = this.extractFromParents(element);
         Object.assign(result, parentInfo);
       }
 
       // Generate default path if we have a component name but no path
-      if (result.componentName && result.componentName !== 'Unknown' && !result.componentPath) {
+      if (
+        result.componentName &&
+        result.componentName !== "Unknown" &&
+        !result.componentPath
+      ) {
         result.componentPath = this.generateDefaultPath(result.componentName);
       }
 
       // Set default values
       if (!result.componentName) {
-        result.componentName = 'Unknown';
+        result.componentName = "Unknown";
       }
     } catch (error) {
-      console.error('Error detecting React component information:', error);
-      result.componentName = 'Unknown';
-      result.componentPath = '';
+      console.error("Error detecting React component information:", error);
+      result.componentName = "Unknown";
+      result.componentPath = "";
     }
 
     return result;
@@ -78,17 +82,20 @@ export class ReactComponentDetector extends BaseComponentDetector {
   private findReactInternalKey(element: HTMLElement): string | undefined {
     return Object.keys(element).find(
       (key) =>
-        key.startsWith('__reactFiber$') ||
-        key.startsWith('__reactInternalInstance$') ||
-        key.startsWith('__reactProps$') ||
-        key.startsWith('_reactInternals')
+        key.startsWith("__reactFiber$") ||
+        key.startsWith("__reactInternalInstance$") ||
+        key.startsWith("__reactProps$") ||
+        key.startsWith("_reactInternals")
     );
   }
 
   /**
    * Extract component information from React fiber node
    */
-  private extractFromReactFiber(element: HTMLElement, reactKey: string): Partial<ComponentInfo> {
+  private extractFromReactFiber(
+    element: HTMLElement,
+    reactKey: string
+  ): Partial<ComponentInfo> {
     const result: Partial<ComponentInfo> = {};
 
     try {
@@ -106,30 +113,31 @@ export class ReactComponentDetector extends BaseComponentDetector {
       while (fiber && !foundName && depth < maxDepth) {
         if (fiber.type) {
           // Check for function components
-          if (typeof fiber.type === 'function') {
-            result.componentName = fiber.type.displayName || fiber.type.name || 'UnnamedComponent';
+          if (typeof fiber.type === "function") {
+            result.componentName =
+              fiber.type.displayName || fiber.type.name || "UnnamedComponent";
             foundName = true;
           }
           // Check for forwardRef and memo components
-          else if (typeof fiber.type === 'object' && fiber.type !== null) {
+          else if (typeof fiber.type === "object" && fiber.type !== null) {
             // ForwardRef components
-            if (fiber.type.render && typeof fiber.type.render === 'function') {
+            if (fiber.type.render && typeof fiber.type.render === "function") {
               result.componentName =
                 fiber.type.render.name ||
                 fiber.type.displayName ||
-                'ForwardRefComponent';
+                "ForwardRefComponent";
               foundName = true;
             }
             // Memo components
             else if (
               fiber.type.$$typeof &&
               fiber.type.type &&
-              typeof fiber.type.type === 'function'
+              typeof fiber.type.type === "function"
             ) {
               result.componentName =
                 fiber.type.type.displayName ||
                 fiber.type.type.name ||
-                'MemoComponent';
+                "MemoComponent";
               foundName = true;
             }
             // Components with displayName
@@ -144,8 +152,8 @@ export class ReactComponentDetector extends BaseComponentDetector {
         if (!foundName && fiber.stateNode && fiber.stateNode.constructor) {
           if (
             fiber.stateNode.constructor.name &&
-            fiber.stateNode.constructor.name !== 'HTMLDivElement' &&
-            !fiber.stateNode.constructor.name.startsWith('HTML')
+            fiber.stateNode.constructor.name !== "HTMLDivElement" &&
+            !fiber.stateNode.constructor.name.startsWith("HTML")
           ) {
             result.componentName = fiber.stateNode.constructor.name;
             foundName = true;
@@ -157,55 +165,9 @@ export class ReactComponentDetector extends BaseComponentDetector {
         depth++;
       }
     } catch (error) {
-      console.error('Error extracting from React fiber:', error);
+      console.error("Error extracting from React fiber:", error);
     }
 
     return result;
-  }
-
-  /**
-   * Check if an element has React DevTools data
-   */
-  private hasReactDevToolsData(element: HTMLElement): boolean {
-    // Check for React DevTools specific data attributes
-    return !!(
-      element.getAttribute('data-reactroot') ||
-      element.getAttribute('data-reactid') ||
-      Object.keys(element).some(key => key.startsWith('__reactContainer'))
-    );
-  }
-
-  /**
-   * Extract component props if available (for debugging purposes)
-   */
-  private extractComponentProps(element: HTMLElement): Record<string, unknown> | undefined {
-    try {
-      const reactKey = this.findReactInternalKey(element);
-      if (!reactKey) return undefined;
-
-      // @ts-expect-error - accessing dynamic properties
-      const fiberNode = element[reactKey];
-      if (!fiberNode) return undefined;
-
-      // Try to get props from the fiber node
-      let fiber = fiberNode;
-      let depth = 0;
-      const maxDepth = 5;
-
-      while (fiber && depth < maxDepth) {
-        if (fiber.memoizedProps && typeof fiber.memoizedProps === 'object') {
-          return fiber.memoizedProps;
-        }
-        if (fiber.pendingProps && typeof fiber.pendingProps === 'object') {
-          return fiber.pendingProps;
-        }
-        fiber = fiber.return;
-        depth++;
-      }
-    } catch (error) {
-      console.error('Error extracting component props:', error);
-    }
-
-    return undefined;
   }
 }

@@ -7,6 +7,7 @@ export const BrowserProvider = ({ children }: any) => {
     payload: any = null
   ) => {
     const queryOptions = { active: true, lastFocusedWindow: true };
+    console.log(payload);
     const [tab] = await chrome.tabs.query(queryOptions);
     return await sendMessage(message, payload, tab.id);
   };

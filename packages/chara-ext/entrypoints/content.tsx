@@ -1,5 +1,6 @@
 import { onMessage } from "@/utils/messages";
 import { ElementSelectorWidget } from "@chara-codes/design-system";
+import { getAppliedCss } from "@chara-codes/element-selector";
 import ReactDOM from "react-dom/client";
 
 export default defineContentScript({
@@ -21,6 +22,7 @@ export default defineContentScript({
 
             const handleAddingContext = (object: unknown) => {
               root.render(<></>);
+              console.log(object);
               resolve(object);
             };
             root.render(
@@ -35,6 +37,26 @@ export default defineContentScript({
         });
         ui.mount();
       });
+    });
+
+    onMessage("select", async (payload) => {
+      const { selector } = payload?.data;
+      const elements = document.querySelectorAll(selector);
+
+      const res = [...elements].map((el) => {
+        return {
+          html: el.outerHTML,
+          styles: getAppliedCss(el),
+          content: el.innerText,
+          url: window.location.href,
+        };
+      });
+
+      return await {
+        selector: selector,
+        result: res,
+        test: "test1",
+      };
     });
   },
 });

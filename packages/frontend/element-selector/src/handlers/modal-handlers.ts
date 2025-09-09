@@ -1,6 +1,6 @@
-import { ComponentInfo, ElementContextItem } from '../types';
-import { CommentModal } from '../components/comment-modal';
-import { getElementText, getElementHTML } from '../utils/dom-utils';
+import type { CommentModal } from "../components/comment-modal";
+import type { ComponentInfo, ElementContextItem } from "../types";
+import { getAppliedCss } from "../utils/css-styles";
 
 /**
  * Modal event handlers for managing comment modal interactions
@@ -42,7 +42,7 @@ export class ModalHandlers {
    */
   handleConfirm(comment: string): void {
     if (!this.currentElement || !this.currentComponentInfo) {
-      console.error('No element or component info available for confirmation');
+      console.error("No element or component info available for confirmation");
       return;
     }
 
@@ -50,7 +50,9 @@ export class ModalHandlers {
       // Validate comment
       const trimmedComment = comment.trim();
       if (!trimmedComment) {
-        this.showValidationError('Please enter a comment before adding the element.');
+        this.showValidationError(
+          "Please enter a comment before adding the element."
+        );
         return;
       }
 
@@ -61,7 +63,7 @@ export class ModalHandlers {
         trimmedComment
       );
 
-      console.log('Adding element to context:', elementInfo);
+      console.log("Adding element to context:", elementInfo);
 
       // Add to context
       this.onAddContext(elementInfo);
@@ -69,8 +71,10 @@ export class ModalHandlers {
       // Close modal
       this.closeModal();
     } catch (error) {
-      console.error('Error handling modal confirmation:', error);
-      this.showValidationError('An error occurred while adding the element. Please try again.');
+      console.error("Error handling modal confirmation:", error);
+      this.showValidationError(
+        "An error occurred while adding the element. Please try again."
+      );
     }
   }
 
@@ -78,7 +82,7 @@ export class ModalHandlers {
    * Handle modal cancellation
    */
   handleCancel(): void {
-    console.log('Modal cancelled by user');
+    console.log("Modal cancelled by user");
     this.closeModal();
   }
 
@@ -105,13 +109,14 @@ export class ModalHandlers {
 
     return {
       name: elementName,
-      type: 'Element',
+      type: "Element",
       data: {
         tagName: element.tagName,
-        id: element.id || '',
-        className: element.className || '',
-        textContent: getElementText(element, 100),
-        html: getElementHTML(element, 500),
+        id: element.id || "",
+        className: element.className || "",
+        content: element.innerText,
+        html: element.outerHTML,
+        styles: getAppliedCss(element),
         comment: comment,
         component: componentInfo,
       },
@@ -128,16 +133,18 @@ export class ModalHandlers {
       return `${tagName}#${element.id}`;
     }
 
-    if (element.className && typeof element.className === 'string') {
-      const firstClass = element.className.trim().split(' ')[0];
+    if (element.className && typeof element.className === "string") {
+      const firstClass = element.className.trim().split(" ")[0];
       if (firstClass) {
         return `${tagName}.${firstClass}`;
       }
     }
 
     // Try to use component name if available
-    if (this.currentComponentInfo?.componentName &&
-        this.currentComponentInfo.componentName !== 'Unknown') {
+    if (
+      this.currentComponentInfo?.componentName &&
+      this.currentComponentInfo.componentName !== "Unknown"
+    ) {
       return `${tagName} (${this.currentComponentInfo.componentName})`;
     }
 
@@ -153,7 +160,7 @@ export class ModalHandlers {
       this.modal.focusInput();
 
       // You could extend this to show actual error messages in the UI
-      console.warn('Validation error:', message);
+      console.warn("Validation error:", message);
 
       // Simple alert for now - could be replaced with in-modal error display
       alert(message);
@@ -165,25 +172,25 @@ export class ModalHandlers {
    */
   private attachModalEventListeners(): void {
     // Listen for escape key to close modal
-    document.addEventListener('keydown', this.handleModalKeyDown.bind(this));
+    document.addEventListener("keydown", this.handleModalKeyDown.bind(this));
 
     // Listen for clicks outside modal to close
-    document.addEventListener('click', this.handleOutsideClick.bind(this));
+    document.addEventListener("click", this.handleOutsideClick.bind(this));
   }
 
   /**
    * Remove modal-specific event listeners
    */
   private removeModalEventListeners(): void {
-    document.removeEventListener('keydown', this.handleModalKeyDown.bind(this));
-    document.removeEventListener('click', this.handleOutsideClick.bind(this));
+    document.removeEventListener("keydown", this.handleModalKeyDown.bind(this));
+    document.removeEventListener("click", this.handleOutsideClick.bind(this));
   }
 
   /**
    * Handle keyboard events in modal
    */
   private handleModalKeyDown(e: KeyboardEvent): void {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       e.preventDefault();
       this.handleCancel();
     }
@@ -204,19 +211,25 @@ export class ModalHandlers {
   /**
    * Validate comment input
    */
-  private validateComment(comment: string): { isValid: boolean; error?: string } {
+  private validateComment(comment: string): {
+    isValid: boolean;
+    error?: string;
+  } {
     const trimmed = comment.trim();
 
     if (!trimmed) {
-      return { isValid: false, error: 'Comment cannot be empty' };
+      return { isValid: false, error: "Comment cannot be empty" };
     }
 
     if (trimmed.length < 2) {
-      return { isValid: false, error: 'Comment must be at least 2 characters long' };
+      return {
+        isValid: false,
+        error: "Comment must be at least 2 characters long",
+      };
     }
 
     if (trimmed.length > 500) {
-      return { isValid: false, error: 'Comment cannot exceed 500 characters' };
+      return { isValid: false, error: "Comment cannot exceed 500 characters" };
     }
 
     return { isValid: true };
@@ -229,7 +242,7 @@ export class ModalHandlers {
     const validation = this.validateComment(comment);
 
     if (!validation.isValid) {
-      this.showValidationError(validation.error || 'Invalid comment');
+      this.showValidationError(validation.error || "Invalid comment");
       return;
     }
 
@@ -266,7 +279,7 @@ export class ModalHandlers {
       this.currentComponentInfo = null;
       this.modal = null;
     } catch (error) {
-      console.error('Error during force close:', error);
+      console.error("Error during force close:", error);
     }
   }
 
@@ -294,6 +307,6 @@ export class ModalHandlers {
    * Get current comment value from modal
    */
   getCurrentComment(): string {
-    return this.modal ? this.modal.getCurrentComment() : '';
+    return this.modal ? this.modal.getCurrentComment() : "";
   }
 }

@@ -8,6 +8,7 @@ import {
   useUIStore,
   type InputAreaProps,
 } from "@chara-codes/core";
+import { useElementSelector } from "@chara-codes/element-selector";
 import type React from "react";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
@@ -22,7 +23,6 @@ import {
   UndoIcon,
 } from "../../atoms/input-icons";
 import Tooltip from "../../atoms/tooltip";
-import { useElementSelector } from "../../hooks";
 import DropdownMenu from "../dropdown-menu";
 import FileInput from "../file-input";
 import AnimatedButton from "./animated-button";
@@ -145,6 +145,17 @@ const InputArea: React.FC<InputAreaProps> = ({
       startElementSelection();
     }
   };
+
+  const querySelector = async () => {
+    if (browser) {
+      const result = await sentMessageToApp("select", {
+        selector: "body",
+        url: "http://127.0.0.1:8080/portfolio.html",
+      });
+      console.log(result);
+    }
+  };
+
   // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;
@@ -480,6 +491,15 @@ const InputArea: React.FC<InputAreaProps> = ({
                 </RoundedIconButton>
               </Tooltip>
             )}
+            <Tooltip text="Test selector" position="top" delay={500}>
+              <RoundedIconButton
+                onClick={querySelector}
+                disabled={isResponding || isLoading || isBeautifying}
+                aria-label="Test selector"
+              >
+                <SendIcon />
+              </RoundedIconButton>
+            </Tooltip>
             <AnimatedButton isVisible={showBeautifyButton}>
               <Tooltip
                 text={

@@ -204,22 +204,6 @@ export function findClosestParent(
 }
 
 /**
- * Get element text content with trimming and length limit
- */
-export function getElementText(element: HTMLElement, maxLength = 100): string {
-  const text = element.textContent?.trim() || "";
-  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
-}
-
-/**
- * Get element HTML with length limit
- */
-export function getElementHTML(element: HTMLElement, maxLength = 500): string {
-  const html = element.outerHTML || "";
-  return html.length > maxLength ? html.substring(0, maxLength) + "..." : html;
-}
-
-/**
  * Check if an element is visible in the viewport
  */
 export function isElementVisible(element: HTMLElement): boolean {

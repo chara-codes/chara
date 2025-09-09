@@ -1,6 +1,7 @@
 import { codeGrep } from "./code-grep";
 import { devServer } from "./dev-server";
 import { directory } from "./directory";
+import { domGrep } from "./dom-grep";
 import { editFile } from "./edit-file";
 import { examination } from "./examination";
 import { fetchTool } from "./fetch";
@@ -27,6 +28,7 @@ export const chatToolsWriteMode = {
   directory,
   grep,
   "code-grep": codeGrep,
+  "dom-grep": domGrep,
   fetch: fetchTool,
   terminal,
   thinking,
@@ -40,6 +42,7 @@ export const chatToolsAskMode = {
   "read-file": readFile,
   "file-system": fileSystem,
   "code-grep": codeGrep,
+  "dom-grep": domGrep,
   grep,
   find,
   fetch: fetchTool,

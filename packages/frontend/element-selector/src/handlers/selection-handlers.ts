@@ -20,7 +20,6 @@ export class SelectionHandlers {
 
   // Event handlers
   private boundMouseMove: (e: MouseEvent) => void;
-  private boundHighlight: (element: HTMLElement) => void;
 
   constructor(
     ui: ElementSelectorUI,
@@ -36,7 +35,6 @@ export class SelectionHandlers {
 
     // Create bound handlers for consistent reference
     this.boundMouseMove = this.handleMouseMove.bind(this);
-    this.boundHighlight = this.highlightElement.bind(this);
   }
 
   /**
@@ -305,80 +303,5 @@ export class SelectionHandlers {
    */
   getHandlers(): SelectionEventHandlers {
     return { ...this.handlers };
-  }
-
-  /**
-   * Handle special key combinations during selection
-   */
-  private handleSpecialKeys(e: KeyboardEvent): void {
-    if (!this.isActive) return;
-
-    switch (e.key) {
-      case "h":
-      case "H":
-        // Toggle help message
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          this.toggleHelpMessage();
-        }
-        break;
-      case "c":
-      case "C":
-        // Clear current selection
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          this.forceReset();
-        }
-        break;
-    }
-  }
-
-  /**
-   * Toggle help message in selection guide
-   */
-  private toggleHelpMessage(): void {
-    const helpMessage =
-      "Use mouse to hover and click elements. Press ESC to cancel, Ctrl+C to clear.";
-    const defaultMessage =
-      "Click on any element to select it. Press ESC to cancel.";
-
-    // This would need to be implemented based on current message state
-    this.updateSelectionMessage(helpMessage);
-
-    // Reset to default message after a delay
-    setTimeout(() => {
-      this.updateSelectionMessage(defaultMessage);
-    }, 3000);
-  }
-
-  /**
-   * Handle window resize during selection
-   */
-  private handleWindowResize(): void {
-    if (!this.isActive) return;
-
-    // Clear current highlight as positions may have changed
-    this.clearHighlight();
-    this.ui.hideTagDisplay();
-  }
-
-  /**
-   * Handle window blur (user switches away from window)
-   */
-  private handleWindowBlur(): void {
-    if (!this.isActive) return;
-
-    // Pause selection to prevent issues when window is not focused
-    this.pauseSelection();
-  }
-
-  /**
-   * Handle window focus (user returns to window)
-   */
-  private handleWindowFocus(): void {
-    if (!this.isActive) return;
-
-    // Resume selection when window regains focus
-    this.resumeSelection();
   }
 }

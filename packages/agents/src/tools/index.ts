@@ -1,6 +1,7 @@
 import { codeGrep } from "./code-grep";
 import { devServer } from "./dev-server";
 import { directory } from "./directory";
+import { domGrep } from "./dom-grep";
 import { editFile } from "./edit-file";
 import { examination } from "./examination";
 import { fetchTool } from "./fetch";
@@ -15,8 +16,6 @@ import { terminal } from "./terminal";
 import { thinking } from "./thinking";
 import { writeFile } from "./write-file";
 
-// Legacy imports for backward compatibility
-
 // Export specialized tool configurations
 export { chatTools, chatToolsWriteMode, chatToolsAskMode } from "./chat-tools";
 
@@ -25,6 +24,7 @@ export { mkdir };
 export { fileSystem };
 export { find };
 export { directory };
+export { domGrep };
 
 // Modern tool exports with new unified file system tool
 export const modernTools = {
@@ -60,6 +60,7 @@ export const tools = {
   terminal: terminal,
   grep: grep,
   "code-grep": codeGrep,
+  "dom-grep": domGrep,
   thinking: thinking,
   "dev-server": devServer,
   examination: examination,

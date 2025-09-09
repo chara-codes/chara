@@ -1,10 +1,10 @@
-# Element Selector Module
+# @chara-codes/element-selector
 
 A comprehensive, modular element selection system for web applications with multi-framework support.
 
 ## Overview
 
-The Element Selector module provides functionality to highlight, select, and annotate DOM elements on web pages. It has been completely refactored from a monolithic 1300+ line hook into a modular, maintainable architecture with clear separation of concerns.
+The Element Selector package provides functionality to highlight, select, and annotate DOM elements on web pages. Originally part of the design-system package, it has been extracted into its own dedicated package with a modular, maintainable architecture and clear separation of concerns.
 
 ## Key Features
 
@@ -85,10 +85,22 @@ element-selector/
 
 ## Quick Start
 
+### Installation
+
+This package is part of the Chara monorepo workspace. Install it as a dependency:
+
+```json
+{
+  "dependencies": {
+    "@chara-codes/element-selector": "workspace:*"
+  }
+}
+```
+
 ### Basic Usage
 
 ```typescript
-import { useElementSelector } from './hooks/element-selector';
+import { useElementSelector } from '@chara-codes/element-selector';
 
 function MyComponent() {
   const { startElementSelection, isSelectingElement } = useElementSelector(
@@ -113,7 +125,7 @@ import {
   ElementSelectorUI,
   componentDetectionService,
   UI_CONFIG_PRESETS
-} from './hooks/element-selector';
+} from '@chara-codes/element-selector';
 
 // Custom configuration
 function AdvancedComponent() {
@@ -139,7 +151,7 @@ function AdvancedComponent() {
 ### Custom Component Detector
 
 ```typescript
-import { BaseComponentDetector } from './hooks/element-selector';
+import { BaseComponentDetector } from '@chara-codes/element-selector';
 
 class AngularDetector extends BaseComponentDetector {
   framework = 'angular';
@@ -218,7 +230,7 @@ Service for detecting framework components.
 #### UI Config Presets
 
 ```typescript
-import { UI_CONFIG_PRESETS } from './hooks/element-selector';
+import { UI_CONFIG_PRESETS } from '@chara-codes/element-selector';
 
 // Available presets:
 UI_CONFIG_PRESETS.DEFAULT   // Blue theme
@@ -245,35 +257,39 @@ selector.updateConfig(customConfig);
 
 ## Migration Guide
 
-### From Old Hook
+### Migration from Design System Package
+
+If you were previously importing from the design-system package:
 
 **Before:**
 ```typescript
-const {
-  isSelectingElement,
-  startElementSelection,
-  detectComponentInfo
-} = useElementSelector(onAddContext);
+import { useElementSelector } from '@chara-codes/design-system';
 ```
 
 **After:**
 ```typescript
-// Same API - no changes needed!
-const {
-  isSelectingElement,
-  startElementSelection,
-  detectComponentInfo
-} = useElementSelector(onAddContext);
-
-// But now you also have access to:
-const {
-  updateConfig,
-  getConfig,
-  forceCleanup
-} = useElementSelector(onAddContext);
+import { useElementSelector } from '@chara-codes/element-selector';
 ```
 
-The public API remains the same for backward compatibility.
+The public API remains the same for backward compatibility. The design-system package now re-exports from this package, so existing code continues to work.
+
+### Package Structure
+
+```
+@chara-codes/element-selector/
+├── src/
+│   ├── components/          # UI components
+│   ├── handlers/           # Event management
+│   ├── services/           # Business logic
+│   ├── types/              # Type definitions
+│   ├── utils/              # Utilities
+│   ├── use-element-selector.ts  # Main hook
+│   └── index.ts            # Public API
+├── dist/                   # Built files
+├── package.json
+├── tsconfig.json
+└── README.md
+```
 
 ## Performance Improvements
 
@@ -333,13 +349,39 @@ The public API remains the same for backward compatibility.
 
 ## Contributing
 
-When contributing to this module:
+When contributing to this package:
 
 1. **Keep files focused**: Each file should have a single responsibility
 2. **Update types**: Always update TypeScript interfaces when adding features
 3. **Add tests**: Test new detectors and components thoroughly
 4. **Document changes**: Update this README for API changes
 5. **Follow patterns**: Use established patterns for new components/services
+6. **Build before committing**: Run `npm run build` to ensure TypeScript compilation succeeds
+
+## Development
+
+### Building
+
+```bash
+npm run build
+```
+
+### Development with Watch Mode
+
+```bash
+npm run dev
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+## Dependencies
+
+- **@chara-codes/core**: Provides UI store and shared utilities
+- **react**: React hooks and types
 
 ## License
 

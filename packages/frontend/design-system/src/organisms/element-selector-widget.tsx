@@ -1,6 +1,6 @@
+import { useElementSelector } from "@chara-codes/element-selector";
 import type React from "react";
 import { useEffect } from "react";
-import { useElementSelector } from "../hooks/use-element-selector";
 
 interface ElementSelectorWidgetProps {
   /** Whether to automatically start element selection when component mounts */

@@ -298,11 +298,9 @@ class ComponentDetectionService {
 
     // Check for React
     if (
-      // @ts-expect-error - checking global variables
-      (typeof window !== "undefined" && window.React) ||
-      // @ts-expect-error - checking global variables
+      (typeof window !== "undefined" && (window as any).React) ||
       (typeof window !== "undefined" &&
-        window.__REACT_DEVTOOLS_GLOBAL_HOOK__) ||
+        (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__) ||
       document.querySelector("[data-reactroot], [data-reactid]")
     ) {
       frameworks.push("react");
@@ -310,12 +308,10 @@ class ComponentDetectionService {
 
     // Check for Vue
     if (
-      // @ts-expect-error - checking global variables
-      (typeof window !== "undefined" && window.Vue) ||
-      // @ts-expect-error - checking global variables
-      (typeof window !== "undefined" && window.__VUE__) ||
-      // @ts-expect-error - checking global variables
-      (typeof window !== "undefined" && window.__VUE_DEVTOOLS_GLOBAL_HOOK__) ||
+      (typeof window !== "undefined" && (window as any).Vue) ||
+      (typeof window !== "undefined" && (window as any).__VUE__) ||
+      (typeof window !== "undefined" &&
+        (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__) ||
       document.querySelector("[data-v-], [v-]")
     ) {
       frameworks.push("vue");
@@ -323,10 +319,8 @@ class ComponentDetectionService {
 
     // Check for Angular
     if (
-      // @ts-expect-error - checking global variables
-      (typeof window !== "undefined" && window.ng) ||
-      // @ts-expect-error - checking global variables
-      (typeof window !== "undefined" && window.angular) ||
+      (typeof window !== "undefined" && (window as any).ng) ||
+      (typeof window !== "undefined" && (window as any).angular) ||
       document.querySelector("[ng-app], [ng-controller], [data-ng-app]")
     ) {
       frameworks.push("angular");
