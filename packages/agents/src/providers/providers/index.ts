@@ -1,3 +1,15 @@
+// Import provider instances for registry
+import { anthropicProvider } from "./anthropic";
+import { deepseekProvider } from "./deepseek";
+import { dialProvider } from "./dial";
+import { geminiCLIProvider } from "./gemini-cli";
+import { googleProvider } from "./google";
+import { lmstudioProvider } from "./lmstudio";
+import { moonshotProvider } from "./moonshot";
+import { ollamaProvider } from "./ollama";
+import { openaiProvider } from "./openai";
+import { openrouterProvider } from "./openrouter";
+
 // Export base provider interface and class
 export { type BaseProvider, AbstractProvider } from "./base-provider";
 
@@ -11,17 +23,7 @@ export { OllamaProvider, ollamaProvider } from "./ollama";
 export { LMStudioProvider, lmstudioProvider } from "./lmstudio";
 export { DIALProvider, dialProvider } from "./dial";
 export { MoonshotProvider, moonshotProvider } from "./moonshot";
-
-// Import provider instances for registry
-import { openaiProvider } from "./openai";
-import { anthropicProvider } from "./anthropic";
-import { googleProvider } from "./google";
-import { deepseekProvider } from "./deepseek";
-import { openrouterProvider } from "./openrouter";
-import { ollamaProvider } from "./ollama";
-import { lmstudioProvider } from "./lmstudio";
-import { dialProvider } from "./dial";
-import { moonshotProvider } from "./moonshot";
+export { GeminiCLIProvider, geminiCLIProvider } from "./gemini-cli";
 
 // Export all provider instances as a registry
 export const allProviders = {
@@ -34,6 +36,7 @@ export const allProviders = {
   lmstudio: lmstudioProvider,
   dial: dialProvider,
   moonshot: moonshotProvider,
+  "gemini-cli": geminiCLIProvider,
 };
 
 // Export provider keys for easy iteration

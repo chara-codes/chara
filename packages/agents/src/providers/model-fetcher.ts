@@ -435,6 +435,28 @@ export namespace ModelFetcher {
   }
 
   /**
+   * Fetches available models from Gemini CLI
+   * @returns Array of Gemini CLI models
+   */
+  export async function fetchGeminiCLIModels(): Promise<ModelInfo[]> {
+    // Gemini CLI supports a fixed set of models as per documentation
+    return [
+      {
+        id: "gemini-2.5-pro",
+        name: "Gemini 2.5 Pro",
+        description: "Most capable model for complex tasks (64K output tokens)",
+        contextLength: 2097152, // 2M tokens context
+      },
+      {
+        id: "gemini-2.5-flash",
+        name: "Gemini 2.5 Flash",
+        description: "Faster model for simpler tasks (64K output tokens)",
+        contextLength: 1048576, // 1M tokens context
+      },
+    ];
+  }
+
+  /**
    * Fetches models for a provider that supports model fetching
    * @param providerName - Name of the provider
    * @param fetchFunction - The provider's fetch function

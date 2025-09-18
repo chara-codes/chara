@@ -1,4 +1,4 @@
-import type { LanguageModelV2 } from 'ai';
+import type { LanguageModelV2 } from "@ai-sdk/provider";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { logger } from "../../utils/logger";
 import { ModelFetcher } from "../model-fetcher";
@@ -33,7 +33,7 @@ export class OpenRouterProvider extends AbstractProvider {
   /**
    * Create OpenRouter provider factory
    */
-  public async createProvider(): Promise<(modelId: string) => LanguageModelV1> {
+  public async createProvider(): Promise<(modelId: string) => LanguageModelV2> {
     const apiKey = await getEnvVar(this.apiKeyEnvVar!);
 
     if (!apiKey) {

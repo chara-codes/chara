@@ -1,5 +1,5 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { LanguageModelV2 } from 'ai';
+import type { LanguageModelV2 } from "@ai-sdk/provider";
 import { logger } from "../../utils/logger";
 import { ModelFetcher } from "../model-fetcher";
 import type { ModelInfo } from "../types";
@@ -45,7 +45,7 @@ export class DIALProvider extends AbstractProvider {
   /**
    * Create DIAL provider factory
    */
-  public async createProvider(): Promise<(modelId: string) => LanguageModelV1> {
+  public async createProvider(): Promise<(modelId: string) => LanguageModelV2> {
     const apiKey = await getEnvVar(this.apiKeyEnvVar!);
     const baseUrl = await getEnvVar(this.baseUrlEnvVar!);
 

@@ -1,4 +1,4 @@
-import type { LanguageModelV2 } from "ai";
+import type { LanguageModelV2 } from "@ai-sdk/provider";
 import { createOllama } from "ollama-ai-provider-v2";
 import { logger } from "../../utils/logger";
 import { ModelFetcher } from "../model-fetcher";
@@ -33,7 +33,7 @@ export class OllamaProvider extends AbstractProvider {
   /**
    * Create Ollama provider factory
    */
-  public async createProvider(): Promise<(modelId: string) => LanguageModelV1> {
+  public async createProvider(): Promise<(modelId: string) => LanguageModelV2> {
     const baseUrl =
       (await getEnvVar(this.baseUrlEnvVar!)) || this.defaultBaseUrl;
 

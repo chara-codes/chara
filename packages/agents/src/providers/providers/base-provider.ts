@@ -1,4 +1,4 @@
-import type { LanguageModelV2 } from 'ai';
+import type { LanguageModelV2 } from "@ai-sdk/provider";
 import type { ModelInfo } from "../types";
 
 /**
@@ -26,9 +26,9 @@ export interface BaseProvider {
 
   /**
    * Create the provider factory function
-   * @returns Function that creates LanguageModelV1 instances
+   * @returns Function that creates LanguageModelV2 instances
    */
-  createProvider(): Promise<(modelId: string) => LanguageModelV1>;
+  createProvider(): Promise<(modelId: string) => LanguageModelV2>;
 
   /**
    * Fetch available models from this provider
@@ -62,7 +62,7 @@ export abstract class AbstractProvider implements BaseProvider {
   defaultBaseUrl?: string;
 
   abstract canInitialize(): Promise<boolean>;
-  abstract createProvider(): Promise<(modelId: string) => LanguageModelV1>;
+  abstract createProvider(): Promise<(modelId: string) => LanguageModelV2>;
   abstract fetchModels(): Promise<ModelInfo[]>;
 
   /**

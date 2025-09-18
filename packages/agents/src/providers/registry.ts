@@ -241,8 +241,12 @@ export class ProvidersRegistry {
     const availableProviders = (await this.getAvailableProviders()).filter(
       (p) => p.fetchModels
     );
+
+    logger.dump(availableProviders);
+
     const fetchPromises = availableProviders.map(async (provider) => {
       const providerName = provider.name.toLowerCase();
+      logger.dump(providerName);
       try {
         const models = await this.fetchModels(providerName);
         results[providerName] = models;

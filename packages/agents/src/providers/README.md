@@ -24,7 +24,8 @@ providers/
     ├── ollama.ts         # Ollama provider
     ├── lmstudio.ts       # LMStudio provider
     ├── dial.ts           # DIAL provider
-    └── moonshot.ts       # Moonshot provider
+    ├── moonshot.ts       # Moonshot provider
+    └── gemini-cli.ts     # Gemini CLI provider
 ```
 
 ## Files Overview
@@ -98,6 +99,7 @@ Individual provider implementations:
 - **`lmstudio.ts`**: LMStudio provider implementation
 - **`dial.ts`**: DIAL provider implementation
 - **`moonshot.ts`**: Moonshot provider implementation
+- **`gemini-cli.ts`**: Gemini CLI provider implementation
 - **`index.ts`**: Exports all providers and utilities
 
 Each provider file contains:
@@ -202,6 +204,7 @@ providers/
 │   ├── lmstudio.ts        # LMStudio provider
 │   ├── dial.ts            # DIAL provider
 │   ├── moonshot.ts        # Moonshot provider
+│   ├── gemini-cli.ts      # Gemini CLI provider
 │   └── index.ts           # Provider registry and exports
 ├── examples/               # Custom provider examples
 │   ├── custom-provider.ts # Example custom provider

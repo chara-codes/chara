@@ -75,4 +75,12 @@ export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
     requiresApiKey: true,
     helpUrl: "https://platform.moonshot.ai/console/api-keys",
   },
+  "gemini-cli": {
+    name: "Gemini CLI",
+    envKey: "GEMINI_API_KEY",
+    description:
+      "Google Gemini models via CLI (supports API key and OAuth authentication)",
+    requiresApiKey: true,
+    helpUrl: "https://aistudio.google.com/app/apikey",
+  },
 };

@@ -491,15 +491,6 @@ const InputArea: React.FC<InputAreaProps> = ({
                 </RoundedIconButton>
               </Tooltip>
             )}
-            <Tooltip text="Test selector" position="top" delay={500}>
-              <RoundedIconButton
-                onClick={querySelector}
-                disabled={isResponding || isLoading || isBeautifying}
-                aria-label="Test selector"
-              >
-                <SendIcon />
-              </RoundedIconButton>
-            </Tooltip>
             <AnimatedButton isVisible={showBeautifyButton}>
               <Tooltip
                 text={
