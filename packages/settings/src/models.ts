@@ -149,6 +149,15 @@ export const DEFAULT_MODELS_WHITELIST: ModelConfig[] = [
     approved: true,
   },
   {
+    id: "openrouter/sonoma-sky-alpha",
+    name: "Sonoma Sky Alpha",
+    provider: "openrouter",
+    contextSize: 2000000,
+    hasTools: true,
+    recommended: false,
+    approved: true,
+  },
+  {
     id: "x-ai/grok-code-fast-1",
     name: "xAI: Grok Code Fast",
     provider: "openrouter",
