@@ -854,13 +854,15 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
                   .{fileExtension}
                 </span>
               )}
-              <StatusBadge $status={status}>
-                {status === "generating"
-                  ? "Generating..."
-                  : status === "error"
-                  ? "Error"
-                  : "Complete"}
-              </StatusBadge>
+              {status !== "error" && (
+                <StatusBadge $status={status}>
+                  {status === "generating"
+                    ? "Generating..."
+                    : status === "error"
+                    ? "Error"
+                    : "Complete"}
+                </StatusBadge>
+              )}
             </DiffTitle>
             <DiffActions>
               <ExpandCollapseButton onClick={toggleCollapse}>
@@ -944,13 +946,15 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
                 .{fileExtension}
               </span>
             )}
-            <StatusBadge $status={status}>
-              {status === "generating"
-                ? "Generating..."
-                : status === "error"
-                ? "Error"
-                : "Complete"}
-            </StatusBadge>
+            {status !== "error" && (
+              <StatusBadge $status={status}>
+                {status === "generating"
+                  ? "Generating..."
+                  : status === "error"
+                  ? "Error"
+                  : "Complete"}
+              </StatusBadge>
+            )}
           </DiffTitle>
           <DiffActions>
             <ExpandCollapseButton onClick={toggleCollapse}>
