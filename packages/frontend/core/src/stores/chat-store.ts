@@ -1,7 +1,9 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import { DefaultChatTransport } from "ai";
+import type { UIMessage } from "ai";
+import type React from "react";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import {
@@ -17,6 +19,57 @@ import {
   generateTitleFromContent,
   isDefaultChatTitle,
 } from "../utils/chat-utils";
+
+// Throttle utility for preventing excessive updates
+interface ThrottleState {
+  lastUpdate: number;
+  timeout: NodeJS.Timeout | null;
+  pendingMessages: UIMessage[] | null;
+}
+
+const createThrottledMessageUpdater = (
+  setState: (updater: (state: ChatState) => ChatState) => void,
+  delay: number = 500
+) => {
+  const throttleState: ThrottleState = {
+    lastUpdate: 0,
+    timeout: null,
+    pendingMessages: null,
+  };
+
+  return (messages: UIMessage[]) => {
+    const now = Date.now();
+
+    // Store the latest messages
+    throttleState.pendingMessages = messages;
+
+    // If we're within the throttle window, schedule an update
+    if (now - throttleState.lastUpdate < delay) {
+      if (throttleState.timeout) {
+        clearTimeout(throttleState.timeout);
+      }
+
+      throttleState.timeout = setTimeout(() => {
+        if (throttleState.pendingMessages) {
+          setState((state) => ({
+            ...state,
+            currentMessages: throttleState.pendingMessages,
+          }));
+          throttleState.lastUpdate = Date.now();
+          throttleState.pendingMessages = null;
+          throttleState.timeout = null;
+        }
+      }, delay - (now - throttleState.lastUpdate));
+
+      return;
+    }
+
+    // Update immediately if enough time has passed
+    setState((state) => ({ ...state, currentMessages: messages }));
+    throttleState.lastUpdate = now;
+    throttleState.pendingMessages = null;
+  };
+};
 
 /**
  * Interface for messages returned from the server
@@ -105,6 +158,7 @@ interface ChatState {
 
   // Message management
   setMessages: (messages: UIMessage[]) => void;
+  setMessagesImmediate: (messages: UIMessage[]) => void;
   onChatFinish: (message: UIMessage) => Promise<void>;
 }
 
@@ -127,418 +181,438 @@ interface ChatState {
 export const useChatStore = create<ChatState>()(
   devtools(
     persist(
-      (set, get) => ({
-        // Initial state
-        chats: [],
-        activeChat: null,
-        currentMessages: [],
-        contextItems: [],
-        mode: "write" as ChatMode,
-        model: "openai:::gpt-4o-mini", // Default model
-        isLoading: true,
-        loadError: null,
+      (set, get) => {
+        // Create throttled message updater to prevent infinite loops
+        const throttledSetMessages = createThrottledMessageUpdater(set, 500);
 
-        initializeStore: async () => {
-          set({ isLoading: true, loadError: null });
+        return {
+          // Initial state
+          chats: [],
+          activeChat: null,
+          currentMessages: [],
+          contextItems: [],
+          mode: "write" as ChatMode,
+          model: "openai:::gpt-4o-mini", // Default model
+          isLoading: true,
+          loadError: null,
 
-          try {
-            const chats = await fetchChats();
-            set({
-              chats: chats.length > 0 ? chats : [],
-              isLoading: false,
-            });
+          initializeStore: async () => {
+            set({ isLoading: true, loadError: null });
 
-            // Load messages for persisted activeChat
-            const currentState = get();
-            if (currentState.activeChat) {
+            try {
+              const chats = await fetchChats();
+              set({
+                chats: chats.length > 0 ? chats : [],
+                isLoading: false,
+              });
+
+              // Load messages for persisted activeChat
+              const currentState = get();
+              if (currentState.activeChat) {
+                try {
+                  await get().loadChatHistory(currentState.activeChat);
+                } catch (error) {
+                  console.error(
+                    "Chat Store: Failed to load messages for persisted activeChat:",
+                    error
+                  );
+                  // Don't fail initialization, just clear the activeChat
+                  set({ activeChat: null });
+                }
+              }
+            } catch (error) {
+              console.error("Chat Store: Failed to initialize:", error);
+              set({
+                loadError:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to initialize chat store",
+                isLoading: false,
+              });
+            }
+          },
+
+          setActiveChat: async (chatId: string | null) => {
+            if (chatId === get().activeChat) {
+              return;
+            }
+
+            set({ activeChat: chatId, currentMessages: [] });
+
+            if (chatId) {
               try {
-                await get().loadChatHistory(currentState.activeChat);
+                await get().loadChatHistory(chatId);
               } catch (error) {
                 console.error(
-                  "Chat Store: Failed to load messages for persisted activeChat:",
+                  "Chat Store: Failed to load chat history:",
                   error
                 );
-                // Don't fail initialization, just clear the activeChat
-                set({ activeChat: null });
+                set({ loadError: "Failed to load chat history" });
               }
             }
-          } catch (error) {
-            console.error("Chat Store: Failed to initialize:", error);
-            set({
-              loadError:
-                error instanceof Error
-                  ? error.message
-                  : "Failed to initialize chat store",
-              isLoading: false,
-            });
-          }
-        },
+          },
 
-        setActiveChat: async (chatId: string | null) => {
-          if (chatId === get().activeChat) {
-            return;
-          }
-
-          set({ activeChat: chatId, currentMessages: [] });
-
-          if (chatId) {
+          createNewChat: async (title: string = "New Chat") => {
             try {
-              await get().loadChatHistory(chatId);
+              const newChat = await createChat(title);
+              // Add to chats list
+              set((state) => ({
+                chats: [newChat, ...state.chats],
+                activeChat: newChat.id,
+                currentMessages: [],
+                loadError: null,
+              }));
+
+              return newChat.id;
+            } catch (error) {
+              console.error("Chat Store: Failed to create new chat:", error);
+              set({
+                loadError:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to create new chat",
+              });
+              throw error;
+            }
+          },
+
+          updateChat: async (
+            chatId: string,
+            updates: {
+              title?: string;
+              status?: "idle" | "in_progress" | "completed" | "error";
+            }
+          ) => {
+            try {
+              const updatedChat = await updateChat(chatId, updates);
+
+              // Update the chat in the store
+              set((state) => ({
+                chats: state.chats.map((chat) =>
+                  chat.id === chatId
+                    ? {
+                        ...chat,
+                        title: updatedChat.title,
+                        timestamp: updatedChat.timestamp,
+                      }
+                    : chat
+                ),
+                loadError: null,
+              }));
+            } catch (error) {
+              console.error("Chat Store: Failed to update chat:", error);
+              set({
+                loadError:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to update chat",
+              });
+              throw error;
+            }
+          },
+
+          updateChatTitleFromFirstMessage: async (
+            chatId: string,
+            messageContent: string
+          ) => {
+            try {
+              const { chats, currentMessages, activeChat } = get();
+              const chat = chats.find((c) => c.id === chatId);
+
+              if (!chat) {
+                return;
+              }
+
+              if (!isDefaultChatTitle(chat.title)) {
+                return;
+              }
+
+              // Check if this is the first message by checking local messages first
+              let messageCount = 0;
+              if (activeChat === chatId && currentMessages.length > 0) {
+                messageCount = currentMessages.length;
+              } else {
+                // Fallback to API call if not in current chat or no local messages
+                const result = await fetchChatHistory(chatId);
+                messageCount = result.history.length;
+              }
+
+              if (messageCount > 1) {
+                return;
+              }
+
+              // Generate title from message content
+              const title = generateTitleFromContent(messageContent);
+
+              if (title.length === 0) {
+                return;
+              }
+
+              await get().updateChat(chatId, { title });
+            } catch (error) {
+              console.error(
+                "Chat Store: Failed to update chat title from first message:",
+                error
+              );
+              // Don't throw error - this is a non-critical operation
+            }
+          },
+
+          loadChatHistory: async (chatId: string) => {
+            try {
+              const result = await fetchChatHistory(chatId);
+              // Convert server messages to proper UIMessage format with typed roles
+              const uiMessages: UIMessage[] = result.history.map(
+                (msg: ServerMessage) => ({
+                  ...msg,
+                  role: msg.role as "system" | "user" | "assistant",
+                  parts: msg.parts as UIMessage["parts"], // Cast to satisfy UIMessage type requirements
+                })
+              );
+              set({ currentMessages: uiMessages, loadError: null });
             } catch (error) {
               console.error("Chat Store: Failed to load chat history:", error);
-              set({ loadError: "Failed to load chat history" });
+              set({
+                loadError:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to load chat history",
+                currentMessages: [],
+              });
             }
-          }
-        },
+          },
 
-        createNewChat: async (title: string = "New Chat") => {
-          try {
-            const newChat = await createChat(title);
-            // Add to chats list
-            set((state) => ({
-              chats: [newChat, ...state.chats],
-              activeChat: newChat.id,
-              currentMessages: [],
-              loadError: null,
-            }));
+          setMessages: (messages: UIMessage[]) => {
+            // Use throttled updates to prevent infinite loops during streaming
+            throttledSetMessages(messages);
+          },
 
-            return newChat.id;
-          } catch (error) {
-            console.error("Chat Store: Failed to create new chat:", error);
-            set({
-              loadError:
-                error instanceof Error
-                  ? error.message
-                  : "Failed to create new chat",
-            });
-            throw error;
-          }
-        },
+          setMessagesImmediate: (messages: UIMessage[]) => {
+            // Immediate update for critical operations (bypasses throttling)
+            set({ currentMessages: messages });
+          },
 
-        updateChat: async (
-          chatId: string,
-          updates: {
-            title?: string;
-            status?: "idle" | "in_progress" | "completed" | "error";
-          }
-        ) => {
-          try {
-            const updatedChat = await updateChat(chatId, updates);
+          onChatFinish: async (_message: UIMessage) => {
+            const { activeChat, chats } = get();
+            if (!activeChat) {
+              console.warn("Chat Store: No active chat to save message to");
+              return;
+            }
 
-            // Update the chat in the store
-            set((state) => ({
-              chats: state.chats.map((chat) =>
-                chat.id === chatId
-                  ? {
-                      ...chat,
-                      title: updatedChat.title,
-                      timestamp: updatedChat.timestamp,
-                    }
+            try {
+              // Update the chat's timestamp
+              const updatedChats = chats.map((chat) =>
+                chat.id === activeChat
+                  ? { ...chat, timestamp: new Date().toISOString() }
                   : chat
-              ),
-              loadError: null,
-            }));
-          } catch (error) {
-            console.error("Chat Store: Failed to update chat:", error);
-            set({
-              loadError:
-                error instanceof Error
-                  ? error.message
-                  : "Failed to update chat",
-            });
-            throw error;
-          }
-        },
-
-        updateChatTitleFromFirstMessage: async (
-          chatId: string,
-          messageContent: string
-        ) => {
-          try {
-            const { chats, currentMessages, activeChat } = get();
-            const chat = chats.find((c) => c.id === chatId);
-
-            if (!chat) {
-              return;
-            }
-
-            if (!isDefaultChatTitle(chat.title)) {
-              return;
-            }
-
-            // Check if this is the first message by checking local messages first
-            let messageCount = 0;
-            if (activeChat === chatId && currentMessages.length > 0) {
-              messageCount = currentMessages.length;
-            } else {
-              // Fallback to API call if not in current chat or no local messages
-              const result = await fetchChatHistory(chatId);
-              messageCount = result.history.length;
-            }
-
-            if (messageCount > 1) {
-              return;
-            }
-
-            // Generate title from message content
-            const title = generateTitleFromContent(messageContent);
-
-            if (title.length === 0) {
-              return;
-            }
-
-            await get().updateChat(chatId, { title });
-          } catch (error) {
-            console.error(
-              "Chat Store: Failed to update chat title from first message:",
-              error
-            );
-            // Don't throw error - this is a non-critical operation
-          }
-        },
-
-        loadChatHistory: async (chatId: string) => {
-          try {
-            const result = await fetchChatHistory(chatId);
-            // Convert server messages to proper UIMessage format with typed roles
-            const uiMessages: UIMessage[] = result.history.map(
-              (msg: ServerMessage) => ({
-                ...msg,
-                role: msg.role as "system" | "user" | "assistant",
-                parts: msg.parts as UIMessage["parts"], // Cast to satisfy UIMessage type requirements
-              })
-            );
-            set({ currentMessages: uiMessages, loadError: null });
-          } catch (error) {
-            console.error("Chat Store: Failed to load chat history:", error);
-            set({
-              loadError:
-                error instanceof Error
-                  ? error.message
-                  : "Failed to load chat history",
-              currentMessages: [],
-            });
-          }
-        },
-
-        setMessages: (messages: UIMessage[]) => {
-          set({ currentMessages: messages });
-        },
-
-        onChatFinish: async (_message: UIMessage) => {
-          const { activeChat, chats } = get();
-          if (!activeChat) {
-            console.warn("Chat Store: No active chat to save message to");
-            return;
-          }
-
-          try {
-            // Update the chat's timestamp
-            const updatedChats = chats.map((chat) =>
-              chat.id === activeChat
-                ? { ...chat, timestamp: new Date().toISOString() }
-                : chat
-            );
-
-            set({ chats: updatedChats });
-          } catch (error) {
-            console.error(
-              "Chat Store: Failed to update chat after message:",
-              error
-            );
-          }
-        },
-
-        getChatConfig: () => {
-          const { activeChat, model, mode } = get();
-
-          if (!activeChat) {
-            throw new Error("No active chat selected");
-          }
-
-          const agentsUrl =
-            import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
-          const apiUrl = `${agentsUrl}api/chat`;
-
-          return {
-            api: apiUrl,
-            onFinish: get().onChatFinish,
-            generateId: () =>
-              `msg_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-            body: {
-              chatId: activeChat,
-              model,
-              mode,
-            },
-            headers: {
-              "Content-Type": "application/json",
-            },
-          };
-        },
-
-        addContextItem: (item: Omit<ContextItem, "id">) => {
-          const newItem: ContextItem = {
-            ...item,
-            id: `ctx_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-          };
-          set((state) => ({
-            contextItems: [...state.contextItems, newItem],
-          }));
-        },
-
-        removeContextItem: (id: string) => {
-          set((state) => ({
-            contextItems: state.contextItems.filter((item) => item.id !== id),
-          }));
-        },
-
-        setMode: (mode: ChatMode) => {
-          set({ mode });
-        },
-
-        setModel: (model: string) => {
-          set({ model });
-        },
-
-        clearContextItems: () => {
-          set({ contextItems: [] });
-        },
-
-        getSuggestedPrompts: async () => {
-          try {
-            const { model } = get();
-            const prompts = await getSuggestedPrompts(model, [], 10);
-            return prompts;
-          } catch (error) {
-            console.error(
-              "Chat Store: Failed to get suggested prompts:",
-              error
-            );
-            return [];
-          }
-        },
-
-        resetToCommit: async (commitHash: string) => {
-          try {
-            await resetToCommit(commitHash);
-          } catch (error) {
-            console.error("Chat Store: Failed to reset to commit:", error);
-            throw error;
-          }
-        },
-
-        beautifyPromptStream: (
-          currentPrompt: string,
-          onTextDelta: (delta: string) => void,
-          onComplete: (finalText: string) => void,
-          onError: (error: Error) => void
-        ) => {
-          // This function provides configuration for components to use with useChat
-          // The actual implementation should be done in React components using useBeautifyChat hook
-
-          console.warn(
-            "beautifyPromptStream: Consider using useBeautifyChat hook in React components for better integration with AI SDK"
-          );
-
-          // Fallback implementation using fetch for backward compatibility
-          const agentsUrl =
-            import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
-          const beautifyUrl = `${agentsUrl}api/beautify`;
-
-          fetch(beautifyUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              text: currentPrompt,
-              model: get().model,
-            }),
-          })
-            .then(async (response) => {
-              if (!response.ok) {
-                throw new Error(`Beautify request failed: ${response.status}`);
-              }
-
-              const reader = response.body?.getReader();
-              if (!reader) {
-                throw new Error("No response stream available");
-              }
-
-              let fullText = "";
-              const decoder = new TextDecoder();
-
-              try {
-                while (true) {
-                  const { done, value } = await reader.read();
-                  if (done) break;
-
-                  const chunk = decoder.decode(value, { stream: true });
-
-                  // Handle AI SDK UI stream format
-                  const lines = chunk.split("\n").filter((line) => line.trim());
-
-                  for (const line of lines) {
-                    try {
-                      const data = JSON.parse(line);
-
-                      // Handle UIMessage format from AI SDK
-                      if (data.type === "text-delta" && data.textDelta) {
-                        const delta = data.textDelta;
-                        fullText += delta;
-                        onTextDelta(delta);
-                      } else if (data.type === "finish") {
-                        break;
-                      }
-                    } catch {
-                      // Skip malformed JSON or handle plain text chunks
-                      if (chunk.trim()) {
-                        fullText += chunk;
-                        onTextDelta(chunk);
-                      }
-                    }
-                  }
-                }
-                onComplete(fullText);
-              } finally {
-                reader.releaseLock();
-              }
-            })
-            .catch((error) => {
-              console.error("Chat Store: Beautify stream failed:", error);
-              onError(
-                error instanceof Error ? error : new Error(String(error))
               );
-            });
-        },
 
-        // Get configuration for beautify chat using useChat hook
-        getBeautifyChatConfig: () => {
-          const { model, activeChat } = get();
-          const agentsUrl =
-            import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
-          const beautifyUrl = `${agentsUrl}api/beautify`;
+              set({ chats: updatedChats });
+            } catch (error) {
+              console.error(
+                "Chat Store: Failed to update chat after message:",
+                error
+              );
+            }
+          },
 
-          return {
-            api: beautifyUrl,
-            transport: new DefaultChatTransport({
-              api: beautifyUrl,
+          getChatConfig: () => {
+            const { activeChat, model, mode } = get();
+
+            if (!activeChat) {
+              throw new Error("No active chat selected");
+            }
+
+            const agentsUrl =
+              import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
+            const apiUrl = `${agentsUrl}api/chat`;
+
+            return {
+              api: apiUrl,
+              onFinish: get().onChatFinish,
+              generateId: () =>
+                `msg_${Date.now()}_${Math.random().toString(36).substring(2)}`,
               body: {
-                model,
                 chatId: activeChat,
+                model,
+                mode,
               },
               headers: {
                 "Content-Type": "application/json",
               },
-            }),
-            generateId: () =>
-              `beautify_${Date.now()}_${Math.random()
+            };
+          },
+
+          addContextItem: (item: Omit<ContextItem, "id">) => {
+            const newItem: ContextItem = {
+              ...item,
+              id: `ctx_${Date.now()}_${Math.random()
                 .toString(36)
                 .substring(2)}`,
-            id: activeChat || undefined,
-          };
-        },
-      }),
+            };
+            set((state) => ({
+              contextItems: [...state.contextItems, newItem],
+            }));
+          },
+
+          removeContextItem: (id: string) => {
+            set((state) => ({
+              contextItems: state.contextItems.filter((item) => item.id !== id),
+            }));
+          },
+
+          setMode: (mode: ChatMode) => {
+            set({ mode });
+          },
+
+          setModel: (model: string) => {
+            set({ model });
+          },
+
+          clearContextItems: () => {
+            set({ contextItems: [] });
+          },
+
+          getSuggestedPrompts: async () => {
+            try {
+              const { model } = get();
+              const prompts = await getSuggestedPrompts(model, [], 10);
+              return prompts;
+            } catch (error) {
+              console.error(
+                "Chat Store: Failed to get suggested prompts:",
+                error
+              );
+              return [];
+            }
+          },
+
+          resetToCommit: async (commitHash: string) => {
+            try {
+              await resetToCommit(commitHash);
+            } catch (error) {
+              console.error("Chat Store: Failed to reset to commit:", error);
+              throw error;
+            }
+          },
+
+          beautifyPromptStream: (
+            currentPrompt: string,
+            onTextDelta: (delta: string) => void,
+            onComplete: (finalText: string) => void,
+            onError: (error: Error) => void
+          ) => {
+            // This function provides configuration for components to use with useChat
+            // The actual implementation should be done in React components using useBeautifyChat hook
+
+            console.warn(
+              "beautifyPromptStream: Consider using useBeautifyChat hook in React components for better integration with AI SDK"
+            );
+
+            // Fallback implementation using fetch for backward compatibility
+            const agentsUrl =
+              import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
+            const beautifyUrl = `${agentsUrl}api/beautify`;
+
+            fetch(beautifyUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                text: currentPrompt,
+                model: get().model,
+              }),
+            })
+              .then(async (response) => {
+                if (!response.ok) {
+                  throw new Error(
+                    `Beautify request failed: ${response.status}`
+                  );
+                }
+
+                const reader = response.body?.getReader();
+                if (!reader) {
+                  throw new Error("No response stream available");
+                }
+
+                let fullText = "";
+                const decoder = new TextDecoder();
+
+                try {
+                  while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+
+                    // Handle AI SDK UI stream format
+                    const lines = chunk
+                      .split("\n")
+                      .filter((line) => line.trim());
+
+                    for (const line of lines) {
+                      try {
+                        const data = JSON.parse(line);
+
+                        // Handle UIMessage format from AI SDK
+                        if (data.type === "text-delta" && data.textDelta) {
+                          const delta = data.textDelta;
+                          fullText += delta;
+                          onTextDelta(delta);
+                        } else if (data.type === "finish") {
+                          break;
+                        }
+                      } catch {
+                        // Skip malformed JSON or handle plain text chunks
+                        if (chunk.trim()) {
+                          fullText += chunk;
+                          onTextDelta(chunk);
+                        }
+                      }
+                    }
+                  }
+                  onComplete(fullText);
+                } finally {
+                  reader.releaseLock();
+                }
+              })
+              .catch((error) => {
+                console.error("Chat Store: Beautify stream failed:", error);
+                onError(
+                  error instanceof Error ? error : new Error(String(error))
+                );
+              });
+          },
+
+          // Get configuration for beautify chat using useChat hook
+          getBeautifyChatConfig: () => {
+            const { model, activeChat } = get();
+            const agentsUrl =
+              import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
+            const beautifyUrl = `${agentsUrl}api/beautify`;
+
+            return {
+              api: beautifyUrl,
+              transport: new DefaultChatTransport({
+                api: beautifyUrl,
+                body: {
+                  model,
+                  chatId: activeChat,
+                },
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }),
+              generateId: () =>
+                `beautify_${Date.now()}_${Math.random()
+                  .toString(36)
+                  .substring(2)}`,
+              id: activeChat || undefined,
+            };
+          },
+        };
+      },
       {
         name: "chat-store",
         partialize: (state) => ({
@@ -633,7 +707,15 @@ export const getChatHookConfig = (
  * }, [beautifyChat.messages]);
  * ```
  */
-export const useBeautifyChat = () => {
+export const useBeautifyChat = (): {
+  messages: UIMessage[];
+  input: string;
+  setInput: (input: string) => void;
+  handleSubmit: (event?: React.FormEvent<HTMLFormElement>) => void;
+  isLoading: boolean;
+  error: Error | undefined;
+  beautifyPrompt: (prompt: string) => void;
+} => {
   const store = useChatStore();
   const config = store.getBeautifyChatConfig();
 

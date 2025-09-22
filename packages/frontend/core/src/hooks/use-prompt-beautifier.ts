@@ -21,7 +21,23 @@ export interface BeautifyState {
  * Advanced hook for prompt beautification that integrates with the chat store
  * and provides a more convenient API for components
  */
-export const usePromptBeautifier = () => {
+export const usePromptBeautifier = (): {
+  isBeautifying: boolean;
+  progress: string;
+  result: string | null;
+  error: Error | null;
+  beautifyPrompt: (prompt: string, options?: BeautifyOptions) => void;
+  stopBeautifying: () => void;
+  clearResult: () => void;
+  beautifyWithFallback: (
+    prompt: string,
+    onTextDelta: (delta: string) => void,
+    onComplete: (finalText: string) => void,
+    onError: (error: Error) => void
+  ) => void;
+  messages: any[];
+  status: string;
+} => {
   const chatStore = useChatStore();
   const beautifyChat = useBeautifyChat();
 
@@ -205,7 +221,17 @@ export const usePromptBeautifier = () => {
 /**
  * Simplified hook for basic beautification needs
  */
-export const useSimpleBeautifier = () => {
+export const useSimpleBeautifier = (): {
+  prompt: string;
+  setPrompt: (prompt: string) => void;
+  handleBeautify: () => void;
+  beautifyPrompt: (prompt: string, options?: BeautifyOptions) => void;
+  isBeautifying: boolean;
+  result: string | null;
+  error: Error | null;
+  stopBeautifying: () => void;
+  clearResult: () => void;
+} => {
   const {
     beautifyPrompt,
     isBeautifying,
