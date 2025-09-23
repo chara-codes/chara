@@ -3,7 +3,6 @@
 import { useChat } from "@ai-sdk/react";
 import {
   generateTitleWithFallback,
-  useBatchedMessages,
   useChatStore,
   type InputContextItem,
 } from "@chara-codes/core";
@@ -102,22 +101,6 @@ const ConversationView: React.FC = () => {
   // Get store actions using getState to avoid subscription issues
   const chatStore = useChatStore.getState();
 
-  // Initialize batched message system
-  const {
-    messages: batchedMessages,
-    replaceMessages,
-    updateMessage,
-    immediateUpdate,
-    flushUpdates,
-  } = useBatchedMessages({
-    batchInterval: 500, // Update every half second
-    onMessagesUpdate: (messages) => {
-      // Update the store with batched messages
-      chatStore.setMessages(messages);
-    },
-    initialMessages: currentMessages,
-  });
-
   const agentsUrl =
     import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
   const api = `${agentsUrl}api/chat`;
@@ -125,36 +108,12 @@ const ConversationView: React.FC = () => {
   // Use the AI SDK useChat hook with proper configuration
   const { sendMessage, messages, stop, setMessages, status, error } = useChat({
     id: activeChat || "default",
-    messages: batchedMessages,
+    messages: currentMessages,
+    experimental_throttle: 300,
     transport: new DefaultChatTransport({
       api,
     }),
   });
-
-  const prevStatusRef = useRef(status);
-  // Sync messages between useChat hook and batched message system
-  useEffect(() => {
-    // When the chat is active and streaming, use batched updates
-    if (status === "streaming" || status === "awaiting_response") {
-      replaceMessages(messages);
-    } else if (prevStatusRef.current !== "idle" && status === "idle") {
-      // When streaming finishes, flush any pending updates and sync final state
-      flushUpdates();
-      immediateUpdate(messages);
-    } else if (status === "idle") {
-      // When idle, the store is the source of truth (e.g., loading a chat).
-      setMessages(batchedMessages);
-    }
-    prevStatusRef.current = status;
-  }, [
-    status,
-    setMessages,
-    messages,
-    batchedMessages,
-    replaceMessages,
-    flushUpdates,
-    immediateUpdate,
-  ]);
 
   // Initialize store on mount without blocking UI
   useEffect(() => {
@@ -173,50 +132,6 @@ const ConversationView: React.FC = () => {
   useEffect(() => {
     setIsLoading(status === "streaming" || status === "awaiting_response");
   }, [status]);
-
-  // Add error message to chat - using batched updates to prevent infinite loops
-  useEffect(() => {
-    if (error) {
-      const errorKey = `${error.message}-${Date.now()}`;
-
-      // Check if we've already processed this error
-      if (processedErrorsRef.current.has(errorKey)) {
-        return;
-      }
-
-      processedErrorsRef.current.add(errorKey);
-      console.error("An error occurred:", error);
-
-      const lastMessage = batchedMessages[batchedMessages.length - 1];
-
-      // If last message is from assistant, add error part to it
-      if (lastMessage && lastMessage.role === "assistant") {
-        // Avoid adding duplicate error parts
-        if (lastMessage.parts?.some((part) => part.type === "error")) {
-          return;
-        }
-
-        const updatedMessage = {
-          ...lastMessage,
-          parts: [
-            ...(lastMessage.parts || []),
-            { type: "error", error: { message: error.message } },
-          ],
-        };
-
-        updateMessage(lastMessage.id, updatedMessage);
-      } else {
-        // Otherwise, create a new assistant message with the error
-        const errorMessage = {
-          id: `error-${Date.now()}`,
-          role: "assistant" as const,
-          parts: [{ type: "error", error: { message: error.message } }],
-        };
-
-        replaceMessages([...batchedMessages, errorMessage]);
-      }
-    }
-  }, [error, batchedMessages, updateMessage, replaceMessages]);
 
   // Handle sending messages using useChat hook
   const handleSendMessage = useCallback(
@@ -351,23 +266,19 @@ const ConversationView: React.FC = () => {
 
   const handleDeleteMessage = useCallback(
     (messageId: string) => {
-      const updatedMessages = batchedMessages.filter(
-        (msg) => msg.id !== messageId
-      );
+      const updatedMessages = messages.filter((msg) => msg.id !== messageId);
       setMessages(updatedMessages);
-      // Use immediate update for delete operations
-      immediateUpdate(updatedMessages);
     },
-    [batchedMessages, setMessages, immediateUpdate]
+    [messages, setMessages]
   );
 
   return (
     <ConversationContainer>
       <ConversationContent>
         <ChatContent>
-          {batchedMessages.length > 0 ? (
+          {messages.length > 0 ? (
             <ChatMessages
-              messages={batchedMessages}
+              messages={messages}
               isResponding={isLoading}
               onDeleteMessage={handleDeleteMessage}
             />
@@ -386,7 +297,7 @@ const ConversationView: React.FC = () => {
             </EmptyStateContainer>
           )}
         </ChatContent>
-        {batchedMessages.length === 0 && (
+        {messages.length === 0 && (
           <RecentHistory chats={chats} onSelectChat={handleSelectChat} />
         )}
       </ConversationContent>

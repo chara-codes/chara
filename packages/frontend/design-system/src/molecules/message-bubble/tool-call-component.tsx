@@ -112,7 +112,7 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
             {toolCall.result ? (
               <ToolCallResult>
                 <ToolCallResultLabel>Result</ToolCallResultLabel>
-                <ToolCallResultContent hasError={toolCall.status === "error"}>
+                <ToolCallResultContent $hasError={toolCall.status === "error"}>
                   {typeof toolCall.result === "string"
                     ? (toolCall.result as string)
                     : JSON.stringify(toolCall.result, null, 2)}

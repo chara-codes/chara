@@ -930,7 +930,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     }
 
     return (
-      <DiffContainer isVisible={isVisible}>
+      <DiffContainer $isVisible={isVisible}>
         <DiffHeader>
           <DiffTitle>
             <FileIcon width={12} height={12} />
