@@ -130,7 +130,11 @@ const ConversationView: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setIsLoading(status === "streaming" || status === "awaiting_response");
+    setMessages(currentMessages);
+  }, [activeChat, currentMessages, setMessages]);
+
+  useEffect(() => {
+    setIsLoading(status === "streaming" || status === "submitted");
   }, [status]);
 
   // Handle sending messages using useChat hook
