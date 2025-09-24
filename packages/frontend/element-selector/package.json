@@ -16,7 +16,9 @@
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
     "ttest": "vitest run"
   },
-  "dependencies": {},
+  "dependencies": {
+    "html2canvas": "^1.4.1"
+  },
   "devDependencies": {
     "typescript": "^5.8.3",
     "vitest": "^3.2.4",

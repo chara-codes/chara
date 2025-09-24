@@ -73,7 +73,7 @@ export function createFileTransport(
     return pino.transport({
       target: "pino/file",
       options: {
-        destination: options.destination || "./logs/app.log",
+        destination: options.destination || "./.chara/logs/app.log",
         mkdir: options.mkdir ?? true,
         ...options,
       },
@@ -163,7 +163,8 @@ export function createMultiTransport(transports: LoggerTransportConfig[]) {
           return {
             target: "pino/file",
             options: {
-              destination: transport.options?.destination || "./logs/app.log",
+              destination:
+                transport.options?.destination || "./.chara/logs/app.log",
               mkdir: transport.options?.mkdir ?? true,
               ...transport.options,
             },
