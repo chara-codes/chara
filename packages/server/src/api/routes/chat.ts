@@ -288,14 +288,14 @@ export const chatRouter = router({
     .input(
       z.object({
         chatId: z.string(),
-        fromMessageId: z.string(),
+        messageId: z.string(),
       })
     )
     .mutation(async ({ input }) => {
       try {
         const result = await deleteMessagesFromChat(
           input.chatId,
-          input.fromMessageId
+          input.messageId
         );
         return result;
       } catch (err) {

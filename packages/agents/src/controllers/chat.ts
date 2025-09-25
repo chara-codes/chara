@@ -274,4 +274,126 @@ export const chatController = {
       );
     }
   },
+
+  // DELETE handler for removing messages and rolling back git state
+  DELETE: async (req: Request) => {
+    try {
+      const { messageId, chatId } = await req.json();
+
+      if (!messageId || !chatId) {
+        return new Response(
+          JSON.stringify({
+            error: "Missing required fields: messageId, chatId",
+          }),
+          {
+            status: 400,
+            headers: {
+              ...CORS_HEADERS,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      const workingDir = process.cwd();
+
+      try {
+        // Initialize repository if needed
+        if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
+          await isoGitService.initializeRepository(workingDir);
+        }
+
+        // Delete messages from database
+        const deleteResult = await trpc.chat.deleteMessages.mutate({
+          chatId,
+          messageId,
+        });
+
+        // If the message has a commit, rollback to it
+        let rollbackResult = null;
+        if (deleteResult.commitToReset) {
+          try {
+            rollbackResult = await isoGitService.resetToCommit(
+              workingDir,
+              deleteResult.commitToReset
+            );
+
+            if (rollbackResult.status !== "success") {
+              logger.warn(
+                `Failed to rollback git to commit ${deleteResult.commitToReset}: ${rollbackResult.message}`
+              );
+            }
+          } catch (error) {
+            logger.error(
+              `Error during git rollback to commit ${deleteResult.commitToReset}:`,
+              error
+            );
+          }
+        }
+
+        logger.info(
+          `Successfully deleted ${deleteResult.deletedCount} messages from chat ${chatId} starting from message ${messageId}`
+        );
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            deletedCount: deleteResult.deletedCount,
+            deletedMessageIds: deleteResult.deletedMessageIds,
+            commitToReset: deleteResult.commitToReset,
+            rollbackResult: rollbackResult?.status || null,
+            message: `Deleted ${deleteResult.deletedCount} messages${
+              rollbackResult?.status === "success"
+                ? ` and rolled back to commit ${deleteResult.commitToReset}`
+                : ""
+            }`,
+          }),
+          {
+            headers: {
+              ...CORS_HEADERS,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      } catch (error) {
+        logger.error("Error during message deletion:", error);
+
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
+        return new Response(
+          JSON.stringify({
+            error: errorMessage,
+            code: "DELETE_MESSAGES_ERROR",
+          }),
+          {
+            status: 500,
+            headers: {
+              ...CORS_HEADERS,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+    } catch (error) {
+      logger.error("Chat controller DELETE error:", error);
+
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      return new Response(
+        JSON.stringify({
+          error: errorMessage,
+          code: "DELETE_REQUEST_ERROR",
+        }),
+        {
+          status: 500,
+          headers: {
+            ...CORS_HEADERS,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+  },
 };

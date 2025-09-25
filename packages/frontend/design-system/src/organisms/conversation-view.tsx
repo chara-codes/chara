@@ -3,6 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import {
   generateTitleWithFallback,
+  toast,
   useChatStore,
   type InputContextItem,
 } from "@chara-codes/core";
@@ -269,11 +270,74 @@ const ConversationView: React.FC = () => {
   }, [stop]);
 
   const handleDeleteMessage = useCallback(
-    (messageId: string) => {
-      const updatedMessages = messages.filter((msg) => msg.id !== messageId);
-      setMessages(updatedMessages);
+    async (messageId: string) => {
+      if (!activeChat) {
+        console.error("No active chat to delete messages from");
+        return;
+      }
+
+      try {
+        // Call the agents /api/chat DELETE endpoint directly
+        const response = await fetch(api, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messageId,
+            chatId: activeChat,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+          );
+        }
+
+        const result = await response.json();
+
+        // Update local state by removing the deleted messages
+        const updatedMessages = messages.filter(
+          (msg) => !result.deletedMessageIds?.map(String).includes(msg.id)
+        );
+
+        setMessages(updatedMessages);
+
+        // Update the chat store with the new messages immediately
+        chatStore.setMessagesImmediate(updatedMessages);
+
+        // Log rollback information if available
+        if (result.commitToReset) {
+          console.log(`Git rolled back to commit: ${result.commitToReset}`);
+        }
+
+        console.log(`Successfully deleted ${result.deletedCount} messages`);
+
+        // Show success toast
+        toast({
+          title: "Messages deleted",
+          description: `Successfully deleted ${result.deletedCount} message${
+            result.deletedCount === 1 ? "" : "s"
+          }${result.commitToReset ? " and rolled back changes" : ""}`,
+          variant: "default",
+        });
+      } catch (error) {
+        console.error("Failed to delete messages:", error);
+
+        // Show error toast
+        toast({
+          title: "Failed to delete messages",
+          description:
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred",
+          variant: "destructive",
+        });
+      }
     },
-    [messages, setMessages]
+    [activeChat, messages, setMessages, chatStore, api]
   );
 
   return (

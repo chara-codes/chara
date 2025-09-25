@@ -623,9 +623,9 @@ export async function deleteMessagesFromChat(
   fromMessageId: string
 ) {
   try {
-    // Get the message to determine its timestamp
+    // Get the message to determine its timestamp and commit
     const [messageToDelete] = await db
-      .select({ createdAt: messages.createdAt })
+      .select({ createdAt: messages.createdAt, commit: messages.commit })
       .from(messages)
       .where(eq(messages.id, fromMessageId))
       .limit(1);
@@ -649,6 +649,7 @@ export async function deleteMessagesFromChat(
     return {
       deletedCount: result.length,
       deletedMessageIds: result.map((msg) => msg.id),
+      commitToReset: messageToDelete.commit,
     };
   } catch (err) {
     logger.error(JSON.stringify(err), "deleteMessagesFromChat failed");
