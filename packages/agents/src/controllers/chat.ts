@@ -123,7 +123,7 @@ export const chatController = {
                       commitMessage.text
                     );
                     const { id } = uiMessages[uiMessages.length - 1];
-                    const res = await trpc.chat.updateMessage.mutate({
+                    await trpc.chat.updateMessage.mutate({
                       messageId: id,
                       commit: commitSha,
                     });
@@ -187,7 +187,7 @@ export const chatController = {
             );
 
             const { id } = uiMessages[uiMessages.length - 1];
-            const res = await trpc.chat.updateMessage.mutate({
+            await trpc.chat.updateMessage.mutate({
               messageId: id,
               commit: commitSha,
             });
