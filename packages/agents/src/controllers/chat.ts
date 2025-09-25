@@ -118,10 +118,15 @@ export const chatController = {
                       model,
                       messages: convertToModelMessages(uiMessages),
                     });
-                    await isoGitService.saveToHistory(
+                    const { commitSha } = await isoGitService.saveToHistory(
                       workingDir,
                       commitMessage.text
                     );
+                    const { id } = uiMessages[uiMessages.length - 1];
+                    const res = await trpc.chat.updateMessage.mutate({
+                      messageId: id,
+                      commit: commitSha,
+                    });
                   } catch (error) {
                     logger.error("Failed to save to git history:", error);
                   }
@@ -176,7 +181,16 @@ export const chatController = {
               model,
               messages: convertToModelMessages(uiMessages),
             });
-            await isoGitService.saveToHistory(workingDir, commitMessage.text);
+            const { commitSha } = await isoGitService.saveToHistory(
+              workingDir,
+              commitMessage.text
+            );
+
+            const { id } = uiMessages[uiMessages.length - 1];
+            const res = await trpc.chat.updateMessage.mutate({
+              messageId: id,
+              commit: commitSha,
+            });
           } catch (gitError) {
             logger.error(
               "Failed to save to git history after error:",

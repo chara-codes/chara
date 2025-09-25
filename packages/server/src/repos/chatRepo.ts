@@ -401,3 +401,86 @@ export async function deleteMessagesFromChat(
     throw err;
   }
 }
+
+/** Update a specific message by ID. */
+export async function updateMessage(
+  messageId: string,
+  updates: {
+    parts?: any[];
+    role?: "user" | "assistant" | "system";
+    metadata?: any;
+    commit?: string;
+  }
+): Promise<UIMessage & { createdAt?: Date }> {
+  try {
+    // First check if the message exists
+    const [existingMessage] = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.id, messageId))
+      .limit(1);
+
+    if (!existingMessage) {
+      throw new Error(`Message with ID ${messageId} not found`);
+    }
+
+    const updateValues: any = {};
+
+    if (updates.parts !== undefined) {
+      updateValues.parts = JSON.stringify(updates.parts);
+    }
+    if (updates.role !== undefined) {
+      updateValues.role = updates.role;
+    }
+    if (updates.metadata !== undefined) {
+      updateValues.metadata = updates.metadata
+        ? JSON.stringify(updates.metadata)
+        : null;
+    }
+    if (updates.commit !== undefined) {
+      updateValues.commit = updates.commit;
+    }
+
+    if (Object.keys(updateValues).length === 0) {
+      throw new Error("No fields to update");
+    }
+
+    updateValues.updatedAt = sql`CURRENT_TIMESTAMP`;
+
+    const [updatedMessage] = await db
+      .update(messages)
+      .set(updateValues)
+      .where(eq(messages.id, messageId))
+      .returning();
+
+    if (!updatedMessage) {
+      throw new Error(`Failed to update message with ID ${messageId}`);
+    }
+
+    // Update the chat's updatedAt timestamp
+    await db
+      .update(chats)
+      .set({ updatedAt: sql`CURRENT_TIMESTAMP` })
+      .where(eq(chats.id, updatedMessage.chatId));
+
+    // Return the updated message in UIMessage format
+    return {
+      id: updatedMessage.id,
+      role: updatedMessage.role as "user" | "assistant" | "system",
+      parts: JSON.parse(updatedMessage.parts as string).filter(
+        (part: any) => part.type !== "step-start"
+      ),
+      metadata: updatedMessage.metadata
+        ? JSON.parse(updatedMessage.metadata as string)
+        : undefined,
+      createdAt: new Date(
+        typeof updatedMessage.createdAt === "number"
+          ? updatedMessage.createdAt * 1000
+          : updatedMessage.createdAt
+      ),
+    };
+  } catch (err) {
+    logger.error(JSON.stringify(err), "updateMessage failed");
+    throw err;
+  }
+}

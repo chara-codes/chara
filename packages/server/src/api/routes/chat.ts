@@ -11,6 +11,7 @@ import {
   loadUIMessages,
   saveUIMessages,
   updateChat,
+  updateMessage,
 } from "../../repos/chatRepo.ts";
 import { logger } from "../../utils/logger.ts";
 import { publicProcedure, router } from "../trpc";
@@ -229,6 +230,38 @@ export const chatRouter = router({
         };
       } catch (err) {
         logger.error(JSON.stringify(err), "addMessage endpoint failed");
+        throw err;
+      }
+    }),
+
+  // Update a message by ID - allows updating parts, role, metadata, or commit
+  // Useful for editing message content, fixing typos, changing roles, adding metadata, or tracking commits
+  updateMessage: publicProcedure
+    .input(
+      z.object({
+        messageId: z.string(),
+        parts: z.array(UIMessagePartSchema).optional(),
+        role: z.enum(["user", "assistant", "system"]).optional(),
+        metadata: z.record(z.unknown()).optional(),
+        commit: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const updatedMessage = await updateMessage(input.messageId, {
+          parts: input.parts,
+          role: input.role,
+          metadata: input.metadata,
+          commit: input.commit,
+        });
+
+        return {
+          success: true,
+          messageId: input.messageId,
+          message: updatedMessage,
+        };
+      } catch (err) {
+        logger.error(JSON.stringify(err), "updateMessage endpoint failed");
         throw err;
       }
     }),
