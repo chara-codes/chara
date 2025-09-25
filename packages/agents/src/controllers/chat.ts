@@ -309,25 +309,64 @@ export const chatController = {
           messageId,
         });
 
-        // If the message has a commit, rollback to it
+        // If the message has a commit, rollback to its parent commit (the state before changes)
         let rollbackResult = null;
         if (deleteResult.commitToReset) {
           try {
-            rollbackResult = await isoGitService.resetToCommit(
+            // Get the parent commit to reset to the state before changes were made
+            const commitResult = await isoGitService.getCommitByOid(
               workingDir,
               deleteResult.commitToReset
             );
 
-            if (rollbackResult.status !== "success") {
+            if (
+              commitResult.status === "success" &&
+              commitResult.commit &&
+              commitResult.commit.commit.parent.length > 0
+            ) {
+              const parentCommitSha = commitResult.commit.commit.parent[0];
+              if (parentCommitSha && typeof parentCommitSha === "string") {
+                logger.info(
+                  `Resetting to parent commit ${parentCommitSha} (before changes from commit ${deleteResult.commitToReset})`
+                );
+
+                rollbackResult = await isoGitService.resetToCommit(
+                  workingDir,
+                  parentCommitSha as string
+                );
+
+                if (rollbackResult.status !== "success") {
+                  logger.warn(
+                    `Failed to rollback git to parent commit ${parentCommitSha}: ${rollbackResult.message}`
+                  );
+                }
+              } else {
+                logger.warn(
+                  `Parent commit SHA is empty for commit ${deleteResult.commitToReset}, skipping rollback`
+                );
+                rollbackResult = {
+                  status: "error",
+                  message: "Parent commit SHA is empty",
+                } as const;
+              }
+            } else {
               logger.warn(
-                `Failed to rollback git to commit ${deleteResult.commitToReset}: ${rollbackResult.message}`
+                `Cannot find parent commit for ${deleteResult.commitToReset}, skipping rollback`
               );
+              rollbackResult = {
+                status: "error",
+                message: "No parent commit found",
+              } as const;
             }
           } catch (error) {
             logger.error(
-              `Error during git rollback to commit ${deleteResult.commitToReset}:`,
+              `Error during git rollback for commit ${deleteResult.commitToReset}:`,
               error
             );
+            rollbackResult = {
+              status: "error",
+              message: error instanceof Error ? error.message : String(error),
+            } as const;
           }
         }
 
@@ -340,11 +379,10 @@ export const chatController = {
             success: true,
             deletedCount: deleteResult.deletedCount,
             deletedMessageIds: deleteResult.deletedMessageIds,
-            commitToReset: deleteResult.commitToReset,
             rollbackResult: rollbackResult?.status || null,
             message: `Deleted ${deleteResult.deletedCount} messages${
               rollbackResult?.status === "success"
-                ? ` and rolled back to commit ${deleteResult.commitToReset}`
+                ? ` and rolled back changes`
                 : ""
             }`,
           }),

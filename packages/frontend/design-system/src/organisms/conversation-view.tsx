@@ -309,8 +309,8 @@ const ConversationView: React.FC = () => {
         chatStore.setMessagesImmediate(updatedMessages);
 
         // Log rollback information if available
-        if (result.commitToReset) {
-          console.log(`Git rolled back to commit: ${result.commitToReset}`);
+        if (result.rollbackResult === "success") {
+          console.log(`Git rollback completed successfully`);
         }
 
         console.log(`Successfully deleted ${result.deletedCount} messages`);
@@ -320,7 +320,11 @@ const ConversationView: React.FC = () => {
           title: "Messages deleted",
           description: `Successfully deleted ${result.deletedCount} message${
             result.deletedCount === 1 ? "" : "s"
-          }${result.commitToReset ? " and rolled back changes" : ""}`,
+          }${
+            result.rollbackResult === "success"
+              ? " and rolled back changes"
+              : ""
+          }`,
           variant: "default",
         });
       } catch (error) {
