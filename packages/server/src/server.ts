@@ -8,6 +8,7 @@ import { chatRouter } from "./api/routes/chat";
 import { filesRouter } from "./api/routes/files";
 import { instructionsRouter } from "./api/routes/instructions";
 import { linksRouter } from "./api/routes/links";
+import { settingsRouter } from "./api/routes/settings";
 import { stacksRouter } from "./api/routes/stacks";
 import { subscription } from "./api/routes/subscription";
 import { logger } from "./utils/logger";
@@ -23,6 +24,7 @@ const appRouter = t.router({
   events: subscription,
   instructions: instructionsRouter,
   files: filesRouter,
+  settings: settingsRouter,
 });
 
 export interface ServerOptions {

@@ -8,8 +8,10 @@ import {
   useUIStore,
   type KeyboardShortcut,
   UIStoreContext,
+  trpc,
 } from '@chara-codes/core';
 import { ChevronDownIcon } from "../atoms/icons";
+import ProviderManagement from "./provider-management";
 
 const SettingsContainer = styled.div`
   display: flex;
@@ -19,10 +21,50 @@ const SettingsContainer = styled.div`
   background-color: #f9fafb;
 `;
 
+const TabNavigation = styled.div`
+  display: flex;
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 12px;
+`;
+
+const TabButton = styled.button<{ $active: boolean }>`
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: ${props => props.$active ? '#3b82f6' : '#6b7280'};
+  background: none;
+  border: none;
+  border-bottom: 2px solid ${props => props.$active ? '#3b82f6' : 'transparent'};
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #3b82f6;
+  }
+`;
+
 const SettingsContent = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: 12px;
+`;
+
+const LoadingState = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  color: #6b7280;
+`;
+
+const ErrorState = styled.div`
+  padding: 16px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
+  margin: 12px;
 `;
 
 const SettingsGroup = styled.div`
@@ -301,9 +343,12 @@ interface SettingsItemWithAction {
 
 interface SettingsViewProps {
   onBack: () => void;
+  initialTab?: 'general' | 'providers';
 }
 
-const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
+type SettingsTab = 'general' | 'providers';
+
+const SettingsView: React.FC<SettingsViewProps> = ({ onBack, initialTab = 'general' }) => {
   // Get UI store state
   const keyboardShortcuts = useUIStore((state) => state.keyboardShortcuts);
 
@@ -315,11 +360,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
     throw new Error("SettingsView must be used within a UIStoreProvider");
   }
 
+  // Tab and search state
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [settingsSearchQuery, setSettingsSearchQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     general: true,
     "keyboard-shortcuts": true,
-    models: true,
     privacy: true,
     appearance: true,
     advanced: true,
@@ -420,6 +466,158 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
           }))
           .filter((group) => group.items.length > 0);
 
+  // Render tab content based on active tab
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'providers':
+        return <ProviderManagement />;
+      case 'general':
+      default:
+        return (
+          <>
+            {filteredSettings.length > 0 ? (
+              filteredSettings.map((group) => (
+                <SettingsGroup key={group.id}>
+                  <SettingsGroupHeader
+                    $isOpen={openGroups[group.id]}
+                    onClick={() => toggleGroup(group.id)}
+                  >
+                    <SettingsGroupTitle>{group.title}</SettingsGroupTitle>
+                    <SettingsGroupIcon $isOpen={openGroups[group.id]}>
+                      <ChevronDownIcon width={16} height={16} />
+                    </SettingsGroupIcon>
+                  </SettingsGroupHeader>
+                  <SettingsGroupContent $isOpen={openGroups[group.id]}>
+                    {group.items.map((item) => (
+                      <SettingItem key={item.id}>
+                        <SettingInfo>
+                          <SettingTitle>{item.title}</SettingTitle>
+                          <SettingDescription>
+                            {item.description}
+                          </SettingDescription>
+                        </SettingInfo>
+                        <SettingControl>
+                          {item.control === "toggle" && (
+                            <div
+                              style={{
+                                width: "36px",
+                                height: "20px",
+                                backgroundColor: "#e5e7eb",
+                                borderRadius: "10px",
+                                position: "relative",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: "16px",
+                                  height: "16px",
+                                  backgroundColor: "white",
+                                  borderRadius: "50%",
+                                  position: "absolute",
+                                  top: "2px",
+                                  left: "2px",
+                                }}
+                              />
+                            </div>
+                          )}
+                          {item.control === "shortcut" &&
+                            (item as SettingsItemWithAction).action && (
+                              <ShortcutControls>
+                                <ShortcutToggle
+                                  $enabled={
+                                    getShortcutByAction(
+                                      (item as SettingsItemWithAction).action,
+                                    )?.enabled || false
+                                  }
+                                  onClick={() =>
+                                    toggleShortcutEnabled(
+                                      (item as SettingsItemWithAction).action,
+                                    )
+                                  }
+                                />
+                                <KeyboardShortcutInput
+                                  value={
+                                    recordingShortcut ===
+                                    (item as SettingsItemWithAction).action
+                                      ? "Press key..."
+                                      : getShortcutByAction(
+                                          (item as SettingsItemWithAction).action,
+                                        )?.key || ""
+                                  }
+                                  onFocus={() =>
+                                    startRecordingShortcut(
+                                      (item as SettingsItemWithAction).action,
+                                    )
+                                  }
+                                  readOnly
+                                  placeholder="Press key"
+                                />
+                              </ShortcutControls>
+                            )}
+                          {item.control === "select" && (
+                            <select
+                              style={{
+                                padding: "4px 8px",
+                                fontSize: "12px",
+                                borderRadius: "4px",
+                                border: "1px solid #e5e7eb",
+                              }}
+                            >
+                              <option>Select...</option>
+                            </select>
+                          )}
+                          {item.control === "slider" && (
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              defaultValue="50"
+                              style={{ width: "80px" }}
+                            />
+                          )}
+                          {item.control === "input" && (
+                            <input
+                              type="text"
+                              style={{
+                                padding: "4px 8px",
+                                fontSize: "12px",
+                                borderRadius: "4px",
+                                border: "1px solid #e5e7eb",
+                                width: "60px",
+                              }}
+                            />
+                          )}
+                          {item.control === "button" && (
+                            <button
+                              type="button"
+                              style={{
+                                padding: "4px 8px",
+                                fontSize: "12px",
+                                borderRadius: "4px",
+                                border: "1px solid #e5e7eb",
+                                backgroundColor: "#f3f4f6",
+                              }}
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </SettingControl>
+                      </SettingItem>
+                    ))}
+                  </SettingsGroupContent>
+                </SettingsGroup>
+              ))
+            ) : (
+              <NoSettingsResults>
+                No settings found for &quot;{settingsSearchQuery}&quot;. Try a
+                different search term.
+              </NoSettingsResults>
+            )}
+          </>
+        );
+    }
+  };
+
   return (
     <SettingsContainer>
       <ViewNavigation
@@ -429,145 +627,23 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         placeholder="Search settings..."
       />
 
+      <TabNavigation>
+        <TabButton
+          $active={activeTab === 'general'}
+          onClick={() => setActiveTab('general')}
+        >
+          General
+        </TabButton>
+        <TabButton
+          $active={activeTab === 'providers'}
+          onClick={() => setActiveTab('providers')}
+        >
+          Providers
+        </TabButton>
+      </TabNavigation>
+
       <SettingsContent>
-        {filteredSettings.length > 0 ? (
-          filteredSettings.map((group) => (
-            <SettingsGroup key={group.id}>
-              <SettingsGroupHeader
-                $isOpen={openGroups[group.id]}
-                onClick={() => toggleGroup(group.id)}
-              >
-                <SettingsGroupTitle>{group.title}</SettingsGroupTitle>
-                <SettingsGroupIcon $isOpen={openGroups[group.id]}>
-                  <ChevronDownIcon width={16} height={16} />
-                </SettingsGroupIcon>
-              </SettingsGroupHeader>
-              <SettingsGroupContent $isOpen={openGroups[group.id]}>
-                {group.items.map((item) => (
-                  <SettingItem key={item.id}>
-                    <SettingInfo>
-                      <SettingTitle>{item.title}</SettingTitle>
-                      <SettingDescription>
-                        {item.description}
-                      </SettingDescription>
-                    </SettingInfo>
-                    <SettingControl>
-                      {item.control === "toggle" && (
-                        <div
-                          style={{
-                            width: "36px",
-                            height: "20px",
-                            backgroundColor: "#e5e7eb",
-                            borderRadius: "10px",
-                            position: "relative",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "16px",
-                              height: "16px",
-                              backgroundColor: "white",
-                              borderRadius: "50%",
-                              position: "absolute",
-                              top: "2px",
-                              left: "2px",
-                            }}
-                          />
-                        </div>
-                      )}
-                      {item.control === "shortcut" &&
-                        (item as SettingsItemWithAction).action && (
-                          <ShortcutControls>
-                            <ShortcutToggle
-                              $enabled={
-                                getShortcutByAction(
-                                  (item as SettingsItemWithAction).action,
-                                )?.enabled || false
-                              }
-                              onClick={() =>
-                                toggleShortcutEnabled(
-                                  (item as SettingsItemWithAction).action,
-                                )
-                              }
-                            />
-                            <KeyboardShortcutInput
-                              value={
-                                recordingShortcut ===
-                                (item as SettingsItemWithAction).action
-                                  ? "Press key..."
-                                  : getShortcutByAction(
-                                      (item as SettingsItemWithAction).action,
-                                    )?.key || ""
-                              }
-                              onFocus={() =>
-                                startRecordingShortcut(
-                                  (item as SettingsItemWithAction).action,
-                                )
-                              }
-                              readOnly
-                              placeholder="Press key"
-                            />
-                          </ShortcutControls>
-                        )}
-                      {item.control === "select" && (
-                        <select
-                          style={{
-                            padding: "4px 8px",
-                            fontSize: "12px",
-                            borderRadius: "4px",
-                            border: "1px solid #e5e7eb",
-                          }}
-                        >
-                          <option>Select...</option>
-                        </select>
-                      )}
-                      {item.control === "slider" && (
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          defaultValue="50"
-                          style={{ width: "80px" }}
-                        />
-                      )}
-                      {item.control === "input" && (
-                        <input
-                          type="text"
-                          style={{
-                            padding: "4px 8px",
-                            fontSize: "12px",
-                            borderRadius: "4px",
-                            border: "1px solid #e5e7eb",
-                            width: "60px",
-                          }}
-                        />
-                      )}
-                      {item.control === "button" && (
-                        <button
-                          type="button"
-                          style={{
-                            padding: "4px 8px",
-                            fontSize: "12px",
-                            borderRadius: "4px",
-                            border: "1px solid #e5e7eb",
-                            backgroundColor: "#f3f4f6",
-                          }}
-                        >
-                          Reset
-                        </button>
-                      )}
-                    </SettingControl>
-                  </SettingItem>
-                ))}
-              </SettingsGroupContent>
-            </SettingsGroup>
-          ))
-        ) : (
-          <NoSettingsResults>
-            No settings found for &quot;{settingsSearchQuery}&quot;. Try a
-            different search term.
-          </NoSettingsResults>
-        )}
+        {renderTabContent()}
       </SettingsContent>
     </SettingsContainer>
   );
