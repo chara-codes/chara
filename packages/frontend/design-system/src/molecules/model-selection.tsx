@@ -254,17 +254,17 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Get currently enabled models
-  const enabledModelsQuery = trpc.settings.models.getEnabled.useQuery();
+  const enabledModelsConfigQuery = trpc.settings.models.getEnabledWithConfig.useQuery();
 
   // Mutations for enabling/disabling models
   const enableModelMutation = trpc.settings.models.enable.useMutation({
     onSuccess: () => {
-      enabledModelsQuery.refetch();
+      enabledModelsConfigQuery.refetch();
     }
   });
   const disableModelMutation = trpc.settings.models.disable.useMutation({
     onSuccess: () => {
-      enabledModelsQuery.refetch();
+      enabledModelsConfigQuery.refetch();
     }
   });
 
@@ -311,14 +311,30 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
 
   // Initialize selected models with currently enabled ones from this provider
   useEffect(() => {
-    if (models.length > 0 && enabledModelsQuery.data) {
+    if (models.length > 0 && enabledModelsConfigQuery.data) {
       const providerModelIds = models.map(m => m.id);
-      const enabledFromProvider = enabledModelsQuery.data.filter(id =>
-        providerModelIds.includes(id)
+      const providerPrefix = `${provider.type}:::`;
+      const enabledModelsConfig = enabledModelsConfigQuery.data;
+      
+      // Get enabled model IDs for this provider
+      const enabledFromProvider = Object.keys(enabledModelsConfig).filter(id => {
+        // Check if it's a prefixed ID for this provider
+        if (id.startsWith(providerPrefix)) {
+          const modelId = id.substring(providerPrefix.length);
+          return providerModelIds.includes(modelId);
+        }
+        // Check if it's a non-prefixed ID that matches this provider's models
+        return providerModelIds.includes(id) && enabledModelsConfig[id].provider === provider.type;
+      });
+      
+      // Convert to model IDs (remove prefix if present)
+      const selectedModelIds = enabledFromProvider.map(id => 
+        id.startsWith(providerPrefix) ? id.substring(providerPrefix.length) : id
       );
-      setSelectedModels(new Set(enabledFromProvider));
+      
+      setSelectedModels(new Set(selectedModelIds));
     }
-  }, [models, enabledModelsQuery.data]);
+  }, [models, enabledModelsConfigQuery.data, provider.type]);
 
   // Focus search input when component mounts
   useEffect(() => {
@@ -355,30 +371,49 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
   };
 
   const handleSaveSelection = async () => {
-    if (models.length === 0 || !enabledModelsQuery.data) return;
+    if (models.length === 0 || !enabledModelsConfigQuery.data) return;
 
     setIsEnabling(true);
     try {
       const providerModelIds = models.map(m => m.id);
-      const currentlyEnabledFromProvider = enabledModelsQuery.data.filter(id =>
-        providerModelIds.includes(id)
+      const providerPrefix = `${provider.type}:::`;
+      
+      // Find currently enabled models from this provider
+      const enabledModelsConfig = enabledModelsConfigQuery.data;
+      const currentlyEnabledFromProvider = Object.keys(enabledModelsConfig).filter(id => {
+        if (id.startsWith(providerPrefix)) {
+          const modelId = id.substring(providerPrefix.length);
+          return providerModelIds.includes(modelId);
+        }
+        return providerModelIds.includes(id) && enabledModelsConfig[id].provider === provider.type;
+      });
+
+      // Note: selectedPrefixedIds would be used if we needed to track them separately
+
+      // Find models to enable (newly selected)
+      const currentlyEnabledModelIds = currentlyEnabledFromProvider.map(id =>
+        id.startsWith(providerPrefix) ? id.substring(providerPrefix.length) : id
+      );
+      
+      const toEnable = Array.from(selectedModels).filter(modelId =>
+        !currentlyEnabledModelIds.includes(modelId)
       );
 
-      // Enable newly selected models
-      const toEnable = Array.from(selectedModels).filter(id =>
-        !currentlyEnabledFromProvider.includes(id)
-      );
+      // Find models to disable (previously enabled but now unselected)
+      const toDisable = currentlyEnabledFromProvider.filter(enabledId => {
+        const modelId = enabledId.startsWith(providerPrefix) 
+          ? enabledId.substring(providerPrefix.length) 
+          : enabledId;
+        return !selectedModels.has(modelId);
+      });
 
-      // Disable unselected models
-      const toDisable = currentlyEnabledFromProvider.filter(id =>
-        !selectedModels.has(id)
-      );
-
-      // Execute enable/disable operations
+      // Execute enable operations with prefixed IDs
       for (const modelId of toEnable) {
-        await enableModelMutation.mutateAsync({ modelId });
+        const prefixedId = `${providerPrefix}${modelId}`;
+        await enableModelMutation.mutateAsync({ modelId: prefixedId });
       }
 
+      // Execute disable operations with the original IDs (to handle both prefixed and non-prefixed)
       for (const modelId of toDisable) {
         await disableModelMutation.mutateAsync({ modelId });
       }
@@ -404,7 +439,7 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
     model.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (isLoadingModels || enabledModelsQuery.isLoading) {
+  if (isLoadingModels || enabledModelsConfigQuery.isLoading) {
     return (
       <SelectionContainer>
         <SelectionHeader>

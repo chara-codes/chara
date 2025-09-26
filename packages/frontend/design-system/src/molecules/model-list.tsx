@@ -230,17 +230,17 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
 
   // TRPC queries and mutations
   const availableModelsQuery = trpc.settings.models.getAvailable.useQuery();
-  const enabledModelsQuery = trpc.settings.models.getEnabled.useQuery();
   const providersQuery = trpc.settings.providers.list.useQuery();
+  const enabledModelsConfigQuery = trpc.settings.models.getEnabledWithConfig.useQuery();
   const enableModelMutation = trpc.settings.models.enable.useMutation({
     onSuccess: () => {
-      enabledModelsQuery.refetch();
+      enabledModelsConfigQuery.refetch();
       setTogglingModel(null);
     }
   });
   const disableModelMutation = trpc.settings.models.disable.useMutation({
     onSuccess: () => {
-      enabledModelsQuery.refetch();
+      enabledModelsConfigQuery.refetch();
       setTogglingModel(null);
     }
   });
@@ -248,18 +248,23 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
   // Combine data to create enhanced model configs
   const enhancedModels = useMemo(() => {
     const availableModels = availableModelsQuery.data || [];
-    const enabledModels = enabledModelsQuery.data || [];
+    const enabledModelsConfig = enabledModelsConfigQuery.data || {};
     const providers = providersQuery.data || [];
 
     return availableModels.map(model => {
       const provider = providers.find(p => p.type === model.provider);
+      const prefixedId = `${model.provider}:::${model.id}`;
+      
+      // Check if model is enabled using either prefixed or non-prefixed ID
+      const isEnabled = enabledModelsConfig[model.id] !== undefined || enabledModelsConfig[prefixedId] !== undefined;
+      
       return {
         ...model,
-        enabled: enabledModels.includes(model.id),
+        enabled: isEnabled,
         providerEnabled: provider?.enabled ?? false
       } as EnhancedModelConfig;
     });
-  }, [availableModelsQuery.data, enabledModelsQuery.data, providersQuery.data]);
+  }, [availableModelsQuery.data, enabledModelsConfigQuery.data, providersQuery.data]);
 
   // Filter models based on current filter
   const filteredModels = useMemo(() => {
@@ -307,10 +312,16 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
 
     setTogglingModel(model.id);
     try {
+      const prefixedId = `${model.provider}:::${model.id}`;
+      const enabledModelsConfig = enabledModelsConfigQuery.data || {};
+      
       if (model.enabled) {
-        await disableModelMutation.mutateAsync({ modelId: model.id });
+        // Find which ID format is currently enabled and disable it
+        const enabledId = enabledModelsConfig[prefixedId] ? prefixedId : model.id;
+        await disableModelMutation.mutateAsync({ modelId: enabledId });
       } else {
-        await enableModelMutation.mutateAsync({ modelId: model.id });
+        // Always enable with prefixed ID for new models
+        await enableModelMutation.mutateAsync({ modelId: prefixedId });
       }
     } catch (error) {
       console.error('Failed to toggle model:', error);
@@ -330,7 +341,7 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
     return `$${cost.toFixed(4)}`;
   };
 
-  if (availableModelsQuery.isLoading || enabledModelsQuery.isLoading || providersQuery.isLoading) {
+  if (availableModelsQuery.isLoading || enabledModelsConfigQuery.isLoading || providersQuery.isLoading) {
     return (
       <LoadingState>
         Loading models...
@@ -338,8 +349,8 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
     );
   }
 
-  if (availableModelsQuery.error || enabledModelsQuery.error || providersQuery.error) {
-    const error = availableModelsQuery.error || enabledModelsQuery.error || providersQuery.error;
+  if (availableModelsQuery.error || enabledModelsConfigQuery.error || providersQuery.error) {
+    const error = availableModelsQuery.error || enabledModelsConfigQuery.error || providersQuery.error;
     return (
       <ErrorState>
         Error loading models: {error?.message}

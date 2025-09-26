@@ -154,16 +154,22 @@ export interface SettingsError {
   details?: any;
 }
 
+// Enhanced model configuration with full metadata
+export interface EnabledModelConfig extends ModelConfig {
+  enabledAt: Date;
+  updatedAt: Date;
+}
+
 // Extended global settings interface
 export interface ExtendedGlobalSettings {
   env?: Record<string, string>;
   models?: {
     whitelist?: any[];
     customModels?: any[];
-    enabled?: string[]; // New: List of enabled model IDs
+    enabledModels?: Record<string, EnabledModelConfig>; // Full model configurations keyed by prefixed ID
   };
   providers?: {
-    [providerId: string]: SettingsProviderConfig; // New: Provider configurations
+    [providerId: string]: SettingsProviderConfig; // Provider configurations
   };
   [key: string]: any;
 }

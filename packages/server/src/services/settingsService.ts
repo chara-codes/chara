@@ -11,7 +11,8 @@ import {
   PROVIDER_CONFIGS,
   SettingsErrorType,
   type SettingsError,
-  type ModelConfig
+  type ModelConfig,
+  type EnabledModelConfig
 } from "../types/settings";
 
 export class SettingsService {
@@ -204,29 +205,34 @@ export class SettingsService {
       delete providers[id];
 
       // Disable models associated with this provider
-      const enabledModels = currentConfig.models?.enabled || [];
+      const enabledModelsConfig = currentConfig.models?.enabledModels || {};
+      const providerPrefix = `${provider.type}:::`;
       
       // Get available models to find which ones belong to this provider
-      let providerModels: string[] = [];
+      let providerModelIds: string[] = [];
       try {
         const availableModels = await this.getAvailableModels();
-        providerModels = availableModels
+        providerModelIds = availableModels
           .filter(model => model.provider === provider.type)
           .map(model => model.id);
       } catch (error) {
-        // If we can't get available models, we'll just keep all enabled models
+        // If we can't get available models, we'll just remove prefixed models
         console.warn('Could not get available models for provider cleanup:', error);
       }
 
-      const updatedEnabledModels = enabledModels.filter(
-        modelId => !providerModels.includes(modelId)
-      );
+      // Remove from enabledModels configuration
+      const updatedEnabledModelsConfig = { ...enabledModelsConfig };
+      Object.keys(updatedEnabledModelsConfig).forEach(modelId => {
+        if (modelId.startsWith(providerPrefix) || providerModelIds.includes(modelId)) {
+          delete updatedEnabledModelsConfig[modelId];
+        }
+      });
 
       await updateGlobalConfig({
         providers,
         models: {
           ...currentConfig.models,
-          enabled: updatedEnabledModels
+          enabledModels: updatedEnabledModelsConfig
         }
       }, this.configFile);
     } catch (error) {
@@ -395,7 +401,9 @@ export class SettingsService {
   async getEnabledModels(): Promise<string[]> {
     try {
       const config = await this.getGlobalConfig();
-      return config.models?.enabled || [];
+      
+      // Use only the new enabledModels structure
+      return Object.keys(config.models?.enabledModels || {});
     } catch (error) {
       throw this.createError(
         SettingsErrorType.SETTINGS_SAVE_ERROR,
@@ -407,7 +415,24 @@ export class SettingsService {
   }
 
   /**
-   * Enable a model
+   * Get enabled models with full configuration
+   */
+  async getEnabledModelsWithConfig(): Promise<Record<string, EnabledModelConfig>> {
+    try {
+      const config = await this.getGlobalConfig();
+      return config.models?.enabledModels || {};
+    } catch (error) {
+      throw this.createError(
+        SettingsErrorType.SETTINGS_SAVE_ERROR,
+        'Failed to get enabled models configuration',
+        undefined,
+        error
+      );
+    }
+  }
+
+  /**
+   * Enable a model with full configuration
    */
   async enableModel(modelId: string): Promise<void> {
     // Basic validation - ensure modelId is provided
@@ -421,19 +446,56 @@ export class SettingsService {
     try {
       // Get current configuration
       const config = await this.getGlobalConfig();
-      const enabledModels = config.models?.enabled || [];
+      const enabledModelsConfig = config.models?.enabledModels || {};
 
-      // Add model to enabled list if not already present
-      if (!enabledModels.includes(modelId)) {
-        enabledModels.push(modelId);
-
-        await updateGlobalConfig({
-          models: {
-            ...config.models,
-            enabled: enabledModels
-          }
-        }, this.configFile);
+      // If model is already enabled, don't add it again
+      if (enabledModelsConfig[modelId]) {
+        return;
       }
+
+      // Get full model information from available models
+      let modelConfig: ModelConfig | null = null;
+      try {
+        const availableModels = await this.getAvailableModels();
+        
+        // For prefixed IDs, extract the provider and model ID
+        let provider: string;
+        let actualModelId: string;
+        
+        if (modelId.includes(':::')) {
+          [provider, actualModelId] = modelId.split(':::');
+          modelConfig = availableModels.find(m => m.id === actualModelId && m.provider === provider);
+        } else {
+          // For non-prefixed IDs, find the model (backward compatibility)
+          modelConfig = availableModels.find(m => m.id === modelId);
+        }
+      } catch (error) {
+        console.warn('Could not fetch model details from providers:', error);
+      }
+
+      // Create enabled model configuration
+      const now = new Date();
+      const enabledModelConfig: EnabledModelConfig = {
+        id: modelConfig?.id || (modelId.includes(':::') ? modelId.split(':::')[1] : modelId),
+        name: modelConfig?.name || (modelId.includes(':::') ? modelId.split(':::')[1] : modelId),
+        provider: modelConfig?.provider || (modelId.includes(':::') ? modelId.split(':::')[0] : 'unknown'),
+        contextSize: modelConfig?.contextSize,
+        hasTools: modelConfig?.hasTools || false,
+        recommended: modelConfig?.recommended || false,
+        approved: modelConfig?.approved !== false,
+        enabledAt: now,
+        updatedAt: now
+      };
+
+      // Add to enabledModels configuration
+      enabledModelsConfig[modelId] = enabledModelConfig;
+
+      await updateGlobalConfig({
+        models: {
+          ...config.models,
+          enabledModels: enabledModelsConfig
+        }
+      }, this.configFile);
     } catch (error) {
       throw this.createError(
         SettingsErrorType.SETTINGS_SAVE_ERROR,
@@ -458,14 +520,16 @@ export class SettingsService {
 
     try {
       const config = await this.getGlobalConfig();
-      const enabledModels = config.models?.enabled || [];
+      const enabledModelsConfig = config.models?.enabledModels || {};
 
-      const updatedEnabledModels = enabledModels.filter(id => id !== modelId);
+      // Remove from enabledModels configuration
+      const updatedEnabledModelsConfig = { ...enabledModelsConfig };
+      delete updatedEnabledModelsConfig[modelId];
 
       await updateGlobalConfig({
         models: {
           ...config.models,
-          enabled: updatedEnabledModels
+          enabledModels: updatedEnabledModelsConfig
         }
       }, this.configFile);
     } catch (error) {

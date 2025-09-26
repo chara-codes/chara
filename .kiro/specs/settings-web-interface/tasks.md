@@ -79,7 +79,7 @@
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
 - [ ] 7. Integrate settings with existing application workflow
-  - [ ] 7.1 Update model dropdown in chat interface
+  - [x] 7.1 Update model dropdown in chat interface
     - Modify existing model dropdown to use enabled models from settings
     - Add "Add model..." option to existing chat interface model selection
     - Ensure backward compatibility with existing model selection behavior

@@ -218,7 +218,7 @@ const ProviderList: React.FC<ProviderListProps> = ({
 
   // TRPC queries and mutations
   const providersQuery = trpc.settings.providers.list.useQuery();
-  const enabledModelsQuery = trpc.settings.models.getEnabled.useQuery();
+  const enabledModelsConfigQuery = trpc.settings.models.getEnabledWithConfig.useQuery();
   const updateProviderMutation = trpc.settings.providers.update.useMutation({
     onSuccess: () => {
       providersQuery.refetch();
@@ -234,9 +234,10 @@ const ProviderList: React.FC<ProviderListProps> = ({
   // Fetch models for each provider and match with enabled models
   useEffect(() => {
     const fetchProviderModels = async () => {
-      if (!providersQuery.data || !enabledModelsQuery.data) return;
+      if (!providersQuery.data || !enabledModelsConfigQuery.data) return;
 
       const modelsMap: Record<string, string[]> = {};
+      const enabledModelsConfig = enabledModelsConfigQuery.data;
 
       for (const provider of providersQuery.data) {
         if (!provider.enabled) {
@@ -244,42 +245,22 @@ const ProviderList: React.FC<ProviderListProps> = ({
           continue;
         }
 
-        try {
-          const agentsUrl =
-            import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
-          const response = await fetch(
-            `${agentsUrl}api/models?all&provider=${provider.type}`
-          );
+        // Get enabled models for this provider from the configuration
+        const enabledFromProvider = Object.entries(enabledModelsConfig)
+          .filter(([modelId, config]) => {
+            // Check if this model belongs to the current provider
+            return config.provider === provider.type || modelId.startsWith(`${provider.type}:::`);
+          })
+          .map(([_modelId, config]) => config.name);
 
-          if (response.ok) {
-            const responseData = await response.json();
-            const modelsData = responseData.models || responseData;
-
-            // Get model names for enabled models from this provider
-            const enabledFromProvider = modelsData
-              .filter((model: any) =>
-                enabledModelsQuery.data.includes(model.id)
-              )
-              .map((model: any) => model.name || model.id);
-
-            modelsMap[provider.id] = enabledFromProvider;
-          } else {
-            modelsMap[provider.id] = [];
-          }
-        } catch (error) {
-          console.error(
-            `Failed to fetch models for provider ${provider.type}:`,
-            error
-          );
-          modelsMap[provider.id] = [];
-        }
+        modelsMap[provider.id] = enabledFromProvider;
       }
 
       setProviderModels(modelsMap);
     };
 
     fetchProviderModels();
-  }, [providersQuery.data, enabledModelsQuery.data]);
+  }, [providersQuery.data, enabledModelsConfigQuery.data]);
 
   const handleToggleEnabled = async (provider: ProviderConfig) => {
     try {
@@ -308,7 +289,7 @@ const ProviderList: React.FC<ProviderListProps> = ({
     }
   };
 
-  if (providersQuery.isLoading) {
+  if (providersQuery.isLoading || enabledModelsConfigQuery.isLoading) {
     return <LoadingState>Loading providers...</LoadingState>;
   }
 
@@ -316,6 +297,14 @@ const ProviderList: React.FC<ProviderListProps> = ({
     return (
       <ErrorState>
         Error loading providers: {providersQuery.error.message}
+      </ErrorState>
+    );
+  }
+
+  if (enabledModelsConfigQuery.error) {
+    return (
+      <ErrorState>
+        Error loading enabled models: {enabledModelsConfigQuery.error.message}
       </ErrorState>
     );
   }

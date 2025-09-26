@@ -108,6 +108,18 @@ export const settingsRouter = router({
         }
       }),
 
+    // Get enabled models with full configuration
+    getEnabledWithConfig: publicProcedure
+      .query(async () => {
+        try {
+          const enabledModelsConfig = await settingsService.getEnabledModelsWithConfig();
+          return enabledModelsConfig;
+        } catch (err) {
+          logger.error(JSON.stringify(err), "models.getEnabledWithConfig endpoint failed");
+          throw err;
+        }
+      }),
+
     // Enable a model
     enable: publicProcedure
       .input(z.object({

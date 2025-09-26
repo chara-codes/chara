@@ -39,13 +39,15 @@ export const modelsController = {
             if (provider === "ollama" || provider === "lmstudio") {
               return true;
             }
-            // Use dynamic whitelist from settings
-            return whitelistIds.has(model.id);
+            // Use dynamic whitelist from settings - check both prefixed and non-prefixed IDs
+            const prefixedId = `${provider}:::${model.id}`;
+            return whitelistIds.has(model.id) || whitelistIds.has(prefixedId);
           })
           .map((model) => {
-            // Find whitelist model for enhanced metadata
+            // Find whitelist model for enhanced metadata - check both prefixed and non-prefixed
+            const prefixedId = `${provider}:::${model.id}`;
             const whitelistModel = whitelistedModels.find(
-              (w) => w.id === model.id
+              (w) => w.id === model.id || w.id === prefixedId
             );
 
             return {
@@ -54,13 +56,13 @@ export const modelsController = {
               provider: provider,
               // Add enhanced fields from whitelist if available
               ...(whitelistModel &&
-                provider === whitelistModel.provider && {
-                  name: whitelistModel.name,
-                  contextSize: whitelistModel.contextSize,
-                  hasTools: whitelistModel.hasTools,
-                  recommended: whitelistModel.recommended,
-                  approved: whitelistModel.approved,
-                }),
+                (provider === whitelistModel.provider || whitelistModel.id === prefixedId) && {
+                name: whitelistModel.name,
+                contextSize: whitelistModel.contextSize,
+                hasTools: whitelistModel.hasTools,
+                recommended: whitelistModel.recommended,
+                approved: whitelistModel.approved,
+              }),
             };
           })
       );

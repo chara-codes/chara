@@ -3,10 +3,7 @@ import { fetchModels } from "../services";
 import type { Model } from "../types";
 
 // Fallback data in case fetch fails
-const fallbackModels: Model[] = [
-  { id: "claude-3.7-sonnet", name: "Claude 3.7 Sonnet", provider: "Anthropic" },
-  { id: "gpt-4o", name: "GPT-4o", provider: "OpenAI" },
-];
+const fallbackModels: Model[] = [];
 
 interface ModelsState {
   models: Model[];

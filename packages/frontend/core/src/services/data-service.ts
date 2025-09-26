@@ -75,30 +75,41 @@ export async function fetchChatsWithPagination(options?: {
   }
 }
 
-// Update the fetchModels function to use the imported mock data as a fallback
+// Update the fetchModels function to get enabled models from settings
 export async function fetchModels(): Promise<{
   models: Model[];
   recentModels: string[];
 }> {
-  const agentsUrl = import.meta.env?.VITE_AGENTS_BASE_URL
-    ? `${import.meta.env.VITE_AGENTS_BASE_URL}api/models`
-    : "http://localhost:3031/api/models";
   try {
-    const response = await fetch(agentsUrl);
-    if (!response.ok) {
-      console.error(`Failed to fetch models: Status ${response.status}`);
-      throw new Error(`Failed to fetch models: ${response.status}`);
-    }
-    const data: ModelsResponse = await response.json();
-    console.log("Successfully fetched models data");
+    const client = getVanillaTrpcClient();
+    const enabledModelsConfig = await client.settings.models.getEnabledWithConfig.query();
+
+    console.log("Successfully fetched enabled models from settings");
+
+    // Convert enabled models config to Model array
+    const models: Model[] = Object.entries(enabledModelsConfig).map(([modelId, config]) => ({
+      id: modelId, // Already includes provider prefix (e.g., "openrouter:::qwen/qwen3-coder")
+      name: config.name,
+      provider: config.provider,
+      contextSize: config.contextSize,
+      hasTools: config.hasTools || false,
+      recommended: config.recommended || false,
+      approved: config.approved !== false
+    }));
+
+    // For recent models, we'll use the most recently enabled models
+    // Sort by enabledAt timestamp and take the most recent ones
+    const recentModels = Object.entries(enabledModelsConfig)
+      .sort(([, a], [, b]) => new Date(b.enabledAt).getTime() - new Date(a.enabledAt).getTime())
+      .slice(0, 5) // Take top 5 most recent
+      .map(([modelId]) => modelId);
+
     return {
-      models: data.models.map((model) => {
-        return { ...model, id: `${model.provider}:::${model.id}` };
-      }),
-      recentModels: data.recentModels,
+      models,
+      recentModels,
     };
   } catch (error) {
-    console.error("Error fetching models:", error);
+    console.error("Error fetching enabled models from settings:", error);
     console.log("Using imported mock models data instead");
     return {
       models: mockModels,
@@ -386,12 +397,12 @@ export async function fetchFirstMessageFromRecentChats(options?: {
       },
       firstMessage: item.firstMessage
         ? {
-            id: item.firstMessage.id,
-            role: item.firstMessage.role,
-            parts: item.firstMessage.parts,
-            metadata: item.firstMessage.metadata,
-            createdAt: item.firstMessage.createdAt,
-          }
+          id: item.firstMessage.id,
+          role: item.firstMessage.role,
+          parts: item.firstMessage.parts,
+          metadata: item.firstMessage.metadata,
+          createdAt: item.firstMessage.createdAt,
+        }
         : null,
     }));
   } catch (error) {
