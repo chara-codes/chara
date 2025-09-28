@@ -6,7 +6,7 @@ import { ErrorIcon } from "../../../atoms/icons/error-icon";
 
 const ErrorContainer = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   background-color: #fff5f5;
   border: 1px solid #fed7d7;
   border-radius: 6px;
@@ -24,9 +24,10 @@ const IconWrapper = styled.div`
 `;
 
 const ErrorMessage = styled.span`
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+  line-height: 1.4;
 `;
 
 interface ErrorPartProps {

@@ -8,7 +8,7 @@ import {
   type InputContextItem,
 } from "@chara-codes/core";
 import { DefaultChatTransport } from "ai";
-import type { DataUIPart, FileUIPart, TextUIPart } from "ai";
+import type { DataUIPart, FileUIPart, TextUIPart, UIMessage } from "ai";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
@@ -98,6 +98,8 @@ const ConversationView: React.FC = () => {
 
   // Track processed errors to prevent infinite loops
   const processedErrorsRef = useRef(new Set<string>());
+  const lastErrorTimeRef = useRef<number>(0);
+  const ERROR_DEBOUNCE_MS = 1000; // Prevent same error within 1 second
 
   // Get store actions using getState to avoid subscription issues
   const chatStore = useChatStore.getState();
@@ -130,13 +132,75 @@ const ConversationView: React.FC = () => {
     }
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: setMessages dependency is stable
   useEffect(() => {
     setMessages(currentMessages);
+    // Clear processed errors when chat changes
+    processedErrorsRef.current.clear();
+    lastErrorTimeRef.current = 0;
   }, [activeChat, currentMessages, setMessages]);
 
   useEffect(() => {
     setIsLoading(status === "streaming" || status === "submitted");
   }, [status]);
+
+  // Handle errors from useChat hook
+  useEffect(() => {
+    if (error && !processedErrorsRef.current.has(error.message)) {
+      const now = Date.now();
+
+      // Debounce errors to prevent rapid-fire processing
+      if (now - lastErrorTimeRef.current < ERROR_DEBOUNCE_MS) {
+        console.log("Debouncing error, too soon after last error");
+        return;
+      }
+
+      lastErrorTimeRef.current = now;
+
+      // Mark this error as processed to prevent infinite loops
+      processedErrorsRef.current.add(error.message);
+
+      // Use functional update to avoid dependency on messages state
+      setMessages((currentMessages) => {
+        const updatedMessages = [...currentMessages];
+        const lastAssistantIndex = updatedMessages.length - 1;
+
+        if (
+          lastAssistantIndex >= 0 &&
+          updatedMessages[lastAssistantIndex]?.role === "assistant"
+        ) {
+          // Add error part to the last assistant message
+          const lastMessage = updatedMessages[lastAssistantIndex];
+          const errorPart = {
+            type: "error",
+            error: error.message || "An unexpected error occurred",
+          } as any; // Using 'any' because UIMessage doesn't officially support custom error parts
+
+          updatedMessages[lastAssistantIndex] = {
+            ...lastMessage,
+            parts: [...(lastMessage.parts || []), errorPart],
+          };
+        } else {
+          // If no assistant message exists, create a new error message
+          const errorMessage: UIMessage = {
+            id: `error-${Date.now()}-${Math.random()
+              .toString(36)
+              .substr(2, 9)}`,
+            role: "assistant",
+            parts: [
+              {
+                type: "error",
+                error: error.message || "An unexpected error occurred",
+              } as any, // Using 'any' because UIMessage doesn't officially support custom error parts
+            ],
+          };
+          updatedMessages.push(errorMessage);
+        }
+
+        return updatedMessages;
+      });
+    }
+  }, [error, setMessages]);
 
   // Handle sending messages using useChat hook
   const handleSendMessage = useCallback(
@@ -145,6 +209,7 @@ const ConversationView: React.FC = () => {
 
       // Clear processed errors when sending a new message
       processedErrorsRef.current.clear();
+      lastErrorTimeRef.current = 0;
 
       try {
         let currentChatId = activeChat;
