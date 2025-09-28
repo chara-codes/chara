@@ -7,7 +7,7 @@ import {
   useNavigateToHistory,
   useNavigateToNewThread,
   useNavigateToSettings,
-  useNavigateToTechStacks, // Import the new navigation hook
+  // useNavigateToTechStacks, // Import the new navigation hook
   useNavigateToTerminal, // Import the terminal navigation hook
 } from "@chara-codes/core";
 import type React from "react";
@@ -15,7 +15,7 @@ import { useCallback } from "react";
 import styled from "styled-components";
 import {
   HistoryIcon,
-  LayersIcon, // Import the LayersIcon
+  // LayersIcon, // Import the LayersIcon
   PlusIcon,
   SettingsIcon,
   TerminalIcon, // Import the TerminalIcon
@@ -81,7 +81,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   const navigateToHistory = useNavigateToHistory();
   const navigateToSettings = useNavigateToSettings();
   const navigateToNewThread = useNavigateToNewThread();
-  const navigateToTechStacks = useNavigateToTechStacks(); // Get the new navigation action
+  // const navigateToTechStacks = useNavigateToTechStacks(); // Get the new navigation action
   const navigateToTerminal = useNavigateToTerminal(); // Get the terminal navigation action
   const currentScreen = useCurrentScreen();
 
@@ -119,9 +119,9 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
     navigateToNewThread();
   }, [navigateToNewThread]);
 
-  const handleTechStacksClick = useCallback(() => {
-    navigateToTechStacks();
-  }, [navigateToTechStacks]);
+  // const handleTechStacksClick = useCallback(() => {
+  //   navigateToTechStacks();
+  // }, [navigateToTechStacks]);
 
   const handleTerminalClick = useCallback(() => {
     navigateToTerminal();
@@ -141,13 +141,13 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
         >
           <HistoryIcon size={16} />
         </HeaderButton>
-        <HeaderButton
+        {/*<HeaderButton
           onClick={handleTechStacksClick}
           title="Tech Stacks"
           $active={currentScreen === Screen.TECH_STACKS}
         >
           <LayersIcon width={16} height={16} />
-        </HeaderButton>
+        </HeaderButton>*/}
         <HeaderButton
           onClick={handleTerminalClick}
           title="Terminal"
