@@ -146,16 +146,6 @@ const InputArea: React.FC<InputAreaProps> = ({
     }
   };
 
-  const querySelector = async () => {
-    if (browser) {
-      const result = await sentMessageToApp("select", {
-        selector: "body",
-        url: "http://127.0.0.1:8080/portfolio.html",
-      });
-      console.log(result);
-    }
-  };
-
   // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;

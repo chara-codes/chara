@@ -24,7 +24,6 @@
     "ttest": "bun test"
   },
   "dependencies": {
-    "@chara-codes/agents": "workspace:*",
     "@chara-codes/logger": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.18.2",
     "@trpc/client": "^11.6.0",

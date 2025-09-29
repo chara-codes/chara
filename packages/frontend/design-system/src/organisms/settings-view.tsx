@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  trpc,
   UIStoreContext,
   useUIStore,
   type KeyboardShortcut,
@@ -21,29 +20,29 @@ const SettingsContainer = styled.div`
   background-color: #f9fafb;
 `;
 
-const TabNavigation = styled.div`
-  display: flex;
-  background-color: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0 12px;
-`;
+// const TabNavigation = styled.div`
+//   display: flex;
+//   background-color: white;
+//   border-bottom: 1px solid #e5e7eb;
+//   padding: 0 12px;
+// `;
 
-const TabButton = styled.button<{ $active: boolean }>`
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: ${(props) => (props.$active ? "#3b82f6" : "#6b7280")};
-  background: none;
-  border: none;
-  border-bottom: 2px solid
-    ${(props) => (props.$active ? "#3b82f6" : "transparent")};
-  cursor: pointer;
-  transition: all 0.2s ease;
+// const TabButton = styled.button<{ $active: boolean }>`
+//   padding: 12px 16px;
+//   font-size: 14px;
+//   font-weight: 500;
+//   color: ${(props) => (props.$active ? "#3b82f6" : "#6b7280")};
+//   background: none;
+//   border: none;
+//   border-bottom: 2px solid
+//     ${(props) => (props.$active ? "#3b82f6" : "transparent")};
+//   cursor: pointer;
+//   transition: all 0.2s ease;
 
-  &:hover {
-    color: #3b82f6;
-  }
-`;
+//   &:hover {
+//     color: #3b82f6;
+//   }
+// `;
 
 const SettingsContent = styled.div`
   flex: 1;
@@ -51,22 +50,22 @@ const SettingsContent = styled.div`
   padding: 12px;
 `;
 
-const LoadingState = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
-  color: #6b7280;
-`;
+// const LoadingState = styled.div`
+//   display: flex;
+//   align-items: center;
+//   justify-content: center;
+//   padding: 32px;
+//   color: #6b7280;
+// `;
 
-const ErrorState = styled.div`
-  padding: 16px;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 6px;
-  color: #dc2626;
-  margin: 12px;
-`;
+// const ErrorState = styled.div`
+//   padding: 16px;
+//   background-color: #fef2f2;
+//   border: 1px solid #fecaca;
+//   border-radius: 6px;
+//   color: #dc2626;
+//   margin: 12px;
+// `;
 
 const SettingsGroup = styled.div`
   margin-bottom: 16px;
@@ -365,7 +364,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   }
 
   // Tab and search state
-  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+  const [activeTab] = useState<SettingsTab>(initialTab);
   const [settingsSearchQuery, setSettingsSearchQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     general: true,

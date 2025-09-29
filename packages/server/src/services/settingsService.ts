@@ -3,7 +3,8 @@ import {
   updateGlobalConfig,
   existsGlobalConfig
 } from "@chara-codes/settings";
-import { providersRegistry } from "@chara-codes/agents";
+import { getAgentsApiUrl } from "../config/env";
+
 import {
   type SettingsProviderConfig,
   type ExtendedGlobalSettings,
@@ -207,7 +208,7 @@ export class SettingsService {
       // Disable models associated with this provider
       const enabledModelsConfig = currentConfig.models?.enabledModels || {};
       const providerPrefix = `${provider.type}:::`;
-      
+
       // Get available models to find which ones belong to this provider
       let providerModelIds: string[] = [];
       try {
@@ -261,28 +262,53 @@ export class SettingsService {
   /**
    * Get available models from all configured providers
    */
-  async getAvailableModels(): Promise<ModelConfig[]> {
+  async getAvailableModels(provider?: string): Promise<ModelConfig[]> {
     try {
-      // Try to fetch models from providers registry first
+      // Try to fetch models from API endpoint first
       let allModels: Record<string, any[]> = {};
-      
+
       try {
-        allModels = await providersRegistry.fetchAllModels();
-      } catch (registryError) {
-        // If providers registry fails, get configured providers and return fallback data
-        console.warn('Failed to fetch models from providers registry, using fallback data:', registryError);
-        
+        // Construct API URL with optional provider filter
+        const apiUrl = provider
+          ? getAgentsApiUrl(`/api/models?all&provider=${encodeURIComponent(provider)}`)
+          : getAgentsApiUrl('/api/models?all');
+
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const modelsData = await response.json();
+
+        // Convert the response format to match expected structure
+        if (Array.isArray(modelsData)) {
+          // If response is an array of models, group them by provider
+          allModels = modelsData.reduce((acc: Record<string, any[]>, model: any) => {
+            const modelProvider = model.provider || 'unknown';
+            if (!acc[modelProvider]) {
+              acc[modelProvider] = [];
+            }
+            acc[modelProvider].push(model);
+            return acc;
+          }, {});
+        } else if (typeof modelsData === 'object') {
+          // If response is already grouped by provider
+          allModels = modelsData;
+        }
+      } catch (apiError) {
+        // If API fails, get configured providers and return fallback data
+        console.warn('Failed to fetch models from API, using fallback data:', apiError);
+
         const configuredProviders = await this.getProviders();
         const fallbackModels: ModelConfig[] = [];
-        
-        configuredProviders.forEach(provider => {
-          if (provider.enabled) {
+
+        configuredProviders.forEach(configuredProvider => {
+          if (configuredProvider.enabled && (!provider || configuredProvider.type === provider)) {
             // Add some basic models based on provider type
-            const providerModels = this.getFallbackModelsForProvider(provider.type);
+            const providerModels = this.getFallbackModelsForProvider(configuredProvider.type);
             fallbackModels.push(...providerModels);
           }
         });
-        
+
         return fallbackModels;
       }
 
@@ -309,7 +335,7 @@ export class SettingsService {
     } catch (error) {
       throw this.createError(
         SettingsErrorType.SETTINGS_SAVE_ERROR,
-        'Failed to get available models from providers',
+        'Failed to get available models from API',
         undefined,
         error
       );
@@ -320,77 +346,7 @@ export class SettingsService {
    * Get fallback models for a provider type when registry is unavailable
    */
   private getFallbackModelsForProvider(providerType: string): ModelConfig[] {
-    const fallbackModels: Record<string, ModelConfig[]> = {
-      openai: [
-        {
-          id: 'gpt-4o',
-          name: 'GPT-4o',
-          provider: 'openai',
-          contextSize: 128000,
-          hasTools: true,
-          recommended: true,
-          approved: true
-        },
-        {
-          id: 'gpt-4o-mini',
-          name: 'GPT-4o Mini',
-          provider: 'openai',
-          contextSize: 128000,
-          hasTools: true,
-          recommended: true,
-          approved: true
-        },
-        {
-          id: 'gpt-4-turbo',
-          name: 'GPT-4 Turbo',
-          provider: 'openai',
-          contextSize: 128000,
-          hasTools: true,
-          recommended: false,
-          approved: true
-        }
-      ],
-      anthropic: [
-        {
-          id: 'claude-3-5-sonnet-20241022',
-          name: 'Claude 3.5 Sonnet',
-          provider: 'anthropic',
-          contextSize: 200000,
-          hasTools: true,
-          recommended: true,
-          approved: true
-        },
-        {
-          id: 'claude-3-5-haiku-20241022',
-          name: 'Claude 3.5 Haiku',
-          provider: 'anthropic',
-          contextSize: 200000,
-          hasTools: true,
-          recommended: true,
-          approved: true
-        }
-      ],
-      google: [
-        {
-          id: 'gemini-1.5-pro',
-          name: 'Gemini 1.5 Pro',
-          provider: 'google',
-          contextSize: 2000000,
-          hasTools: true,
-          recommended: true,
-          approved: true
-        },
-        {
-          id: 'gemini-1.5-flash',
-          name: 'Gemini 1.5 Flash',
-          provider: 'google',
-          contextSize: 1000000,
-          hasTools: true,
-          recommended: true,
-          approved: true
-        }
-      ]
-    };
+    const fallbackModels: Record<string, ModelConfig[]> = {};
 
     return fallbackModels[providerType] || [];
   }
@@ -401,7 +357,7 @@ export class SettingsService {
   async getEnabledModels(): Promise<string[]> {
     try {
       const config = await this.getGlobalConfig();
-      
+
       // Use only the new enabledModels structure
       return Object.keys(config.models?.enabledModels || {});
     } catch (error) {
@@ -457,17 +413,17 @@ export class SettingsService {
       let modelConfig: ModelConfig | null = null;
       try {
         const availableModels = await this.getAvailableModels();
-        
+
         // For prefixed IDs, extract the provider and model ID
         let provider: string;
         let actualModelId: string;
-        
+
         if (modelId.includes(':::')) {
           [provider, actualModelId] = modelId.split(':::');
-          modelConfig = availableModels.find(m => m.id === actualModelId && m.provider === provider);
+          modelConfig = availableModels.find(m => m.id === actualModelId && m.provider === provider) || null;
         } else {
           // For non-prefixed IDs, find the model (backward compatibility)
-          modelConfig = availableModels.find(m => m.id === modelId);
+          modelConfig = availableModels.find(m => m.id === modelId) || null;
         }
       } catch (error) {
         console.warn('Could not fetch model details from providers:', error);
@@ -546,8 +502,8 @@ export class SettingsService {
    * Get models by provider
    */
   async getModelsByProvider(provider: string): Promise<ModelConfig[]> {
-    const availableModels = await this.getAvailableModels();
-    return availableModels.filter(model => model.provider === provider);
+    // Use the enhanced getAvailableModels method with provider filtering
+    return await this.getAvailableModels(provider);
   }
 
 

@@ -254,7 +254,9 @@ export async function startServer(options?: ServerOptions): Promise<{
     const validation = validateConfiguration(finalOptions);
     if (!validation.valid) {
       logger.error("Configuration validation failed:");
-      validation.errors.forEach((error) => logger.error(`- ${error}`));
+      validation.errors.forEach((error) => {
+        logger.error(`- ${error}`);
+      });
       throw new Error("Invalid server configuration");
     }
 

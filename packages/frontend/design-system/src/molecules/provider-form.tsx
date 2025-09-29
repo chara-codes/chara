@@ -3,7 +3,6 @@
 import type React from "react";
 import { useState, useEffect } from "react";
 import styled from "styled-components";
-import { trpc } from '@chara-codes/core';
 import {
   InputBase,
   LabelBase,
@@ -178,7 +177,7 @@ const ProviderForm: React.FC<ProviderFormProps> = ({ provider, onSubmit, onCance
     // Validate configuration fields
     fieldConfig.forEach(field => {
       const value = formData.configuration[field.name] || '';
-      
+
       if (field.required && !value.trim()) {
         newErrors[field.name] = `${field.label} is required`;
       } else if (value && field.type === 'url') {
@@ -235,7 +234,7 @@ const ProviderForm: React.FC<ProviderFormProps> = ({ provider, onSubmit, onCance
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -279,7 +278,7 @@ const ProviderForm: React.FC<ProviderFormProps> = ({ provider, onSubmit, onCance
 
         <FormSectionBase>
           <SectionTitleBase>Provider Type</SectionTitleBase>
-          
+
           <FormRowBase>
             <FormGroupBase $fullWidth>
               <LabelBase htmlFor="type">Select Provider</LabelBase>
@@ -302,7 +301,7 @@ const ProviderForm: React.FC<ProviderFormProps> = ({ provider, onSubmit, onCance
 
         <FormSectionBase>
           <SectionTitleBase>Configuration</SectionTitleBase>
-          
+
           {fieldConfig.map(field => (
             <FormGroupBase key={field.name} $fullWidth>
               <LabelBase htmlFor={field.name}>

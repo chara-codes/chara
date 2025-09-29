@@ -4,7 +4,7 @@ import { trpc, useModelSync } from "@chara-codes/core";
 import type React from "react";
 import { useMemo, useState } from "react";
 import styled from "styled-components";
-import { ButtonBase, SelectBase } from "../atoms/form-elements";
+import { SelectBase } from "../atoms/form-elements";
 
 interface ModelConfig {
   id: string;

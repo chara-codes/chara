@@ -20,11 +20,6 @@ interface ServerChat {
   parentId: string | null;
 }
 
-interface ModelsResponse {
-  models: Model[];
-  recentModels: string[];
-}
-
 interface ChatsWithPagination {
   chats: Chat[];
   hasMore: boolean;
