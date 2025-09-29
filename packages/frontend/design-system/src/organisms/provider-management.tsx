@@ -1,19 +1,35 @@
 "use client";
 
+import {
+  trpc,
+  useModelsStore,
+  useModelSync,
+  useProvidersStore,
+} from "@chara-codes/core";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
-import { trpc } from '@chara-codes/core';
-import ProviderList from "../molecules/provider-list";
-import ProviderForm from "../molecules/provider-form";
 import ModelSelection from "../molecules/model-selection";
+import ProviderForm from "../molecules/provider-form";
+import ProviderList from "../molecules/provider-list";
 
 interface ProviderConfig {
   id: string;
   name: string;
-  type: string;
+  type:
+    | "openrouter"
+    | "dial"
+    | "openai"
+    | "anthropic"
+    | "google"
+    | "deepseek"
+    | "ollama"
+    | "lmstudio"
+    | "custom"
+    | "moonshot"
+    | "gemini-cli";
   enabled: boolean;
-  configuration: Record<string, any>;
+  configuration: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,14 +63,28 @@ const ModalContent = styled.div`
 `;
 
 const ProviderManagement: React.FC = () => {
-  const [editingProvider, setEditingProvider] = useState<ProviderConfig | null>(null);
+  const [editingProvider, setEditingProvider] = useState<ProviderConfig | null>(
+    null
+  );
   const [showAddForm, setShowAddForm] = useState(false);
-  const [selectingModelsFor, setSelectingModelsFor] = useState<ProviderConfig | null>(null);
+  const [selectingModelsFor, setSelectingModelsFor] =
+    useState<ProviderConfig | null>(null);
+
+  // Use stores
+  const { refetchProviders, initializeStore: initializeProvidersStore } =
+    useProvidersStore();
+  const { refetchModels } = useModelsStore();
+  const { notifyModelsChanged } = useModelSync();
 
   // TRPC mutations
   const createProviderMutation = trpc.settings.providers.create.useMutation();
   const updateProviderMutation = trpc.settings.providers.update.useMutation();
   const providersQuery = trpc.settings.providers.list.useQuery();
+
+  // Initialize providers store on mount
+  useEffect(() => {
+    initializeProvidersStore();
+  }, [initializeProvidersStore]);
 
   const handleAddProvider = () => {
     setShowAddForm(true);
@@ -75,33 +105,42 @@ const ProviderManagement: React.FC = () => {
     setSelectingModelsFor(null);
   };
 
-  const handleSubmitProvider = async (providerData: Omit<ProviderConfig, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleSubmitProvider = async (providerData: any) => {
     try {
       let createdProvider: ProviderConfig;
-      
+
       if (editingProvider) {
         // Update existing provider
         createdProvider = await updateProviderMutation.mutateAsync({
           id: editingProvider.id,
-          updates: providerData
+          updates: providerData as any,
         });
       } else {
         // Create new provider
-        createdProvider = await createProviderMutation.mutateAsync(providerData);
+        createdProvider = await createProviderMutation.mutateAsync(
+          providerData as any
+        );
       }
-      
-      // Refresh the providers list
-      await providersQuery.refetch();
-      
+
+      // Refresh the providers list and stores
+      await Promise.all([
+        providersQuery.refetch(),
+        refetchProviders(),
+        refetchModels(), // Refetch models when providers change
+      ]);
+
+      // Notify all components about model changes
+      notifyModelsChanged();
+
       // Close the form
       handleCloseForm();
-      
+
       // For new providers, show model selection
       if (!editingProvider && createdProvider.enabled) {
         setSelectingModelsFor(createdProvider);
       }
     } catch (error) {
-      console.error('Failed to save provider:', error);
+      console.error("Failed to save provider:", error);
       throw error; // Re-throw to let the form handle the error
     }
   };

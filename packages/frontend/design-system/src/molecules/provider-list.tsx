@@ -1,6 +1,11 @@
 "use client";
 
-import { trpc } from "@chara-codes/core";
+import {
+  trpc,
+  useModelsStore,
+  useModelSync,
+  useProvidersStore,
+} from "@chara-codes/core";
 import type React from "react";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
@@ -9,9 +14,20 @@ import { ButtonBase } from "../atoms/form-elements";
 interface ProviderConfig {
   id: string;
   name: string;
-  type: string;
+  type:
+    | "openrouter"
+    | "dial"
+    | "openai"
+    | "anthropic"
+    | "google"
+    | "deepseek"
+    | "ollama"
+    | "lmstudio"
+    | "custom"
+    | "moonshot"
+    | "gemini-cli";
   enabled: boolean;
-  configuration: Record<string, any>;
+  configuration: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -216,17 +232,33 @@ const ProviderList: React.FC<ProviderListProps> = ({
     Record<string, string[]>
   >({});
 
+  // Use stores
+  const { refetchProviders } = useProvidersStore();
+  const { refetchModels } = useModelsStore();
+  const { notifyModelsChanged } = useModelSync();
+
   // TRPC queries and mutations
   const providersQuery = trpc.settings.providers.list.useQuery();
-  const enabledModelsConfigQuery = trpc.settings.models.getEnabledWithConfig.useQuery();
+  const enabledModelsConfigQuery =
+    trpc.settings.models.getEnabledWithConfig.useQuery();
   const updateProviderMutation = trpc.settings.providers.update.useMutation({
-    onSuccess: () => {
-      providersQuery.refetch();
+    onSuccess: async () => {
+      await Promise.all([
+        providersQuery.refetch(),
+        refetchProviders(),
+        refetchModels(), // Refetch models when provider settings change
+      ]);
+      notifyModelsChanged(); // Notify all components about model changes
     },
   });
   const deleteProviderMutation = trpc.settings.providers.delete.useMutation({
-    onSuccess: () => {
-      providersQuery.refetch();
+    onSuccess: async () => {
+      await Promise.all([
+        providersQuery.refetch(),
+        refetchProviders(),
+        refetchModels(), // Refetch models when provider is deleted
+      ]);
+      notifyModelsChanged(); // Notify all components about model changes
       setDeletingProvider(null);
     },
   });
@@ -249,7 +281,10 @@ const ProviderList: React.FC<ProviderListProps> = ({
         const enabledFromProvider = Object.entries(enabledModelsConfig)
           .filter(([modelId, config]) => {
             // Check if this model belongs to the current provider
-            return config.provider === provider.type || modelId.startsWith(`${provider.type}:::`);
+            return (
+              config.provider === provider.type ||
+              modelId.startsWith(`${provider.type}:::`)
+            );
           })
           .map(([_modelId, config]) => config.name);
 
@@ -360,8 +395,8 @@ const ProviderList: React.FC<ProviderListProps> = ({
 
                   {enabledModels.length > 0 ? (
                     <ModelsList>
-                      {enabledModels.map((modelName, index) => (
-                        <ModelTag key={index}>{modelName}</ModelTag>
+                      {enabledModels.map((modelName) => (
+                        <ModelTag key={modelName}>{modelName}</ModelTag>
                       ))}
                     </ModelsList>
                   ) : (

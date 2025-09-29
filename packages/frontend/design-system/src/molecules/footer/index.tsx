@@ -1,6 +1,11 @@
 "use client";
 
-import { useChatStore, useModelsStore } from "@chara-codes/core";
+import {
+  useChatStore,
+  useModelsStore,
+  useModelSync,
+  useProvidersStore,
+} from "@chara-codes/core";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDownIcon, SearchIcon, StarIcon } from "../../atoms/icons";
@@ -29,7 +34,9 @@ import { getModelSourceType } from "./utils";
  */
 const Footer: React.FC = () => {
   const { mode, model, setMode, setModel } = useChatStore();
-  const { models, addRecentModel } = useModelsStore();
+  const { models, addRecentModel, refetchModels } = useModelsStore();
+  const { providers } = useProvidersStore();
+  const { onModelsChange } = useModelSync();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,9 +57,25 @@ const Footer: React.FC = () => {
     return { name: model, sourceType: "unknown", provider: "unknown" };
   };
 
+  // Get enabled provider IDs
+  const enabledProviderIds = new Set(
+    providers
+      .filter((provider) => provider.enabled)
+      .map((provider) => provider.name.toLowerCase())
+  );
+
+  // Filter out models from disabled providers
+  const availableModels = models.filter(
+    (model) =>
+      enabledProviderIds.size === 0 ||
+      enabledProviderIds.has(model.provider.toLowerCase())
+  );
+
   // Separate recommended models from others
-  const recommendedModels = models.filter((model) => model.recommended);
-  const otherModels = models.filter((model) => !model.recommended);
+  const recommendedModels = availableModels.filter(
+    (model) => model.recommended
+  );
+  const otherModels = availableModels.filter((model) => !model.recommended);
 
   // Group other models by provider
   const groupedOtherModels = otherModels.reduce((acc, model) => {
@@ -81,6 +104,27 @@ const Footer: React.FC = () => {
       ),
     }))
     .filter((provider) => provider.models.length > 0);
+
+  // Subscribe to provider changes and refetch models
+  useEffect(() => {
+    const providersStore = useProvidersStore.getState();
+    const unsubscribe = providersStore.onProvidersChange(() => {
+      console.log("Footer: Provider settings changed, refetching models...");
+      refetchModels();
+    });
+
+    return unsubscribe;
+  }, [refetchModels]);
+
+  // Subscribe to direct model changes (enable/disable)
+  useEffect(() => {
+    const unsubscribe = onModelsChange(() => {
+      console.log("Footer: Model settings changed, refreshing display...");
+      // Models will be automatically updated via the store notification
+    });
+
+    return unsubscribe;
+  }, [onModelsChange]);
 
   // Handle click outside to close dropdown
   useEffect(() => {

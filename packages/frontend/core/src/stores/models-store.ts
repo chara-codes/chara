@@ -5,16 +5,22 @@ import type { Model } from "../types";
 // Fallback data in case fetch fails
 const fallbackModels: Model[] = [];
 
+// Store callbacks for model changes
+let modelChangeCallbacks: (() => void)[] = [];
+
 interface ModelsState {
   models: Model[];
   recentModels: string[];
   isLoading: boolean;
   loadError: string | null;
   initializeStore: () => Promise<void>;
+  refetchModels: () => Promise<void>;
   addRecentModel: (modelId: string) => void;
+  onModelsChange: (callback: () => void) => () => void;
+  notifyModelsChanged: () => void;
 }
 
-export const useModelsStore = create<ModelsState>()((set) => ({
+export const useModelsStore = create<ModelsState>()((set, get) => ({
   models: [],
   recentModels: [],
   isLoading: true,
@@ -31,13 +37,19 @@ export const useModelsStore = create<ModelsState>()((set) => ({
         setTimeout(() => reject(new Error("Models fetch timeout")), 10000)
       );
 
-      const { models } = await Promise.race([fetchPromise, timeoutPromise]);
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+      const { models } = result as { models: Model[]; recentModels: string[] };
       console.log("Models Store: Models fetched successfully");
 
       set({
         models: models.length > 0 ? models : fallbackModels,
         recentModels: ["claude-3.7-sonnet"],
         isLoading: false,
+      });
+
+      // Notify subscribers that models have changed
+      modelChangeCallbacks.forEach((callback) => {
+        callback();
       });
     } catch (error) {
       console.error("Failed to initialize models store:", error);
@@ -51,12 +63,72 @@ export const useModelsStore = create<ModelsState>()((set) => ({
     }
   },
 
+  refetchModels: async () => {
+    const currentState = get();
+    set({ isLoading: true, loadError: null });
+    try {
+      console.log("Models Store: Refetching models due to provider changes...");
+
+      // Add timeout to models fetch
+      const fetchPromise = fetchModels();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Models fetch timeout")), 10000)
+      );
+
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+      const { models, recentModels } = result as {
+        models: Model[];
+        recentModels: string[];
+      };
+      console.log("Models Store: Models refetched successfully");
+
+      set({
+        models: models.length > 0 ? models : fallbackModels,
+        recentModels:
+          recentModels.length > 0 ? recentModels : currentState.recentModels,
+        isLoading: false,
+      });
+
+      // Notify subscribers that models have changed
+      modelChangeCallbacks.forEach((callback) => {
+        callback();
+      });
+    } catch (error) {
+      console.error("Failed to refetch models:", error);
+      set({
+        isLoading: false,
+        loadError:
+          error instanceof Error
+            ? error.message
+            : "Failed to refetch models data",
+      });
+    }
+  },
+
   addRecentModel: (modelId) => {
     set((state) => {
       // Remove the model if it's already in the list
       const filteredRecent = state.recentModels.filter((id) => id !== modelId);
       // Add it to the beginning
       return { recentModels: [modelId, ...filteredRecent].slice(0, 5) };
+    });
+  },
+
+  onModelsChange: (callback: () => void) => {
+    modelChangeCallbacks.push(callback);
+
+    // Return unsubscribe function
+    return () => {
+      modelChangeCallbacks = modelChangeCallbacks.filter(
+        (cb) => cb !== callback
+      );
+    };
+  },
+
+  notifyModelsChanged: () => {
+    console.log("Models Store: Notifying subscribers of model changes");
+    modelChangeCallbacks.forEach((callback) => {
+      callback();
     });
   },
 }));

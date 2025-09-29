@@ -1,9 +1,9 @@
 "use client";
 
+import { trpc, useModelSync } from "@chara-codes/core";
 import type React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import { trpc } from '@chara-codes/core';
 import { ButtonBase } from "../atoms/form-elements";
 
 interface ModelConfig {
@@ -129,15 +129,17 @@ const ModelGrid = styled.div`
 `;
 
 const ModelCard = styled.div<{ $selected: boolean; $recommended?: boolean }>`
-  border: 2px solid ${props => props.$selected ? '#3b82f6' : '#e5e7eb'};
+  border: 2px solid ${(props) => (props.$selected ? "#3b82f6" : "#e5e7eb")};
   border-radius: 8px;
   padding: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
-  background-color: ${props => props.$selected ? '#eff6ff' : 'white'};
+  background-color: ${(props) => (props.$selected ? "#eff6ff" : "white")};
   position: relative;
 
-  ${props => props.$recommended && `
+  ${(props) =>
+    props.$recommended &&
+    `
     &::before {
       content: "Recommended";
       position: absolute;
@@ -153,7 +155,7 @@ const ModelCard = styled.div<{ $selected: boolean; $recommended?: boolean }>`
   `}
 
   &:hover {
-    border-color: ${props => props.$selected ? '#2563eb' : '#9ca3af'};
+    border-color: ${(props) => (props.$selected ? "#2563eb" : "#9ca3af")};
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 `;
@@ -193,13 +195,14 @@ const ModelFeatures = styled.div`
   flex-wrap: wrap;
 `;
 
-const FeatureBadge = styled.span<{ $type: 'tools' | 'context' }>`
+const FeatureBadge = styled.span<{ $type: "tools" | "context" }>`
   font-size: 10px;
   font-weight: 500;
   padding: 2px 6px;
   border-radius: 4px;
-  background-color: ${props => props.$type === 'tools' ? '#dbeafe' : '#f3f4f6'};
-  color: ${props => props.$type === 'tools' ? '#1e40af' : '#374151'};
+  background-color: ${(props) =>
+    props.$type === "tools" ? "#dbeafe" : "#f3f4f6"};
+  color: ${(props) => (props.$type === "tools" ? "#1e40af" : "#374151")};
 `;
 
 const SelectionActions = styled.div`
@@ -244,7 +247,11 @@ const EmptyState = styled.div`
   color: #6b7280;
 `;
 
-const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, onCancel }) => {
+const ModelSelection: React.FC<ModelSelectionProps> = ({
+  provider,
+  onComplete,
+  onCancel,
+}) => {
   const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set());
   const [isEnabling, setIsEnabling] = useState(false);
   const [models, setModels] = useState<ModelConfig[]>([]);
@@ -253,19 +260,25 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Get model sync service
+  const { notifyModelsChanged } = useModelSync();
+
   // Get currently enabled models
-  const enabledModelsConfigQuery = trpc.settings.models.getEnabledWithConfig.useQuery();
+  const enabledModelsConfigQuery =
+    trpc.settings.models.getEnabledWithConfig.useQuery();
 
   // Mutations for enabling/disabling models
   const enableModelMutation = trpc.settings.models.enable.useMutation({
     onSuccess: () => {
       enabledModelsConfigQuery.refetch();
-    }
+      notifyModelsChanged(); // Notify footer and other components
+    },
   });
   const disableModelMutation = trpc.settings.models.disable.useMutation({
     onSuccess: () => {
       enabledModelsConfigQuery.refetch();
-    }
+      notifyModelsChanged(); // Notify footer and other components
+    },
   });
 
   // Fetch models from the agents service
@@ -275,8 +288,11 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
       setModelsError(null);
 
       try {
-        const agentsUrl = import.meta.env?.VITE_AGENTS_BASE_URL || 'http://localhost:3031/';
-        const response = await fetch(`${agentsUrl}api/models?all&provider=${provider.type}`);
+        const agentsUrl =
+          import.meta.env?.VITE_AGENTS_BASE_URL || "http://localhost:3031/";
+        const response = await fetch(
+          `${agentsUrl}api/models?all&provider=${provider.type}`
+        );
 
         if (!response.ok) {
           throw new Error(`Failed to fetch models: ${response.statusText}`);
@@ -290,16 +306,19 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
           id: model.id || `${provider.type}_${model.name}`,
           name: model.name || model.id,
           provider: provider.type,
-          contextSize: model.contextSize || model.contextLength || model.context_length,
+          contextSize:
+            model.contextSize || model.contextLength || model.context_length,
           hasTools: model.hasTools || model.has_tools || false,
           recommended: model.recommended || false,
-          approved: model.approved !== false
+          approved: model.approved !== false,
         }));
 
         setModels(formattedModels);
       } catch (error) {
-        console.error('Failed to fetch models from agents service:', error);
-        setModelsError(error instanceof Error ? error.message : 'Failed to fetch models');
+        console.error("Failed to fetch models from agents service:", error);
+        setModelsError(
+          error instanceof Error ? error.message : "Failed to fetch models"
+        );
         setModels([]);
       } finally {
         setIsLoadingModels(false);
@@ -312,26 +331,31 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
   // Initialize selected models with currently enabled ones from this provider
   useEffect(() => {
     if (models.length > 0 && enabledModelsConfigQuery.data) {
-      const providerModelIds = models.map(m => m.id);
+      const providerModelIds = models.map((m) => m.id);
       const providerPrefix = `${provider.type}:::`;
       const enabledModelsConfig = enabledModelsConfigQuery.data;
-      
+
       // Get enabled model IDs for this provider
-      const enabledFromProvider = Object.keys(enabledModelsConfig).filter(id => {
-        // Check if it's a prefixed ID for this provider
-        if (id.startsWith(providerPrefix)) {
-          const modelId = id.substring(providerPrefix.length);
-          return providerModelIds.includes(modelId);
+      const enabledFromProvider = Object.keys(enabledModelsConfig).filter(
+        (id) => {
+          // Check if it's a prefixed ID for this provider
+          if (id.startsWith(providerPrefix)) {
+            const modelId = id.substring(providerPrefix.length);
+            return providerModelIds.includes(modelId);
+          }
+          // Check if it's a non-prefixed ID that matches this provider's models
+          return (
+            providerModelIds.includes(id) &&
+            enabledModelsConfig[id].provider === provider.type
+          );
         }
-        // Check if it's a non-prefixed ID that matches this provider's models
-        return providerModelIds.includes(id) && enabledModelsConfig[id].provider === provider.type;
-      });
-      
+      );
+
       // Convert to model IDs (remove prefix if present)
-      const selectedModelIds = enabledFromProvider.map(id => 
+      const selectedModelIds = enabledFromProvider.map((id) =>
         id.startsWith(providerPrefix) ? id.substring(providerPrefix.length) : id
       );
-      
+
       setSelectedModels(new Set(selectedModelIds));
     }
   }, [models, enabledModelsConfigQuery.data, provider.type]);
@@ -347,19 +371,19 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && searchQuery) {
+      if (e.key === "Escape" && searchQuery) {
         e.preventDefault();
-        setSearchQuery('');
+        setSearchQuery("");
         searchInputRef.current?.focus();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [searchQuery]);
 
   const handleModelToggle = (modelId: string) => {
-    setSelectedModels(prev => {
+    setSelectedModels((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(modelId)) {
         newSet.delete(modelId);
@@ -375,34 +399,39 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
 
     setIsEnabling(true);
     try {
-      const providerModelIds = models.map(m => m.id);
+      const providerModelIds = models.map((m) => m.id);
       const providerPrefix = `${provider.type}:::`;
-      
+
       // Find currently enabled models from this provider
       const enabledModelsConfig = enabledModelsConfigQuery.data;
-      const currentlyEnabledFromProvider = Object.keys(enabledModelsConfig).filter(id => {
+      const currentlyEnabledFromProvider = Object.keys(
+        enabledModelsConfig
+      ).filter((id) => {
         if (id.startsWith(providerPrefix)) {
           const modelId = id.substring(providerPrefix.length);
           return providerModelIds.includes(modelId);
         }
-        return providerModelIds.includes(id) && enabledModelsConfig[id].provider === provider.type;
+        return (
+          providerModelIds.includes(id) &&
+          enabledModelsConfig[id].provider === provider.type
+        );
       });
 
       // Note: selectedPrefixedIds would be used if we needed to track them separately
 
       // Find models to enable (newly selected)
-      const currentlyEnabledModelIds = currentlyEnabledFromProvider.map(id =>
+      const currentlyEnabledModelIds = currentlyEnabledFromProvider.map((id) =>
         id.startsWith(providerPrefix) ? id.substring(providerPrefix.length) : id
       );
-      
-      const toEnable = Array.from(selectedModels).filter(modelId =>
-        !currentlyEnabledModelIds.includes(modelId)
+
+      const toEnable = Array.from(selectedModels).filter(
+        (modelId) => !currentlyEnabledModelIds.includes(modelId)
       );
 
       // Find models to disable (previously enabled but now unselected)
-      const toDisable = currentlyEnabledFromProvider.filter(enabledId => {
-        const modelId = enabledId.startsWith(providerPrefix) 
-          ? enabledId.substring(providerPrefix.length) 
+      const toDisable = currentlyEnabledFromProvider.filter((enabledId) => {
+        const modelId = enabledId.startsWith(providerPrefix)
+          ? enabledId.substring(providerPrefix.length)
           : enabledId;
         return !selectedModels.has(modelId);
       });
@@ -418,25 +447,28 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
         await disableModelMutation.mutateAsync({ modelId });
       }
 
+      // Notify all subscribers that models have changed
+      notifyModelsChanged();
       onComplete();
     } catch (error) {
-      console.error('Failed to save model selection:', error);
+      console.error("Failed to save model selection:", error);
     } finally {
       setIsEnabling(false);
     }
   };
 
   const formatContextSize = (size?: number) => {
-    if (!size) return 'Unknown';
+    if (!size) return "Unknown";
     if (size >= 1000000) return `${(size / 1000000).toFixed(1)}M`;
     if (size >= 1000) return `${(size / 1000).toFixed(0)}K`;
     return size.toString();
   };
 
   // Filter models based on search query
-  const filteredModels = models.filter(model => 
-    model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    model.id.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredModels = models.filter(
+    (model) =>
+      model.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      model.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (isLoadingModels || enabledModelsConfigQuery.isLoading) {
@@ -444,11 +476,11 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
       <SelectionContainer>
         <SelectionHeader>
           <SelectionTitle>Loading Models</SelectionTitle>
-          <SelectionSubtitle>Fetching available models from {provider.name}...</SelectionSubtitle>
+          <SelectionSubtitle>
+            Fetching available models from {provider.name}...
+          </SelectionSubtitle>
         </SelectionHeader>
-        <LoadingState>
-          Loading models from {provider.name}...
-        </LoadingState>
+        <LoadingState>Loading models from {provider.name}...</LoadingState>
       </SelectionContainer>
     );
   }
@@ -458,17 +490,20 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
       <SelectionContainer>
         <SelectionHeader>
           <SelectionTitle>Error Loading Models</SelectionTitle>
-          <SelectionSubtitle>Failed to fetch models from {provider.name}</SelectionSubtitle>
+          <SelectionSubtitle>
+            Failed to fetch models from {provider.name}
+          </SelectionSubtitle>
         </SelectionHeader>
         <SelectionContent>
-          <ErrorState>
-            Error: {modelsError}
-          </ErrorState>
+          <ErrorState>Error: {modelsError}</ErrorState>
           <ActionButtons>
             <ButtonBase $variant="secondary" onClick={onCancel}>
               Cancel
             </ButtonBase>
-            <ButtonBase $variant="primary" onClick={() => window.location.reload()}>
+            <ButtonBase
+              $variant="primary"
+              onClick={() => window.location.reload()}
+            >
               Retry
             </ButtonBase>
           </ActionButtons>
@@ -482,12 +517,17 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
       <SelectionContainer>
         <SelectionHeader>
           <SelectionTitle>No Models Available</SelectionTitle>
-          <SelectionSubtitle>No models found for {provider.name}</SelectionSubtitle>
+          <SelectionSubtitle>
+            No models found for {provider.name}
+          </SelectionSubtitle>
         </SelectionHeader>
         <SelectionContent>
           <EmptyState>
             <h3>No models available</h3>
-            <p>This provider doesn't have any available models or they couldn't be loaded.</p>
+            <p>
+              This provider doesn't have any available models or they couldn't
+              be loaded.
+            </p>
           </EmptyState>
         </SelectionContent>
         <SelectionActions>
@@ -517,7 +557,16 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
       <SearchContainer>
         <SearchInputWrapper>
           <SearchIcon>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              role="img"
+              aria-label="Search icon"
+            >
               <circle cx="11" cy="11" r="8"></circle>
               <path d="m21 21-4.35-4.35"></path>
             </svg>
@@ -531,10 +580,19 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
           />
           {searchQuery && (
             <ClearButton
-              onClick={() => setSearchQuery('')}
+              onClick={() => setSearchQuery("")}
               title="Clear search"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                role="img"
+                aria-label="Clear search"
+              >
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
@@ -547,37 +605,42 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
         {filteredModels.length === 0 && searchQuery ? (
           <EmptyState>
             <h3>No models found</h3>
-            <p>No models match your search for "{searchQuery}". Try a different search term.</p>
+            <p>
+              No models match your search for "{searchQuery}". Try a different
+              search term.
+            </p>
           </EmptyState>
         ) : (
           <ModelGrid>
             {filteredModels.map((model) => (
-            <ModelCard
-              key={model.id}
-              $selected={selectedModels.has(model.id)}
-              $recommended={model.recommended}
-              onClick={() => handleModelToggle(model.id)}
-            >
-              <ModelName>{model.name}</ModelName>
+              <ModelCard
+                key={model.id}
+                $selected={selectedModels.has(model.id)}
+                $recommended={model.recommended}
+                onClick={() => handleModelToggle(model.id)}
+              >
+                <ModelName>{model.name}</ModelName>
 
-              <ModelMeta>
-                <MetaItem>
-                  <MetaLabel>Context</MetaLabel>
-                  <MetaValue>{formatContextSize(model.contextSize)}</MetaValue>
-                </MetaItem>
-              </ModelMeta>
+                <ModelMeta>
+                  <MetaItem>
+                    <MetaLabel>Context</MetaLabel>
+                    <MetaValue>
+                      {formatContextSize(model.contextSize)}
+                    </MetaValue>
+                  </MetaItem>
+                </ModelMeta>
 
-              <ModelFeatures>
-                {model.hasTools && (
-                  <FeatureBadge $type="tools">Function Calling</FeatureBadge>
-                )}
-                {model.contextSize && model.contextSize >= 100000 && (
-                  <FeatureBadge $type="context">Large Context</FeatureBadge>
-                )}
-              </ModelFeatures>
-            </ModelCard>
-          ))}
-        </ModelGrid>
+                <ModelFeatures>
+                  {model.hasTools && (
+                    <FeatureBadge $type="tools">Function Calling</FeatureBadge>
+                  )}
+                  {model.contextSize && model.contextSize >= 100000 && (
+                    <FeatureBadge $type="context">Large Context</FeatureBadge>
+                  )}
+                </ModelFeatures>
+              </ModelCard>
+            ))}
+          </ModelGrid>
         )}
       </SelectionContent>
 
@@ -585,14 +648,18 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
         <SelectionSummary>
           {selectedModels.size} of {models.length} models selected
           {searchQuery && filteredModels.length !== models.length && (
-            <span style={{ color: '#6b7280', marginLeft: '8px' }}>
+            <span style={{ color: "#6b7280", marginLeft: "8px" }}>
               ({filteredModels.length} shown)
             </span>
           )}
         </SelectionSummary>
 
         <ActionButtons>
-          <ButtonBase $variant="secondary" onClick={onCancel} disabled={isEnabling}>
+          <ButtonBase
+            $variant="secondary"
+            onClick={onCancel}
+            disabled={isEnabling}
+          >
             Cancel
           </ButtonBase>
           <ButtonBase
@@ -600,7 +667,7 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({ provider, onComplete, o
             onClick={handleSaveSelection}
             disabled={isEnabling}
           >
-            {isEnabling ? 'Saving...' : 'Save Selection'}
+            {isEnabling ? "Saving..." : "Save Selection"}
           </ButtonBase>
         </ActionButtons>
       </SelectionActions>

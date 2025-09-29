@@ -1,9 +1,9 @@
 "use client";
 
+import { trpc, useModelSync } from "@chara-codes/core";
 import type React from "react";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import styled from "styled-components";
-import { trpc } from '@chara-codes/core';
 import { ButtonBase, SelectBase } from "../atoms/form-elements";
 
 interface ModelConfig {
@@ -23,7 +23,7 @@ interface EnhancedModelConfig extends ModelConfig {
 }
 
 interface ModelListProps {
-  groupBy?: 'provider' | 'status' | 'none';
+  groupBy?: "provider" | "status" | "none";
 }
 
 const ListContainer = styled.div`
@@ -85,7 +85,7 @@ const ModelCard = styled.div<{ $enabled: boolean; $providerEnabled: boolean }>`
   padding: 16px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
-  opacity: ${props => !props.$providerEnabled ? 0.6 : 1};
+  opacity: ${(props) => (!props.$providerEnabled ? 0.6 : 1)};
 
   &:hover {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -159,23 +159,24 @@ const ModelStatus = styled.div<{ $enabled: boolean }>`
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: ${props => props.$enabled ? '#059669' : '#6b7280'};
+  color: ${(props) => (props.$enabled ? "#059669" : "#6b7280")};
 `;
 
 const StatusDot = styled.div<{ $enabled: boolean }>`
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: ${props => props.$enabled ? '#10b981' : '#d1d5db'};
+  background-color: ${(props) => (props.$enabled ? "#10b981" : "#d1d5db")};
 `;
 
 const ToggleSwitch = styled.div<{ $enabled: boolean; $disabled: boolean }>`
   width: 36px;
   height: 20px;
-  background-color: ${props => props.$disabled ? '#f3f4f6' : (props.$enabled ? '#3b82f6' : '#e5e7eb')};
+  background-color: ${(props) =>
+    props.$disabled ? "#f3f4f6" : props.$enabled ? "#3b82f6" : "#e5e7eb"};
   border-radius: 10px;
   position: relative;
-  cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
+  cursor: ${(props) => (props.$disabled ? "not-allowed" : "pointer")};
   transition: background-color 0.2s ease;
 
   &::after {
@@ -186,7 +187,7 @@ const ToggleSwitch = styled.div<{ $enabled: boolean; $disabled: boolean }>`
     background-color: white;
     border-radius: 50%;
     top: 2px;
-    left: ${props => props.$enabled ? 'calc(100% - 18px)' : '2px'};
+    left: ${(props) => (props.$enabled ? "calc(100% - 18px)" : "2px")};
     transition: left 0.2s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
@@ -224,25 +225,31 @@ const DisabledProviderWarning = styled.div`
   color: #92400e;
 `;
 
-const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
-  const [filter, setFilter] = useState<'all' | 'enabled' | 'disabled'>('all');
+const ModelList: React.FC<ModelListProps> = ({ groupBy = "provider" }) => {
+  const [filter, setFilter] = useState<"all" | "enabled" | "disabled">("all");
   const [togglingModel, setTogglingModel] = useState<string | null>(null);
+
+  // Get model sync service
+  const { notifyModelsChanged } = useModelSync();
 
   // TRPC queries and mutations
   const availableModelsQuery = trpc.settings.models.getAvailable.useQuery();
   const providersQuery = trpc.settings.providers.list.useQuery();
-  const enabledModelsConfigQuery = trpc.settings.models.getEnabledWithConfig.useQuery();
+  const enabledModelsConfigQuery =
+    trpc.settings.models.getEnabledWithConfig.useQuery();
   const enableModelMutation = trpc.settings.models.enable.useMutation({
     onSuccess: () => {
       enabledModelsConfigQuery.refetch();
       setTogglingModel(null);
-    }
+      notifyModelsChanged(); // Notify footer and other components
+    },
   });
   const disableModelMutation = trpc.settings.models.disable.useMutation({
     onSuccess: () => {
       enabledModelsConfigQuery.refetch();
       setTogglingModel(null);
-    }
+      notifyModelsChanged(); // Notify footer and other components
+    },
   });
 
   // Combine data to create enhanced model configs
@@ -251,28 +258,34 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
     const enabledModelsConfig = enabledModelsConfigQuery.data || {};
     const providers = providersQuery.data || [];
 
-    return availableModels.map(model => {
-      const provider = providers.find(p => p.type === model.provider);
+    return availableModels.map((model) => {
+      const provider = providers.find((p) => p.type === model.provider);
       const prefixedId = `${model.provider}:::${model.id}`;
-      
+
       // Check if model is enabled using either prefixed or non-prefixed ID
-      const isEnabled = enabledModelsConfig[model.id] !== undefined || enabledModelsConfig[prefixedId] !== undefined;
-      
+      const isEnabled =
+        enabledModelsConfig[model.id] !== undefined ||
+        enabledModelsConfig[prefixedId] !== undefined;
+
       return {
         ...model,
         enabled: isEnabled,
-        providerEnabled: provider?.enabled ?? false
+        providerEnabled: provider?.enabled ?? false,
       } as EnhancedModelConfig;
     });
-  }, [availableModelsQuery.data, enabledModelsConfigQuery.data, providersQuery.data]);
+  }, [
+    availableModelsQuery.data,
+    enabledModelsConfigQuery.data,
+    providersQuery.data,
+  ]);
 
   // Filter models based on current filter
   const filteredModels = useMemo(() => {
     switch (filter) {
-      case 'enabled':
-        return enhancedModels.filter(model => model.enabled);
-      case 'disabled':
-        return enhancedModels.filter(model => !model.enabled);
+      case "enabled":
+        return enhancedModels.filter((model) => model.enabled);
+      case "disabled":
+        return enhancedModels.filter((model) => !model.enabled);
       default:
         return enhancedModels;
     }
@@ -280,18 +293,18 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
 
   // Group models based on groupBy prop
   const groupedModels = useMemo(() => {
-    if (groupBy === 'none') {
-      return { 'All Models': filteredModels };
+    if (groupBy === "none") {
+      return { "All Models": filteredModels };
     }
 
     return filteredModels.reduce((groups, model) => {
       let key: string;
-      
+
       switch (groupBy) {
-        case 'status':
-          key = model.enabled ? 'Enabled' : 'Disabled';
+        case "status":
+          key = model.enabled ? "Enabled" : "Disabled";
           break;
-        case 'provider':
+        case "provider":
         default:
           key = model.provider;
           break;
@@ -314,48 +327,53 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
     try {
       const prefixedId = `${model.provider}:::${model.id}`;
       const enabledModelsConfig = enabledModelsConfigQuery.data || {};
-      
+
       if (model.enabled) {
         // Find which ID format is currently enabled and disable it
-        const enabledId = enabledModelsConfig[prefixedId] ? prefixedId : model.id;
+        const enabledId = enabledModelsConfig[prefixedId]
+          ? prefixedId
+          : model.id;
         await disableModelMutation.mutateAsync({ modelId: enabledId });
       } else {
         // Always enable with prefixed ID for new models
         await enableModelMutation.mutateAsync({ modelId: prefixedId });
       }
     } catch (error) {
-      console.error('Failed to toggle model:', error);
+      console.error("Failed to toggle model:", error);
       setTogglingModel(null);
     }
   };
 
   const formatContextLength = (length?: number) => {
-    if (!length) return 'Unknown';
+    if (!length) return "Unknown";
     if (length >= 1000000) return `${(length / 1000000).toFixed(1)}M`;
     if (length >= 1000) return `${(length / 1000).toFixed(0)}K`;
     return length.toString();
   };
 
   const formatCost = (cost?: number) => {
-    if (!cost) return 'Unknown';
+    if (!cost) return "Unknown";
     return `$${cost.toFixed(4)}`;
   };
 
-  if (availableModelsQuery.isLoading || enabledModelsConfigQuery.isLoading || providersQuery.isLoading) {
-    return (
-      <LoadingState>
-        Loading models...
-      </LoadingState>
-    );
+  if (
+    availableModelsQuery.isLoading ||
+    enabledModelsConfigQuery.isLoading ||
+    providersQuery.isLoading
+  ) {
+    return <LoadingState>Loading models...</LoadingState>;
   }
 
-  if (availableModelsQuery.error || enabledModelsConfigQuery.error || providersQuery.error) {
-    const error = availableModelsQuery.error || enabledModelsConfigQuery.error || providersQuery.error;
-    return (
-      <ErrorState>
-        Error loading models: {error?.message}
-      </ErrorState>
-    );
+  if (
+    availableModelsQuery.error ||
+    enabledModelsConfigQuery.error ||
+    providersQuery.error
+  ) {
+    const error =
+      availableModelsQuery.error ||
+      enabledModelsConfigQuery.error ||
+      providersQuery.error;
+    return <ErrorState>Error loading models: {error?.message}</ErrorState>;
   }
 
   if (enhancedModels.length === 0) {
@@ -376,7 +394,9 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
           <SelectBase
             id="model-filter"
             value={filter}
-            onChange={(e) => setFilter(e.target.value as 'all' | 'enabled' | 'disabled')}
+            onChange={(e) =>
+              setFilter(e.target.value as "all" | "enabled" | "disabled")
+            }
           >
             <option value="all">All Models</option>
             <option value="enabled">Enabled Only</option>
@@ -387,8 +407,8 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
 
       {Object.entries(groupedModels).map(([groupName, models]) => (
         <GroupContainer key={groupName}>
-          {groupBy !== 'none' && <GroupHeader>{groupName}</GroupHeader>}
-          
+          {groupBy !== "none" && <GroupHeader>{groupName}</GroupHeader>}
+
           <ModelGrid>
             {models.map((model) => (
               <ModelCard
@@ -398,10 +418,11 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
               >
                 {!model.providerEnabled && (
                   <DisabledProviderWarning>
-                    Provider "{model.provider}" is disabled. Enable the provider to use this model.
+                    Provider "{model.provider}" is disabled. Enable the provider
+                    to use this model.
                   </DisabledProviderWarning>
                 )}
-                
+
                 <ModelHeader>
                   <ModelInfo>
                     <ModelName>{model.name}</ModelName>
@@ -416,7 +437,11 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
                 <ModelMeta>
                   <MetaItem>
                     <MetaLabel>Context</MetaLabel>
-                    <MetaValue>{formatContextLength(model.contextLength || model.contextSize)}</MetaValue>
+                    <MetaValue>
+                      {formatContextLength(
+                        model.contextLength || model.contextSize
+                      )}
+                    </MetaValue>
                   </MetaItem>
                   {model.inputCost && (
                     <MetaItem>
@@ -435,12 +460,14 @@ const ModelList: React.FC<ModelListProps> = ({ groupBy = 'provider' }) => {
                 <ModelActions>
                   <ModelStatus $enabled={model.enabled}>
                     <StatusDot $enabled={model.enabled} />
-                    {model.enabled ? 'Enabled' : 'Disabled'}
+                    {model.enabled ? "Enabled" : "Disabled"}
                   </ModelStatus>
-                  
+
                   <ToggleSwitch
                     $enabled={model.enabled}
-                    $disabled={!model.providerEnabled || togglingModel === model.id}
+                    $disabled={
+                      !model.providerEnabled || togglingModel === model.id
+                    }
                     onClick={() => handleToggleModel(model)}
                   />
                 </ModelActions>

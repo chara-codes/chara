@@ -7,6 +7,7 @@ import {
   useModelsStore,
   useNavigateToConversation,
   useNavigateToServerConnection,
+  useProvidersStore,
   useRoutingStore,
   useRunnerConnect,
   useRunnerConnection,
@@ -105,14 +106,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [debugInfo, setDebugInfo] = useState({
     chatStoreInitialized: false,
     modelsStoreInitialized: false,
+    providersStoreInitialized: false,
     chatStoreError: null as string | null,
     modelsStoreError: null as string | null,
+    providersStoreError: null as string | null,
   });
   const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   // Get store initialization functions
   const initializeChatStore = useChatStore((state) => state.initializeStore);
   const initializeModelsStore = useModelsStore(
+    (state) => state.initializeStore
+  );
+  const initializeProvidersStore = useProvidersStore(
     (state) => state.initializeStore
   );
 
@@ -236,11 +242,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         setDebugInfo((prev) => ({ ...prev, modelsStoreError: errorMsg }));
       }
 
-      console.log("ChatInterface: Store initialization complete");
+      // Initialize providers store
+      try {
+        await initializeProvidersStore();
+        setDebugInfo((prev) => ({ ...prev, providersStoreInitialized: true }));
+      } catch (error) {
+        const errorMsg =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error(
+          "ChatInterface: Providers store initialization failed:",
+          error
+        );
+        setDebugInfo((prev) => ({ ...prev, providersStoreError: errorMsg }));
+      }
     };
 
     initializeStores();
-  }, [initializeChatStore, initializeModelsStore]);
+  }, [initializeChatStore, initializeModelsStore, initializeProvidersStore]);
 
   /**
    * Monitor connection loss and navigate to SERVER_CONNECTION screen with delay.
@@ -296,7 +314,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           if (
             !currentHasConnection &&
             currentScreen !== Screen.SERVER_CONNECTION &&
-            (debugInfo.chatStoreInitialized || debugInfo.modelsStoreInitialized)
+            (debugInfo.chatStoreInitialized ||
+              debugInfo.modelsStoreInitialized ||
+              debugInfo.providersStoreInitialized)
           ) {
             navigateToServerConnection();
           }
@@ -321,6 +341,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     navigateToServerConnection,
     debugInfo.chatStoreInitialized,
     debugInfo.modelsStoreInitialized,
+    debugInfo.providersStoreInitialized,
   ]);
 
   /**
@@ -336,7 +357,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     if (
       hasAnyConnection &&
       currentScreen === Screen.SERVER_CONNECTION &&
-      (debugInfo.chatStoreInitialized || debugInfo.modelsStoreInitialized)
+      (debugInfo.chatStoreInitialized ||
+        debugInfo.modelsStoreInitialized ||
+        debugInfo.providersStoreInitialized)
     ) {
       navigateToConversation();
     }
@@ -347,6 +370,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     navigateToConversation,
     debugInfo.chatStoreInitialized,
     debugInfo.modelsStoreInitialized,
+    debugInfo.providersStoreInitialized,
   ]);
 
   /**
@@ -394,6 +418,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     hasError &&
     !debugInfo.chatStoreInitialized &&
     !debugInfo.modelsStoreInitialized &&
+    !debugInfo.providersStoreInitialized &&
     !isLoading &&
     currentScreen === Screen.CONVERSATION
   ) {
@@ -420,6 +445,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                     "- Models store error:",
                     debugInfo.modelsStoreError
                   );
+                  console.log(
+                    "- Providers store error:",
+                    debugInfo.providersStoreError
+                  );
                   console.log("- Runner connected:", isConnected);
                   alert("Debug info logged to console");
                 }}
@@ -431,6 +460,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                   // Retry initialization
                   initializeChatStore().catch(console.error);
                   initializeModelsStore().catch(console.error);
+                  initializeProvidersStore().catch(console.error);
                 }}
               >
                 Retry Connection
@@ -450,6 +480,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     isLoading &&
     !debugInfo.chatStoreInitialized &&
     !debugInfo.modelsStoreInitialized &&
+    !debugInfo.providersStoreInitialized &&
     (isChatsLoading || isModelsLoading)
   ) {
     return (
