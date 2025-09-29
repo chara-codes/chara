@@ -16,7 +16,7 @@
     "clean": "rm -rf node_modules packages/*/node_modules packages/*/*/node_modules bun.lock packages/*/bun.lock"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.21",
+    "@types/bun": "^1.2.23",
     "@types/http-proxy": "^1.17.16"
   },
   "trustedDependencies": [
@@ -26,7 +26,7 @@
   "dependencies": {
     "@changesets/cli": "^2.29.7",
     "http-proxy": "^1.18.1",
-    "pretty-bytes": "^7.0.1",
-    "turbo": "^2.5.6"
+    "pretty-bytes": "^7.1.0",
+    "turbo": "^2.5.8"
   }
 }
