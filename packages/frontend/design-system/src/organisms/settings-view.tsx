@@ -1,16 +1,16 @@
 "use client";
 
-import type React from "react";
-import { useState, useCallback, useEffect, useContext } from "react";
-import styled from "styled-components";
-import ViewNavigation from "../molecules/view-navigation";
 import {
+  trpc,
+  UIStoreContext,
   useUIStore,
   type KeyboardShortcut,
-  UIStoreContext,
-  trpc,
-} from '@chara-codes/core';
+} from "@chara-codes/core";
+import type React from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
+import styled from "styled-components";
 import { ChevronDownIcon } from "../atoms/icons";
+import ViewNavigation from "../molecules/view-navigation";
 import ProviderManagement from "./provider-management";
 
 const SettingsContainer = styled.div`
@@ -32,10 +32,11 @@ const TabButton = styled.button<{ $active: boolean }>`
   padding: 12px 16px;
   font-size: 14px;
   font-weight: 500;
-  color: ${props => props.$active ? '#3b82f6' : '#6b7280'};
+  color: ${(props) => (props.$active ? "#3b82f6" : "#6b7280")};
   background: none;
   border: none;
-  border-bottom: 2px solid ${props => props.$active ? '#3b82f6' : 'transparent'};
+  border-bottom: 2px solid
+    ${(props) => (props.$active ? "#3b82f6" : "transparent")};
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -343,12 +344,15 @@ interface SettingsItemWithAction {
 
 interface SettingsViewProps {
   onBack: () => void;
-  initialTab?: 'general' | 'providers';
+  initialTab?: "general" | "providers";
 }
 
-type SettingsTab = 'general' | 'providers';
+type SettingsTab = "general" | "providers";
 
-const SettingsView: React.FC<SettingsViewProps> = ({ onBack, initialTab = 'general' }) => {
+const SettingsView: React.FC<SettingsViewProps> = ({
+  onBack,
+  initialTab = "providers",
+}) => {
   // Get UI store state
   const keyboardShortcuts = useUIStore((state) => state.keyboardShortcuts);
 
@@ -371,7 +375,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, initialTab = 'gener
     advanced: true,
   });
   const [recordingShortcut, setRecordingShortcut] = useState<string | null>(
-    null,
+    null
   );
 
   // Toggle group open/closed state
@@ -392,7 +396,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, initialTab = 'gener
     (action: string): KeyboardShortcut | undefined => {
       return keyboardShortcuts.find((shortcut) => shortcut.action === action);
     },
-    [keyboardShortcuts],
+    [keyboardShortcuts]
   );
 
   // Toggle shortcut enabled state
@@ -405,7 +409,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, initialTab = 'gener
           .updateKeyboardShortcut(action, { enabled: !shortcut.enabled });
       }
     },
-    [getShortcutByAction, storeApi],
+    [getShortcutByAction, storeApi]
   );
 
   // Handle key press during recording
@@ -461,7 +465,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, initialTab = 'gener
                   .includes(settingsSearchQuery.toLowerCase()) ||
                 item.description
                   .toLowerCase()
-                  .includes(settingsSearchQuery.toLowerCase()),
+                  .includes(settingsSearchQuery.toLowerCase())
             ),
           }))
           .filter((group) => group.items.length > 0);
@@ -469,9 +473,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, initialTab = 'gener
   // Render tab content based on active tab
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'providers':
+      case "providers":
         return <ProviderManagement />;
-      case 'general':
+      case "general":
       default:
         return (
           <>
@@ -526,12 +530,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, initialTab = 'gener
                                 <ShortcutToggle
                                   $enabled={
                                     getShortcutByAction(
-                                      (item as SettingsItemWithAction).action,
+                                      (item as SettingsItemWithAction).action
                                     )?.enabled || false
                                   }
                                   onClick={() =>
                                     toggleShortcutEnabled(
-                                      (item as SettingsItemWithAction).action,
+                                      (item as SettingsItemWithAction).action
                                     )
                                   }
                                 />
@@ -541,12 +545,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, initialTab = 'gener
                                     (item as SettingsItemWithAction).action
                                       ? "Press key..."
                                       : getShortcutByAction(
-                                          (item as SettingsItemWithAction).action,
+                                          (item as SettingsItemWithAction)
+                                            .action
                                         )?.key || ""
                                   }
                                   onFocus={() =>
                                     startRecordingShortcut(
-                                      (item as SettingsItemWithAction).action,
+                                      (item as SettingsItemWithAction).action
                                     )
                                   }
                                   readOnly
@@ -627,24 +632,22 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, initialTab = 'gener
         placeholder="Search settings..."
       />
 
-      <TabNavigation>
+      {/*<TabNavigation>
         <TabButton
-          $active={activeTab === 'general'}
-          onClick={() => setActiveTab('general')}
+          $active={activeTab === "general"}
+          onClick={() => setActiveTab("general")}
         >
           General
         </TabButton>
         <TabButton
-          $active={activeTab === 'providers'}
-          onClick={() => setActiveTab('providers')}
+          $active={activeTab === "providers"}
+          onClick={() => setActiveTab("providers")}
         >
           Providers
         </TabButton>
-      </TabNavigation>
+      </TabNavigation>*/}
 
-      <SettingsContent>
-        {renderTabContent()}
-      </SettingsContent>
+      <SettingsContent>{renderTabContent()}</SettingsContent>
     </SettingsContainer>
   );
 };
