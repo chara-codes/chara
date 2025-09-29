@@ -20,11 +20,11 @@
     "html2canvas": "^1.4.1"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "tsup": "^8.5.0",
-    "eslint": "^9.30.0",
-    "@types/node": "^22.15.33"
+    "eslint": "^9.36.0",
+    "@types/node": "^22.18.6"
   },
   "repository": {
     "type": "git",
