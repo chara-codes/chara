@@ -112,7 +112,7 @@ const ConversationView: React.FC = () => {
   const { sendMessage, messages, stop, setMessages, status, error } = useChat({
     id: activeChat || "default",
     messages: currentMessages,
-    experimental_throttle: 300,
+    experimental_throttle: 500,
     transport: new DefaultChatTransport({
       api,
     }),
