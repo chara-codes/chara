@@ -9,12 +9,7 @@ import {
 } from "@chara-codes/core";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import {
-  ChevronDownIcon,
-  SearchIcon,
-  SettingsIcon,
-  StarIcon,
-} from "../../atoms/icons";
+import { ChevronDownIcon, SearchIcon, StarIcon } from "../../atoms/icons";
 import {
   ConfigureOption,
   DropdownContainer,
