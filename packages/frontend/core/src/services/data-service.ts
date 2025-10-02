@@ -95,7 +95,10 @@ export async function fetchModels(): Promise<{
     // For recent models, we'll use the most recently enabled models
     // Sort by enabledAt timestamp and take the most recent ones
     const recentModels = Object.entries(enabledModelsConfig)
-      .sort(([, a], [, b]) => new Date(b.enabledAt).getTime() - new Date(a.enabledAt).getTime())
+      .sort(
+        ([, a], [, b]) =>
+          new Date(b.enabledAt).getTime() - new Date(a.enabledAt).getTime()
+      )
       .slice(0, 5) // Take top 5 most recent
       .map(([modelId]) => modelId);
 
@@ -392,12 +395,12 @@ export async function fetchFirstMessageFromRecentChats(options?: {
       },
       firstMessage: item.firstMessage
         ? {
-          id: item.firstMessage.id,
-          role: item.firstMessage.role,
-          parts: item.firstMessage.parts,
-          metadata: item.firstMessage.metadata,
-          createdAt: item.firstMessage.createdAt,
-        }
+            id: item.firstMessage.id,
+            role: item.firstMessage.role,
+            parts: item.firstMessage.parts,
+            metadata: item.firstMessage.metadata,
+            createdAt: item.firstMessage.createdAt,
+          }
         : null,
     }));
   } catch (error) {

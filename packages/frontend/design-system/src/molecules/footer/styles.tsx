@@ -216,3 +216,27 @@ export const NoResults = styled.div`
   color: ${({ theme }) => (theme as Theme).colors.textSecondary};
   font-style: italic;
 `;
+
+// Configure option
+export const ConfigureOption = styled.div`
+  padding: ${({ theme }) => (theme as Theme).spacing.sm}
+    ${({ theme }) => (theme as Theme).spacing.sm};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => (theme as Theme).spacing.xs};
+  color: ${({ theme }) => (theme as Theme).colors.textSecondary};
+  border-top: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  background-color: ${({ theme }) => (theme as Theme).colors.background};
+  font-size: ${({ theme }) => (theme as Theme).typography.fontSize.xs};
+  transition: background-color
+    ${({ theme }) => (theme as Theme).transitions.fast};
+  position: sticky;
+  bottom: 0;
+
+  &:hover {
+    background-color: ${({ theme }) =>
+      (theme as Theme).colors.backgroundSecondary};
+    color: ${({ theme }) => (theme as Theme).colors.text};
+  }
+`;

@@ -4,12 +4,19 @@ import {
   useChatStore,
   useModelsStore,
   useModelSync,
+  useNavigateToSettings,
   useProvidersStore,
 } from "@chara-codes/core";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDownIcon, SearchIcon, StarIcon } from "../../atoms/icons";
 import {
+  ChevronDownIcon,
+  SearchIcon,
+  SettingsIcon,
+  StarIcon,
+} from "../../atoms/icons";
+import {
+  ConfigureOption,
   DropdownContainer,
   FooterContainer,
   ModeButton,
@@ -37,6 +44,7 @@ const Footer: React.FC = () => {
   const { models, addRecentModel, refetchModels } = useModelsStore();
   const { providers } = useProvidersStore();
   const { onModelsChange } = useModelSync();
+  const navigateToSettings = useNavigateToSettings();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -156,6 +164,11 @@ const Footer: React.FC = () => {
     setIsDropdownOpen(false);
   };
 
+  const handleConfigureClick = () => {
+    setIsDropdownOpen(false);
+    navigateToSettings();
+  };
+
   const selectedModel = getSelectedModelInfo();
 
   return (
@@ -257,6 +270,9 @@ const Footer: React.FC = () => {
             ) : (
               <NoResults>No models found</NoResults>
             )}
+            <ConfigureOption onClick={handleConfigureClick}>
+              Configure...
+            </ConfigureOption>
           </DropdownContainer>
         )}
       </ModelSelectorContainer>
