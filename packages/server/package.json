@@ -33,6 +33,7 @@
     "drizzle-orm": "^0.43.1",
     "drizzle-zod": "^0.7.1",
     "eventsource": "^4.0.0",
+    "ignore": "^7.0.5",
     "live-server": "^1.2.2",
     "nanoid": "^5.1.6",
     "picocolors": "^1.1.1",

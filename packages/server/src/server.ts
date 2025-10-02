@@ -5,6 +5,7 @@ import { cyan } from "picocolors";
 import superjson from "superjson";
 import { createContext, type Context } from "./api/context";
 import { chatRouter } from "./api/routes/chat";
+import { contextRouter } from "./api/routes/context";
 import { filesRouter } from "./api/routes/files";
 import { instructionsRouter } from "./api/routes/instructions";
 import { linksRouter } from "./api/routes/links";
@@ -25,6 +26,7 @@ const appRouter = t.router({
   instructions: instructionsRouter,
   files: filesRouter,
   settings: settingsRouter,
+  context: contextRouter,
 });
 
 export interface ServerOptions {

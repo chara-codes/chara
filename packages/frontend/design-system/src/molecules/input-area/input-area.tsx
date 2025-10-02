@@ -3,6 +3,7 @@
 import {
   BrowserContext,
   readFileContent,
+  trpc,
   useRunnerProcesses,
   useSimpleBeautifier,
   useUIStore,
@@ -315,11 +316,33 @@ const InputArea: React.FC<InputAreaProps> = ({
 
   const runnerProcesses = useRunnerProcesses();
 
+  // Fetch file list for context dropdown
+  const fileListQuery = trpc.context.getFileList.useQuery(
+    {
+      maxDepth: 3,
+      includeHidden: false,
+    },
+    {
+      enabled: false, // Don't auto-fetch on mount
+      staleTime: 30000, // Cache for 30 seconds
+    }
+  );
+
+  // Trigger file list fetch when dropdown is opened
+  useEffect(() => {
+    if (isDropdownOpen && !fileListQuery.data && !fileListQuery.isFetching) {
+      fileListQuery.refetch();
+    }
+  }, [isDropdownOpen, fileListQuery]);
+
   const dropdownItems = createDropdownItems(
     startSelection,
     triggerFileUpload,
     onAddContext,
-    runnerProcesses
+    runnerProcesses,
+    fileListQuery.data?.files,
+    fileListQuery.isFetching,
+    fileListQuery.error?.message
   );
 
   const handleDropdownSelect = useCallback(
