@@ -212,22 +212,22 @@ const ScrollToBottomButton = styled.button`
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(107, 114, 128, 0.1);
-  color: white;
+  background: ${props => props.theme.colors.primary};
+  color: ${props => props.theme.colors.background};
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: ${props => props.theme.shadows.md};
   backdrop-filter: blur(8px);
-  transition: all 0.2s ease;
+  transition: all ${props => props.theme.transitions.normal} ease;
   z-index: 10;
 
   &:hover {
-    background: rgba(75, 85, 99, 0.9);
+    background: ${props => props.theme.colors.primaryHover};
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: ${props => props.theme.shadows.lg};
   }
 
   &:active {
@@ -236,7 +236,7 @@ const ScrollToBottomButton = styled.button`
 
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.3);
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.primaryLight};
   }
 
   svg {
@@ -254,9 +254,10 @@ const EmptyState = styled.div`
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   text-align: center;
   padding: 0 24px;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const EmptyStateTitle = styled.h3`

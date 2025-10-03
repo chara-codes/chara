@@ -17,8 +17,9 @@ import type { MessageBubbleProps } from "./types";
 
 // Animated ellipsis component for generating messages
 const GeneratingIndicator = styled.span`
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   font-size: 12px;
+  transition: color ${props => props.theme.transitions.theme};
 
   &::after {
     content: "";
@@ -41,6 +42,67 @@ const GeneratingIndicator = styled.span`
     100% {
       content: "";
     }
+  }
+`;
+
+const DeleteConfirmDialog = styled.div`
+  position: absolute;
+  top: 0;
+  right: 40px;
+  background: ${props => props.theme.colors.backgroundSecondary};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 4px;
+  padding: 8px;
+  box-shadow: ${props => props.theme.shadows.md};
+  z-index: 10;
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
+`;
+
+const DeleteConfirmText = styled.p`
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: ${props => props.theme.colors.text};
+  transition: color ${props => props.theme.transitions.theme};
+`;
+
+const DeleteConfirmButtons = styled.div`
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+`;
+
+const CancelButton = styled.button`
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 4px;
+  background: ${props => props.theme.colors.background};
+  color: ${props => props.theme.colors.text};
+  cursor: pointer;
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
+
+  &:hover {
+    background: ${props => props.theme.colors.highlight};
+  }
+`;
+
+const ConfirmDeleteButton = styled.button`
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid ${props => props.theme.colors.error};
+  border-radius: 4px;
+  background: ${props => props.theme.colors.error};
+  color: ${props => props.theme.colors.background};
+  cursor: pointer;
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
+
+  &:hover {
+    background: ${props => props.theme.colors.errorHover};
+    border-color: ${props => props.theme.colors.errorHover};
   }
 `;
 
@@ -166,61 +228,26 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
 
         {showDeleteConfirm && (
-          <div
-            style={{
-              position: "absolute",
-              top: "0",
-              right: "40px",
-              background: "white",
-              border: "1px solid #e5e7eb",
-              borderRadius: "4px",
-              padding: "8px",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              zIndex: 10,
-            }}
-          >
-            <p style={{ margin: "0 0 8px 0", fontSize: "12px" }}>
+          <DeleteConfirmDialog>
+            <DeleteConfirmText>
               Delete this message and all subsequent messages? All changes will
               roll back.
-            </p>
-            <div
-              style={{
-                display: "flex",
-                gap: "8px",
-                justifyContent: "flex-end",
-              }}
-            >
-              <button
+            </DeleteConfirmText>
+            <DeleteConfirmButtons>
+              <CancelButton
                 type="button"
                 onClick={handleDeleteCancel}
-                style={{
-                  padding: "4px 8px",
-                  fontSize: "12px",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "4px",
-                  background: "white",
-                  cursor: "pointer",
-                }}
               >
                 Cancel
-              </button>
-              <button
+              </CancelButton>
+              <ConfirmDeleteButton
                 type="button"
                 onClick={handleDeleteConfirm}
-                style={{
-                  padding: "4px 8px",
-                  fontSize: "12px",
-                  border: "1px solid #ef4444",
-                  borderRadius: "4px",
-                  background: "#ef4444",
-                  color: "white",
-                  cursor: "pointer",
-                }}
               >
                 Delete
-              </button>
-            </div>
-          </div>
+              </ConfirmDeleteButton>
+            </DeleteConfirmButtons>
+          </DeleteConfirmDialog>
         )}
 
         <MessageContent>

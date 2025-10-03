@@ -4,6 +4,7 @@ export * from "./providers-store";
 export * from "./routing-store";
 export * from "./runner-store";
 export * from "./tech-stacks-store";
+export * from "./theme-store";
 export * from "./trpc-provider";
 export * from "./ui-store";
 export * from "./browser-context";

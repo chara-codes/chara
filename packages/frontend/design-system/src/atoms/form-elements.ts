@@ -1,14 +1,4 @@
 import styled from "styled-components";
-import {theme} from '../theme';
-
-const {
-  colors,
-  typography,
-  spacing,
-  borderRadius,
-  shadows,
-  transitions,
-} = theme;
 
 // Base input styles
 export const InputBase = styled.input<{
@@ -16,39 +6,39 @@ export const InputBase = styled.input<{
   $disabled?: boolean;
 }>`
   width: 100%;
-  padding: ${spacing.sm} ${spacing.md};
+  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
   height: 38px;
   border: 1px solid
     ${(props) => {
-      if (props.$disabled) return colors.border;
-      if (props.$hasError) return colors.error;
-      return colors.border;
+      if (props.$disabled) return props.theme.colors.border;
+      if (props.$hasError) return props.theme.colors.error;
+      return props.theme.colors.border;
     }};
-  border-radius: ${borderRadius.md};
-  font-size: ${typography.fontSize.md};
-  font-family: ${typography.fontFamily};
+  border-radius: ${props => props.theme.borderRadius.md};
+  font-size: ${props => props.theme.typography.fontSize.md};
+  font-family: ${props => props.theme.typography.fontFamily};
   background-color: ${(props) =>
-    props.$disabled ? colors.backgroundSecondary : colors.background};
+    props.$disabled ? props.theme.colors.backgroundSecondary : props.theme.colors.background};
   color: ${(props) =>
-    props.$disabled ? colors.textSecondary : colors.text};
-  transition: all 0.2s ease;
+    props.$disabled ? props.theme.colors.textSecondary : props.theme.colors.text};
+  transition: all ${props => props.theme.transitions.theme};
 
   &:hover:not(:disabled) {
     border-color: ${(props) =>
-      props.$hasError ? colors.error : colors.border};
+      props.$hasError ? props.theme.colors.error : props.theme.colors.borderHover};
   }
 
   &:focus:not(:disabled) {
     outline: none;
     border-color: ${(props) =>
-      props.$hasError ? colors.error : colors.primary};
-    box-shadow: ${shadows.focus}
+      props.$hasError ? props.theme.colors.error : props.theme.colors.primary};
+    box-shadow: ${props => props.theme.shadows.focus}
       ${(props) =>
-        props.$hasError ? colors.errorLight : colors.primary};
+        props.$hasError ? props.theme.colors.errorLight : props.theme.colors.primaryLight};
   }
 
   &::placeholder {
-    color: ${colors.textSecondary};
+    color: ${props => props.theme.colors.textSecondary};
   }
 
   &:disabled {
@@ -62,7 +52,7 @@ export const TextAreaBase = styled(InputBase).attrs({ as: "textarea" })`
   height: auto;
   min-height: 80px;
   resize: vertical;
-  line-height: ${typography.lineHeight.normal};
+  line-height: ${props => props.theme.typography.lineHeight.normal};
 `;
 
 // Select
@@ -78,23 +68,23 @@ export const SelectBase = styled(InputBase).attrs({ as: "select" })`
 // Label
 export const LabelBase = styled.label`
   display: block;
-  font-size: ${typography.fontSize.sm};
-  font-weight: ${typography.fontWeight.medium};
-  color: ${colors.textSecondary};
-  margin-bottom: ${spacing.xs};
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  font-weight: ${props => props.theme.typography.fontWeight.medium};
+  color: ${props => props.theme.colors.textSecondary};
+  margin-bottom: ${props => props.theme.spacing.xs};
 `;
 
 // Error message
 export const ErrorMessageBase = styled.div`
-  color: ${colors.error};
-  font-size: ${typography.fontSize.xs};
-  margin-top: ${spacing.xs};
+  color: ${props => props.theme.colors.error};
+  font-size: ${props => props.theme.typography.fontSize.xs};
+  margin-top: ${props => props.theme.spacing.xs};
 `;
 
 // Form group
 export const FormGroupBase = styled.div<{ $fullWidth?: boolean }>`
   flex: ${(props) => (props.$fullWidth ? 1 : "0 0 calc(50% - 8px)")};
-  margin-bottom: ${spacing.md};
+  margin-bottom: ${props => props.theme.spacing.md};
 
   @media (max-width: "640px") {
     flex: 1;
@@ -104,32 +94,32 @@ export const FormGroupBase = styled.div<{ $fullWidth?: boolean }>`
 // Form row
 export const FormRowBase = styled.div`
   display: flex;
-  gap: ${spacing.lg};
-  margin-bottom: ${spacing.lg};
+  gap: ${props => props.theme.spacing.lg};
+  margin-bottom: ${props => props.theme.spacing.lg};
 
   @media (max-width: "640px") {
     flex-direction: column;
-    gap: ${spacing.md};
+    gap: ${props => props.theme.spacing.md};
   }
 `;
 
 // Form section
 export const FormSectionBase = styled.div`
-  margin-bottom: ${spacing.lg};
-  background-color: ${colors.background};
-  border-radius: ${borderRadius.lg};
-  box-shadow: ${shadows.sm};
-  padding: ${spacing.lg};
+  margin-bottom: ${props => props.theme.spacing.lg};
+  background-color: ${props => props.theme.colors.background};
+  border-radius: ${props => props.theme.borderRadius.lg};
+  box-shadow: ${props => props.theme.shadows.sm};
+  padding: ${props => props.theme.spacing.lg};
 `;
 
 // Section title
 export const SectionTitleBase = styled.h3`
-  font-size: ${typography.fontSize.md};
-  font-weight: ${typography.fontWeight.semibold};
-  color: ${colors.text};
-  margin: 0 0 ${spacing.lg} 0;
-  padding-bottom: ${spacing.sm};
-  border-bottom: 1px solid ${colors.border};
+  font-size: ${props => props.theme.typography.fontSize.md};
+  font-weight: ${props => props.theme.typography.fontWeight.semibold};
+  color: ${props => props.theme.colors.text};
+  margin: 0 0 ${props => props.theme.spacing.lg} 0;
+  padding-bottom: ${props => props.theme.spacing.sm};
+  border-bottom: 1px solid ${props => props.theme.colors.border};
 `;
 
 // Button base
@@ -140,31 +130,31 @@ export const ButtonBase = styled.button<{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: ${typography.fontWeight.medium};
-  border-radius: ${borderRadius.md};
-  transition: all ${transitions.normal} ease;
+  font-weight: ${props => props.theme.typography.fontWeight.medium};
+  border-radius: ${props => props.theme.borderRadius.md};
+  transition: all ${props => props.theme.transitions.normal} ease;
   cursor: pointer;
-  font-family: ${typography.fontFamily};
+  font-family: ${props => props.theme.typography.fontFamily};
 
   /* Size styles */
   ${(props) => {
     switch (props.$size || "medium") {
       case "small":
         return `
-          padding: 6px 12px;
-          font-size: ${typography.fontSize.xs};
-          height: 30px;
+          padding: 4px 10px;
+          font-size: ${props.theme.typography.fontSize.xs};
+          height: 26px;
         `;
       case "large":
         return `
           padding: 10px 20px;
-          font-size: ${typography.fontSize.lg};
+          font-size: ${props.theme.typography.fontSize.lg};
           height: 46px;
         `;
       default:
         return `
           padding: 8px 16px;
-          font-size: ${typography.fontSize.md};
+          font-size: ${props.theme.typography.fontSize.md};
           height: 38px;
         `;
     }
@@ -175,29 +165,31 @@ export const ButtonBase = styled.button<{
     switch (props.$variant || "primary") {
       case "secondary":
         return `
-          background-color: ${colors.background};
-          color: ${colors.textSecondary};
-          border: 1px solid ${colors.border};
+          background-color: transparent;
+          color: ${props.theme.colors.textSecondary};
+          border: 1px solid ${props.theme.colors.border};
 
           &:hover:not(:disabled) {
-            background-color: ${colors.backgroundSecondary};
-            border-color: ${colors.borderHover};
+            background-color: ${props.theme.colors.highlight};
+            border-color: ${props.theme.colors.borderHover};
+            color: ${props.theme.colors.text};
           }
         `;
       case "destructive":
         return `
-          background-color: ${colors.error};
-          color: ${colors.background};
-          border: none;
+          background-color: transparent;
+          color: ${props.theme.colors.error};
+          border: 1px solid ${props.theme.colors.error};
 
           &:hover:not(:disabled) {
-            background-color: ${colors.errorHover};
+            background-color: ${props.theme.colors.errorLight};
+            border-color: ${props.theme.colors.errorHover};
           }
         `;
       case "link":
         return `
           background-color: transparent;
-          color: ${colors.primary};
+          color: ${props.theme.colors.primary};
           border: none;
           padding: 0;
           height: auto;
@@ -210,12 +202,13 @@ export const ButtonBase = styled.button<{
         `;
       default:
         return `
-          background-color: ${colors.primary};
-          color: ${colors.background};
-          border: none;
+          background-color: ${props.theme.colors.primary};
+          color: ${props.theme.colors.background};
+          border: 1px solid ${props.theme.colors.primary};
 
           &:hover:not(:disabled) {
-            background-color: ${colors.primaryHover};
+            background-color: ${props.theme.colors.primaryHover};
+            border-color: ${props.theme.colors.primaryHover};
           }
         `;
     }
@@ -224,12 +217,12 @@ export const ButtonBase = styled.button<{
   /* States */
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: ${shadows.md};
+    box-shadow: ${props => props.theme.shadows.sm};
   }
 
   &:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: ${shadows.sm};
+    box-shadow: none;
   }
 
   &:disabled {
@@ -242,8 +235,8 @@ export const ButtonBase = styled.button<{
 export const CheckboxBase = styled.div`
   display: flex;
   align-items: center;
-  gap: ${spacing.sm};
-  margin-top: ${spacing.sm};
+  gap: ${props => props.theme.spacing.sm};
+  margin-top: ${props => props.theme.spacing.sm};
 
   input {
     width: 16px;
@@ -252,8 +245,8 @@ export const CheckboxBase = styled.div`
   }
 
   label {
-    font-size: ${typography.fontSize.md};
-    color: ${colors.textSecondary};
+    font-size: ${props => props.theme.typography.fontSize.md};
+    color: ${props => props.theme.colors.textSecondary};
     margin: 0;
     cursor: pointer;
   }
@@ -262,8 +255,8 @@ export const CheckboxBase = styled.div`
 // Icon selector
 export const IconSelectorBase = styled.div`
   display: flex;
-  gap: ${spacing.sm};
-  margin-top: ${spacing.sm};
+  gap: ${props => props.theme.spacing.sm};
+  margin-top: ${props => props.theme.spacing.sm};
   flex-wrap: wrap;
 `;
 
@@ -271,22 +264,22 @@ export const IconSelectorBase = styled.div`
 export const IconOptionBase = styled.div<{ $selected: boolean }>`
   width: 32px;
   height: 32px;
-  border-radius: ${borderRadius.sm};
+  border-radius: ${props => props.theme.borderRadius.sm};
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   background-color: ${(props) =>
-    props.$selected ? colors.primary : colors.backgroundSecondary};
+    props.$selected ? props.theme.colors.primary : props.theme.colors.backgroundSecondary};
   color: ${(props) =>
-    props.$selected ? colors.background : colors.textSecondary};
+    props.$selected ? props.theme.colors.background : props.theme.colors.textSecondary};
   border: 1px solid
     ${(props) =>
-      props.$selected ? colors.primary: colors.border};
-  transition: all ${transitions.normal} ease;
+      props.$selected ? props.theme.colors.primary: props.theme.colors.border};
+  transition: all ${props => props.theme.transitions.normal} ease;
 
   &:hover {
     background-color: ${(props) =>
-      props.$selected ? colors.primary : colors.border};
+      props.$selected ? props.theme.colors.primary : props.theme.colors.highlight};
   }
 `;

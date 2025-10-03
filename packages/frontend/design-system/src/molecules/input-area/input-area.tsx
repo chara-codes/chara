@@ -41,14 +41,14 @@ import {
 
 const RoundedIconButton = styled(IconButton)`
   border-radius: 8px;
-  transition: background-color 0.2s ease;
+  transition: background-color ${props => props.theme.transitions.theme};
 
   &:hover:not(:disabled) {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: ${props => props.theme.colors.highlight};
   }
 
   &:active:not(:disabled) {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: ${props => props.theme.colors.border};
   }
 `;
 
@@ -61,16 +61,14 @@ const LoadingLine = styled.div`
   background: linear-gradient(
     90deg,
     transparent,
-    #3b82f6,
-    #8b5cf6,
-    #ec4899,
-    #8b5cf6,
-    #3b82f6,
+    ${props => props.theme.colors.primary},
+    ${props => props.theme.colors.secondary},
+    ${props => props.theme.colors.primary},
     transparent
   );
   background-size: 200% 100%;
   animation: shimmer 2s infinite linear, pulse 1.5s infinite ease-in-out;
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 10px ${props => props.theme.colors.primaryLight};
 
   @keyframes shimmer {
     0% {

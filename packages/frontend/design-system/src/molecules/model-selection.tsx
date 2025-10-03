@@ -30,35 +30,35 @@ interface ModelSelectionProps {
 }
 
 const SelectionContainer = styled.div`
-  background-color: white;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: ${props => props.theme.shadows.lg};
   overflow: hidden;
 `;
 
 const SelectionHeader = styled.div`
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.background};
 `;
 
 const SelectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #111827;
+  color: ${props => props.theme.colors.text};
   margin: 0 0 8px 0;
 `;
 
 const SelectionSubtitle = styled.p`
   font-size: 14px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   margin: 0;
 `;
 
 const SearchContainer = styled.div`
   padding: 16px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.background};
   position: relative;
 `;
 
@@ -69,19 +69,23 @@ const SearchInputWrapper = styled.div`
 const SearchInput = styled.input`
   width: 100%;
   padding: 8px 12px 8px 36px;
-  border: 1px solid #d1d5db;
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 6px;
   font-size: 14px;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
+  color: ${props => props.theme.colors.text};
   outline: none;
-  transition: border-color 0.2s ease;
+  transition: border-color ${props => props.theme.transitions.theme},
+              background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 
   &:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: ${props => props.theme.colors.primary};
+    box-shadow: 0 0 0 3px ${props => props.theme.colors.primaryLight};
   }
 
   &::placeholder {
-    color: #9ca3af;
+    color: ${props => props.theme.colors.textSecondary};
   }
 `;
 
@@ -90,7 +94,7 @@ const SearchIcon = styled.div`
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: ${props => props.theme.colors.textSecondary};
   pointer-events: none;
 `;
 
@@ -101,17 +105,19 @@ const ClearButton = styled.button`
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 
   &:hover {
-    background-color: #f3f4f6;
-    color: #374151;
+    background-color: ${props => props.theme.colors.highlight};
+    color: ${props => props.theme.colors.text};
   }
 `;
 
@@ -129,12 +135,12 @@ const ModelGrid = styled.div`
 `;
 
 const ModelCard = styled.div<{ $selected: boolean; $recommended?: boolean }>`
-  border: 2px solid ${(props) => (props.$selected ? "#3b82f6" : "#e5e7eb")};
+  border: 2px solid ${(props) => (props.$selected ? props.theme.colors.primary : props.theme.colors.border)};
   border-radius: 8px;
   padding: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: ${(props) => (props.$selected ? "#eff6ff" : "white")};
+  transition: all ${props => props.theme.transitions.theme};
+  background-color: ${(props) => (props.$selected ? props.theme.colors.primaryLight : props.theme.colors.backgroundSecondary)};
   position: relative;
 
   ${(props) =>
@@ -145,8 +151,8 @@ const ModelCard = styled.div<{ $selected: boolean; $recommended?: boolean }>`
       position: absolute;
       top: -1px;
       right: -1px;
-      background-color: #10b981;
-      color: white;
+      background-color: ${props.theme.colors.success};
+      color: ${props.theme.colors.background};
       font-size: 10px;
       font-weight: 600;
       padding: 2px 8px;
@@ -155,15 +161,15 @@ const ModelCard = styled.div<{ $selected: boolean; $recommended?: boolean }>`
   `}
 
   &:hover {
-    border-color: ${(props) => (props.$selected ? "#2563eb" : "#9ca3af")};
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: ${(props) => (props.$selected ? props.theme.colors.primaryHover : props.theme.colors.borderHover)};
+    box-shadow: ${props => props.theme.shadows.sm};
   }
 `;
 
 const ModelName = styled.h4`
   font-size: 14px;
   font-weight: 600;
-  color: #111827;
+  color: ${props => props.theme.colors.text};
   margin: 0 0 8px 0;
 `;
 
@@ -171,7 +177,7 @@ const ModelMeta = styled.div`
   display: flex;
   gap: 16px;
   font-size: 12px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   margin-bottom: 12px;
 `;
 
@@ -186,7 +192,7 @@ const MetaLabel = styled.span`
 `;
 
 const MetaValue = styled.span`
-  color: #374151;
+  color: ${props => props.theme.colors.text};
 `;
 
 const ModelFeatures = styled.div`
@@ -201,8 +207,10 @@ const FeatureBadge = styled.span<{ $type: "tools" | "context" }>`
   padding: 2px 6px;
   border-radius: 4px;
   background-color: ${(props) =>
-    props.$type === "tools" ? "#dbeafe" : "#f3f4f6"};
-  color: ${(props) => (props.$type === "tools" ? "#1e40af" : "#374151")};
+    props.$type === "tools" ? props.theme.colors.primaryLight : props.theme.colors.highlight};
+  color: ${(props) => (props.$type === "tools" ? props.theme.colors.primary : props.theme.colors.text)};
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 `;
 
 const SelectionActions = styled.div`
@@ -210,13 +218,13 @@ const SelectionActions = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-top: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-top: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.background};
 `;
 
 const SelectionSummary = styled.div`
   font-size: 14px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
 `;
 
 const ActionButtons = styled.div`
@@ -224,27 +232,32 @@ const ActionButtons = styled.div`
   gap: 12px;
 `;
 
+const FilteredCount = styled.span`
+  color: ${props => props.theme.colors.textSecondary};
+  margin-left: 8px;
+`;
+
 const LoadingState = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 48px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
 `;
 
 const ErrorState = styled.div`
   padding: 16px;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
+  background-color: ${props => props.theme.colors.errorLight};
+  border: 1px solid ${props => props.theme.colors.error};
   border-radius: 6px;
-  color: #dc2626;
+  color: ${props => props.theme.colors.error};
   margin-bottom: 16px;
 `;
 
 const EmptyState = styled.div`
   text-align: center;
   padding: 48px 24px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
 `;
 
 const ModelSelection: React.FC<ModelSelectionProps> = ({
@@ -648,9 +661,9 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({
         <SelectionSummary>
           {selectedModels.size} of {models.length} models selected
           {searchQuery && filteredModels.length !== models.length && (
-            <span style={{ color: "#6b7280", marginLeft: "8px" }}>
+            <FilteredCount>
               ({filteredModels.length} shown)
-            </span>
+            </FilteredCount>
           )}
         </SelectionSummary>
 

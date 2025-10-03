@@ -37,8 +37,20 @@ interface ProviderConfig {
 const ManagementContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100%;
-  gap: 20px;
+  padding: 0;
+  
+  /* Remove extra spacing to align with settings items */
+  & > div {
+    gap: 8px;
+  }
+  
+  /* Adjust list header to match settings style */
+  & h3 {
+    font-size: 13px;
+    font-weight: 500;
+    color: ${props => props.theme.colors.text};
+    margin: 0 0 8px 0;
+  }
 `;
 
 const ModalOverlay = styled.div`
@@ -51,7 +63,7 @@ const ModalOverlay = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: ${props => props.theme.zIndices.modal};
   padding: 20px;
 `;
 

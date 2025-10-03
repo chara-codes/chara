@@ -40,22 +40,22 @@ interface ProviderFieldConfig {
 }
 
 const FormContainer = styled.div`
-  background-color: white;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: ${props => props.theme.shadows.lg};
   overflow: hidden;
 `;
 
 const FormHeader = styled.div`
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.background};
 `;
 
 const FormTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #111827;
+  color: ${props => props.theme.colors.text};
   margin: 0;
 `;
 
@@ -68,13 +68,13 @@ const FormActions = styled.div`
   justify-content: flex-end;
   gap: 12px;
   padding: 20px 24px;
-  border-top: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-top: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.background};
 `;
 
 const ValidationSummary = styled.div`
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
+  background-color: ${props => props.theme.colors.errorLight};
+  border: 1px solid ${props => props.theme.colors.error};
   border-radius: 6px;
   padding: 12px;
   margin-bottom: 20px;
@@ -83,15 +83,19 @@ const ValidationSummary = styled.div`
 const ValidationTitle = styled.h4`
   font-size: 14px;
   font-weight: 600;
-  color: #dc2626;
+  color: ${props => props.theme.colors.error};
   margin: 0 0 8px 0;
 `;
 
 const ValidationList = styled.ul`
   margin: 0;
   padding-left: 20px;
-  color: #dc2626;
+  color: ${props => props.theme.colors.error};
   font-size: 13px;
+`;
+
+const RequiredIndicator = styled.span`
+  color: ${props => props.theme.colors.error};
 `;
 
 // Provider type configurations (aligned with server-side PROVIDER_CONFIGS)
@@ -306,7 +310,7 @@ const ProviderForm: React.FC<ProviderFormProps> = ({ provider, onSubmit, onCance
             <FormGroupBase key={field.name} $fullWidth>
               <LabelBase htmlFor={field.name}>
                 {field.label}
-                {field.required && <span style={{ color: '#dc2626' }}> *</span>}
+                {field.required && <RequiredIndicator> *</RequiredIndicator>}
               </LabelBase>
               <InputBase
                 id={field.name}

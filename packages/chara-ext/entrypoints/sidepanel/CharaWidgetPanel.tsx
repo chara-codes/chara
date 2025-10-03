@@ -5,8 +5,7 @@ import {
   UIStoreProvider,
   useUIStore,
 } from "@chara-codes/core";
-import { ChatInterface, theme } from "@chara-codes/design-system";
-import { ThemeProvider } from "styled-components";
+import { ChatInterface, AppThemeProvider } from "@chara-codes/design-system";
 import { BrowserProvider } from "./BrowserProvider";
 
 // Configuration interface
@@ -30,10 +29,10 @@ export const CharaWidgetPanel = (config: CharaWidgetConfig) => {
         <TrpcProvider>
           <TechStacksProvider>
             <UIStoreProvider>
-              <ThemeProvider theme={theme}>
+              <AppThemeProvider>
                 <ChatInterface />
                 <Toaster />
-              </ThemeProvider>
+              </AppThemeProvider>
             </UIStoreProvider>
           </TechStacksProvider>
         </TrpcProvider>

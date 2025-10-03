@@ -98,13 +98,10 @@ export const SourceBadge = styled.span<{ $sourceType: string }>`
   color: ${(props) => {
     switch (props.$sourceType) {
       case "unified":
-        return "#5b21b6";
         return (props.theme as Theme).colors.sourceBadge.unified.text;
       case "native":
-        return "#1d4ed8";
         return (props.theme as Theme).colors.sourceBadge.native.text;
       case "local":
-        return "#166534";
         return (props.theme as Theme).colors.sourceBadge.local.text;
       default:
         return (props.theme as Theme).colors.textSecondary;
@@ -146,11 +143,20 @@ export const SearchInput = styled.input`
   border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
   border-radius: ${({ theme }) => (theme as Theme).borderRadius.sm};
   font-size: ${({ theme }) => (theme as Theme).typography.fontSize.xs};
+  background-color: ${({ theme }) => (theme as Theme).colors.backgroundSecondary};
+  color: ${({ theme }) => (theme as Theme).colors.text};
   outline: none;
-  transition: border-color ${({ theme }) => (theme as Theme).transitions.fast};
+  transition: border-color ${({ theme }) => (theme as Theme).transitions.fast},
+              background-color ${({ theme }) => (theme as Theme).transitions.theme},
+              color ${({ theme }) => (theme as Theme).transitions.theme};
+
+  &::placeholder {
+    color: ${({ theme }) => (theme as Theme).colors.textSecondary};
+  }
 
   &:focus {
     border-color: ${({ theme }) => (theme as Theme).colors.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => (theme as Theme).colors.primaryLight};
   }
 `;
 

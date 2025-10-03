@@ -45,14 +45,16 @@ const blink = keyframes`
 
 const TerminalContainer = styled.div<{ isVisible?: boolean }>`
   margin-top: 16px;
-  background-color: #1e1e1e;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
   border-radius: 6px;
-  border: 1px solid #3d3d3d;
+  border: 1px solid ${props => props.theme.colors.border};
   font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   font-size: 12px;
   line-height: 1.5;
   overflow: hidden;
-  transition: opacity 0.2s ease, height 0.2s ease;
+  transition: opacity 0.2s ease, height 0.2s ease,
+              background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
   opacity: ${({ isVisible }) => (isVisible ? 1 : 0)};
   height: ${({ isVisible }) => (isVisible ? "auto" : "0")};
   margin-bottom: ${({ isVisible }) => (isVisible ? "16px" : "0")};
@@ -63,17 +65,20 @@ const TerminalHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background-color: #2d2d2d;
-  border-bottom: 1px solid #3d3d3d;
+  background-color: ${props => props.theme.colors.highlight};
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const TerminalTitle = styled.div`
   font-weight: 500;
   font-size: 12px;
-  color: #e5e7eb;
+  color: ${props => props.theme.colors.text};
   display: flex;
   align-items: center;
   gap: 6px;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const TerminalActions = styled.div`
@@ -86,17 +91,19 @@ const ExpandCollapseButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #9ca3af;
+  color: ${props => props.theme.colors.textSecondary};
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 4px;
   font-size: 11px;
   border-radius: 4px;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 
   &:hover {
-    background-color: #3d3d3d;
-    color: #e5e7eb;
+    background-color: ${props => props.theme.colors.border};
+    color: ${props => props.theme.colors.text};
   }
 `;
 
@@ -105,8 +112,9 @@ const TerminalContent = styled.div<{ maxHeight: number; viewMode: ViewMode }>`
     viewMode === "full" ? "none" : `${maxHeight}px`};
   overflow-y: ${({ viewMode }) => (viewMode === "full" ? "visible" : "auto")};
   padding: 0;
-  background-color: #1e1e1e;
+  background-color: ${props => props.theme.colors.background};
   display: ${({ viewMode }) => (viewMode === "collapsed" ? "none" : "block")};
+  transition: background-color ${props => props.theme.transitions.theme};
 `;
 
 const StatusBadge = styled.div<{
@@ -121,40 +129,44 @@ const StatusBadge = styled.div<{
   font-weight: 500;
   margin-left: 8px;
 
-  background-color: ${({ $status }) => {
+  background-color: ${({ $status, theme }) => {
     switch ($status) {
       case "pending":
-        return "#374151";
+        return theme.colors.highlight;
       case "in-progress":
-        return "#1e40af";
+        return theme.colors.primaryLight;
       case "success":
-        return "#065f46";
+        return "rgba(16, 185, 129, 0.1)";
       case "error":
-        return "#7f1d1d";
+        return theme.colors.errorLight;
       default:
-        return "#374151";
+        return theme.colors.highlight;
     }
   }};
-  color: ${({ $status }) => {
+  color: ${({ $status, theme }) => {
     switch ($status) {
       case "pending":
-        return "#d1d5db";
+        return theme.colors.textSecondary;
       case "in-progress":
-        return "#60a5fa";
+        return theme.colors.primary;
       case "success":
-        return "#10b981";
+        return theme.colors.success;
       case "error":
-        return "#f87171";
+        return theme.colors.error;
       default:
-        return "#d1d5db";
+        return theme.colors.textSecondary;
     }
   }};
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 `;
 
 const CommandSection = styled.div`
   padding: 8px 12px;
-  border-bottom: 1px solid #3d3d3d;
-  background-color: #2d2d2d;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.highlight};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const CommandPrompt = styled.div`
@@ -166,31 +178,37 @@ const CommandPrompt = styled.div`
 `;
 
 const CommandText = styled.span`
-  color: #e5e7eb;
+  color: ${props => props.theme.colors.text};
   word-break: break-all;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const OutputSection = styled.div<{ viewMode: ViewMode }>`
   display: ${({ viewMode }) => (viewMode === "collapsed" ? "none" : "block")};
   padding: 8px 12px;
-  color: #e5e7eb;
+  color: ${props => props.theme.colors.text};
   white-space: pre-wrap;
   font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   font-size: 12px;
   line-height: 1.5;
-  background-color: #1e1e1e;
+  background-color: ${props => props.theme.colors.background};
   position: relative;
   min-height: 20px;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 `;
 
 const GenerationStats = styled.div<{ viewMode: ViewMode }>`
   display: ${({ viewMode }) => (viewMode === "collapsed" ? "none" : "flex")};
   gap: 12px;
   padding: 8px 12px;
-  border-bottom: 1px solid #3d3d3d;
-  background-color: #2d2d2d;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.highlight};
   font-size: 11px;
-  color: #9ca3af;
+  color: ${props => props.theme.colors.textSecondary};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 `;
 
 const ViewModeToggle = styled.div`
@@ -198,15 +216,17 @@ const ViewModeToggle = styled.div`
   justify-content: center;
   align-items: center;
   padding: 8px 12px;
-  background-color: #2d2d2d;
-  border-top: 1px solid #3d3d3d;
+  background-color: ${props => props.theme.colors.highlight};
+  border-top: 1px solid ${props => props.theme.colors.border};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const ViewModeButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #9ca3af;
+  color: ${props => props.theme.colors.textSecondary};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -214,10 +234,12 @@ const ViewModeButton = styled.button`
   padding: 4px 8px;
   font-size: 11px;
   border-radius: 4px;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 
   &:hover {
-    background-color: #3d3d3d;
-    color: #e5e7eb;
+    background-color: ${props => props.theme.colors.border};
+    color: ${props => props.theme.colors.text};
   }
 `;
 
@@ -229,12 +251,15 @@ const StatItem = styled.div`
 
 const ErrorBanner = styled.div`
   padding: 8px 12px;
-  background-color: #7f1d1d;
-  color: #f87171;
+  background-color: ${props => props.theme.colors.errorLight};
+  color: ${props => props.theme.colors.error};
   font-size: 11px;
-  border-bottom: 1px solid #3d3d3d;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
   font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   white-space: pre-wrap;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const LoadingIndicator = styled.span<{ isGenerating: boolean }>`

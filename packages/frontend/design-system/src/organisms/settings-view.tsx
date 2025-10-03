@@ -10,6 +10,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import styled from "styled-components";
 import { ChevronDownIcon } from "../atoms/icons";
 import ViewNavigation from "../molecules/view-navigation";
+import { ThemeToggle } from "../molecules/theme-toggle";
 import ProviderManagement from "./provider-management";
 
 const SettingsContainer = styled.div`
@@ -17,7 +18,7 @@ const SettingsContainer = styled.div`
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background-color: #f9fafb;
+  background-color: ${props => props.theme.colors.background};
 `;
 
 // const TabNavigation = styled.div`
@@ -70,8 +71,8 @@ const SettingsContent = styled.div`
 const SettingsGroup = styled.div`
   margin-bottom: 16px;
   border-radius: 6px;
-  background-color: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background-color: ${props => props.theme.colors.backgroundSecondary};
+  box-shadow: ${props => props.theme.shadows.sm};
   overflow: hidden;
 `;
 
@@ -80,26 +81,27 @@ const SettingsGroupHeader = styled.div<{ $isOpen?: boolean }>`
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  background-color: white;
-  border-bottom: ${(props) => (props.$isOpen ? "1px solid #e5e7eb" : "none")};
+  background-color: ${props => props.theme.colors.backgroundSecondary};
+  border-bottom: ${(props) => (props.$isOpen ? `1px solid ${props.theme.colors.border}` : "none")};
   cursor: pointer;
+  transition: background-color ${props => props.theme.transitions?.theme || '0.2s ease'};
 
   &:hover {
-    background-color: #f9fafb;
+    background-color: ${props => props.theme.colors.highlight};
   }
 `;
 
 const SettingsGroupTitle = styled.h3`
   font-size: 14px;
   font-weight: 500;
-  color: #111827;
+  color: ${props => props.theme.colors.text};
   margin: 0;
 `;
 
 const SettingsGroupIcon = styled.div<{ $isOpen?: boolean }>`
   transform: ${(props) => (props.$isOpen ? "rotate(180deg)" : "rotate(0)")};
-  transition: transform 0.2s ease;
-  color: #6b7280;
+  transition: transform 0.2s ease, color ${props => props.theme.transitions?.theme || '0.2s ease'};
+  color: ${props => props.theme.colors.textSecondary};
 `;
 
 const SettingsGroupContent = styled.div<{ $isOpen?: boolean }>`
@@ -110,7 +112,8 @@ const SettingItem = styled.div`
   display: flex;
   align-items: flex-start;
   padding: 10px 12px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  transition: border-color ${props => props.theme.transitions?.theme || '0.2s ease'};
 
   &:last-child {
     border-bottom: none;
@@ -124,13 +127,13 @@ const SettingInfo = styled.div`
 const SettingTitle = styled.h4`
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: ${props => props.theme.colors.text};
   margin: 0 0 2px 0;
 `;
 
 const SettingDescription = styled.p`
   font-size: 12px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   margin: 0;
   line-height: 1.4;
 `;
@@ -144,9 +147,9 @@ const SettingControl = styled.div`
 const NoSettingsResults = styled.div`
   padding: 16px;
   text-align: center;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   font-style: italic;
-  background-color: white;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
   border-radius: 6px;
   margin-top: 12px;
 `;
@@ -156,25 +159,30 @@ const KeyboardShortcutInput = styled.input`
   padding: 4px 8px;
   font-size: 12px;
   border-radius: 4px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.backgroundSecondary};
+  color: ${props => props.theme.colors.text};
   text-align: center;
   font-family: monospace;
+  transition: border-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              background-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              color ${props => props.theme.transitions?.theme || '0.2s ease'};
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    border-color: ${props => props.theme.colors.primary};
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.primaryLight};
   }
 `;
 
 const ShortcutToggle = styled.div<{ $enabled: boolean }>`
   width: 36px;
   height: 20px;
-  background-color: ${(props) => (props.$enabled ? "#3b82f6" : "#e5e7eb")};
+  background-color: ${(props) => (props.$enabled ? props.theme.colors.primary : props.theme.colors.border)};
   border-radius: 10px;
   position: relative;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color ${props => props.theme.transitions?.theme || '0.2s ease'};
   margin-right: 8px;
 
   &::after {
@@ -182,12 +190,12 @@ const ShortcutToggle = styled.div<{ $enabled: boolean }>`
     position: absolute;
     width: 16px;
     height: 16px;
-    background-color: white;
+    background-color: ${props => props.theme.colors.backgroundSecondary};
     border-radius: 50%;
     top: 2px;
     left: ${(props) => (props.$enabled ? "calc(100% - 18px)" : "2px")};
-    transition: left 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: left 0.2s ease, background-color ${props => props.theme.transitions?.theme || '0.2s ease'};
+    box-shadow: ${props => props.theme.shadows.sm};
   }
 `;
 
@@ -196,11 +204,91 @@ const ShortcutControls = styled.div`
   align-items: center;
 `;
 
+const PlaceholderToggle = styled.div`
+  width: 36px;
+  height: 20px;
+  background-color: ${props => props.theme.colors.border};
+  border-radius: 10px;
+  position: relative;
+  transition: background-color ${props => props.theme.transitions?.theme || '0.2s ease'};
+
+  &::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background-color: ${props => props.theme.colors.backgroundSecondary};
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: background-color ${props => props.theme.transitions?.theme || '0.2s ease'};
+    box-shadow: ${props => props.theme.shadows.sm};
+  }
+`;
+
+const SelectInput = styled.select`
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  border: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.backgroundSecondary};
+  color: ${props => props.theme.colors.text};
+  transition: border-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              background-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              color ${props => props.theme.transitions?.theme || '0.2s ease'};
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
+`;
+
+const TextInput = styled.input`
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  border: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.backgroundSecondary};
+  color: ${props => props.theme.colors.text};
+  width: 60px;
+  transition: border-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              background-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              color ${props => props.theme.transitions?.theme || '0.2s ease'};
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
+`;
+
+const ResetButton = styled.button`
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  border: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.highlight};
+  color: ${props => props.theme.colors.text};
+  cursor: pointer;
+  transition: background-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              border-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              color ${props => props.theme.transitions?.theme || '0.2s ease'};
+
+  &:hover {
+    background-color: ${props => props.theme.colors.border};
+  }
+`;
+
 // Settings data structure
 const settingsData = [
   {
-    id: "general",
-    title: "General",
+    id: "providers",
+    title: "Providers",
+    items: [],
+    isSpecial: true,
+  },
+  {
+    id: "appearance",
+    title: "Appearance",
     items: [
       {
         id: "theme",
@@ -220,73 +308,6 @@ const settingsData = [
         description: "Play sounds for messages and actions",
         control: "toggle",
       },
-    ],
-  },
-  {
-    id: "keyboard-shortcuts",
-    title: "Keyboard Shortcuts",
-    items: [
-      {
-        id: "toggle-chat-overlay",
-        title: "Toggle Chat Overlay",
-        description: "Show or hide the chat panel with a keyboard shortcut",
-        control: "shortcut",
-        action: "toggleChatOverlay",
-      },
-    ],
-  },
-  {
-    id: "models",
-    title: "AI Models",
-    items: [
-      {
-        id: "default-model",
-        title: "Default Model",
-        description: "Set your preferred AI model",
-        control: "select",
-      },
-      {
-        id: "temperature",
-        title: "Temperature",
-        description: "Control the randomness of responses",
-        control: "slider",
-      },
-      {
-        id: "context-length",
-        title: "Context Length",
-        description: "Maximum tokens to include in context",
-        control: "input",
-      },
-    ],
-  },
-  {
-    id: "privacy",
-    title: "Privacy & Data",
-    items: [
-      {
-        id: "history",
-        title: "Conversation History",
-        description: "Store conversations for future reference",
-        control: "toggle",
-      },
-      {
-        id: "data-collection",
-        title: "Data Collection",
-        description: "Allow anonymous usage data collection",
-        control: "toggle",
-      },
-      {
-        id: "auto-delete",
-        title: "Auto-Delete",
-        description: "Automatically delete conversations after 30 days",
-        control: "toggle",
-      },
-    ],
-  },
-  {
-    id: "appearance",
-    title: "Appearance",
-    items: [
       {
         id: "font-size",
         title: "Font Size",
@@ -304,30 +325,6 @@ const settingsData = [
         title: "Animations",
         description: "Enable or disable UI animations",
         control: "toggle",
-      },
-    ],
-  },
-  {
-    id: "advanced",
-    title: "Advanced",
-    items: [
-      {
-        id: "keyboard-shortcuts",
-        title: "Keyboard Shortcuts",
-        description: "Enable keyboard shortcuts for faster navigation",
-        control: "toggle",
-      },
-      {
-        id: "developer-mode",
-        title: "Developer Mode",
-        description: "Enable additional developer features",
-        control: "toggle",
-      },
-      {
-        id: "reset",
-        title: "Reset All Settings",
-        description: "Restore all settings to their default values",
-        control: "button",
       },
     ],
   },
@@ -350,7 +347,7 @@ type SettingsTab = "general" | "providers";
 
 const SettingsView: React.FC<SettingsViewProps> = ({
   onBack,
-  initialTab = "providers",
+  initialTab = "general",
 }) => {
   // Get UI store state
   const keyboardShortcuts = useUIStore((state) => state.keyboardShortcuts);
@@ -367,11 +364,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   const [activeTab] = useState<SettingsTab>(initialTab);
   const [settingsSearchQuery, setSettingsSearchQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    general: true,
-    "keyboard-shortcuts": true,
-    privacy: true,
+    providers: true,
     appearance: true,
-    advanced: true,
   });
   const [recordingShortcut, setRecordingShortcut] = useState<string | null>(
     null
@@ -472,8 +466,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   // Render tab content based on active tab
   const renderTabContent = () => {
     switch (activeTab) {
-      case "providers":
-        return <ProviderManagement />;
       case "general":
       default:
         return (
@@ -491,7 +483,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     </SettingsGroupIcon>
                   </SettingsGroupHeader>
                   <SettingsGroupContent $isOpen={openGroups[group.id]}>
-                    {group.items.map((item) => (
+                    {(group as any).isSpecial && group.id === "providers" ? (
+                      <ProviderManagement />
+                    ) : (
+                      group.items.map((item) => (
                       <SettingItem key={item.id}>
                         <SettingInfo>
                           <SettingTitle>{item.title}</SettingTitle>
@@ -501,27 +496,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                         </SettingInfo>
                         <SettingControl>
                           {item.control === "toggle" && (
-                            <div
-                              style={{
-                                width: "36px",
-                                height: "20px",
-                                backgroundColor: "#e5e7eb",
-                                borderRadius: "10px",
-                                position: "relative",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  width: "16px",
-                                  height: "16px",
-                                  backgroundColor: "white",
-                                  borderRadius: "50%",
-                                  position: "absolute",
-                                  top: "2px",
-                                  left: "2px",
-                                }}
-                              />
-                            </div>
+                            <>
+                              {item.id === "theme" ? (
+                                <ThemeToggle variant="switch" />
+                              ) : (
+                                <PlaceholderToggle />
+                              )}
+                            </>
                           )}
                           {item.control === "shortcut" &&
                             (item as SettingsItemWithAction).action && (
@@ -559,16 +540,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                               </ShortcutControls>
                             )}
                           {item.control === "select" && (
-                            <select
-                              style={{
-                                padding: "4px 8px",
-                                fontSize: "12px",
-                                borderRadius: "4px",
-                                border: "1px solid #e5e7eb",
-                              }}
-                            >
+                            <SelectInput>
                               <option>Select...</option>
-                            </select>
+                            </SelectInput>
                           )}
                           {item.control === "slider" && (
                             <input
@@ -580,34 +554,17 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             />
                           )}
                           {item.control === "input" && (
-                            <input
-                              type="text"
-                              style={{
-                                padding: "4px 8px",
-                                fontSize: "12px",
-                                borderRadius: "4px",
-                                border: "1px solid #e5e7eb",
-                                width: "60px",
-                              }}
-                            />
+                            <TextInput type="text" />
                           )}
                           {item.control === "button" && (
-                            <button
-                              type="button"
-                              style={{
-                                padding: "4px 8px",
-                                fontSize: "12px",
-                                borderRadius: "4px",
-                                border: "1px solid #e5e7eb",
-                                backgroundColor: "#f3f4f6",
-                              }}
-                            >
+                            <ResetButton type="button">
                               Reset
-                            </button>
+                            </ResetButton>
                           )}
                         </SettingControl>
                       </SettingItem>
-                    ))}
+                      ))
+                    )}
                   </SettingsGroupContent>
                 </SettingsGroup>
               ))

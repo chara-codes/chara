@@ -33,38 +33,50 @@ const DropdownContainer = styled.div<{
   position: absolute;
   top: ${(props) => (props.position ? `${props.position.top}px` : "100%")};
   left: ${(props) => (props.position ? `${props.position.left}px` : "0")};
-  background-color: #fff;
-  border: 1px solid #e5e7eb;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: ${props => props.theme.shadows.md};
   z-index: 10;
   width: 240px;
   max-height: 350px;
   display: flex;
   flex-direction: column;
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const SearchContainer = styled.div`
   padding: 8px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
   position: sticky;
   top: 0;
-  background-color: #fff;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
   z-index: 1;
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const SearchInput = styled.input`
   width: 100%;
   padding: 6px 8px 6px 28px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
   font-size: 12px;
+  background-color: ${props => props.theme.colors.background};
+  color: ${props => props.theme.colors.text};
   outline: none;
+  transition: border-color ${props => props.theme.transitions.theme},
+              background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
+
+  &::placeholder {
+    color: ${props => props.theme.colors.textSecondary};
+  }
 
   &:focus {
-    border-color: #2563eb;
+    border-color: ${props => props.theme.colors.primary};
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.primaryLight};
   }
 `;
 
@@ -73,7 +85,8 @@ const SearchIconWrapper = styled.div`
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: ${props => props.theme.colors.textSecondary};
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const DropdownContent = styled.div`
@@ -84,35 +97,40 @@ const DropdownContent = styled.div`
 const GroupHeader = styled.div`
   padding: 8px 12px;
   font-weight: 500;
-  color: #6b7280;
-  background-color: #f9fafb;
+  color: ${props => props.theme.colors.textSecondary};
+  background-color: ${props => props.theme.colors.background};
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   position: sticky;
   top: 0;
   z-index: 1;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 `;
 
 const DropdownItemStyled = styled.div`
   padding: 8px 12px;
   font-size: 13px;
-  color: #333;
+  color: ${props => props.theme.colors.text};
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 
   &:hover {
-    background-color: #f3f4f6;
+    background-color: ${props => props.theme.colors.highlight};
   }
 `;
 
 const NoResults = styled.div`
   padding: 12px;
   text-align: center;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   font-style: italic;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const DropdownMenu: React.FC<DropdownMenuProps> = ({

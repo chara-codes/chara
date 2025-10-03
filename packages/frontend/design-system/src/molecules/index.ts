@@ -21,6 +21,7 @@ export * from "./preview-toolbar";
 export * from "./constants/preview-types";
 export * from "./statistics-preview";
 export * from "./tests-preview";
+export * from "./theme-toggle";
 export * from "./tools";
 export * from "./view-navigation";
 export { default as ProviderList } from "./provider-list";

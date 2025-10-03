@@ -41,33 +41,42 @@ interface ProviderListProps {
 const ListContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  padding: 0;
 `;
 
 const ListHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+  padding: 8px 12px;
 `;
 
 const ListTitle = styled.h3`
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
+  font-size: 13px;
+  font-weight: 500;
+  color: ${props => props.theme.colors.text};
   margin: 0;
 `;
 
 const ProviderCard = styled.div`
-  background-color: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  border-radius: 0;
+  padding: 10px 12px;
+  box-shadow: none;
+  transition: background-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              border-color ${props => props.theme.transitions?.theme || '0.2s ease'};
+
+  &:last-child {
+    border-bottom: none;
+  }
 
   &:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: ${props => props.theme.colors.highlight};
+    box-shadow: none;
   }
 `;
 
@@ -83,15 +92,15 @@ const ProviderInfo = styled.div`
 `;
 
 const ProviderName = styled.h4`
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 4px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: ${props => props.theme.colors.text};
+  margin: 0 0 2px 0;
 `;
 
 const ProviderType = styled.span`
-  font-size: 12px;
-  color: #6b7280;
+  font-size: 11px;
+  color: ${props => props.theme.colors.textSecondary};
   text-transform: capitalize;
 `;
 
@@ -100,20 +109,21 @@ const ProviderStatus = styled.div<{ $enabled: boolean }>`
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: ${(props) => (props.$enabled ? "#059669" : "#dc2626")};
+  color: ${(props) => (props.$enabled ? props.theme.colors.success : props.theme.colors.error)};
 `;
 
 const StatusDot = styled.div<{ $enabled: boolean }>`
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: ${(props) => (props.$enabled ? "#10b981" : "#ef4444")};
+  background-color: ${(props) => (props.$enabled ? props.theme.colors.success : props.theme.colors.error)};
 `;
 
 const ProviderModels = styled.div`
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #f3f4f6;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid ${props => props.theme.colors.border};
+  transition: border-color ${props => props.theme.transitions?.theme || '0.2s ease'};
 `;
 
 const ModelsHeader = styled.div`
@@ -126,7 +136,7 @@ const ModelsHeader = styled.div`
 const ModelsTitle = styled.h5`
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -134,7 +144,7 @@ const ModelsTitle = styled.h5`
 
 const ModelsCount = styled.span`
   font-size: 11px;
-  color: #9ca3af;
+  color: ${props => props.theme.colors.textSecondary};
 `;
 
 const ModelsList = styled.div`
@@ -146,63 +156,67 @@ const ModelsList = styled.div`
 const ModelTag = styled.span`
   font-size: 11px;
   padding: 2px 6px;
-  background-color: #eff6ff;
-  color: #1e40af;
+  background-color: ${props => props.theme.colors.primaryLight};
+  color: ${props => props.theme.colors.primary};
   border-radius: 4px;
-  border: 1px solid #bfdbfe;
+  border: 1px solid ${props => props.theme.colors.primary};
+  transition: background-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              border-color ${props => props.theme.transitions?.theme || '0.2s ease'};
 `;
 
 const NoModelsText = styled.span`
   font-size: 11px;
-  color: #9ca3af;
+  color: ${props => props.theme.colors.textSecondary};
   font-style: italic;
 `;
 
 const ProviderActions = styled.div`
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
 `;
 
 const ToggleSwitch = styled.div<{ $enabled: boolean }>`
   width: 36px;
   height: 20px;
-  background-color: ${(props) => (props.$enabled ? "#3b82f6" : "#e5e7eb")};
+  background-color: ${(props) => (props.$enabled ? props.theme.colors.primary : props.theme.colors.border)};
   border-radius: 10px;
   position: relative;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color ${props => props.theme.transitions?.theme || '0.2s ease'};
 
   &::after {
     content: "";
     position: absolute;
     width: 16px;
     height: 16px;
-    background-color: white;
+    background-color: ${props => props.theme.colors.backgroundSecondary};
     border-radius: 50%;
     top: 2px;
     left: ${(props) => (props.$enabled ? "calc(100% - 18px)" : "2px")};
-    transition: left 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: left 0.2s ease, background-color ${props => props.theme.transitions?.theme || '0.2s ease'};
+    box-shadow: ${props => props.theme.shadows.sm};
   }
 `;
 
 const EmptyState = styled.div`
   text-align: center;
   padding: 48px 24px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
 `;
 
 const EmptyStateTitle = styled.h3`
   font-size: 16px;
   font-weight: 500;
-  color: #374151;
+  color: ${props => props.theme.colors.text};
   margin: 0 0 8px 0;
 `;
 
 const EmptyStateDescription = styled.p`
   font-size: 14px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   margin: 0 0 24px 0;
 `;
 
@@ -211,15 +225,18 @@ const LoadingState = styled.div`
   align-items: center;
   justify-content: center;
   padding: 48px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
 `;
 
 const ErrorState = styled.div`
   padding: 16px;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
+  background-color: ${props => props.theme.colors.errorLight};
+  border: 1px solid ${props => props.theme.colors.error};
   border-radius: 6px;
-  color: #dc2626;
+  color: ${props => props.theme.colors.error};
+  transition: background-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              border-color ${props => props.theme.transitions?.theme || '0.2s ease'},
+              color ${props => props.theme.transitions?.theme || '0.2s ease'};
 `;
 
 const ProviderList: React.FC<ProviderListProps> = ({

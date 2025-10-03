@@ -44,23 +44,25 @@ const LogoContainer = styled.div`
 `;
 
 const Title = styled.h1`
-  color: #1f2937;
+  color: ${props => props.theme.colors.text};
   font-size: 24px;
   font-weight: 600;
   margin: 12px 0 4px;
   text-align: center;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const Subtitle = styled.h2`
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   font-size: 16px;
   font-weight: 400;
   margin: 0 0 8px;
   text-align: center;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const EmptyStateMessage = styled.span`
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   font-size: 14px;
   text-align: center;
   align-self: center;
@@ -68,6 +70,7 @@ const EmptyStateMessage = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const ConversationContainer = styled.div`

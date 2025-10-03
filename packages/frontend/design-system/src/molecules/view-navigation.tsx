@@ -21,8 +21,10 @@ const HeaderContainer = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: white;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.backgroundSecondary};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `
 
 const LeftSection = styled.div`
@@ -53,11 +55,13 @@ const BackButton = styled(Button)`
   font-size: 13px;
   padding: 4px 10px;
   background-color: transparent;
-  color: #374151;
+  color: ${props => props.theme.colors.text};
   border: none;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
   
   &:hover {
-    background-color: #f3f4f6;
+    background-color: ${props => props.theme.colors.highlight};
   }
 `
 
@@ -71,14 +75,23 @@ const SearchInput = styled.input`
   width: 100%;
   padding: 6px 10px 6px 32px;
   border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid ${props => props.theme.colors.border};
   font-size: 13px;
-  background-color: #f9fafb;
+  background-color: ${props => props.theme.colors.background};
+  color: ${props => props.theme.colors.text};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
   
   &:focus {
     outline: none;
-    border-color: #6b7280;
-    background-color: white;
+    border-color: ${props => props.theme.colors.primary};
+    background-color: ${props => props.theme.colors.backgroundSecondary};
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.primaryLight};
+  }
+
+  &::placeholder {
+    color: ${props => props.theme.colors.textSecondary};
   }
 `
 
@@ -87,7 +100,8 @@ const SearchIconWrapper = styled.div`
   left: 8px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: ${props => props.theme.colors.textSecondary};
+  transition: color ${props => props.theme.transitions.theme};
 `
 
 const ViewNavigation: React.FC<ViewNavigationProps> = ({

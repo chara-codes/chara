@@ -155,14 +155,16 @@ type ViewMode = "collapsed" | "limited" | "full";
 
 const DiffContainer = styled.div<{ isVisible?: boolean }>`
   margin-top: 16px;
-  background-color: #f9fafb;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
   border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid ${props => props.theme.colors.border};
   font-family: monospace;
   font-size: 12px;
   line-height: 1.5;
   overflow: hidden;
-  transition: opacity 0.2s ease, height 0.2s ease;
+  transition: opacity 0.2s ease, height 0.2s ease,
+              background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
   opacity: ${({ isVisible }) => (isVisible ? 1 : 0)};
   height: ${({ isVisible }) => (isVisible ? "auto" : "0")};
   margin-bottom: ${({ isVisible }) => (isVisible ? "16px" : "0")};
@@ -173,17 +175,20 @@ const DiffHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background-color: #f3f4f6;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: ${props => props.theme.colors.highlight};
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const DiffTitle = styled.div`
   font-weight: 500;
   font-size: 12px;
-  color: #4b5563;
+  color: ${props => props.theme.colors.text};
   display: flex;
   align-items: center;
   gap: 6px;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const DiffActions = styled.div`
@@ -196,17 +201,19 @@ const ExpandCollapseButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 4px;
   font-size: 11px;
   border-radius: 4px;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 
   &:hover {
-    background-color: #e5e7eb;
-    color: #4b5563;
+    background-color: ${props => props.theme.colors.border};
+    color: ${props => props.theme.colors.text};
   }
 `;
 
@@ -215,9 +222,10 @@ const DiffContent = styled.div<{ maxHeight: number; viewMode: ViewMode }>`
     viewMode === "full" ? "none" : `${maxHeight}px`};
   overflow-y: ${({ viewMode }) => (viewMode === "full" ? "visible" : "auto")};
   padding: 0;
-  background-color: #ffffff;
+  background-color: ${props => props.theme.colors.background};
   border-width: 0;
   display: ${({ viewMode }) => (viewMode === "collapsed" ? "none" : "block")};
+  transition: background-color ${props => props.theme.transitions.theme};
 `;
 
 const pulseAnimation = keyframes`
@@ -244,30 +252,32 @@ const StatusBadge = styled.div<{
   font-weight: 500;
   margin-left: 8px;
 
-  background-color: ${({ $status }) => {
+  background-color: ${({ $status, theme }) => {
     switch ($status) {
       case "generating":
-        return "#dbeafe";
+        return theme.colors.primaryLight;
       case "complete":
-        return "#d1fae5";
+        return "rgba(16, 185, 129, 0.1)";
       case "error":
-        return "#fee2e2";
+        return theme.colors.errorLight;
       default:
-        return "#f3f4f6";
+        return theme.colors.highlight;
     }
   }};
-  color: ${({ $status }) => {
+  color: ${({ $status, theme }) => {
     switch ($status) {
       case "generating":
-        return "#2563eb";
+        return theme.colors.primary;
       case "complete":
-        return "#10b981";
+        return theme.colors.success;
       case "error":
-        return "#ef4444";
+        return theme.colors.error;
       default:
-        return "#6b7280";
+        return theme.colors.textSecondary;
     }
   }};
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 
   animation: ${({ $status }) =>
     $status === "generating"
@@ -281,10 +291,13 @@ const DiffStats = styled.div<{ viewMode: ViewMode }>`
   display: ${({ viewMode }) => (viewMode === "collapsed" ? "none" : "flex")};
   gap: 12px;
   padding: 8px 12px;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.backgroundSecondary};
   font-size: 11px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 `;
 
 const ViewModeToggle = styled.div`
@@ -292,15 +305,17 @@ const ViewModeToggle = styled.div`
   justify-content: center;
   align-items: center;
   padding: 8px 12px;
-  background-color: #f9fafb;
-  border-top: 1px solid #e5e7eb;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
+  border-top: 1px solid ${props => props.theme.colors.border};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const ViewModeButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -308,10 +323,12 @@ const ViewModeButton = styled.button`
   padding: 4px 8px;
   font-size: 11px;
   border-radius: 4px;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 
   &:hover {
-    background-color: #e5e7eb;
-    color: #4b5563;
+    background-color: ${props => props.theme.colors.border};
+    color: ${props => props.theme.colors.text};
   }
 `;
 
@@ -328,8 +345,9 @@ const StreamingContainer = styled.div`
 const StreamingCursor = styled.span`
   display: inline-block;
   animation: blink 1s infinite;
-  color: #111827;
+  color: ${props => props.theme.colors.text};
   font-weight: bold;
+  transition: color ${props => props.theme.transitions.theme};
 
   @keyframes blink {
     0%,
