@@ -11,7 +11,7 @@ describe("GeminiCLIProvider", () => {
   it("should have correct provider metadata", () => {
     expect(provider.key).toBe("gemini-cli");
     expect(provider.name).toBe("Gemini-CLI");
-    expect(provider.requiresApiKey).toBe(true); // API key is preferred
+    expect(provider.requiresApiKey).toBe(false); // OAuth is preferred over API key
     expect(provider.apiKeyEnvVar).toBe("GEMINI_API_KEY");
   });
 

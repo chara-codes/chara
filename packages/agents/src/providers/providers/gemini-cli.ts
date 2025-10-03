@@ -11,21 +11,14 @@ import { AbstractProvider, getEnvVar, validateApiKey } from "./base-provider";
 export class GeminiCLIProvider extends AbstractProvider {
   readonly key = "gemini-cli";
   readonly name = "Gemini-CLI";
-  readonly requiresApiKey = true; // API key is preferred over OAuth
+  readonly requiresApiKey = false; // OAuth is preferred over API key
   override readonly apiKeyEnvVar = "GEMINI_API_KEY";
 
   /**
    * Check if Gemini CLI can be initialized
    */
   public async canInitialize(): Promise<boolean> {
-    // Try API key first (preferred method)
-    const apiKey = await getEnvVar(this.apiKeyEnvVar ?? "GEMINI_API_KEY");
-    if (validateApiKey(apiKey, this.name)) {
-      logger.debug("Using API key authentication for Gemini CLI");
-      return true;
-    }
-
-    // Fallback to OAuth authentication
+    // Try OAuth first (preferred method)
     try {
       createGeminiProvider({
         authType: "oauth-personal",
@@ -35,19 +28,37 @@ export class GeminiCLIProvider extends AbstractProvider {
       return true;
     } catch (oauthError) {
       logger.debug(`Gemini CLI OAuth authentication failed: ${oauthError}`);
-
-      logger.debug(
-        `${this.name} cannot be initialized - no API key or OAuth credentials found`
-      );
-      return false;
     }
+
+    // Fallback to API key authentication
+    const apiKey = await getEnvVar(this.apiKeyEnvVar ?? "GEMINI_API_KEY");
+    if (validateApiKey(apiKey, this.name)) {
+      logger.debug("Using API key authentication for Gemini CLI");
+      return true;
+    }
+
+    logger.debug(
+      `${this.name} cannot be initialized - no OAuth credentials or API key found`
+    );
+    return false;
   }
 
   /**
    * Create Gemini CLI provider factory
    */
   public async createProvider(): Promise<(modelId: string) => LanguageModelV2> {
-    // Try API key first
+    // Try OAuth first (preferred method)
+    try {
+      const gemini = createGeminiProvider({
+        authType: "oauth-personal",
+      });
+
+      return (modelId: string) => gemini(modelId);
+    } catch (oauthError) {
+      logger.debug(`OAuth failed: ${oauthError}`);
+    }
+
+    // Fallback to API key
     const apiKey = await getEnvVar(this.apiKeyEnvVar ?? "GEMINI_API_KEY");
     if (apiKey && validateApiKey(apiKey, this.name)) {
       const gemini = createGeminiProvider({
@@ -58,20 +69,9 @@ export class GeminiCLIProvider extends AbstractProvider {
       return (modelId: string) => gemini(modelId);
     }
 
-    // Fallback to OAuth
-    try {
-      const gemini = createGeminiProvider({
-        authType: "oauth-personal",
-      });
-
-      return (modelId: string) => gemini(modelId);
-    } catch (oauthError) {
-      logger.debug(`OAuth failed: ${oauthError}`);
-
-      throw new Error(
-        `${this.name} requires either API key (GEMINI_API_KEY) or OAuth authentication (run 'gemini' CLI first)`
-      );
-    }
+    throw new Error(
+      `${this.name} requires either OAuth authentication (run 'gemini' CLI first) or API key (GEMINI_API_KEY)`
+    );
   }
 
   /**
