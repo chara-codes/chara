@@ -1,5 +1,15 @@
 # @chara-codes/web
 
+## 0.1.30
+
+### Patch Changes
+
+- Migrated to ai sdk v5
+- Updated dependencies
+  - @chara-codes/element-selector@0.1.29
+  - @chara-codes/design-system@0.1.29
+  - @chara-codes/core@0.1.29
+
 ## 0.1.29
 
 ### Patch Changes

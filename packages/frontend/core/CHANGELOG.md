@@ -1,5 +1,11 @@
 # @chara-codes/core
 
+## 0.1.29
+
+### Patch Changes
+
+- Migrated to ai sdk v5
+
 ## 0.1.28
 
 ### Patch Changes

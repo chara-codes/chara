@@ -1,5 +1,13 @@
 # @chara-codes/server
 
+## 0.1.30
+
+### Patch Changes
+
+- Migrated to ai sdk v5
+- Updated dependencies
+  - @chara-codes/logger@0.1.27
+
 ## 0.1.29
 
 ### Patch Changes

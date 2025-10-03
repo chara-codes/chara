@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/logger",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "description": "A flexible and powerful logging utility for Chara applications built on Pino with beautiful object pretty-printing using @base2/pretty-print-object",
   "keywords": [
     "logger",

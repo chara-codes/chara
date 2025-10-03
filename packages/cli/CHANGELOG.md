@@ -1,5 +1,11 @@
 # chara
 
+## 0.1.30
+
+### Patch Changes
+
+- Migrated to ai sdk v5
+
 ## 0.1.29
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # @chara-codes/agents
 
+## 0.1.30
+
+### Patch Changes
+
+- Migrated to ai sdk v5
+- Updated dependencies
+  - @chara-codes/settings@0.1.30
+  - @chara-codes/logger@0.1.27
+  - @chara-codes/shared@0.1.30
+
 ## 0.1.29
 
 ### Patch Changes
