@@ -128,7 +128,7 @@ export const chatAgent = async (
       mode,
       workingDir,
     }),
-    tools: tools,
+    tools: providerName !== "gemini-cli" ? tools : undefined,
     model: aiModel,
     temperature: 0.3,
     abortSignal: options.abortSignal,
