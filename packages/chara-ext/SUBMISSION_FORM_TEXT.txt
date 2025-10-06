@@ -1,0 +1,247 @@
+================================================================================
+CHROME WEB STORE SUBMISSION - COPY/PASTE TEXT
+================================================================================
+
+Use this file to quickly copy and paste text into the Chrome Web Store
+submission form. All text below is ready to use as-is.
+
+================================================================================
+STORE LISTING TAB
+================================================================================
+
+Extension Name:
+--------------------------------------------------------------------------------
+Chara Codes
+
+
+Short Description (132 characters max):
+--------------------------------------------------------------------------------
+AI-powered development assistant for analyzing web elements and generating code. Extract HTML, CSS, and get instant dev help.
+
+
+Detailed Description:
+--------------------------------------------------------------------------------
+Chara Codes is an AI-powered development assistant designed specifically for frontend developers. This Chrome extension streamlines your workflow by allowing you to visually select any element on a webpage and instantly extract its HTML structure, CSS styles, and content.
+
+Key Features:
+
+🎯 Visual Element Selection
+- Click to select any element on any webpage
+- Highlight and inspect DOM elements visually
+- Extract complete HTML structure and applied CSS styles
+
+🤖 AI-Powered Assistant
+- Ask questions about selected elements
+- Generate code based on webpage components
+- Get styling suggestions and best practices
+- Understand complex CSS implementations
+
+🎨 Developer-Friendly Interface
+- Non-intrusive side panel that doesn't block your work
+- Dark mode support for comfortable coding
+- Clean, modern UI built with React
+- Keyboard shortcuts for efficient workflow
+
+💻 Perfect For:
+- Learning from existing websites
+- Debugging CSS issues
+- Extracting component structures
+- Understanding layout implementations
+- Rapid prototyping and development
+
+Privacy First:
+Chara Codes operates entirely within your browser. No data is collected, stored, or transmitted to external servers. Your code and browsing remain completely private.
+
+How It Works:
+1. Click the Chara Codes icon to open the side panel
+2. Click "Select Element" to activate the element picker
+3. Hover and click any element on the webpage
+4. View extracted HTML, CSS, and content
+5. Ask the AI assistant for help with your development tasks
+
+Whether you're a beginner learning web development or an experienced developer analyzing complex layouts, Chara Codes helps you work faster and learn continuously.
+
+
+Category:
+--------------------------------------------------------------------------------
+Developer Tools
+
+
+Language:
+--------------------------------------------------------------------------------
+English
+
+
+================================================================================
+PRIVACY PRACTICES TAB
+================================================================================
+
+Single Purpose Description:
+--------------------------------------------------------------------------------
+Chara Codes is an AI-powered development assistant that helps frontend developers analyze and understand web page elements. The extension allows developers to select DOM elements from any webpage, extract their HTML structure, CSS styles, and content, and interact with an AI assistant to generate code, understand styling, and streamline their development workflow.
+
+
+Permission Justification - activeTab:
+--------------------------------------------------------------------------------
+The activeTab permission is required to interact with the currently active browser tab when the user clicks the extension icon. This enables the core functionality of accessing the current webpage to inject the element selector interface, reading the page URL to provide context, and establishing communication between the side panel and the active webpage. No data from the active tab is stored or transmitted externally - all processing happens locally within the browser.
+
+
+Permission Justification - Host Permissions (<all_urls>):
+--------------------------------------------------------------------------------
+Host permissions are required to function on any website where developers need to analyze elements. Since developers work across countless domains (localhost, staging, production), restricting to specific hosts would render the tool unusable. The extension only accesses page content when the user explicitly activates the element selection feature - no automatic data collection occurs on page load. Content scripts only execute when triggered by user action, and all data processing is local to the browser with no transmission to external servers.
+
+
+Permission Justification - scripting:
+--------------------------------------------------------------------------------
+The scripting permission is essential for injecting the element selector interface and extracting element information from web pages. It enables injecting the ElementSelectorWidget component when the user clicks "Select Element", executing scripts to query the DOM for CSS styles using getComputedStyle(), extracting HTML structure and text content from user-selected elements, and creating a shadow DOM to isolate the extension's UI from the host page. Scripts only extract data from elements the user explicitly selects - no background scanning or automatic data collection occurs.
+
+
+Permission Justification - sidePanel:
+--------------------------------------------------------------------------------
+The sidePanel permission provides users with a dedicated, non-intrusive interface for the AI assistant that doesn't interfere with their browsing or development work. It displays the chat interface where users interact with the AI assistant, shows extracted element information and generated code, and provides settings without obscuring webpage content. The side panel offers superior user experience compared to popups (which auto-close when clicking outside) by remaining accessible while browsing and providing ample space for code viewing.
+
+
+Permission Justification - tabs:
+--------------------------------------------------------------------------------
+The tabs permission allows the extension to communicate between the side panel and the content script running in the active tab. It enables querying the active tab to send messages from the side panel to the content script, identifying which tab the user is working with to route messages correctly, and establishing bidirectional communication for element selection and data extraction. Only tab IDs and basic metadata are accessed - no browsing history tracking, cross-tab monitoring, or storage of visited websites occurs.
+
+
+Data Collection:
+--------------------------------------------------------------------------------
+Select: "No, this item does not collect user data"
+
+(If that option is not available, select "Yes" and specify that data is
+processed locally only)
+
+
+Remote Code Execution:
+--------------------------------------------------------------------------------
+Select: "No"
+
+
+================================================================================
+PRIVACY TAB
+================================================================================
+
+Privacy Policy URL:
+--------------------------------------------------------------------------------
+[REPLACE WITH YOUR PUBLIC PRIVACY POLICY URL]
+
+Examples:
+- https://yourdomain.com/chara-codes-privacy
+- https://github.com/yourusername/yourrepo/blob/main/PRIVACY_POLICY.md
+- https://yourusername.github.io/chara-codes/privacy
+
+
+Homepage URL (optional):
+--------------------------------------------------------------------------------
+[REPLACE WITH YOUR WEBSITE OR GITHUB URL]
+
+Examples:
+- https://yourdomain.com
+- https://github.com/yourusername/chara-codes
+
+
+================================================================================
+DISTRIBUTION TAB
+================================================================================
+
+Visibility:
+--------------------------------------------------------------------------------
+Select: "Public"
+(or "Unlisted" if you only want people with the link to access it)
+
+
+Geographic Distribution:
+--------------------------------------------------------------------------------
+Select: "All regions"
+(or select specific countries if you want to limit distribution)
+
+
+Pricing:
+--------------------------------------------------------------------------------
+Select: "Free"
+
+
+================================================================================
+ACCOUNT TAB (BEFORE SUBMISSION)
+================================================================================
+
+Developer Email:
+--------------------------------------------------------------------------------
+[YOUR CONTACT EMAIL]
+
+⚠️ IMPORTANT: You must verify this email before you can publish!
+Check your inbox for verification email after adding.
+
+
+Developer Name:
+--------------------------------------------------------------------------------
+[YOUR NAME OR COMPANY NAME]
+
+
+Website (optional):
+--------------------------------------------------------------------------------
+[YOUR WEBSITE URL]
+
+
+================================================================================
+NOTES FOR REVIEWERS (if there's a notes field)
+================================================================================
+
+This extension is a development tool for frontend developers that requires broad permissions to function on any website where developers might be working, including localhost, staging environments, and production sites.
+
+Key points:
+- All data processing is local - no external servers
+- Content scripts only execute on explicit user action
+- No automatic data collection or tracking
+- Built with WXT framework following Chrome extension best practices
+
+Test instructions:
+1. Install the extension
+2. Navigate to any webpage
+3. Click the extension icon to open side panel
+4. Click "Select Element" button
+5. Hover over page elements (they will be highlighted)
+6. Click an element to extract its HTML and CSS
+7. View extracted data in the side panel
+
+
+================================================================================
+CHECKLIST BEFORE SUBMITTING
+================================================================================
+
+[ ] Extension built: npm run build && npm run zip
+[ ] Privacy policy hosted on public URL
+[ ] Privacy policy URL is accessible (test in incognito)
+[ ] Developer account created and paid ($5 fee)
+[ ] Developer email added and VERIFIED (check inbox!)
+[ ] Extension ZIP uploaded
+[ ] Extension name filled in
+[ ] Short description filled in (≤132 characters)
+[ ] Detailed description filled in
+[ ] Category selected (Developer Tools)
+[ ] Language selected (English)
+[ ] Icon uploaded (128x128 PNG)
+[ ] Screenshots uploaded (5-8 images, 1280x800 recommended)
+[ ] Single purpose description filled in
+[ ] activeTab justification filled in
+[ ] Host permission justification filled in
+[ ] scripting justification filled in
+[ ] sidePanel justification filled in
+[ ] tabs justification filled in
+[ ] Data collection answered
+[ ] Remote code answered (No)
+[ ] Privacy policy URL added
+[ ] Distribution settings selected
+[ ] Draft saved
+[ ] All errors cleared
+[ ] Ready to submit!
+
+
+================================================================================
+END OF SUBMISSION TEXT
+================================================================================
+
+For detailed instructions, see SUBMISSION_GUIDE.md
+For more information, see CHROME_STORE_DOCUMENTATION.md

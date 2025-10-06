@@ -280,20 +280,19 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
           <IconContainer>◈</IconContainer>
         </IconWrapper>
 
-        <Title>Chara Codes Server Not Connected</Title>
+        <Title>The Local Chara Codes Server Not Connected</Title>
 
         <Description>
-          Chara Codes needs to be running to work properly.{" "}
           {!wsStatus.connected
-            ? "Not connected to Chara Codes."
+            ? "Not connected to the local Chara Codes server."
             : !isConnected
             ? "Connected to Chara Codes, starting services..."
             : "Chara Codes is ready to use."}{" "}
-          Please start Chara Codes to continue.
+          Please start the local Chara Codes server to continue.
         </Description>
 
         <CommandSection>
-          <CommandTitle>› Start Chara Codes</CommandTitle>
+          <CommandTitle>› Start Local Chara Codes Server</CommandTitle>
           <CommandBlock>
             <CommandText>bunx @chara-codes/cli dev</CommandText>
             <CopyButton onClick={handleCopyCommand} title="Copy command">

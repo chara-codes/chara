@@ -19,19 +19,7 @@ export default defineConfig({
     },
   }),
   manifest: {
-    permissions: [
-      "activeTab",
-      "storage",
-      "sidePanel",
-      "scripting",
-      "tabs",
-      "clipboardRead",
-      "cookies",
-      "debugger",
-      "history",
-      "identity",
-      "notifications",
-    ],
+    permissions: ["activeTab", "sidePanel", "scripting", "tabs"],
     action: {
       default_title: "Click to Chara Codes side panel",
     },

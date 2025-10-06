@@ -1,20 +1,24 @@
-# Chara Extension - Side Panel Browser Extension
+# Chara Codes - AI-Powered Development Assistant
 
-A modern browser extension built with WXT, React, and TypeScript that provides a convenient side panel interface accessible by clicking the extension icon.
+A Chrome extension built with WXT, React, and TypeScript that helps frontend developers analyze and understand web page elements. Select any element on a webpage and instantly extract its HTML structure, CSS styles, and content with AI-powered assistance.
 
 ## Features
 
-- **Side Panel Interface**: Clean, modern side panel that slides in from the right
-- **Cross-Browser Support**: Works in Chrome, Edge, and other Chromium-based browsers
-- **Fallback Implementation**: Graceful fallback for browsers without native side panel API
-- **Responsive Design**: Adapts to different screen sizes and supports dark mode
-- **Multiple Tabs**: Home, Settings, and About sections
-- **Keyboard Navigation**: Supports Escape key to close panel
-- **Smooth Animations**: Polished slide-in/slide-out transitions
+- **Visual Element Selection**: Click to select any element on any webpage with visual highlighting
+- **HTML/CSS Extraction**: Instantly extract complete HTML structure and applied CSS styles
+- **AI-Powered Assistant**: Ask questions and get help with selected elements
+- **Side Panel Interface**: Non-intrusive side panel that doesn't block your work
+- **Dark Mode Support**: Comfortable coding interface with theme support
+- **Privacy First**: All data processing happens locally - nothing leaves your browser
+- **Developer Tools**: Built specifically for frontend developers and learners
 
 ## How It Works
 
-When you click the extension icon:
+1. Click the Chara Codes extension icon to open the side panel
+2. Click "Select Element" to activate the element picker
+3. Hover over any element on the webpage (it will be highlighted)
+4. Click the element to extract its HTML, CSS, and content
+5. View extracted data in the side panel and interact with AI assistant
 
 1. **Modern Browsers (Chrome 114+)**: Uses the native `chrome.sidePanel` API for optimal performance
 2. **Fallback Mode**: Injects a content script that creates an iframe-based side panel for broader compatibility
