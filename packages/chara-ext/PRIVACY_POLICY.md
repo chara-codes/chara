@@ -155,8 +155,8 @@ We encourage you to review this policy periodically.
 ## Open Source
 
 Chara Codes is an open-source project. You can review the complete source code to verify our privacy practices at:
-- **Repository**: [YOUR_GITHUB_REPO_URL]
-- **License**: MIT License
+- **Repository**: https://github.com/chara-codes/chara/
+- **License**: Apache License
 
 ## Compliance
 
@@ -171,18 +171,18 @@ This extension complies with:
 
 If you have questions or concerns about this privacy policy or the extension's privacy practices:
 
-**Email**: [YOUR_EMAIL_ADDRESS]
-**Support**: [YOUR_SUPPORT_EMAIL_OR_URL]
-**Issues**: [YOUR_GITHUB_ISSUES_URL]
+**Email**: kucherenko.andrey+chara@gmail.com
+**Support**: https://github.com/chara-codes/chara/issues
+**Issues**: https://github.com/chara-codes/chara/issues
 
 We will respond to privacy inquiries within 48 hours.
 
 ## Developer Information
 
 **Extension Name**: Chara Codes
-**Developer**: [YOUR_NAME_OR_COMPANY]
+**Developer**: Andrey Kucherenko
 **Version**: 0.1.29
-**Website**: [YOUR_WEBSITE_URL]
+**Website**: https://chara-ai.dev/
 
 ## Legal
 
