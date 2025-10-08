@@ -17,6 +17,246 @@ const CORS_HEADERS = {
 const activeChats = new Map<string, AbortController>();
 let mcpTools: Record<string, unknown> = {};
 
+// ============================================================================
+// Validation Helpers
+// ============================================================================
+
+function validateChatRequest(body: any): {
+  valid: boolean;
+  error?: string;
+} {
+  const { chatId, messages, model, mode } = body;
+
+  if (!chatId || !messages || !model || !mode) {
+    return {
+      valid: false,
+      error: "Missing required fields: chatId, messages, model, mode",
+    };
+  }
+
+  return { valid: true };
+}
+
+function validateDeleteRequest(body: any): {
+  valid: boolean;
+  error?: string;
+} {
+  const { messageId, chatId } = body;
+
+  if (!messageId || !chatId) {
+    return {
+      valid: false,
+      error: "Missing required fields: messageId, chatId",
+    };
+  }
+
+  return { valid: true };
+}
+
+// ============================================================================
+// Message Conversion
+// ============================================================================
+
+function convertToUIMessages(messages: any[]): UIMessage[] {
+  return messages.map((msg: any) => {
+    if (msg.parts) {
+      return msg;
+    }
+
+    return {
+      id: msg.id || generateId(),
+      role: msg.role,
+      parts: [{ type: "text" as const, text: msg.content || "" }],
+      createdAt: new Date(),
+    };
+  });
+}
+
+// ============================================================================
+// Repository Management
+// ============================================================================
+
+async function ensureRepositoryInitialized(workingDir: string): Promise<void> {
+  if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
+    await isoGitService.initializeRepository(workingDir);
+  }
+  await isoGitService.getLastCommit(workingDir);
+}
+
+// ============================================================================
+// Chat Operations
+// ============================================================================
+
+async function saveChatMessages(
+  chatId: string,
+  messages: UIMessage[]
+): Promise<void> {
+  try {
+    await trpc.chat.saveMessages.mutate({
+      chatId,
+      messages: messages as any,
+    });
+  } catch (error) {
+    logger.error("Failed to save chat:", error);
+    throw error;
+  }
+}
+
+function getCombinedTools(mode: string): Record<string, unknown> {
+  const localChatTools =
+    mode === "write" ? chatToolsWriteMode : chatToolsAskMode;
+  return { ...localChatTools, ...mcpTools };
+}
+
+async function createGitCommit(
+  model: string,
+  uiMessages: UIMessage[],
+  workingDir: string
+): Promise<string> {
+  const commitMessage = await gitAgent({
+    model,
+    messages: convertToModelMessages(uiMessages),
+  });
+
+  const { commitSha } = await isoGitService.saveToHistory(
+    workingDir,
+    commitMessage.text
+  );
+
+  return commitSha as string;
+}
+
+async function updateMessageWithCommit(
+  messageId: string,
+  commitSha: string
+): Promise<void> {
+  await trpc.chat.updateMessage.mutate({
+    messageId,
+    commit: commitSha,
+  });
+}
+
+async function handleWriteModeCompletion(
+  model: string,
+  uiMessages: UIMessage[],
+  workingDir: string
+): Promise<void> {
+  try {
+    const commitSha = await createGitCommit(model, uiMessages, workingDir);
+    const lastMessageId = uiMessages[uiMessages.length - 1]?.id as string;
+    await updateMessageWithCommit(lastMessageId, commitSha);
+  } catch (error) {
+    logger.error("Failed to save to git history:", error);
+  }
+}
+
+function createChatAbortController(chatId: string): AbortController {
+  const controller = new AbortController();
+  activeChats.set(chatId, controller);
+  return controller;
+}
+
+function cleanupChatController(chatId: string): void {
+  activeChats.delete(chatId);
+}
+
+// ============================================================================
+// Rollback Operations
+// ============================================================================
+
+async function rollbackToParentCommit(
+  workingDir: string,
+  commitSha: string
+): Promise<{ status: string; message?: string }> {
+  try {
+    const commitResult = await isoGitService.getCommitByOid(
+      workingDir,
+      commitSha
+    );
+
+    if (
+      commitResult.status === "success" &&
+      commitResult.commit &&
+      commitResult.commit.commit.parent.length > 0
+    ) {
+      const parentCommitSha = commitResult.commit.commit.parent[0];
+
+      if (parentCommitSha && typeof parentCommitSha === "string") {
+        logger.info(
+          `Resetting to parent commit ${parentCommitSha} (before changes from commit ${commitSha})`
+        );
+
+        const rollbackResult = await isoGitService.resetToCommit(
+          workingDir,
+          parentCommitSha as string
+        );
+
+        if (rollbackResult.status !== "success") {
+          logger.warn(
+            `Failed to rollback git to parent commit ${parentCommitSha}: ${rollbackResult.message}`
+          );
+        }
+
+        return rollbackResult;
+      } else {
+        logger.warn(
+          `Parent commit SHA is empty for commit ${commitSha}, skipping rollback`
+        );
+        return {
+          status: "error",
+          message: "Parent commit SHA is empty",
+        };
+      }
+    } else {
+      logger.warn(
+        `Cannot find parent commit for ${commitSha}, skipping rollback`
+      );
+      return {
+        status: "error",
+        message: "No parent commit found",
+      };
+    }
+  } catch (error) {
+    logger.error(`Error during git rollback for commit ${commitSha}:`, error);
+    return {
+      status: "error",
+      message: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+// ============================================================================
+// Response Helpers
+// ============================================================================
+
+function createErrorResponse(
+  error: string,
+  code: string,
+  status: number = 400
+): Response {
+  return new Response(JSON.stringify({ error, code }), {
+    status,
+    headers: {
+      ...CORS_HEADERS,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+function createJsonResponse(data: any, status: number = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      ...CORS_HEADERS,
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+// ============================================================================
+// Main Controller
+// ============================================================================
+
 export const chatController = {
   setTools: (tools: Record<string, unknown>) => {
     mcpTools = { ...tools };
@@ -26,77 +266,24 @@ export const chatController = {
 
   POST: async (req: Request) => {
     try {
-      const { messages, chatId, model, mode } = await req.json();
-      if (!chatId || !messages || !model || !mode) {
-        return new Response(
-          JSON.stringify({
-            error: "Missing required fields: chatId, messages, model, mode",
-          }),
-          {
-            status: 400,
-            headers: {
-              ...CORS_HEADERS,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+      const body = await req.json();
+      const validation = validateChatRequest(body);
+
+      if (!validation.valid) {
+        return createErrorResponse(validation.error!, "VALIDATION_ERROR", 400);
       }
 
-      // Convert simple message format to UIMessage format
-      const uiMessages: UIMessage[] = messages.map((msg: any) => {
-        if (msg.parts) {
-          // Already in UIMessage format
-          return msg;
-        } else {
-          // Convert from simple {role, content} format to UIMessage format
-          return {
-            id: msg.id || generateId(),
-            role: msg.role,
-            parts: [{ type: "text" as const, text: msg.content || "" }],
-            createdAt: new Date(),
-          };
-        }
-      });
-
+      const { messages, chatId, model, mode } = body;
+      const uiMessages = convertToUIMessages(messages);
       const workingDir = process.cwd();
-
-      // Create abort controller for this chat
-      const controller = new AbortController();
-      activeChats.set(chatId, controller);
+      const controller = createChatAbortController(chatId);
 
       try {
-        // Initialize repository if needed
-        if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
-          await isoGitService.initializeRepository(workingDir);
-        }
+        await ensureRepositoryInitialized(workingDir);
 
-        // Initialize git repository for this working directory
-        await isoGitService.getLastCommit(workingDir);
-
-        // Save chat messages to database
-        const saveChatMessages = async (
-          chatId: string,
-          messages: UIMessage[]
-        ): Promise<void> => {
-          try {
-            await trpc.chat.saveMessages.mutate({
-              chatId,
-              messages: messages as any,
-            });
-          } catch (error) {
-            logger.error("Failed to save chat:", error);
-            throw error;
-          }
-        };
-
-        // Combine tools
-        const localChatTools =
-          mode === "write" ? chatToolsWriteMode : chatToolsAskMode;
-        const allTools = { ...localChatTools, ...mcpTools };
-
+        const allTools = getCombinedTools(mode);
         const modelMessages = convertToModelMessages(uiMessages);
 
-        // Start chat agent
         const result = await chatAgent(
           {
             model,
@@ -113,23 +300,11 @@ export const chatController = {
               },
               onFinish: async () => {
                 if (mode === "write") {
-                  try {
-                    const commitMessage = await gitAgent({
-                      model,
-                      messages: convertToModelMessages(uiMessages),
-                    });
-                    const { commitSha } = await isoGitService.saveToHistory(
-                      workingDir,
-                      commitMessage.text
-                    );
-                    const { id } = uiMessages[uiMessages.length - 1];
-                    await trpc.chat.updateMessage.mutate({
-                      messageId: id,
-                      commit: commitSha,
-                    });
-                  } catch (error) {
-                    logger.error("Failed to save to git history:", error);
-                  }
+                  await handleWriteModeCompletion(
+                    model,
+                    uiMessages,
+                    workingDir
+                  );
                 }
               },
               onError: async (error: Error) => {
@@ -140,32 +315,25 @@ export const chatController = {
           { abortSignal: controller.signal }
         );
 
-        // Return the streaming response using AI SDK's toUIMessageStreamResponse
         return result.toUIMessageStreamResponse({
           headers: CORS_HEADERS,
           originalMessages: uiMessages,
           generateMessageId: () => generateId(),
           onFinish: async ({ messages: finalMessages }) => {
             try {
-              // Save the complete conversation
               await saveChatMessages(chatId, finalMessages);
             } catch (error) {
               logger.error(
                 `Failed to handle chat completion for ${chatId}:`,
                 error
               );
-
-              logger.error(
-                `Chat completion error for ${chatId}:`,
-                error instanceof Error ? error.message : String(error)
-              );
             } finally {
-              activeChats.delete(chatId);
+              cleanupChatController(chatId);
             }
           },
         });
       } catch (error) {
-        activeChats.delete(chatId);
+        cleanupChatController(chatId);
 
         if (controller.signal.aborted) {
           logger.info(`Chat ${chatId} was cancelled`);
@@ -174,264 +342,101 @@ export const chatController = {
 
         logger.error(`Chat error for chat ${chatId}:`, error);
 
-        // Handle git commit even on error if in write mode
         if (mode === "write") {
-          try {
-            const commitMessage = await gitAgent({
-              model,
-              messages: convertToModelMessages(uiMessages),
-            });
-            const { commitSha } = await isoGitService.saveToHistory(
-              workingDir,
-              commitMessage.text
-            );
-
-            const { id } = uiMessages[uiMessages.length - 1];
-            await trpc.chat.updateMessage.mutate({
-              messageId: id,
-              commit: commitSha,
-            });
-          } catch (gitError) {
-            logger.error(
-              "Failed to save to git history after error:",
-              gitError
-            );
-          }
+          await handleWriteModeCompletion(model, uiMessages, workingDir);
         }
 
         throw error;
       }
     } catch (error) {
       logger.error("Chat controller error:", error);
-
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-
-      return new Response(
-        JSON.stringify({
-          error: errorMessage,
-          code: "CHAT_ERROR",
-        }),
-        {
-          status: 500,
-          headers: {
-            ...CORS_HEADERS,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return createErrorResponse(errorMessage, "CHAT_ERROR", 500);
     }
   },
 
-  // GET handler for loading chat messages
   GET: async (req: Request) => {
     try {
       const url = new URL(req.url);
       const chatId = url.searchParams.get("chatId");
 
       if (!chatId) {
-        return new Response(
-          JSON.stringify({ error: "Missing chatId parameter" }),
-          {
-            status: 400,
-            headers: {
-              ...CORS_HEADERS,
-              "Content-Type": "application/json",
-            },
-          }
+        return createErrorResponse(
+          "Missing chatId parameter",
+          "VALIDATION_ERROR",
+          400
         );
       }
 
       const response = await trpc.chat.getMessages.query({ chatId });
 
-      return new Response(
-        JSON.stringify({
-          chatId,
-          messages: response.messages,
-        }),
-        {
-          headers: {
-            ...CORS_HEADERS,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return createJsonResponse({
+        chatId,
+        messages: response.messages,
+      });
     } catch (error) {
       logger.error("Failed to load chat messages:", error);
-
-      return new Response(
-        JSON.stringify({
-          error: error instanceof Error ? error.message : String(error),
-          code: "LOAD_CHAT_ERROR",
-        }),
-        {
-          status: 500,
-          headers: {
-            ...CORS_HEADERS,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      return createErrorResponse(errorMessage, "LOAD_CHAT_ERROR", 500);
     }
   },
 
-  // DELETE handler for removing messages and rolling back git state
   DELETE: async (req: Request) => {
     try {
-      const { messageId, chatId } = await req.json();
+      const body = await req.json();
+      const validation = validateDeleteRequest(body);
 
-      if (!messageId || !chatId) {
-        return new Response(
-          JSON.stringify({
-            error: "Missing required fields: messageId, chatId",
-          }),
-          {
-            status: 400,
-            headers: {
-              ...CORS_HEADERS,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+      if (!validation.valid) {
+        return createErrorResponse(validation.error!, "VALIDATION_ERROR", 400);
       }
 
+      const { messageId, chatId } = body;
       const workingDir = process.cwd();
 
       try {
-        // Initialize repository if needed
-        if (!(await isoGitService.isRepositoryInitialized(workingDir))) {
-          await isoGitService.initializeRepository(workingDir);
-        }
+        await ensureRepositoryInitialized(workingDir);
 
-        // Delete messages from database
         const deleteResult = await trpc.chat.deleteMessages.mutate({
           chatId,
           messageId,
         });
 
-        // If the message has a commit, rollback to its parent commit (the state before changes)
         let rollbackResult = null;
         if (deleteResult.commitToReset) {
-          try {
-            // Get the parent commit to reset to the state before changes were made
-            const commitResult = await isoGitService.getCommitByOid(
-              workingDir,
-              deleteResult.commitToReset
-            );
-
-            if (
-              commitResult.status === "success" &&
-              commitResult.commit &&
-              commitResult.commit.commit.parent.length > 0
-            ) {
-              const parentCommitSha = commitResult.commit.commit.parent[0];
-              if (parentCommitSha && typeof parentCommitSha === "string") {
-                logger.info(
-                  `Resetting to parent commit ${parentCommitSha} (before changes from commit ${deleteResult.commitToReset})`
-                );
-
-                rollbackResult = await isoGitService.resetToCommit(
-                  workingDir,
-                  parentCommitSha as string
-                );
-
-                if (rollbackResult.status !== "success") {
-                  logger.warn(
-                    `Failed to rollback git to parent commit ${parentCommitSha}: ${rollbackResult.message}`
-                  );
-                }
-              } else {
-                logger.warn(
-                  `Parent commit SHA is empty for commit ${deleteResult.commitToReset}, skipping rollback`
-                );
-                rollbackResult = {
-                  status: "error",
-                  message: "Parent commit SHA is empty",
-                } as const;
-              }
-            } else {
-              logger.warn(
-                `Cannot find parent commit for ${deleteResult.commitToReset}, skipping rollback`
-              );
-              rollbackResult = {
-                status: "error",
-                message: "No parent commit found",
-              } as const;
-            }
-          } catch (error) {
-            logger.error(
-              `Error during git rollback for commit ${deleteResult.commitToReset}:`,
-              error
-            );
-            rollbackResult = {
-              status: "error",
-              message: error instanceof Error ? error.message : String(error),
-            } as const;
-          }
+          rollbackResult = await rollbackToParentCommit(
+            workingDir,
+            deleteResult.commitToReset
+          );
         }
 
         logger.info(
           `Successfully deleted ${deleteResult.deletedCount} messages from chat ${chatId} starting from message ${messageId}`
         );
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            deletedCount: deleteResult.deletedCount,
-            deletedMessageIds: deleteResult.deletedMessageIds,
-            rollbackResult: rollbackResult?.status || null,
-            message: `Deleted ${deleteResult.deletedCount} messages${
-              rollbackResult?.status === "success"
-                ? ` and rolled back changes`
-                : ""
-            }`,
-          }),
-          {
-            headers: {
-              ...CORS_HEADERS,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        return createJsonResponse({
+          success: true,
+          deletedCount: deleteResult.deletedCount,
+          deletedMessageIds: deleteResult.deletedMessageIds,
+          rollbackResult: rollbackResult?.status || null,
+          message: `Deleted ${deleteResult.deletedCount} messages${
+            rollbackResult?.status === "success"
+              ? ` and rolled back changes`
+              : ""
+          }`,
+        });
       } catch (error) {
         logger.error("Error during message deletion:", error);
-
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-
-        return new Response(
-          JSON.stringify({
-            error: errorMessage,
-            code: "DELETE_MESSAGES_ERROR",
-          }),
-          {
-            status: 500,
-            headers: {
-              ...CORS_HEADERS,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        return createErrorResponse(errorMessage, "DELETE_MESSAGES_ERROR", 500);
       }
     } catch (error) {
       logger.error("Chat controller DELETE error:", error);
-
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-
-      return new Response(
-        JSON.stringify({
-          error: errorMessage,
-          code: "DELETE_REQUEST_ERROR",
-        }),
-        {
-          status: 500,
-          headers: {
-            ...CORS_HEADERS,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return createErrorResponse(errorMessage, "DELETE_REQUEST_ERROR", 500);
     }
   },
 };
