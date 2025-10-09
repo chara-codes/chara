@@ -54,21 +54,7 @@ export async function startAgentsAction(
     intro(bold(cyan("🚀 Starting Chara Agents Server")));
   }
 
-  // Check if config exists
-  const configExists = await existsGlobalConfig();
-  if (!configExists) {
-    const errorMessage =
-      "No configuration found. Run 'chara init' first to set up your providers.";
-    logger.error(errorMessage);
-    throw new Error(errorMessage);
-  }
-
-  try {
-    await readGlobalConfig();
-  } catch (error) {
-    logger.error("Error reading configuration:", error);
-    throw error;
-  }
+  // Note: Configuration is optional - providers can be set up via web interface
 
   // Start server
   const s = spinner();

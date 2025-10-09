@@ -159,7 +159,6 @@ export const devCommand: CommandModule<
       const steps = [
         "Setting up logging",
         "Preparing project directory",
-        "Checking configuration",
         "Starting backend server",
         "Starting agents server",
         "Setting up web interface",
@@ -188,58 +187,7 @@ export const devCommand: CommandModule<
         projectDir: argv.projectDir,
       });
 
-      // Step 3: Check if global config exists, if not run init
-      showProgress("Checking configuration");
-      const globalConfigExists = await existsGlobalConfig();
-      if (!globalConfigExists) {
-        if (argv.verbose) {
-          logger.warning(
-            "No global configuration found. Running initialization..."
-          );
-        }
-        await ActionFactory.execute("init", {
-          verbose: argv.verbose,
-        });
-      }
-
-      // Step 4: Check if default model exists in global config
-      let globalConfig: any = {};
-      try {
-        globalConfig = await readGlobalConfig();
-        if (!globalConfig.defaultModel) {
-          if (argv.verbose) {
-            logger.warning(
-              "No default model found in global configuration. Setting up default model..."
-            );
-          }
-
-          // We need to start a temporary server to get available models
-          const tempServer = await ActionFactory.execute("start-agents", {
-            verbose: argv.verbose,
-            silent: true,
-            port: 3031,
-          });
-
-          try {
-            await ActionFactory.execute("default-model", {
-              verbose: argv.verbose,
-              serverUrl: "http://localhost:3031",
-            });
-          } finally {
-            // Stop the temporary server
-            await ActionFactory.execute("stop-agents", {
-              verbose: argv.verbose,
-              server: tempServer.server,
-              silent: true,
-            });
-          }
-        }
-      } catch (error) {
-        logger.error("Error reading global configuration:", error);
-        throw error;
-      }
-
-      // Step 4: Start server with appropriate configuration
+      // Step 3: Start server with appropriate configuration
       showProgress("Starting backend server");
       const serverResult = await ActionFactory.execute("start-server", {
         verbose: argv.verbose,
@@ -279,14 +227,17 @@ export const devCommand: CommandModule<
         silent: true,
       });
 
+      // Declare tunnel variables for shutdown handler
+      let tunnelClient: any = null;
+      let tunnel: any = null;
+
       if (argv.expTunnel) {
         // Step 7: Run widget mode (tunnel server, tunnel client, event listener for the runner)
         showProgress("Configuring tunnel");
         const pingControl = await ping.promise.probe("control.localhost");
         const pingChara = await ping.promise.probe("chara.localhost");
 
-        let tunnelClient: any = null;
-        let tunnel: any = null;
+
         let runnerStatus = "inactive";
         let runnerInfo: any = null;
         if (pingChara.alive && pingControl.alive) {
