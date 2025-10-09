@@ -1,4 +1,4 @@
-export { defaultModelAction } from "./default-model";
+
 export { startAgentsAction, stopAgentsAction } from "./start-agents";
 export { startServerAction } from "./start-server";
 export { stopServerAction } from "./stop-server";
@@ -31,7 +31,6 @@ export type {
   ActionOptions,
   ActionResult,
   BaseAction,
-  DefaultModelActionOptions,
   StartAgentsActionOptions,
   StopAgentsActionOptions,
   StartServerActionOptions,

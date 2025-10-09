@@ -1,4 +1,4 @@
-import { defaultModelAction } from "./default-model";
+
 import {
   ActionFactory,
   compose,
@@ -24,7 +24,6 @@ import {
   stopTunnelServerAction,
 } from "./tunnel-server";
 import type {
-  DefaultModelActionOptions,
   LoadConfigActionOptions,
   ResetActionOptions,
   ServeStaticActionOptions,
@@ -63,17 +62,6 @@ export function registerActions(): void {
       compose<ShowActionOptions>(withErrorHandling, (fn) =>
         withLogging(fn, "show")
       )(showAction)
-    )
-  );
-
-  // Register default-model action
-  ActionFactory.register(
-    createAction(
-      "default-model",
-      "Set default AI model for Chara Codes",
-      compose<DefaultModelActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "default-model")
-      )(defaultModelAction)
     )
   );
 
