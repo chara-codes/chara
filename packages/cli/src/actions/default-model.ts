@@ -40,7 +40,7 @@ export async function defaultModelAction(
   const configExists = await existsGlobalConfig();
   if (!configExists) {
     logger.error(
-      "No configuration found. Run 'chara init' first to set up your providers.",
+      "No configuration found. Configure providers via the web interface first.",
     );
     return;
   }
