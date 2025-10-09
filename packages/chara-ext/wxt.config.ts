@@ -1,5 +1,5 @@
-import { defineConfig } from "wxt";
 import { resolve } from "path";
+import { defineConfig } from "wxt";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
@@ -19,9 +19,9 @@ export default defineConfig({
     },
   }),
   manifest: {
-    permissions: ["activeTab", "scripting", "sidePanel"],
+    permissions: ["activeTab", "sidePanel", "tabs"],
     action: {
-      default_title: "Open Chara Extension",
+      default_title: "Click to Chara Codes side panel",
     },
     side_panel: {
       default_path: "sidepanel/index.html",

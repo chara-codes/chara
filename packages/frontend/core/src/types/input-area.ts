@@ -7,6 +7,8 @@ export interface InputAreaProps {
   onStopResponse?: () => void;
   isLoading?: boolean;
   buttonConfig?: ButtonConfig[];
+  initialMessage?: string;
+  chatId?: string;
 }
 
 export interface InputContextItem {

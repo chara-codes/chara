@@ -15,9 +15,11 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   padding: 6px 12px;
-  border-top: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-top: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.background};
   min-height: 36px;
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const ContextList = styled.div`

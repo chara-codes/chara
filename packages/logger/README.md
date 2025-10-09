@@ -1,216 +1,380 @@
 # @chara-codes/logger
 
-A flexible and customizable logging utility for Chara applications.
+A flexible and powerful logging utility for Chara applications built on top of [Pino](https://github.com/pinojs/pino), featuring advanced object pretty-printing with [@base2/pretty-print-object](https://www.npmjs.com/package/@base2/pretty-print-object) and multiple transport support.
 
 ## Features
 
-- Multiple log levels (TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, EVENT, SERVER)
-- Colorized console output for better readability
-- Configurable transports
-- Metadata support for detailed logging
-- Runtime log level adjustment
+- 🚀 **High Performance**: Built on Pino, one of the fastest Node.js loggers
+- 🎨 **Multiple Transports**: Console, file, and browser console support
+- 🔍 **Advanced Object Printing**: Beautiful object formatting with [@base2/pretty-print-object](https://www.npmjs.com/package/@base2/pretty-print-object) and circular reference handling
+- 🎯 **Custom Log Levels**: Success, event, and server levels in addition to standard levels
+- 🌈 **Colorized Output**: Beautiful console output with customizable colors
+- 🔧 **TypeScript Support**: Full TypeScript definitions included
+- 📦 **Zero Config**: Works out of the box with sensible defaults
 
 ## Installation
 
 ```bash
 npm install @chara-codes/logger
+# or
+bun add @chara-codes/logger
 ```
 
-## Features
-
-- **Multiple log levels**: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, EVENT, SERVER
-- **Configurable transports**: Custom output handlers for different log levels
-- **Advanced variable dumping**: Rich, developer-friendly variable inspection
-- **Circular reference detection**: Safe handling of complex object structures
-- **Type information**: Optional type annotations for better debugging
-- **Colored output**: Syntax highlighting for better readability
-- **Flexible formatting**: Compact and detailed output modes
-
-## Basic Usage
+## Quick Start
 
 ```typescript
 import { logger } from '@chara-codes/logger';
 
-// Use the default logger
+// Basic logging
 logger.info('Application started');
 logger.success('Operation completed successfully');
-logger.warning('Something might be wrong');
-logger.error('An error occurred', { error: 'Details here' });
-logger.debug('Debug information');
-logger.trace('Detailed trace info');
-logger.event('User signed in', { userId: '123' });
-logger.server('Server started on port 3000');
+logger.warning('This is a warning');
+logger.error('Something went wrong');
 
-// Change log level at runtime
-logger.setLevel('DEBUG'); // Only DEBUG and above will be logged
-```
+// Object-style logging
+logger.info({ userId: 123, action: 'login' }, 'User logged in');
 
-## Variable Dumping
-
-The logger includes powerful variable dumping capabilities for inspecting complex data structures with rich formatting:
-
-```typescript
-import { logger, dump, dumpToConsole } from '@chara-codes/logger';
-
-// Basic dump - outputs with INFO level
-const user = {
-  id: 1,
-  name: "John Doe",
-  preferences: {
-    theme: "dark",
-    notifications: { email: true, push: false }
-  },
-  hobbies: ["reading", "coding"],
-  lastLogin: new Date()
+// Advanced data dumping
+const complexData = {
+  user: { name: 'John', settings: { theme: 'dark' } },
+  items: [1, 2, 3]
 };
-
-logger.dump(user, "User Object");
-// Output:
-// ℹ User Object:
-// { [Object (keys: 5)]
-//   id: 1 [number, integer]
-//   name: "John Doe" [string (length: 8)]
-//   preferences: { [Object (keys: 2)]
-//     theme: "dark" [string (length: 4)]
-//     notifications: { [Object (keys: 2)]
-//       email: true [boolean]
-//       push: false [boolean]
-//     }
-//   }
-//   hobbies: [ [Array (length: 2)]
-//     0: "reading" [string (length: 7)]
-//     1: "coding" [string (length: 6)]
-//   ]
-//   lastLogin: 2023-12-01T10:30:00.000Z [Date]
-// }
-
-// Different dump methods for different log levels
-logger.dumpError(errorData, "Error Details");     // ERROR level
-logger.dumpDebug(debugInfo, "Debug Info");        // DEBUG level  
-logger.dumpCompact(stats, "Quick Stats");         // Compact format
-
-// Standalone dump functions
-console.log(dump(data));                          // Direct output
-dumpToConsole(data, "Label", { colors: false });  // Console output with options
-
-// Dump with custom options
-logger.dump(data, "Custom", {
-  maxDepth: 3,
-  showTypes: false,
-  compact: true,
-  colors: false
-});
-```
-
-### Dump Features
-
-- **All Data Types**: Handles primitives, objects, arrays, Maps, Sets, functions, errors, etc.
-- **Circular References**: Safely detects and displays circular references
-- **Type Information**: Shows data types and additional info (string length, array size, etc.)
-- **Depth Control**: Configurable maximum depth to prevent overwhelming output
-- **Color Support**: Syntax highlighting for better readability
-- **Compact Mode**: Condensed output for simple data structures
-- **Custom Labels**: Add descriptive labels to dump output
-
-## Creating a Custom Logger
-
-```typescript
-import { Logger, LogLevel } from '@chara-codes/logger';
-
-// Create a custom logger
-const customLogger = new Logger({
-  name: 'MyService',
-  levels: [LogLevel.INFO, LogLevel.WARNING, LogLevel.ERROR], // Only enable these levels
-});
-
-customLogger.info('This will be logged');
-customLogger.debug('This will NOT be logged'); // DEBUG level not enabled
-```
-
-## Custom Transports
-
-```typescript
-import { Logger, LogLevel, TransportType } from '@chara-codes/logger';
-
-// Create a custom transport
-const fileTransport: TransportType = (level, message, metadata) => {
-  // Implementation for writing to a file
-  const logEntry = {
-    timestamp: new Date().toISOString(),
-    level,
-    message,
-    metadata
-  };
-
-  // Write to file (implementation details omitted)
-  console.log(`[File Transport] Would write: ${JSON.stringify(logEntry)}`);
-};
-
-// Create logger with custom transport
-const fileLogger = new Logger({
-  name: 'FileLogger',
-  transports: {
-    [LogLevel.ERROR]: [fileTransport],  // Only errors go to file
-  }
-});
-
-fileLogger.error('This error will be sent to the file transport');
+logger.dump(complexData, 'Complex Data Structure');
 ```
 
 ## API Reference
 
+### Logger Class
+
+#### Constructor
+
+```typescript
+const logger = new Logger(config: LoggerConfig);
+```
+
+#### LoggerConfig
+
+```typescript
+interface LoggerConfig {
+  name: string;                           // Logger name
+  level?: string;                         // Log level (default: 'info')
+  transports?: LoggerTransportConfig[];   // Transport configurations
+  formatters?: object;                    // Pino formatters
+  serializers?: object;                   // Pino serializers
+  redact?: string[] | object;             // Fields to redact
+}
+```
+
+#### Transport Configuration
+
+```typescript
+interface LoggerTransportConfig {
+  type: 'console' | 'file' | 'browser';
+  options?: {
+    // Console transport options
+    colorize?: boolean;
+    translateTime?: boolean | string;
+    
+    // File transport options
+    destination?: string;
+    mkdir?: boolean;
+    
+    // Browser transport options
+    asObject?: boolean;
+  };
+}
+```
+
 ### Log Levels
 
-The logger supports the following levels (in order of increasing severity):
+The logger supports all standard Pino levels plus custom Chara levels:
 
-- `TRACE`: Most verbose level for detailed tracing
-- `DEBUG`: Debug information for development
-- `INFO`: General information
-- `SUCCESS`: Successful operations
-- `WARNING`: Warnings that don't prevent operation
-- `ERROR`: Errors that might prevent proper operation
-- `EVENT`: Special events in the application
-- `SERVER`: Server-related information
-
-### Methods
-
-- `debug(message: string, metadata?: any)`: Log at DEBUG level
-- `trace(message: string, metadata?: any)`: Log at TRACE level
-- `info(message: string, metadata?: any)`: Log at INFO level
-- `success(message: string, metadata?: any)`: Log at SUCCESS level
-- `warning(message: string, metadata?: any)`: Log at WARNING level
-- `error(message: string, metadata?: any)`: Log at ERROR level
-- `event(message: string, metadata?: any)`: Log at EVENT level
-- `server(message: string, metadata?: any)`: Log at SERVER level
-- `setLevel(level: string)`: Set minimum log level
-- `getLevel(): string`: Get current log level
+- `trace()` - Trace level (lowest)
+- `debug()` - Debug information
+- `info()` - General information
+- `success()` - Success messages (custom)
+- `warn()` / `warning()` - Warning messages
+- `error()` / `err()` - Error messages
+- `fatal()` - Fatal errors (highest)
+- `event()` - Event messages (custom)
+- `server()` - Server messages (custom)
 
 ### Dump Methods
 
-- `dump(data: unknown, label?: string, options?: DumpOptions)`: Dump variable with INFO level
-- `dumpError(data: unknown, label?: string)`: Dump variable with ERROR level  
-- `dumpDebug(data: unknown, label?: string)`: Dump variable with DEBUG level
-- `dumpCompact(data: unknown, label?: string)`: Dump variable in compact format
-
-### Standalone Dump Functions
-
-- `dump(data: unknown, options?: DumpOptions)`: Direct dump without logger
-- `dumpToConsole(data: unknown, label?: string, options?: DumpOptions)`: Console dump
-- `Dumper`: Class for creating custom dumpers with specific options
-
-### DumpOptions
+Advanced object pretty-printing methods using [@base2/pretty-print-object](https://www.npmjs.com/package/@base2/pretty-print-object):
 
 ```typescript
-interface DumpOptions {
-  maxDepth?: number;        // Maximum nesting depth (default: 5)
-  maxArrayLength?: number;  // Maximum array items shown (default: 100)
-  maxStringLength?: number; // Maximum string length (default: 200)
-  showTypes?: boolean;      // Show type information (default: true)
-  colors?: boolean;         // Enable colored output (default: true)
-  indent?: string;          // Indentation string (default: "  ")
-  compact?: boolean;        // Use compact format (default: false)
+// Standard dump with full details
+logger.dump(data, 'Optional Label');
+
+// Compact dump for simple data (higher inline character limit)
+logger.dumpCompact(data, 'Compact Data');
+
+// Debug-level dump (only shows if debug level is enabled)
+logger.dumpDebug(data, 'Debug Info');
+
+// Error-level dump
+logger.dumpError(data, 'Error Details');
+
+// Dump with custom pretty-print options
+logger.dump(data, 'Custom Format', {
+  singleQuotes: false,
+  inlineCharacterLimit: 50,
+  indent: '    '
+});
+```
+
+## Usage Examples
+
+### 1. Console Transport (Default)
+
+```typescript
+import { Logger } from '@chara-codes/logger';
+
+const logger = new Logger({
+  name: 'my-app',
+  level: 'debug',
+  transports: [{ 
+    type: 'console', 
+    options: { colorize: true } 
+  }]
+});
+
+logger.info('Console message');
+```
+
+### 2. File Transport
+
+```typescript
+const fileLogger = new Logger({
+  name: 'file-app',
+  transports: [{ 
+    type: 'file', 
+    options: { 
+      destination: './logs/app.log',
+      mkdir: true 
+    } 
+  }]
+});
+
+fileLogger.info('This goes to file');
+```
+
+### 3. Multiple Transports
+
+```typescript
+const multiLogger = new Logger({
+  name: 'multi-app',
+  transports: [
+    { type: 'console', options: { colorize: true } },
+    { type: 'file', options: { destination: './logs/app.log' } }
+  ]
+});
+
+multiLogger.info('This goes to both console and file');
+```
+
+### 4. Child Loggers
+
+```typescript
+const childLogger = logger.child({ 
+  requestId: 'req-123', 
+  module: 'auth' 
+});
+
+childLogger.info('Processing request'); // Includes context
+```
+
+### 5. Object-Style Logging
+
+```typescript
+// Structured logging
+logger.info({ 
+  userId: 456, 
+  action: 'purchase',
+  amount: 99.99 
+}, 'Purchase completed');
+
+// Error with context
+logger.error({ 
+  error: 'Database timeout',
+  query: 'SELECT * FROM users',
+  duration: 5000 
+}, 'Query failed');
+```
+
+### 6. Advanced Object Pretty-Printing
+
+```typescript
+const complexObject = {
+  user: {
+    id: 123,
+    profile: {
+      name: 'John Doe',
+      preferences: {
+        theme: 'dark',
+        notifications: true
+      }
+    }
+  },
+  metadata: {
+    timestamp: new Date(),
+    version: '1.0.0'
+  },
+  items: [1, 2, 3, 4, 5]
+};
+
+// Full dump with beautiful formatting
+logger.dump(complexObject, 'User Data');
+// Output:
+// User Data:
+// {
+//   user: {
+//     id: 123,
+//     name: 'John Doe',
+//     profile: {settings: {theme: 'dark', notifications: true}}
+//   },
+//   items: [1, 2, 3, 4, 5],
+//   timestamp: new Date('2025-08-07T13:03:45.643Z'),
+//   metadata: {version: '1.0.0', environment: 'development'}
+// }
+
+// Compact dump for simple display (inline when possible)
+logger.dumpCompact({ status: 'ok', count: 42 });
+// Output: {status: 'ok', count: 42}
+
+// Custom formatting options
+logger.dump(complexObject, 'Custom Format', {
+  singleQuotes: false,
+  inlineCharacterLimit: 50,
+  indent: '    '
+});
+
+// Debug dump (only shows if debug level is enabled)
+logger.dumpDebug(someVariable, 'Debug Variable');
+```
+
+### 7. Circular Reference Handling
+
+```typescript
+const obj = { name: 'test' };
+obj.self = obj; // Circular reference
+
+logger.dump(obj); // Safely handles circular references
+// Output: {name: 'test', self: "[Circular]"}
+```
+
+### 8. Direct Pretty-Print Usage
+
+```typescript
+import { prettyPrint } from '@chara-codes/logger';
+
+// Use pretty-print-object directly
+const formatted = prettyPrint({ hello: 'world', numbers: [1, 2, 3] }, {
+  singleQuotes: true,
+  inlineCharacterLimit: 30
+});
+console.log(formatted);
+// Output:
+// {
+//   hello: 'world',
+//   numbers: [1, 2, 3]
+// }
+```
+
+## Transport Details
+
+### Console Transport
+
+The console transport uses `pino-pretty` for beautiful, colorized output:
+
+```typescript
+{
+  type: 'console',
+  options: {
+    colorize: true,                    // Enable colors
+    translateTime: 'SYS:standard',     // Time format
+    ignore: 'pid,hostname',            // Fields to ignore
+    customColors: 'info:cyan,warn:yellow,error:red'
+  }
 }
 ```
+
+### File Transport
+
+The file transport writes structured JSON logs to files:
+
+```typescript
+{
+  type: 'file',
+  options: {
+    destination: './logs/app.log',     // Log file path
+    mkdir: true                        // Create directory if needed
+  }
+}
+```
+
+### Browser Transport
+
+For browser environments:
+
+```typescript
+{
+  type: 'browser',
+  options: {
+    asObject: false                    // Output format
+  }
+}
+```
+
+## Level Management
+
+```typescript
+// Set log level
+logger.setLevel('debug');
+
+// Get current level
+const currentLevel = logger.getLevel(); // Returns: 'debug'
+
+// Only messages at or above the set level will be output
+logger.setLevel('warn');
+logger.debug('Not shown');  // Won't appear
+logger.warn('Shown');       // Will appear
+logger.error('Shown');      // Will appear
+```
+
+## Access to Underlying Pino Logger
+
+```typescript
+// Access the underlying Pino logger for advanced usage
+const pinoLogger = logger.pino;
+pinoLogger.info('Direct Pino call');
+```
+
+## Migration from Previous Version
+
+The new Pino-based logger maintains backward compatibility:
+
+```typescript
+// Old usage still works
+import { logger } from '@chara-codes/logger';
+logger.info('Still works');
+logger.dump(data, 'Still works');
+
+// New features available
+const customLogger = new Logger({
+  name: 'my-app',
+  transports: [{ type: 'console' }]
+});
+```
+
+## Performance
+
+Built on Pino, this logger offers:
+- Extremely fast JSON logging
+- Minimal overhead
+- Efficient transport system
+- Optimized for production use
 
 ## License
 

@@ -1,8 +1,22 @@
-import { logger } from "@chara-codes/logger";
-import { streamText, type CoreMessage } from "ai";
+import {
+  generateObject,
+  NoSuchToolError,
+  smoothStream,
+  stepCountIs,
+  streamText,
+  type ModelMessage,
+  type StepResult,
+} from "ai";
 import { chatPrompt } from "../prompts/chat";
 import { providersRegistry } from "../providers";
-import { chatToolsAskMode, chatToolsWriteMode } from "../tools/chat-tools";
+import { logger } from "../utils/logger";
+
+export interface ChatAgentCallbacks {
+  onChunk?: (chunk: any) => void | Promise<void>;
+  onError?: (error: any) => void | Promise<void>;
+  onFinish?: (result: any) => void | Promise<void>;
+  onStepFinish?: (step: StepResult<any>) => void | Promise<void>;
+}
 
 /**
  * Cleans messages by removing toolCall tags like [toolCall:call_id,tool-name]
@@ -23,7 +37,7 @@ import { chatToolsAskMode, chatToolsWriteMode } from "../tools/chat-tools";
  * // Result: [{ role: "user", content: "Hello  world" }]
  * ```
  */
-export const cleanMessages = (messages: CoreMessage[]): CoreMessage[] => {
+export const cleanMessages = (messages: ModelMessage[]): ModelMessage[] => {
   return messages.map((message) => {
     if (typeof message.content === "string") {
       // Remove toolCall tags using regex
@@ -34,11 +48,36 @@ export const cleanMessages = (messages: CoreMessage[]): CoreMessage[] => {
       return {
         ...message,
         content: cleanedContent,
-      } as CoreMessage;
+      } as ModelMessage;
     }
     return message;
   });
 };
+
+const repairToolCall =
+  (aiModel: any) =>
+  async ({ toolCall, tools, parameterSchema, error }: any) => {
+    if (NoSuchToolError.isInstance(error)) {
+      return null; // do not attempt to fix invalid tool names
+    }
+
+    const tool = tools[toolCall.toolName as keyof typeof tools];
+
+    const { object: repairedArgs } = await generateObject({
+      model: aiModel,
+      schema: tool.parameters,
+      prompt: [
+        `The model tried to call the tool "${toolCall.toolName}"` +
+          ` with the following arguments:`,
+        JSON.stringify(toolCall.args),
+        `The tool accepts the following schema:`,
+        JSON.stringify(parameterSchema(toolCall)),
+        "Please fix the arguments.",
+      ].join("\n"),
+    });
+
+    return { ...toolCall, args: JSON.stringify(repairedArgs) };
+  };
 
 /**
  * Main chat agent function that processes messages and returns a streaming response
@@ -54,16 +93,16 @@ export const chatAgent = async (
     mode,
     workingDir = process.cwd(),
     tools = {},
-    onFinish,
+    callbacks,
   }: {
     model: string;
-    messages: CoreMessage[];
+    messages: ModelMessage[];
     mode: "write" | "ask";
     workingDir: string;
     tools?: Record<string, any>;
-    onFinish: (result: any) => {};
+    callbacks: ChatAgentCallbacks;
   },
-  options: { headers?: Record<string, string> } = {}
+  options: { headers?: Record<string, string>; abortSignal?: AbortSignal } = {}
 ) => {
   const [providerName = "openai", modelName = "gpt-4o-mini"] =
     model.split(":::");
@@ -75,7 +114,12 @@ export const chatAgent = async (
   // Clean messages before sending to AI model to remove any toolCall tags
   // that might interfere with model responses or cause confusion
   const cleanedMessages = cleanMessages(messages);
-
+  const {
+    onFinish = null,
+    onChunk = null,
+    onError = null,
+    onStepFinish = null,
+  } = callbacks;
   return streamText({
     ...options,
     system: chatPrompt({
@@ -84,15 +128,70 @@ export const chatAgent = async (
       mode,
       workingDir,
     }),
-    tools: tools,
+    tools: providerName !== "gemini-cli" ? tools : undefined,
     model: aiModel,
-    temperature: 0.5,
-    toolCallStreaming: true,
-    experimental_continueSteps: true,
-    maxSteps: 99,
+    temperature: 0.3,
+    abortSignal: options.abortSignal,
+    experimental_repairToolCall: repairToolCall(aiModel),
+    experimental_transform: smoothStream({
+      delayInMs: 20, // optional: defaults to 10ms
+      chunking: "line", // optional: defaults to 'word'
+    }),
+    // Stop after 5 steps
+    stopWhen: stepCountIs(100),
     messages: cleanedMessages,
     onFinish: (result) => {
-      onFinish(result);
+      if (onFinish) {
+        onFinish(result);
+      }
+    },
+    onChunk: (chunk) => {
+      if (onChunk) {
+        onChunk(chunk);
+      }
+    },
+    onError: (error) => {
+      if (onError) {
+        onError(error);
+      }
+    },
+    onStepFinish: (result) => {
+      if (onStepFinish) {
+        onStepFinish(result);
+      }
     },
   });
+};
+
+/**
+ * Backward-compatible wrapper for chatAgent for use in examples
+ * This provides default values for the new required parameters
+ */
+export const chatAgentSimple = async (
+  {
+    model,
+    messages,
+    mode = "ask",
+    workingDir = process.cwd(),
+    tools = {},
+  }: {
+    model: string;
+    messages: ModelMessage[];
+    mode?: "write" | "ask";
+    workingDir?: string;
+    tools?: Record<string, any>;
+  },
+  options: { headers?: Record<string, string>; abortSignal?: AbortSignal } = {}
+) => {
+  return chatAgent(
+    {
+      model,
+      messages,
+      mode,
+      workingDir,
+      tools,
+      callbacks: {},
+    },
+    options
+  );
 };

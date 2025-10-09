@@ -1,38 +1,36 @@
-import { int, sqliteTable, text, index } from "drizzle-orm/sqlite-core";
-import { chats } from "./chats";
 import { sql } from "drizzle-orm";
+import { index, int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { chats } from "./chats";
 
 /**
- * Represents individual messages in a chat conversation, storing both user queries
- * and LLM responses.
+ * Represents individual messages in a chat conversation using UIMessage format.
+ * This schema is designed to work with AI SDK's UIMessage structure for better
+ * ecosystem compatibility and modern chat applications.
  *
  * @remarks
  * - Each message belongs to a specific chat conversation
  * - Messages are ordered chronologically by creation timestamp
- * - The role field distinguishes between user messages and LLM responses
- * - Messages maintain the complete conversation history for context
+ * - The role field supports user, assistant, and system messages
+ * - Parts array stores the actual message content in UIMessage format
+ * - Metadata field supports additional message context and annotations
  */
 
 export const messages = sqliteTable(
   "messages",
   {
-    /** Unique identifier for the message */
-    id: int().primaryKey({
-      autoIncrement: true,
-    }),
-    /** The actual text content of the message */
-    content: text({ mode: "json" }).notNull(),
+    /** Unique identifier for the message - compatible with UIMessage.id */
+    id: text().primaryKey(),
 
-    /** Optional JSON object containing additional context for the message (can include list of files, commands, etc) */
-    context: text({ mode: "json" }),
+    /** The message parts as JSON - stores UIMessage.parts array */
+    parts: text({ mode: "json" }).notNull(),
 
-    /** Optional JSON object containing additional context for the message (can include list of files, commands, etc) */
-    toolCalls: text({ mode: "json" }),
+    /** Indicates message sender type: 'user', 'assistant', or 'system' */
+    role: text().notNull().$type<"user" | "assistant" | "system">(),
 
-    /** Indicates message sender type: 'user' for user messages or 'assistant' for LLM responses */
-    role: text().notNull(),
+    /** Optional metadata as JSON - stores UIMessage.metadata */
+    metadata: text({ mode: "json" }),
 
-    /** Commit sha */
+    /** Commit sha for tracking code changes */
     commit: text(),
 
     /** Timestamp when this message was created */
@@ -46,11 +44,13 @@ export const messages = sqliteTable(
       .default(sql`CURRENT_TIMESTAMP`),
 
     /** Foreign key reference to the chat this message belongs to */
-    chatId: int()
+    chatId: text()
       .notNull()
       .references(() => chats.id, { onDelete: "cascade" }),
   },
   (table) => ({
     chatIdx: index("idx_messages_chat_id").on(table.chatId),
+    createdAtIdx: index("idx_messages_created_at").on(table.createdAt),
+    roleIdx: index("idx_messages_role").on(table.role),
   })
 );

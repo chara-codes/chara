@@ -1,9 +1,8 @@
-import { existsSync } from "node:fs";
-import ping from "ping";
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { logger } from "@chara-codes/logger";
-import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
+import { existsGlobalConfig, readGlobalConfig, updateGlobalConfig } from "@chara-codes/settings";
 import { bold, cyan, green, yellow } from "picocolors";
+import ping from "ping";
 import type { CommandModule } from "yargs";
 import { ActionFactory } from "../actions";
 import { intro } from "../utils/prompts";
@@ -12,6 +11,7 @@ interface DevCommandArgs {
   projectDir?: string;
   verbose?: boolean;
   trace?: boolean;
+  expTunnel?: boolean;
 }
 
 interface ServerInfo {
@@ -139,6 +139,12 @@ export const devCommand: CommandModule<
         default: false,
         alias: "v",
       })
+      .option("exp-tunnel", {
+        describe: "Enable experiential tunneling",
+        alias: "e",
+        type: "boolean",
+        default: false,
+      })
       .option("trace", {
         describe: "Enable trace logs (includes debug logs)",
         type: "boolean",
@@ -153,7 +159,7 @@ export const devCommand: CommandModule<
       const steps = [
         "Setting up logging",
         "Preparing project directory",
-        "Checking configuration",
+        "Ensuring configuration",
         "Starting backend server",
         "Starting agents server",
         "Setting up web interface",
@@ -182,72 +188,17 @@ export const devCommand: CommandModule<
         projectDir: argv.projectDir,
       });
 
-      // Step 3: Check if global config exists, if not run init
-      showProgress("Checking configuration");
+      // Step 3: Ensure global config exists
+      showProgress("Ensuring configuration");
       const globalConfigExists = await existsGlobalConfig();
       if (!globalConfigExists) {
         if (argv.verbose) {
-          logger.warning(
-            "No global configuration found. Running initialization..."
-          );
+          logger.info("Creating empty global configuration file...");
         }
-        await ActionFactory.execute("init", {
-          verbose: argv.verbose,
-        });
+        await updateGlobalConfig({ env: {} });
       }
 
-      // Step 4: Check if default model exists in global config
-      let globalConfig: any = {};
-      try {
-        globalConfig = await readGlobalConfig();
-        if (!globalConfig.defaultModel) {
-          if (argv.verbose) {
-            logger.warning(
-              "No default model found in global configuration. Setting up default model..."
-            );
-          }
-
-          // We need to start a temporary server to get available models
-          const tempServer = await ActionFactory.execute("start-agents", {
-            verbose: argv.verbose,
-            silent: true,
-            port: 3031,
-          });
-
-          try {
-            await ActionFactory.execute("default-model", {
-              verbose: argv.verbose,
-              serverUrl: "http://localhost:3031",
-            });
-          } finally {
-            // Stop the temporary server
-            await ActionFactory.execute("stop-agents", {
-              verbose: argv.verbose,
-              server: tempServer.server,
-              silent: true,
-            });
-          }
-        }
-      } catch (error) {
-        logger.error("Error reading global configuration:", error);
-        throw error;
-      }
-
-      // Step 5: Check if local/project config exists
-      const localConfigPath = join(projectDir || process.cwd(), ".chara.json");
-      if (!existsSync(localConfigPath)) {
-        if (argv.verbose) {
-          logger.warning(
-            "No local configuration found. Initializing project configuration..."
-          );
-        }
-        await ActionFactory.execute("initialize-config", {
-          verbose: argv.verbose,
-          configFile: ".chara.json",
-        });
-      }
-
-      // Step 6: Start server with appropriate configuration
+      // Step 4: Start server with appropriate configuration
       showProgress("Starting backend server");
       const serverResult = await ActionFactory.execute("start-server", {
         verbose: argv.verbose,
@@ -255,7 +206,7 @@ export const devCommand: CommandModule<
         silent: !argv.verbose,
       });
 
-      // Step 7: Start agents with appropriate configuration
+      // Step 5: Start agents with appropriate configuration
       showProgress("Starting agents server");
       const agentsResult = await ActionFactory.execute("start-agents", {
         verbose: argv.verbose,
@@ -265,7 +216,7 @@ export const devCommand: CommandModule<
         silent: !argv.verbose,
       });
 
-      // Step 8: Start web applications that should connect to server and agents
+      // Step 6: Start web applications that should connect to server and agents
       showProgress("Setting up web interface");
       const pathToRoot = dirname(process.execPath);
       const indexWeb = Bun.file(`${pathToRoot}/web/index.html`);
@@ -287,96 +238,122 @@ export const devCommand: CommandModule<
         silent: true,
       });
 
-      // Step 9: Run widget mode (tunnel server, tunnel client, event listener for the runner)
-      showProgress("Configuring tunnel");
-      const pingControl = await ping.promise.probe("control.localhost");
-      const pingChara = await ping.promise.probe("chara.localhost");
-
+      // Declare tunnel variables for shutdown handler
       let tunnelClient: any = null;
       let tunnel: any = null;
-      let runnerStatus = "inactive";
-      let runnerInfo: any = null;
-      if (pingChara.alive && pingControl.alive) {
-        const { events } = agentsResult.server;
-        tunnel = await ActionFactory.execute("start-tunnel-server", {
-          verbose: argv.verbose,
-          port: 1337,
-          domain: "localhost",
-          controlDomain: "control.localhost",
-          replacements: [
-            {
-              pattern: "</body>",
-              replacement: `<script type="module" src="http://localhost:1237/widget/main.js"></script><chara-codes></chara-codes></body>`,
-            },
-          ],
-          silent: true,
-        });
 
+      if (argv.expTunnel) {
+        // Step 7: Run widget mode (tunnel server, tunnel client, event listener for the runner)
+        showProgress("Configuring tunnel");
+        const pingControl = await ping.promise.probe("control.localhost");
+        const pingChara = await ping.promise.probe("chara.localhost");
+
+
+        let runnerStatus = "inactive";
+        let runnerInfo: any = null;
+        if (pingChara.alive && pingControl.alive) {
+          const { events } = agentsResult.server;
+          tunnel = await ActionFactory.execute("start-tunnel-server", {
+            verbose: argv.verbose,
+            port: 1337,
+            domain: "localhost",
+            controlDomain: "control.localhost",
+            replacements: [
+              {
+                pattern: "</body>",
+                replacement: `<script type="module" src="http://localhost:1237/widget/main.js"></script><chara-codes></chara-codes></body>`,
+              },
+            ],
+            silent: true,
+          });
+
+          events.on(
+            "runner:status",
+            async ({ proccesId, status, serverInfo }) => {
+              runnerStatus = status;
+              runnerInfo = serverInfo;
+
+              if (argv.verbose) {
+                logger.debug(`Runner status: ${status}`);
+              }
+              if (status === "active" && tunnel && !tunnelClient) {
+                tunnelClient = await ActionFactory.execute(
+                  "start-tunnel-client",
+                  {
+                    verbose: argv.verbose,
+                    port: serverInfo.port,
+                    remoteHost: "control.localhost:1337",
+                    subdomain: "chara",
+                    secure: false,
+                    silent: true,
+                  }
+                );
+
+                // Display updated server summary with tunnel client info
+                displayServerSummary({
+                  serverResult,
+                  agentsResult,
+                  serveStatic,
+                  tunnel,
+                  tunnelClient,
+                  projectDir: projectDir || process.cwd(),
+                  runnerStatus,
+                  runnerInfo,
+                  verbose: argv.verbose,
+                });
+              } else {
+                if (tunnelClient) {
+                  await ActionFactory.execute("stop-tunnel-client", {
+                    client: tunnelClient,
+                    force: true,
+                    silent: true,
+                  });
+                  tunnelClient = null;
+                }
+              }
+            }
+          );
+        } else {
+          if (argv.verbose) {
+            logger.warning(
+              "Local tunnel domains not configured. Add to /etc/hosts:"
+            );
+            console.log(bold("127.0.0.1 control.localhost chara.localhost"));
+          }
+          // Display initial server summary
+          displayServerSummary({
+            serverResult,
+            agentsResult,
+            serveStatic,
+            tunnel,
+            tunnelClient,
+            projectDir: projectDir || process.cwd(),
+            runnerStatus,
+            runnerInfo,
+            verbose: argv.verbose,
+          });
+        }
+      } else {
+        // Display initial server summary
+        const { events } = agentsResult.server;
+        let runnerStatus: any;
+        let runnerInfo: any;
         events.on(
           "runner:status",
           async ({ proccesId, status, serverInfo }) => {
             runnerStatus = status;
             runnerInfo = serverInfo;
-
-            if (argv.verbose) {
-              logger.debug(`Runner status: ${status}`);
-            }
-            if (status === "active" && tunnel && !tunnelClient) {
-              tunnelClient = await ActionFactory.execute(
-                "start-tunnel-client",
-                {
-                  verbose: argv.verbose,
-                  port: serverInfo.port,
-                  remoteHost: "control.localhost:1337",
-                  subdomain: "chara",
-                  secure: false,
-                  silent: true,
-                }
-              );
-
-              // Display updated server summary with tunnel client info
-              displayServerSummary({
-                serverResult,
-                agentsResult,
-                serveStatic,
-                tunnel,
-                tunnelClient,
-                projectDir: projectDir || process.cwd(),
-                runnerStatus,
-                runnerInfo,
-                verbose: argv.verbose,
-              });
-            } else {
-              if (tunnelClient) {
-                await ActionFactory.execute("stop-tunnel-client", {
-                  client: tunnelClient,
-                  force: true,
-                  silent: true,
-                });
-                tunnelClient = null;
-              }
-            }
+            displayServerSummary({
+              serverResult,
+              agentsResult,
+              runnerStatus,
+              runnerInfo,
+              serveStatic,
+              projectDir: projectDir || process.cwd(),
+              verbose: argv.verbose,
+            });
           }
         );
-      } else {
-        if (argv.verbose) {
-          logger.warning(
-            "Local tunnel domains not configured. Add to /etc/hosts:"
-          );
-          console.log(bold("127.0.0.1 control.localhost chara.localhost"));
-        }
-        // Display initial server summary
-        displayServerSummary({
-          serverResult,
-          agentsResult,
-          serveStatic,
-          tunnel,
-          tunnelClient,
-          projectDir: projectDir || process.cwd(),
-          runnerStatus,
-          runnerInfo,
-          verbose: argv.verbose,
-        });
       }
 
       // Display initial server summary

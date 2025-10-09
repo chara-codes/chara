@@ -1,5 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { thinking, resetThinkingEngine } from "../thinking";
+import { beforeEach, describe, expect, test } from "bun:test";
+import { resetThinkingEngine, thinking } from "../thinking";
 
 describe("thinking tool", () => {
   beforeEach(() => {
@@ -313,7 +313,7 @@ describe("thinking tool", () => {
     expect(thinking.description).toContain(
       "systematic engineering methodologies"
     );
-    expect(thinking.parameters).toBeDefined();
+    expect(thinking.inputSchema).toBeDefined();
   });
 
   test("should format thoughts with proper structure", async () => {

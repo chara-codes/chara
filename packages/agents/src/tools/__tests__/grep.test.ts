@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { mkdir } from "node:fs/promises";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { grep } from "../grep";
 import { createTestFS } from "./test-utils";
-import { mkdir } from "node:fs/promises";
 
 describe("grep tool", () => {
   const testFS = createTestFS();
@@ -528,7 +528,7 @@ describe("grep tool", () => {
   test("should have correct tool metadata", () => {
     expect(grep.description).toContain("Search for patterns in files");
     expect(grep.description).toContain("grep-like functionality");
-    expect(grep.parameters).toBeDefined();
+    expect(grep.inputSchema).toBeDefined();
   });
 
   test("should handle concurrent searches", async () => {

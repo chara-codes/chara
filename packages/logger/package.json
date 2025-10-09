@@ -1,7 +1,7 @@
 {
   "name": "@chara-codes/logger",
-  "version": "0.1.20",
-  "description": "A flexible and customizable logging utility for Chara applications with advanced variable dumping capabilities",
+  "version": "0.1.27",
+  "description": "A flexible and powerful logging utility for Chara applications built on Pino with beautiful object pretty-printing using @base2/pretty-print-object",
   "keywords": [
     "logger",
     "logging",
@@ -9,6 +9,9 @@
     "debug",
     "console",
     "dump",
+    "pretty-print",
+    "object-formatting",
+    "pino",
     "variable-inspection"
   ],
   "author": "Chara Team",
@@ -27,7 +30,12 @@
     "README.md"
   ],
   "dependencies": {
-    "picocolors": "^1.1.1"
+    "@base2/pretty-print-object": "^1.0.2",
+    "@poppinss/dumper": "^0.6.4",
+    "picocolors": "^1.1.1",
+    "pino": "^9.7.0",
+    "pino-abstract-transport": "^2.0.0",
+    "pino-pretty": "^13.1.1"
   },
   "devDependencies": {
     "typescript": "^5.8.2"

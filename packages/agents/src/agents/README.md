@@ -19,65 +19,7 @@ const result = await chatAgent({
 });
 ```
 
-### Init Agent (`init-agent.ts`)
-Analyzes project structure and generates a `.chara.json` configuration file with project information, development commands, and technology stack details.
 
-**Purpose:**
-- Automatically detect project type and technology stack
-- Generate development server commands
-- Identify frameworks, tools, and dependencies
-- Create standardized project configuration
-
-**Usage:**
-```typescript
-import { initAgent } from './init-agent';
-
-const result = await initAgent({
-  model: "openai:::gpt-4o-mini",
-  workingDir: "/path/to/project" // optional, defaults to process.cwd()
-});
-
-// Stream the response
-for await (const chunk of result.textStream) {
-  process.stdout.write(chunk);
-}
-```
-
-**Generated .chara.json Structure:**
-```json
-{
-  "dev": "command to start development server",
-  "info": {
-    "name": "project name",
-    "description": "project description",
-    "version": "project version",
-    "frameworks": ["react", "nextjs", "vue", "angular"],
-    "tools": ["vite", "webpack", "turbo", "playwright"],
-    "stack": ["typescript", "nodejs", "python"],
-    "packageManager": "npm|yarn|pnpm|bun",
-    "scripts": {"script1": "command1"},
-    "dependencies": ["production dependencies"],
-    "devDependencies": ["development dependencies"],
-    "languages": ["typescript", "javascript"],
-    "projectType": "web|api|library|cli|mobile|desktop|other"
-  }
-}
-```
-
-**Detection Logic:**
-- **Package Manager**: Checks for lock files (bun.lockb, yarn.lock, pnpm-lock.yaml, package-lock.json)
-- **Frameworks**: Analyzes dependencies and config files (next.config.js, vite.config.ts, etc.)
-- **Project Type**: Determines based on dependencies and structure
-- **Dev Command**: Looks for common script names in package.json or suggests framework defaults
-
-**Supported Project Types:**
-- **web**: Frontend applications (React, Vue, Angular, Svelte)
-- **api**: Backend services (Express, Fastify, tRPC servers)
-- **library**: Reusable packages and libraries
-- **cli**: Command-line tools and utilities
-- **mobile**: React Native, Flutter applications
-- **desktop**: Electron, Tauri applications
-- **other**: Projects that don't fit standard categories
 
 ### Beautify Agent (`beautify-agent.ts`)
 Handles code formatting and beautification tasks.

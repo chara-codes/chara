@@ -1,4 +1,4 @@
-import { logger } from "@chara-codes/logger";
+import { logger } from "../utils/logger";
 import { BaseProviderInitializer } from "./base-initializer";
 import { allProviders, providerKeys, type BaseProvider } from "./providers";
 import type { ProviderConfig } from "./types";
@@ -85,7 +85,7 @@ export class ProviderConfigs extends BaseProviderInitializer {
   /**
    * Safe initialization wrapper that handles async operations
    */
-  protected async safeInitialize(
+  protected override async safeInitialize(
     providerName: string,
     initFn: () => Promise<ProviderConfig>
   ): Promise<ProviderConfig | null> {

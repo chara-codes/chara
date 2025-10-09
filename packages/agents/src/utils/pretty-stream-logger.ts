@@ -1,6 +1,5 @@
-import colors from "picocolors";
 import spinners from "cli-spinners";
-import { logger } from "@chara-codes/logger";
+import colors from "picocolors";
 
 export interface StreamChunk {
   type: string;
@@ -62,7 +61,7 @@ export function logStreamChunk(
       case "tool-result":
         handleToolResult(chunk, opts);
         break;
-      case "text-delta":
+      case 'text':
         handleTextDelta(chunk, opts);
         break;
       default:
@@ -189,7 +188,7 @@ function handleStepFinish(chunk: StreamChunk, opts: LoggerOptions): void {
   console.log(statusColor(message));
 
   if (chunk.usage && opts.showToolDetails) {
-    const { promptTokens, completionTokens, totalTokens } = chunk.usage;
+    const { inputTokens, outputTokens, totalTokens } = chunk.usage;
     console.log(
       colors.dim(
         `${opts.indent}📊 Tokens: ${totalTokens} (${promptTokens} + ${completionTokens})`
@@ -517,14 +516,14 @@ export function demoLogger(options: LoggerOptions = {}): void {
       result: '{\n  "name": "demo-project",\n  "version": "1.0.0"\n}',
     },
     {
-      type: "text-delta",
+      type: 'text',
       textDelta:
         "Based on the analysis, this appears to be a Node.js project...",
     },
     {
       type: "step-finish",
       finishReason: "tool-calls",
-      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
     },
   ];
 
@@ -532,7 +531,7 @@ export function demoLogger(options: LoggerOptions = {}): void {
 
   for (const chunk of sampleChunks) {
     logStreamChunk(chunk, options);
-    if (chunk.type !== "text-delta") {
+    if (chunk.type !== 'text') {
       console.log(); // Add spacing between non-text chunks
     }
   }

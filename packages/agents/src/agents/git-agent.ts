@@ -1,4 +1,4 @@
-import { type CoreMessage, generateText } from "ai";
+import { type ModelMessage, generateText } from "ai";
 import { providersRegistry } from "../providers";
 
 export const gitAgent = async (
@@ -7,7 +7,7 @@ export const gitAgent = async (
     messages,
   }: {
     model: string;
-    messages: CoreMessage[];
+    messages: ModelMessage[];
   },
   options: { headers?: Record<string, string> } = {},
 ) => {

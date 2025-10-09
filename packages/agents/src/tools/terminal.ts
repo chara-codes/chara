@@ -25,7 +25,7 @@ export const terminal = tool({
 
   This tool has a configurable timeout (default 1 minute, maximum 10 minutes) and is designed only for quick, finite operations like building, testing, installing packages, or running one-time scripts.
   Each time this tool is used, it starts a new shell process—no previous state is preserved between runs.`,
-  parameters: z.object({
+  inputSchema: z.object({
     command: z.string().describe("The one-liner command to execute"),
     cd: z
       .string()

@@ -52,7 +52,7 @@ export const devServer = tool({
 
   This is essential for: debugging server responses, checking if servers are responding correctly,
   discovering what processes are running, getting real-time logs, and preventing server conflicts.`,
-  parameters: z.object({
+  inputSchema: z.object({
     processId: z
       .string()
       .optional()

@@ -1,10 +1,10 @@
-import { logger } from "@chara-codes/logger";
 import {
-  fetchModels,
   fetchAllModels,
+  fetchModels,
   getAvailableProviders,
   hasProvider,
 } from "../src/providers";
+import { logger } from "../src/utils/logger";
 
 /**
  * Demonstrates model fetching capabilities
@@ -67,10 +67,10 @@ async function demonstrateModelFetching() {
     // 4. Show some interesting statistics
     const totalModels = Object.values(allModels).reduce(
       (sum, models) => sum + models.length,
-      0,
+      0
     );
     const providersWithModels = Object.entries(allModels).filter(
-      ([_, models]) => models.length > 0,
+      ([_, models]) => models.length > 0
     ).length;
 
     logger.info("📊 Statistics:", {
@@ -78,7 +78,7 @@ async function demonstrateModelFetching() {
       providersWithModels,
       totalModels,
       averageModelsPerProvider: Math.round(
-        totalModels / Object.keys(allModels).length,
+        totalModels / Object.keys(allModels).length
       ),
     });
   } catch (error) {
@@ -96,7 +96,7 @@ async function demonstrateModelFetching() {
     const gptModels = Object.entries(allModels).flatMap(([provider, models]) =>
       models
         .filter((m) => m.id.toLowerCase().includes("gpt"))
-        .map((m) => ({ provider, model: m.id })),
+        .map((m) => ({ provider, model: m.id }))
     );
 
     if (gptModels.length > 0) {
@@ -110,7 +110,7 @@ async function demonstrateModelFetching() {
       ([provider, models]) =>
         models
           .filter((m) => m.id.toLowerCase().includes("claude"))
-          .map((m) => ({ provider, model: m.id })),
+          .map((m) => ({ provider, model: m.id }))
     );
 
     if (claudeModels.length > 0) {
@@ -126,9 +126,9 @@ async function demonstrateModelFetching() {
           .filter(
             (m) =>
               m.id.toLowerCase().includes("latest") ||
-              m.id.toLowerCase().includes("new"),
+              m.id.toLowerCase().includes("new")
           )
-          .map((m) => ({ provider, model: m.id })),
+          .map((m) => ({ provider, model: m.id }))
     );
 
     if (latestModels.length > 0) {
@@ -162,7 +162,7 @@ async function demonstrateErrorHandling() {
   // Try to fetch models from a provider that doesn't support it
   const availableProviders = getAvailableProviders();
   const providerWithoutFetching = availableProviders.find(
-    (p) => !p.fetchModels,
+    (p) => !p.fetchModels
   );
 
   if (providerWithoutFetching) {
@@ -174,7 +174,7 @@ async function demonstrateErrorHandling() {
         `Correctly caught error for ${providerWithoutFetching.name} (no model fetching support):`,
         {
           error: error instanceof Error ? error.message : "Unknown error",
-        },
+        }
       );
     }
   }

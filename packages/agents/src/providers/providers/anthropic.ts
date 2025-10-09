@@ -1,6 +1,6 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
-import type { LanguageModelV1 } from "@ai-sdk/provider";
-import { logger } from "@chara-codes/logger";
+import type { LanguageModelV2 } from "@ai-sdk/provider";
+import { logger } from "../../utils/logger";
 import { ModelFetcher } from "../model-fetcher";
 import type { ModelInfo } from "../types";
 import { AbstractProvider, getEnvVar, validateApiKey } from "./base-provider";
@@ -33,7 +33,7 @@ export class AnthropicProvider extends AbstractProvider {
   /**
    * Create Anthropic provider factory
    */
-  public async createProvider(): Promise<(modelId: string) => LanguageModelV1> {
+  public async createProvider(): Promise<(modelId: string) => LanguageModelV2> {
     const apiKey = await getEnvVar(this.apiKeyEnvVar!);
 
     if (!apiKey) {

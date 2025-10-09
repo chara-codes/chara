@@ -1,10 +1,10 @@
-import styled, { ThemeProvider } from "styled-components";
+import styled from "styled-components";
 import {
   ChatInterface,
   PreviewType,
   type Theme,
-  theme,
   PreviewPanel,
+  AppThemeProvider,
 } from "@chara-codes/design-system";
 import {
   UIStoreProvider,
@@ -158,7 +158,7 @@ export const CharaWeb = () => {
       <TrpcProvider>
         <TechStacksProvider>
           <UIStoreProvider>
-            <ThemeProvider theme={theme}>
+            <AppThemeProvider>
               <WorkspaceContainer>
                 {/* Chat Panel */}
                 <ChatColumn $width={chatWidth}>
@@ -185,7 +185,7 @@ export const CharaWeb = () => {
 
                 <Toaster />
               </WorkspaceContainer>
-            </ThemeProvider>
+            </AppThemeProvider>
           </UIStoreProvider>
         </TechStacksProvider>
       </TrpcProvider>

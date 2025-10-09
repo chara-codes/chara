@@ -1,8 +1,12 @@
-import type { LanguageModelV1 } from "@ai-sdk/provider";
 import { createOpenAI } from "@ai-sdk/openai";
-import { logger } from "@chara-codes/logger";
+import type { LanguageModelV2 } from 'ai';
+import { logger } from "../../utils/logger";
+import {
+  AbstractProvider,
+  getEnvVar,
+  validateApiKey,
+} from "../providers/base-provider";
 import type { ModelInfo } from "../types";
-import { AbstractProvider, getEnvVar, validateApiKey } from "../providers/base-provider";
 
 /**
  * Example custom provider implementation
@@ -30,7 +34,8 @@ export class CustomProvider extends AbstractProvider {
     }
 
     // Additional custom validation logic can go here
-    const baseUrl = await getEnvVar(this.baseUrlEnvVar!) || this.defaultBaseUrl;
+    const baseUrl =
+      (await getEnvVar(this.baseUrlEnvVar!)) || this.defaultBaseUrl;
 
     // Custom validation: check if base URL is reachable (simplified example)
     try {
@@ -48,7 +53,8 @@ export class CustomProvider extends AbstractProvider {
    */
   public async createProvider(): Promise<(modelId: string) => LanguageModelV1> {
     const apiKey = await getEnvVar(this.apiKeyEnvVar!);
-    const baseUrl = await getEnvVar(this.baseUrlEnvVar!) || this.defaultBaseUrl;
+    const baseUrl =
+      (await getEnvVar(this.baseUrlEnvVar!)) || this.defaultBaseUrl;
 
     if (!apiKey) {
       throw new Error(`${this.name} API key is required but not provided`);
@@ -73,7 +79,8 @@ export class CustomProvider extends AbstractProvider {
    */
   public async fetchModels(): Promise<ModelInfo[]> {
     const apiKey = await getEnvVar(this.apiKeyEnvVar!);
-    const baseUrl = await getEnvVar(this.baseUrlEnvVar!) || this.defaultBaseUrl;
+    const baseUrl =
+      (await getEnvVar(this.baseUrlEnvVar!)) || this.defaultBaseUrl;
 
     if (!apiKey || !baseUrl) {
       throw new Error(`${this.name} configuration is incomplete`);
@@ -83,8 +90,8 @@ export class CustomProvider extends AbstractProvider {
       // Example API call to fetch models
       const response = await fetch(`${baseUrl}/models`, {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
         },
       });
 
@@ -95,14 +102,16 @@ export class CustomProvider extends AbstractProvider {
       const data = await response.json();
 
       // Transform response to ModelInfo format
-      return data.models?.map((model: any) => ({
-        id: model.id,
-        name: model.name || model.id,
-        description: model.description,
-        contextLength: model.context_length,
-        created: model.created,
-        ownedBy: model.owned_by,
-      })) || [];
+      return (
+        data.models?.map((model: any) => ({
+          id: model.id,
+          name: model.name || model.id,
+          description: model.description,
+          contextLength: model.context_length,
+          created: model.created,
+          ownedBy: model.owned_by,
+        })) || []
+      );
     } catch (error) {
       logger.error(`Failed to fetch models from ${this.name}:`, error);
       // Return empty array as fallback
@@ -116,7 +125,8 @@ export class CustomProvider extends AbstractProvider {
   public async healthCheck(): Promise<boolean> {
     try {
       const apiKey = await getEnvVar(this.apiKeyEnvVar!);
-      const baseUrl = await getEnvVar(this.baseUrlEnvVar!) || this.defaultBaseUrl;
+      const baseUrl =
+        (await getEnvVar(this.baseUrlEnvVar!)) || this.defaultBaseUrl;
 
       if (!apiKey || !baseUrl) {
         return false;
@@ -141,7 +151,7 @@ export class CustomProvider extends AbstractProvider {
       return false;
     }
 
-    if (config.baseUrl && !config.baseUrl.startsWith('https://')) {
+    if (config.baseUrl && !config.baseUrl.startsWith("https://")) {
       logger.warning(`${this.name} base URL should use HTTPS`);
     }
 

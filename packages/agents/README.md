@@ -76,7 +76,7 @@ for await (const chunk of response.fullStream) {
 ```typescript
 import { startServer } from '@chara-codes/agents';
 
-// Server reads .chara.json for MCP, runner, and other configurations
+// Server reads .mcp.json for MCP configuration and auto-detects dev commands
 const server = await startServer({
   port: 3031,
   websocket: { enabled: true },
@@ -285,13 +285,13 @@ appEvents.emit('runner:restart', {
 
 ## Model Context Protocol (MCP)
 
-Integration with external MCP servers for extended functionality is configured via your project's `.chara.json` file.
+Integration with external MCP servers for extended functionality is configured via your project's `.mcp.json` file.
 
 ### MCP Configuration
 
-Add an `mcpServers` object to your `.chara.json` file. The server will automatically detect and connect to the configured servers upon start.
+Add an `mcpServers` object to your `.mcp.json` file. The server will automatically detect and connect to the configured servers upon start.
 
-**Example `.chara.json` with MCP servers:**
+**Example `.mcp.json` with MCP servers:**
 ```json
 {
   "dev": "npm run dev",
@@ -371,17 +371,7 @@ const response = await beautifyAgent({
 });
 ```
 
-### Initialization Agent
 
-Project setup and configuration:
-
-```typescript
-import { initAgent } from '@chara-codes/agents';
-
-const response = await initAgent({
-  model: 'openai:::gpt-4o'
-});
-```
 
 ## WebSocket Integration
 
@@ -428,7 +418,7 @@ The server provides RESTful endpoints:
 
 ## Configuration
 
-### Project Configuration (.chara.json)
+### Project Configuration (.mcp.json)
 
 ```json
 {

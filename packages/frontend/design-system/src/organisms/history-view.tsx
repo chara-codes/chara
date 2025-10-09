@@ -12,7 +12,8 @@ const HistoryContainer = styled.div`
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background-color: #f9fafb;
+  background-color: ${props => props.theme.colors.background};
+  transition: background-color ${props => props.theme.transitions.theme};
 `;
 
 const HistoryContent = styled.div`

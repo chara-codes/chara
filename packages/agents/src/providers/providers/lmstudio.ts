@@ -1,6 +1,6 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { LanguageModelV1 } from "@ai-sdk/provider";
-import { logger } from "@chara-codes/logger";
+import type { LanguageModelV2 } from "@ai-sdk/provider";
+import { logger } from "../../utils/logger";
 import { ModelFetcher } from "../model-fetcher";
 import type { ModelInfo } from "../types";
 import { AbstractProvider, getEnvVar, validateUrl } from "./base-provider";
@@ -33,7 +33,7 @@ export class LMStudioProvider extends AbstractProvider {
   /**
    * Create LMStudio provider factory
    */
-  public async createProvider(): Promise<(modelId: string) => LanguageModelV1> {
+  public async createProvider(): Promise<(modelId: string) => LanguageModelV2> {
     const baseUrl =
       (await getEnvVar(this.baseUrlEnvVar!)) || this.defaultBaseUrl;
 

@@ -48,7 +48,7 @@ export async function resetAction(
       `${bold(green("✅ Configuration reset!"))}
 
 All environment variables have been cleared.
-Run ${cyan("chara init")} to set up your providers again.`,
+Configure providers via the web interface.`,
     );
   } catch (error) {
     s.stop("Failed to reset configuration");

@@ -425,7 +425,7 @@ export const directory = tool({
 - Analyzing file distribution
 - Quick directory overview with file counts and sizes`,
 
-  parameters: z.object({
+  inputSchema: z.object({
     action: z.string().describe("Operation to perform: 'list' or 'tree'"),
 
     path: z

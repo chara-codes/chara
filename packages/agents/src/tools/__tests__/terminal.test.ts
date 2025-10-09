@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { terminal } from "../terminal";
 import { createTestFS } from "./test-utils";
 
@@ -312,7 +312,7 @@ describe("terminal tool", () => {
     );
     expect(terminal.description).toContain("Development servers");
     expect(terminal.description).toContain("configurable timeout");
-    expect(terminal.parameters).toBeDefined();
+    expect(terminal.inputSchema).toBeDefined();
   });
 
   test("should prevent long-running commands", async () => {

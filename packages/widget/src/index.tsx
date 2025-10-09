@@ -1,5 +1,4 @@
-import { ThemeProvider } from "styled-components";
-import { ChatOverlayPanel, theme } from "@chara-codes/design-system";
+import { ChatOverlayPanel, AppThemeProvider } from "@chara-codes/design-system";
 import {
   UIStoreProvider,
   useUIStore,
@@ -31,13 +30,13 @@ export const CharaWidgetPanel = (config: CharaWidgetConfig) => {
       <TrpcProvider>
         <TechStacksProvider>
           <UIStoreProvider>
-            <ThemeProvider theme={theme}>
+            <AppThemeProvider>
               <ChatOverlayPanel
                 defaultOpen={config?.defaultOpen}
                 position={config?.position || "right"}
               />
               <Toaster />
-            </ThemeProvider>
+            </AppThemeProvider>
           </UIStoreProvider>
         </TechStacksProvider>
       </TrpcProvider>

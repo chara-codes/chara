@@ -1,4 +1,3 @@
-import { logger } from "@chara-codes/logger";
 import {
   experimental_createMCPClient,
   type MCPClient,
@@ -6,6 +5,7 @@ import {
 } from "ai";
 import { Experimental_StdioMCPTransport } from "ai/mcp-stdio";
 import { z } from "zod";
+import { logger } from "../utils/logger";
 
 // Schema for command-based (stdio) server configuration
 const commandServerSchema = z.object({

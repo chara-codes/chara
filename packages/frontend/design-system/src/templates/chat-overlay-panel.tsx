@@ -198,7 +198,7 @@ export const ChatOverlayPanel: React.FC<ChatOverlayPanelProps> = ({
     if (!isConnected && !isConnecting) {
       connect().catch(console.error);
     }
-  }, [isConnected, isConnecting]);
+  }, [isConnected, isConnecting, connect]);
 
   useEffect(() => {
     if (defaultOpen) {

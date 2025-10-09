@@ -8,7 +8,13 @@ export * from "./recent-history";
 // Views
 export * from "./add-edit-tech-stack-view";
 export * from "./conversation-view";
+export * from "./server-connection-view";
 export * from "./settings-view";
 export * from "./tech-stack-detail-view";
 export * from "./tech-stacks-view";
 export * from "./terminal-view";
+export { default as ServerConnectionView } from "./server-connection-view";
+export { default as ProviderManagement } from "./provider-management";
+
+// Element Selector Components
+export * from "./element-selector-widget";

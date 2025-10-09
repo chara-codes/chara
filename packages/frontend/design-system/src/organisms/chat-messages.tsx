@@ -1,15 +1,193 @@
 "use client";
 
-import React from "react";
+import type { UIMessage } from "ai";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
-import MessageBubble from "../molecules/message-bubble";
-import type { Message } from "@chara-codes/core";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollDownIcon } from "../atoms/icons";
+import MessageBubble from "../molecules/message-bubble";
 
-// Update the ChatMessagesProps interface to include handlers for the new buttons
+// Helper function to ensure message has proper parts structure
+const ensureMessageParts = (message: UIMessage): UIMessage => {
+  if (message.parts && Array.isArray(message.parts)) {
+    return {
+      ...message,
+      parts: message.parts,
+    };
+  }
+
+  // If message has content property (legacy format), convert to parts
+  if ((message as any).content) {
+    const content = (message as any).content;
+    const parts: any[] = [];
+
+    if (typeof content === "string") {
+      parts.push({
+        type: "text",
+        text: content,
+      });
+    } else if (Array.isArray(content)) {
+      // Handle array content (legacy MessageContent format)
+      content.forEach((item: any) => {
+        if (typeof item === "string") {
+          parts.push({
+            type: "text",
+            text: item,
+          });
+        } else if (item.type === "text") {
+          parts.push({
+            type: "text",
+            text: item.text || "",
+          });
+        }
+      });
+    }
+
+    return {
+      ...message,
+      parts,
+    };
+  }
+
+  // Fallback: return message with empty parts
+  return {
+    ...message,
+    parts: [],
+  };
+};
+
+// Helper function to extract text content from UIMessage parts
+// For multi-part messages, only extract text from actual text parts
+const getMessageContent = (message: UIMessage): string => {
+  const ensuredMessage = ensureMessageParts(message);
+  return ensuredMessage.parts
+    .filter((part) => part.type === "text")
+    .map((part) => part.text || "")
+    .join("");
+};
+
+// Helper function to extract context items from parts
+// Only extract non-text parts as context items
+const getContextItems = (message: UIMessage): any[] => {
+  const ensuredMessage = ensureMessageParts(message);
+  return ensuredMessage.parts
+    .filter(
+      (part) =>
+        part.type !== "text" &&
+        part.type !== "reasoning" &&
+        !part.type?.startsWith("tool-") &&
+        part.type !== "tool-call" &&
+        part.type !== "tool-result" &&
+        !(part as any).toolCallId
+    )
+    .map((part) => {
+      if (part.type === "source-url") {
+        return {
+          id: part.sourceId || Math.random().toString(),
+          name: part.title || part.url || "Unknown",
+          type: part.type,
+          url: part.url,
+          content: (part as any).content,
+          data: part,
+        };
+      } else if (part.type === "source-document") {
+        return {
+          id: part.sourceId || Math.random().toString(),
+          name: part.title || part.filename || "Unknown",
+          type: part.type,
+          mediaType: part.mediaType,
+          content: (part as any).content,
+          data: part,
+        };
+      } else if (part.type === "file") {
+        return {
+          id: Math.random().toString(),
+          name: part.filename || "Unknown",
+          type: part.type,
+          url: part.url,
+          mediaType: part.mediaType,
+          content: part.url, // Use url as content for compatibility
+          data: part,
+        };
+      } else if (part.type?.startsWith("data-")) {
+        return {
+          id: Math.random().toString(),
+          name: (part as any).data?.filename || "Unknown",
+          type: "data",
+          mediaType: (part as any).data?.mimeType,
+          content: (part as any).data?.content,
+          data: part,
+        };
+      }
+      return {
+        id: Math.random().toString(),
+        name: "Unknown",
+        type: "unknown",
+        data: part,
+      };
+    })
+    .filter((item) => item !== null);
+};
+
+// Helper function to extract tool calls from parts
+const getToolCalls = (message: UIMessage): Record<string, any> => {
+  const toolCalls: Record<string, any> = {};
+  const ensuredMessage = ensureMessageParts(message);
+
+  ensuredMessage.parts.forEach((part: any) => {
+    if (part.toolCallId) {
+      if (!toolCalls[part.toolCallId]) {
+        toolCalls[part.toolCallId] = {
+          id: part.toolCallId,
+          name: "",
+          arguments: {},
+          status: "pending",
+          result: undefined,
+        };
+      }
+
+      if (part.type?.includes("call") || part.input) {
+        toolCalls[part.toolCallId] = {
+          ...toolCalls[part.toolCallId],
+          name: part.toolName || toolCalls[part.toolCallId].name,
+          arguments: part.input || {},
+          status: part.state || "pending",
+        };
+      }
+
+      if (part.type?.includes("result") || part.output !== undefined) {
+        toolCalls[part.toolCallId] = {
+          ...toolCalls[part.toolCallId],
+          result: part.output,
+          status: part.state || "success",
+        };
+      }
+    }
+  });
+
+  return toolCalls;
+};
+
+// Helper function to extract thinking content from reasoning parts
+const getThinkingContent = (message: UIMessage): string | undefined => {
+  const ensuredMessage = ensureMessageParts(message);
+  const reasoningParts = ensuredMessage.parts.filter(
+    (part) => part.type === "reasoning"
+  );
+  const content = reasoningParts.map((part) => part.text).join("\n");
+  return content || undefined;
+};
+
+// Helper function to check if message is currently thinking
+const isMessageThinking = (message: UIMessage): boolean => {
+  const ensuredMessage = ensureMessageParts(message);
+  return ensuredMessage.parts.some(
+    (part) => part.type === "reasoning" && part.state === "streaming"
+  );
+};
+
+// ChatMessagesProps interface
 interface ChatMessagesProps {
-  messages: Message[];
+  messages: UIMessage[];
   isResponding?: boolean;
   onDeleteMessage?: (messageId: string) => void;
 }
@@ -34,22 +212,22 @@ const ScrollToBottomButton = styled.button`
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(107, 114, 128, 0.1);
-  color: white;
+  background: ${props => props.theme.colors.primary};
+  color: ${props => props.theme.colors.background};
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: ${props => props.theme.shadows.md};
   backdrop-filter: blur(8px);
-  transition: all 0.2s ease;
+  transition: all ${props => props.theme.transitions.normal} ease;
   z-index: 10;
 
   &:hover {
-    background: rgba(75, 85, 99, 0.9);
+    background: ${props => props.theme.colors.primaryHover};
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: ${props => props.theme.shadows.lg};
   }
 
   &:active {
@@ -58,7 +236,7 @@ const ScrollToBottomButton = styled.button`
 
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.3);
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.primaryLight};
   }
 
   svg {
@@ -76,9 +254,10 @@ const EmptyState = styled.div`
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   text-align: center;
   padding: 0 24px;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const EmptyStateTitle = styled.h3`
@@ -95,6 +274,7 @@ const EmptyStateText = styled.p`
 // Update the ChatMessages component to pass the handlers to MessageBubble
 const ChatMessages: React.FC<ChatMessagesProps> = ({
   messages,
+  isResponding = false,
   onDeleteMessage,
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -107,7 +287,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
     if (!messagesContainerRef.current) return true;
     const { scrollTop, scrollHeight, clientHeight } =
       messagesContainerRef.current;
-    return scrollTop + clientHeight >= scrollHeight - 150;
+    return scrollTop + clientHeight >= scrollHeight - 300;
   }, []);
 
   // Scroll to bottom
@@ -139,7 +319,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
   }, [isNearBottom]);
 
   // Auto-scroll when new messages arrive or when responding (but not if user scrolled up)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scrollToBottom is stable
   useEffect(() => {
     if (shouldAutoScroll && !userScrolledUp) {
       scrollToBottom();
@@ -169,18 +349,31 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
   return (
     <Container>
       <MessagesContainer ref={messagesContainerRef}>
-        {messages.map((message) => (
+        {messages.map((message, index) => (
           <MessageBubble
             key={message.id}
             id={message.id}
-            content={message.content}
-            isUser={message.isUser}
-            timestamp={message.timestamp}
-            thinkingContent={message.thinkingContent}
-            isThinking={message.isThinking}
-            contextItems={message.contextItems}
-            toolCalls={message.toolCalls}
+            content={getMessageContent(message)}
+            isUser={message.role === "user"}
+            timestamp={
+              message.metadata &&
+              typeof message.metadata === "object" &&
+              "timestamp" in message.metadata &&
+              typeof message.metadata.timestamp === "number"
+                ? new Date(message.metadata.timestamp).toLocaleString()
+                : undefined
+            }
+            thinkingContent={getThinkingContent(message)}
+            isThinking={isMessageThinking(message)}
+            contextItems={getContextItems(message)}
+            toolCalls={getToolCalls(message)}
             onDeleteMessage={onDeleteMessage}
+            isGenerating={
+              isResponding &&
+              index === messages.length - 1 &&
+              message.role !== "user"
+            }
+            parts={ensureMessageParts(message).parts}
           />
         ))}
       </MessagesContainer>

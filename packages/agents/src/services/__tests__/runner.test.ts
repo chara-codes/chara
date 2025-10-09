@@ -323,6 +323,10 @@ describe("RunnerService", () => {
         { command: "vite --port 3000", expectedName: "vite-dev-server" },
         { command: "nodemon app.js", expectedName: "nodemon-server" },
         { command: "npx serve dist", expectedName: "serve-static-server" },
+        {
+          command: "npx live-server --no-browser .",
+          expectedName: "live-server",
+        },
         { command: "unknown-command", expectedName: "unknown-process" },
       ];
 

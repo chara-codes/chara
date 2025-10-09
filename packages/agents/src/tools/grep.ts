@@ -421,7 +421,7 @@ async function searchFiles(
 export const grep = tool({
   description:
     "Search for patterns in files using grep-like functionality with globby for file matching. Automatically respects .gitignore files and ignores common build/cache directories (.chara/, .git/, node_modules/, etc.). Supports regex patterns, context lines, and various filtering options.",
-  parameters: z.object({
+  inputSchema: z.object({
     pattern: z
       .string()
       .describe("Pattern to search for (supports regular expressions)"),

@@ -3,6 +3,7 @@
 # Logs
 .idea
 logs
+*.log
 dial/
 _.log
 npm-debug.log_

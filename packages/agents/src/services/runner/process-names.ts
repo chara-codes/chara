@@ -38,6 +38,9 @@ export function generateProcessName(command: string, args: string[]): string {
   if (fullCommand.includes("npx serve")) {
     return "serve-static-server";
   }
+  if (fullCommand.includes("live-server")) {
+    return "live-server";
+  }
 
   // Docker containers
   if (command === "docker" && args.includes("run")) {

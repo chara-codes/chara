@@ -95,10 +95,11 @@ export interface Theme {
     fast: string;
     normal: string;
     slow: string;
+    theme: string;
   };
 }
 
-export const theme: Theme = {
+export const lightTheme: Theme = {
   colors: {
     primary: "#2563eb",
     primaryLight: "rgba(59, 130, 246, 0.2)",
@@ -194,7 +195,110 @@ export const theme: Theme = {
     fast: "150ms",
     normal: "300ms",
     slow: "500ms",
+    theme: "300ms ease-in-out",
   },
 };
 
+export const darkTheme: Theme = {
+  colors: {
+    primary: "#3b82f6",
+    primaryLight: "rgba(59, 130, 246, 0.3)",
+    primaryHover: "#60a5fa",
+    primaryActive: "#2563eb",
+    secondary: "#9ca3af",
+    secondaryHover: "#d1d5db",
+    secondaryActive: "#e5e7eb",
+    background: "#1a1a1a",
+    backgroundSecondary: "#2a2a2a",
+    text: "#e5e5e5",
+    textSecondary: "#a0a0a0",
+    border: "#404040",
+    borderHover: "#505050",
+    error: "#ef4444",
+    errorHover: "#f87171",
+    errorLight: "rgba(239, 68, 68, 0.3)",
+    success: "#22c55e",
+    warning: "#f59e0b",
+    info: "#3b82f6",
+    highlight: "#333333",
+    sourceBadge: {
+      unified: {
+        background: "#4c1d95",
+        text: "#e0e7ff",
+      },
+      native: {
+        background: "#1e3a8a",
+        text: "#dbeafe",
+      },
+      local: {
+        background: "#14532d",
+        text: "#dcfce7",
+      },
+    },
+  },
+  spacing: {
+    xs: "4px",
+    sm: "8px",
+    md: "16px",
+    lg: "24px",
+    xl: "32px",
+  },
+  borderRadius: {
+    sm: "4px",
+    md: "6px",
+    lg: "8px",
+    full: "9999px",
+  },
+  shadows: {
+    sm: "0 1px 2px 0 rgba(0, 0, 0, 0.3)",
+    md: "0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3)",
+    lg: "0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4)",
+    focus: "0 0 0 2px",
+  },
+  typography: {
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif',
+    fontSize: {
+      xs: "12px",
+      sm: "14px",
+      md: "16px",
+      lg: "18px",
+      xl: "20px",
+    },
+    fontWeight: {
+      regular: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700,
+    },
+    lineHeight: {
+      tight: 1.25,
+      normal: 1.5,
+      relaxed: 1.75,
+    },
+  },
+  zIndices: {
+    base: 1,
+    dropdown: 10,
+    modal: 100,
+    tooltip: 200,
+    widget: 1000,
+  },
+  breakpoints: {
+    xs: "480px",
+    sm: "640px",
+    md: "768px",
+    lg: "1024px",
+    xl: "1280px",
+  },
+  transitions: {
+    fast: "150ms",
+    normal: "300ms",
+    slow: "500ms",
+    theme: "300ms ease-in-out",
+  },
+};
+
+// Default export for backward compatibility
+export const theme = lightTheme;
 export default theme;

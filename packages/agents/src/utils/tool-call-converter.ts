@@ -20,7 +20,7 @@ export interface ToolResult {
 export interface Step {
   stepType: string;
   text?: string;
-  reasoningDetails?: any[];
+  reasoning?: any[];
   files?: any[];
   sources?: any[];
   toolCalls?: ToolCall[];
@@ -30,7 +30,7 @@ export interface Step {
   warnings?: any;
   request?: any;
   response?: any;
-  providerMetadata?: any;
+  providerOptions?: any;
   experimental_providerMetadata?: any;
   isContinued?: boolean;
 }
@@ -39,7 +39,7 @@ export interface InputData {
   finishReason?: string;
   usage?: any;
   text?: string;
-  reasoningDetails?: any[];
+  reasoning?: any[];
   files?: any[];
   sources?: any[];
   toolCalls?: ToolCall[];
@@ -47,7 +47,7 @@ export interface InputData {
   request?: any;
   response?: any;
   warnings?: any;
-  providerMetadata?: any;
+  providerOptions?: any;
   experimental_providerMetadata?: any;
   steps?: Step[];
 }

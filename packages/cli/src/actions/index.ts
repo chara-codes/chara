@@ -1,4 +1,4 @@
-export { defaultModelAction } from "./default-model";
+
 export { startAgentsAction, stopAgentsAction } from "./start-agents";
 export { startServerAction } from "./start-server";
 export { stopServerAction } from "./stop-server";
@@ -14,7 +14,6 @@ export {
 export { setupLoggingAction } from "./setup-logging";
 export { setupProjectAction } from "./setup-project";
 export { loadConfigAction } from "./load-config";
-export { initializeConfigAction } from "./initialize-config";
 export {
   compose,
   createAction,
@@ -22,7 +21,7 @@ export {
   withLogging,
   withValidation,
 } from "./factory";
-export { initAction } from "./init";
+
 export { ActionFactory, registerActions } from "./registry";
 export { resetAction } from "./reset";
 export { showAction } from "./show";
@@ -32,7 +31,6 @@ export type {
   ActionOptions,
   ActionResult,
   BaseAction,
-  DefaultModelActionOptions,
   StartAgentsActionOptions,
   StopAgentsActionOptions,
   StartServerActionOptions,
@@ -40,8 +38,6 @@ export type {
   SetupLoggingActionOptions,
   SetupProjectActionOptions,
   LoadConfigActionOptions,
-  InitializeConfigActionOptions,
-  InitActionOptions,
   ResetActionOptions,
   ServeStaticActionOptions,
   ShowActionOptions,

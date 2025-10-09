@@ -20,7 +20,7 @@ services:
       - "--metrics.prometheus=true"
       - "--tracing=true"
     depends_on:
-      - charatunnel
+      # - charatunnel
       - charalanding
       # - charaweb
     ports:
@@ -52,19 +52,19 @@ services:
       - "traefik.http.routers.landing.tls=true"
       - "traefik.http.services.landing.loadbalancer.server.port=3000"
 
-  charatunnel:
-    build:
-      context: .
-      dockerfile: Dockerfile.tunnel
-    restart: unless-stopped
-    container_name: charatunnel
-    volumes:
-      - ./config.json:/config.json
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.charatunnel.entrypoints=websecure"
-      - "traefik.http.routers.charatunnel.rule=HostRegexp(`{subdomain:chara-[a-z0-9-]+}.chara-ai.dev`) || Host(`tunnel.chara-ai.dev`)"
-      - "traefik.http.routers.charatunnel.tls=true"
-      - "traefik.http.routers.charatunnel.priority=200"
-      - "traefik.http.middlewares.test-compress.compress=true"
-      - "traefik.http.services.charatunnel.loadbalancer.server.port=1337"
+  # charatunnel:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.tunnel
+  #   restart: unless-stopped
+  #   container_name: charatunnel
+  #   volumes:
+  #     - ./config.json:/config.json
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.charatunnel.entrypoints=websecure"
+  #     - "traefik.http.routers.charatunnel.rule=HostRegexp(`{subdomain:chara-[a-z0-9-]+}.chara-ai.dev`) || Host(`tunnel.chara-ai.dev`)"
+  #     - "traefik.http.routers.charatunnel.tls=true"
+  #     - "traefik.http.routers.charatunnel.priority=200"
+  #     - "traefik.http.middlewares.test-compress.compress=true"
+  #     - "traefik.http.services.charatunnel.loadbalancer.server.port=1337"

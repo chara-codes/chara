@@ -1,26 +1,26 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import type { ToolCall } from "@chara-codes/core";
+import { useCallback, useState } from "react";
 import type React from "react";
-import { getToolIcon } from "../../atoms/icons";
-import {
-  ToolCallsContainer,
-  ToolCallName,
-  ToolCallStatus,
-  ToolCallArguments,
-  ToolCallArgumentsLabel,
-  ToolCallArgumentsContent,
-  ToolCallResult,
-  ToolCallResultLabel,
-  ToolCallResultContent,
-  ToolCallItemHeader,
-  ToolCallToggle,
-} from "./styles";
 import { ExpandableChevronIcon } from "../../atoms/icons/expandable-chevron-icon";
+import { getToolIcon } from "../../atoms/icons/tool-icon-mapper";
 // Import specialized tool components for enhanced display
 import { TerminalToolBlock } from "../tools";
 import { DiffBlock } from "../tools/diff-block";
-import type { ToolCall } from "@chara-codes/core";
+import {
+  ToolCallArguments,
+  ToolCallArgumentsContent,
+  ToolCallArgumentsLabel,
+  ToolCallItemHeader,
+  ToolCallName,
+  ToolCallResult,
+  ToolCallResultContent,
+  ToolCallResultLabel,
+  ToolCallsContainer,
+  ToolCallStatus,
+  ToolCallToggle,
+} from "./styles";
 
 interface ToolCallComponentProps {
   toolCall: ToolCall;
@@ -34,7 +34,7 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
   toolCallId,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-
+  const type = toolCall.name || toolCallType;
   const handleToggle = useCallback(() => {
     setIsExpanded((prev) => !prev);
   }, []);
@@ -48,26 +48,26 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
    */
 
   // Terminal tool calls: Show command execution with syntax highlighting and streaming output
-  if (toolCallType === "terminal") {
+  if (type === "terminal") {
     return (
       <TerminalToolBlock
         toolCall={toolCall}
         id={toolCallId}
-        toolCallType={toolCallType}
+        toolCallType={type}
         isVisible={true}
       />
     );
   }
 
   // Edit file tool calls: Show diff view with before/after comparison
-  if (toolCallType === "edit-file") {
+  if (type === "edit-file" || type === "write-file") {
     return (
       <DiffBlock
         toolCall={toolCall}
         toolCallId={toolCallId}
         isVisible={true}
         showLineNumbers={true}
-        maxHeight={500}
+        maxHeight={300}
       />
     );
   }
@@ -83,8 +83,8 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
       <div>
         <ToolCallItemHeader>
           <ToolCallName>
-            {getToolIcon(toolCallType)}
-            {toolCall.name || toolCallType}
+            {getToolIcon(type)}
+            {type}
           </ToolCallName>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <ToolCallStatus status={toolCall.status || "success"}>
@@ -112,7 +112,7 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
             {toolCall.result ? (
               <ToolCallResult>
                 <ToolCallResultLabel>Result</ToolCallResultLabel>
-                <ToolCallResultContent hasError={toolCall.status === "error"}>
+                <ToolCallResultContent $hasError={toolCall.status === "error"}>
                   {typeof toolCall.result === "string"
                     ? (toolCall.result as string)
                     : JSON.stringify(toolCall.result, null, 2)}

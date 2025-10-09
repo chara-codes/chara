@@ -13,16 +13,11 @@ export function convertServerChatToFrontendChat(serverChat: ServerChat): Chat {
 }
 
 interface ServerChat {
-  id: number;
+  id: string;
   title: string;
   createdAt: number;
   updatedAt: number;
-  parentId: number | null;
-}
-
-interface ModelsResponse {
-  models: Model[];
-  recentModels: string[];
+  parentId: string | null;
 }
 
 interface ChatsWithPagination {
@@ -34,7 +29,7 @@ interface ChatsWithPagination {
 export async function fetchChats(_options?: {
   limit?: number;
   offset?: number;
-  parentId?: number | null;
+  parentId?: string | null;
 }): Promise<Chat[]> {
   try {
     const client = getVanillaTrpcClient();
@@ -54,7 +49,7 @@ export async function fetchChats(_options?: {
 export async function fetchChatsWithPagination(options?: {
   limit?: number;
   offset?: number;
-  parentId?: number | null;
+  parentId?: string | null;
 }): Promise<ChatsWithPagination> {
   try {
     const client = getVanillaTrpcClient();
@@ -75,30 +70,44 @@ export async function fetchChatsWithPagination(options?: {
   }
 }
 
-// Update the fetchModels function to use the imported mock data as a fallback
+// Update the fetchModels function to get enabled models from settings
 export async function fetchModels(): Promise<{
   models: Model[];
   recentModels: string[];
 }> {
-  const agentsUrl = import.meta.env?.VITE_AGENTS_BASE_URL
-    ? `${import.meta.env.VITE_AGENTS_BASE_URL}api/models`
-    : "http://localhost:3031/api/models";
   try {
-    const response = await fetch(agentsUrl);
-    if (!response.ok) {
-      console.error(`Failed to fetch models: Status ${response.status}`);
-      throw new Error(`Failed to fetch models: ${response.status}`);
-    }
-    const data: ModelsResponse = await response.json();
-    console.log("Successfully fetched models data");
+    const client = getVanillaTrpcClient();
+    const enabledModelsConfig = await client.settings.models.getEnabledWithConfig.query();
+
+    console.log("Successfully fetched enabled models from settings");
+
+    // Convert enabled models config to Model array
+    const models: Model[] = Object.entries(enabledModelsConfig).map(([modelId, config]) => ({
+      id: modelId, // Already includes provider prefix (e.g., "openrouter:::qwen/qwen3-coder")
+      name: config.name,
+      provider: config.provider,
+      contextSize: config.contextSize,
+      hasTools: config.hasTools || false,
+      recommended: config.recommended || false,
+      approved: config.approved !== false
+    }));
+
+    // For recent models, we'll use the most recently enabled models
+    // Sort by enabledAt timestamp and take the most recent ones
+    const recentModels = Object.entries(enabledModelsConfig)
+      .sort(
+        ([, a], [, b]) =>
+          new Date(b.enabledAt).getTime() - new Date(a.enabledAt).getTime()
+      )
+      .slice(0, 5) // Take top 5 most recent
+      .map(([modelId]) => modelId);
+
     return {
-      models: data.models.map((model) => {
-        return { ...model, id: `${model.provider}:::${model.id}` };
-      }),
-      recentModels: data.recentModels,
+      models,
+      recentModels,
     };
   } catch (error) {
-    console.error("Error fetching models:", error);
+    console.error("Error fetching enabled models from settings:", error);
     console.log("Using imported mock models data instead");
     return {
       models: mockModels,
@@ -121,6 +130,33 @@ export async function createChat(title: string): Promise<Chat> {
     };
   } catch (error) {
     console.error("Error creating chat via tRPC:", error);
+    throw error;
+  }
+}
+
+// Function to update a chat (title and/or status)
+export async function updateChat(
+  chatId: string,
+  updates: {
+    title?: string;
+    status?: "idle" | "in_progress" | "completed" | "error";
+  }
+): Promise<Chat> {
+  try {
+    const client = getVanillaTrpcClient();
+    const result = await client.chat.updateChat.mutate({
+      chatId,
+      ...updates,
+    });
+
+    return {
+      id: result.id.toString(),
+      title: result.title,
+      timestamp: result.updatedAt.toString(),
+      messages: [],
+    };
+  } catch (error) {
+    console.error("Error updating chat via tRPC:", error);
     throw error;
   }
 }
@@ -197,32 +233,47 @@ export async function fetchChatHistory(
   options?: {
     lastMessageId?: string | null;
     limit?: number;
+    firstMessageOnly?: boolean;
   }
 ): Promise<{
   chatId: string;
   history: Array<{
     id: string;
-    message: string;
     role: string;
-    timestamp: number;
-    context?: any;
-    toolCalls?: Record<string, any>;
-    commit?: string;
+    parts: any[];
+    metadata?: any;
+    createdAt?: Date;
   }>;
   hasMore: boolean;
 }> {
   try {
     const client = getVanillaTrpcClient();
-    const result = await client.chat.getHistory.query({
-      chatId: parseInt(chatId),
-      lastMessageId: options?.lastMessageId,
-      limit: options?.limit,
+    const result = await client.chat.getMessages.query({
+      chatId: chatId,
     });
 
+    let messages = result.messages;
+
+    // Apply filtering based on options
+    if (options?.lastMessageId) {
+      const lastMessageIndex = messages.findIndex(
+        (msg) => msg.id === options.lastMessageId
+      );
+      if (lastMessageIndex !== -1) {
+        messages = messages.slice(0, lastMessageIndex);
+      }
+    }
+
+    if (options?.firstMessageOnly) {
+      messages = messages.slice(0, 1);
+    } else if (options?.limit) {
+      messages = messages.slice(-options.limit);
+    }
+
     return {
-      chatId: result.chatId.toString(),
-      history: result.history,
-      hasMore: result.hasMore,
+      chatId: result.chatId,
+      history: messages,
+      hasMore: false, // getMessages doesn't support pagination yet
     };
   } catch (error) {
     console.error("Error fetching chat history via tRPC:", error);
@@ -262,5 +313,115 @@ export async function resetToCommit(commit: string): Promise<{
   } catch (error) {
     console.error("Error resetting to commit:", error);
     throw error;
+  }
+}
+
+// Function to get suggested prompts
+export async function getSuggestedPrompts(
+  model: string,
+  previousMessages: Array<{ role: string; content: string }>,
+  maxSuggestions: number = 10
+): Promise<string[]> {
+  const agentsUrl = import.meta.env?.VITE_AGENTS_BASE_URL
+    ? `${import.meta.env.VITE_AGENTS_BASE_URL}api/suggest`
+    : "http://localhost:3031/api/suggest";
+
+  try {
+    const response = await fetch(
+      `${agentsUrl}?maxSuggestions=${maxSuggestions}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: previousMessages,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || `Failed to get suggestions: ${response.status}`
+      );
+    }
+
+    const result = await response.json();
+    console.log(
+      `Successfully fetched ${result.suggestions.length} suggestions`
+    );
+    return result.suggestions || [];
+  } catch (error) {
+    console.error("Error getting suggested prompts:", error);
+    return [];
+  }
+}
+
+// Function to get first messages from recent chats
+export async function fetchFirstMessageFromRecentChats(options?: {
+  chatLimit?: number;
+}): Promise<
+  Array<{
+    chat: {
+      id: string;
+      title: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+    firstMessage: {
+      id: string;
+      role: string;
+      parts: any[];
+      metadata?: any;
+      createdAt?: Date;
+    } | null;
+  }>
+> {
+  try {
+    const client = getVanillaTrpcClient();
+    const result = await client.chat.getFirstMessageFromRecentChats.query({
+      chatLimit: options?.chatLimit,
+    });
+
+    return result.map((item) => ({
+      chat: {
+        id: item.chat.id.toString(),
+        title: item.chat.title,
+        createdAt: new Date(item.chat.createdAt).toISOString(),
+        updatedAt: new Date(item.chat.updatedAt).toISOString(),
+      },
+      firstMessage: item.firstMessage
+        ? {
+            id: item.firstMessage.id,
+            role: item.firstMessage.role,
+            parts: item.firstMessage.parts,
+            metadata: item.firstMessage.metadata,
+            createdAt: item.firstMessage.createdAt,
+          }
+        : null,
+    }));
+  } catch (error) {
+    console.error("Error fetching first messages from recent chats:", error);
+    return [];
+  }
+}
+
+// Helper function to get just the first message from a chat
+export async function getFirstMessage(chatId: string): Promise<{
+  id: string;
+  role: string;
+  parts: any[];
+  metadata?: any;
+  createdAt?: Date;
+} | null> {
+  try {
+    const result = await fetchChatHistory(chatId, { firstMessageOnly: true });
+    return result.history.length > 0 ? result.history[0] : null;
+  } catch (error) {
+    console.error("Error fetching first message:", error);
+    return null;
   }
 }

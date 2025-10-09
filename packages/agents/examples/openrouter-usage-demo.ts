@@ -1,6 +1,6 @@
-import { logger } from "@chara-codes/logger";
 import { generateText, streamText, type LanguageModelV1 } from "ai";
 import { getModel, hasProvider } from "../src/providers";
+import { logger } from "../src/utils/logger";
 
 async function demonstrateOpenRouterUsage() {
   logger.info("🚀 OpenRouter Usage Demo");
@@ -57,12 +57,12 @@ async function demonstrateOpenRouterUsage() {
       const result = await generateText({
         model,
         prompt,
-        maxTokens: 100,
+        maxOutputTokens: 100,
       });
       const duration = Date.now() - startTime;
 
       logger.info(`✅ Response (${duration}ms):`);
-      logger.info(`   ${result.text}`);
+      logger.info(`   ${result.text.text}`);
       logger.info(`   Tokens: ${result.usage?.totalTokens || "unknown"}`);
     } catch (error) {
       logger.error(`❌ Failed to test ${modelConfig.name}:`, {
@@ -80,10 +80,10 @@ async function demonstrateOpenRouterUsage() {
       "anthropic/claude-3.5-sonnet"
     ) as LanguageModelV1;
 
-    const { textStream } = await streamText({
+    const { textStream } = streamText({
       model,
       prompt: "Count from 1 to 5, explaining each number briefly",
-      maxTokens: 200,
+      maxOutputTokens: 200,
     });
 
     let fullResponse = "";
@@ -114,11 +114,11 @@ async function demonstrateOpenRouterUsage() {
     const result = await generateText({
       model,
       prompt: "Explain quantum computing in one sentence",
-      maxTokens: 50,
+      maxOutputTokens: 50,
     });
 
     logger.info("✅ Free model response:");
-    logger.info(`   ${result.text}`);
+    logger.info(`   ${result.text.text}`);
   } catch (error) {
     logger.error("❌ Free model test failed:", {
       error: error instanceof Error ? error.message : "Unknown error",
@@ -137,7 +137,7 @@ async function demonstrateOpenRouterUsage() {
     await generateText({
       model,
       prompt: "This should fail",
-      maxTokens: 10,
+      maxOutputTokens: 10,
     });
   } catch (error) {
     logger.info("✅ Correctly caught error for invalid model:");

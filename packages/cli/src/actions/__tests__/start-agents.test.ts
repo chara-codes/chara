@@ -198,19 +198,6 @@ describe("start-agents action", () => {
       );
     });
 
-    test("should throw error when config does not exist", async () => {
-      mockExistsGlobalConfig.mockResolvedValue(false);
-
-      await expect(
-        startAgentsAction({
-          silent: true,
-          verbose: false,
-        }),
-      ).rejects.toThrow(
-        "No configuration found. Run 'chara init' first to set up your providers.",
-      );
-    });
-
     test("should throw error when config cannot be read", async () => {
       const configError = new Error("Config read failed");
       mockReadGlobalConfig.mockRejectedValue(configError);

@@ -1,25 +1,27 @@
 "use client";
 
+import type { Theme } from "@/theme";
+import {
+  Screen,
+  useCurrentScreen,
+  useNavigateToHistory,
+  useNavigateToNewThread,
+  useNavigateToSettings,
+  // useNavigateToTechStacks, // Import the new navigation hook
+  useNavigateToTerminal, // Import the terminal navigation hook
+} from "@chara-codes/core";
 import type React from "react";
-import styled from "styled-components";
 import { useCallback } from "react";
+import styled from "styled-components";
 import {
   HistoryIcon,
-  SettingsIcon,
+  // LayersIcon, // Import the LayersIcon
   PlusIcon,
-  LayersIcon, // Import the LayersIcon
+  SettingsIcon,
   TerminalIcon, // Import the TerminalIcon
 } from "../atoms/icons";
-import {
-  useNavigateToHistory,
-  useNavigateToSettings,
-  useNavigateToNewThread,
-  useNavigateToTechStacks, // Import the new navigation hook
-  useNavigateToTerminal, // Import the terminal navigation hook
-  useCurrentScreen,
-  Screen,
-} from "@chara-codes/core";
-import type { Theme } from "@/theme";
+import { ConnectionStatusIndicator } from "./connection-status.js";
+
 // Define Theme interface locally to avoid dependency issues
 
 interface HeaderProps {
@@ -64,9 +66,7 @@ const HeaderButton = styled.button<{ $active?: boolean }>`
       ? (theme as Theme).colors.primary
       : (theme as Theme).colors.textSecondary};
   cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 
   &:hover {
     background-color: ${({ theme }) =>
@@ -81,7 +81,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   const navigateToHistory = useNavigateToHistory();
   const navigateToSettings = useNavigateToSettings();
   const navigateToNewThread = useNavigateToNewThread();
-  const navigateToTechStacks = useNavigateToTechStacks(); // Get the new navigation action
+  // const navigateToTechStacks = useNavigateToTechStacks(); // Get the new navigation action
   const navigateToTerminal = useNavigateToTerminal(); // Get the terminal navigation action
   const currentScreen = useCurrentScreen();
 
@@ -119,9 +119,9 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
     navigateToNewThread();
   }, [navigateToNewThread]);
 
-  const handleTechStacksClick = useCallback(() => {
-    navigateToTechStacks();
-  }, [navigateToTechStacks]);
+  // const handleTechStacksClick = useCallback(() => {
+  //   navigateToTechStacks();
+  // }, [navigateToTechStacks]);
 
   const handleTerminalClick = useCallback(() => {
     navigateToTerminal();
@@ -141,13 +141,13 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
         >
           <HistoryIcon size={16} />
         </HeaderButton>
-        <HeaderButton
+        {/*<HeaderButton
           onClick={handleTechStacksClick}
           title="Tech Stacks"
           $active={currentScreen === Screen.TECH_STACKS}
         >
           <LayersIcon width={16} height={16} />
-        </HeaderButton>
+        </HeaderButton>*/}
         <HeaderButton
           onClick={handleTerminalClick}
           title="Terminal"
@@ -162,6 +162,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
         >
           <SettingsIcon size={16} />
         </HeaderButton>
+        <ConnectionStatusIndicator />
       </HeaderActions>
     </HeaderContainer>
   );

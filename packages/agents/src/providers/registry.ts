@@ -1,5 +1,5 @@
-import { logger } from "@chara-codes/logger";
 import type { LanguageModelV1 } from "ai";
+import { logger } from "../utils/logger";
 import { ModelFetcher } from "./model-fetcher";
 import { ProviderConfigs } from "./provider-configs";
 import type { InitializationError, ModelInfo, ProviderConfig } from "./types";
@@ -241,8 +241,12 @@ export class ProvidersRegistry {
     const availableProviders = (await this.getAvailableProviders()).filter(
       (p) => p.fetchModels
     );
+
+    logger.dump(availableProviders);
+
     const fetchPromises = availableProviders.map(async (provider) => {
       const providerName = provider.name.toLowerCase();
+      logger.dump(providerName);
       try {
         const models = await this.fetchModels(providerName);
         results[providerName] = models;

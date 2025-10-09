@@ -1,6 +1,15 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { editFile } from "../edit-file";
 import { createTestFS } from "./test-utils";
+
+type EditFileResult = {
+  status: "success" | "error";
+  message: string;
+  operation: string;
+  path: string;
+  diff?: string;
+  suggestion?: string;
+};
 
 describe("editFile tool", () => {
   const testFS = createTestFS();
@@ -13,508 +22,554 @@ describe("editFile tool", () => {
     await testFS.cleanup();
   });
 
-  test("should perform simple text replacement", async () => {
-    const originalContent = "Hello World!\nThis is a test.";
-    const filePath = await testFS.createFile("simple.txt", originalContent);
+  describe("File creation", () => {
+    test("should create new file with empty old_string", async () => {
+      const filePath = testFS.getPath("new-file.txt");
 
-    const result = await editFile.execute({
-      display_description: "Replace World with Universe",
-      path: filePath,
-      mode: "edit",
-      edits: [{ oldText: "World", newText: "Universe" }],
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "",
+        new_string: "Hello, new file!",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(result.message).toContain("Successfully created new file");
+      expect(result.operation).toBe("created");
+      expect(await testFS.readFile("new-file.txt")).toBe("Hello, new file!");
     });
 
-    expect(result.status).toBe("success");
-    expect(result.message).toContain("Successfully edited");
-    expect(await testFS.readFile("simple.txt")).toBe(
-      "Hello Universe!\nThis is a test."
-    );
-  });
+    test("should create file with multiline content", async () => {
+      const filePath = testFS.getPath("multiline.js");
+      const content = `function hello() {
+  console.log('Hello, world!');
+  return true;
+}`;
 
-  test("should perform multiple edits sequentially", async () => {
-    const originalContent = "Hello World!\nThis is a test.\nGoodbye World!";
-    const filePath = await testFS.createFile("multiple.txt", originalContent);
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "",
+        new_string: content,
+      })) as EditFileResult;
 
-    const result = await editFile.execute({
-      display_description: "Replace World with Universe and test with example",
-      path: filePath,
-      mode: "edit",
-      edits: [
-        { oldText: "World", newText: "Universe" },
-        { oldText: "test", newText: "example" },
-      ],
+      expect(result.status).toBe("success");
+      expect(result.operation).toBe("created");
+      expect(await testFS.readFile("multiline.js")).toBe(content);
     });
 
-    expect(result.status).toBe("success");
-    const newContent = await testFS.readFile("multiple.txt");
-    expect(newContent).toBe(
-      "Hello Universe!\nThis is a example.\nGoodbye Universe!"
-    );
-  });
+    test("should create parent directories when creating new file", async () => {
+      const filePath = testFS.getPath("deep/nested/path/file.txt");
 
-  test("should handle multiline text replacement", async () => {
-    const originalContent =
-      "function test() {\n  console.log('old');\n  return true;\n}";
-    const filePath = await testFS.createFile("multiline.js", originalContent);
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "",
+        new_string: "Content in nested directory",
+      })) as EditFileResult;
 
-    const result = await editFile.execute({
-      display_description: "Update function implementation",
-      path: filePath,
-      mode: "edit",
-      edits: [
-        {
-          oldText:
-            "function test() {\n  console.log('old');\n  return true;\n}",
-          newText:
-            "function test() {\n  console.log('new');\n  return false;\n}",
-        },
-      ],
+      expect(result.status).toBe("success");
+      expect(result.operation).toBe("created");
+      expect(await testFS.readFile("deep/nested/path/file.txt")).toBe(
+        "Content in nested directory"
+      );
     });
 
-    expect(result.status).toBe("success");
-    const newContent = await testFS.readFile("multiline.js");
-    expect(newContent).toBe(
-      "function test() {\n  console.log('new');\n  return false;\n}"
-    );
-  });
+    test("should error when trying to create file that already exists", async () => {
+      const filePath = await testFS.createFile(
+        "existing.txt",
+        "existing content"
+      );
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "",
+        new_string: "new content",
+      })) as EditFileResult;
 
-  test("should preserve indentation", async () => {
-    const originalContent =
-      "  function test() {\n    console.log('hello');\n  }";
-    const filePath = await testFS.createFile("indented.js", originalContent);
-
-    const result = await editFile.execute({
-      display_description: "Update console message",
-      path: filePath,
-      mode: "edit",
-      edits: [
-        {
-          oldText: "console.log('hello');",
-          newText: "console.log('world');",
-        },
-      ],
-    });
-
-    expect(result.status).toBe("success");
-    const newContent = await testFS.readFile("indented.js");
-    expect(newContent).toBe(
-      "  function test() {\n    console.log('world');\n  }"
-    );
-  });
-
-  test("should handle whitespace-flexible matching", async () => {
-    const originalContent = "  if (condition) {\n    doSomething();\n  }";
-    const filePath = await testFS.createFile("whitespace.js", originalContent);
-
-    const result = await editFile.execute({
-      display_description: "Update condition and function call",
-      path: filePath,
-      mode: "edit",
-      edits: [
-        {
-          oldText: "if (condition) {\n  doSomething();\n}",
-          newText: "if (newCondition) {\n  doSomethingElse();\n}",
-        },
-      ],
-    });
-
-    expect(result.status).toBe("success");
-    const newContent = await testFS.readFile("whitespace.js");
-    expect(newContent).toBe("  if (newCondition) {\n  doSomethingElse();\n}");
-  });
-
-  test("should generate diff output", async () => {
-    const originalContent = "Line 1\nLine 2\nLine 3";
-    const filePath = await testFS.createFile("diff.txt", originalContent);
-
-    const result = await editFile.execute({
-      display_description: "Modify line 2",
-      path: filePath,
-      mode: "edit",
-      edits: [{ oldText: "Line 2", newText: "Modified Line 2" }],
-    });
-
-    expect(result.diff).toContain("- Line 2");
-    expect(result.diff).toContain("+ Modified Line 2");
-  });
-
-  test("should return error object for non-matching text", async () => {
-    const originalContent = "Hello World!";
-    const filePath = await testFS.createFile("nomatch.txt", originalContent);
-
-    const result = await editFile.execute({
-      display_description: "Try to replace non-existent text",
-      path: filePath,
-      mode: "edit",
-      edits: [{ oldText: "Non-existent text", newText: "Replacement" }],
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("Could not find exact match");
-    expect(result.operation).toBe("edit");
-    expect(result.path).toBe(filePath);
-  });
-
-  test("should handle empty file", async () => {
-    const filePath = await testFS.createFile("empty.txt", "");
-
-    const result = await editFile.execute({
-      display_description: "Try to edit empty file",
-      path: filePath,
-      mode: "edit",
-      edits: [{ oldText: "anything", newText: "something" }],
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("Could not find exact match");
-    expect(result.operation).toBe("edit");
-    expect(result.path).toBe(filePath);
-  });
-
-  test("should handle empty edits array", async () => {
-    const originalContent = "Hello World!";
-    const filePath = await testFS.createFile("noedits.txt", originalContent);
-
-    const result = await editFile.execute({
-      display_description: "No edits to perform",
-      path: filePath,
-      mode: "edit",
-      edits: [],
-    });
-
-    expect(result.status).toBe("success");
-    expect(result.message).toContain("No changes made");
-    expect(await testFS.readFile("noedits.txt")).toBe(originalContent);
-  });
-
-  test("should handle line ending normalization", async () => {
-    const originalContent = "Line 1\r\nLine 2\r\nLine 3";
-    const filePath = await testFS.createFile("windows.txt", originalContent);
-
-    const result = await editFile.execute({
-      display_description: "Modify line with Windows line endings",
-      path: filePath,
-      mode: "edit",
-      edits: [{ oldText: "Line 2", newText: "Modified Line 2" }],
-    });
-
-    expect(result.status).toBe("success");
-    const newContent = await testFS.readFile("windows.txt");
-    expect(newContent).toContain("Modified Line 2");
-  });
-
-  test("should handle special characters in text", async () => {
-    const originalContent = "Special: éñü 🚀 <>&\"'";
-    const filePath = await testFS.createFile("special.txt", originalContent);
-
-    const result = await editFile.execute({
-      display_description: "Replace special characters",
-      path: filePath,
-      mode: "edit",
-      edits: [{ oldText: "éñü 🚀", newText: "abc 123" }],
-    });
-
-    expect(result.status).toBe("success");
-    expect(await testFS.readFile("special.txt")).toBe(
-      "Special: abc 123 <>&\"'"
-    );
-  });
-
-  test("should handle replacing entire file content", async () => {
-    const originalContent = "Old content\nMultiple lines\nTo replace";
-    const filePath = await testFS.createFile(
-      "replace-all.txt",
-      originalContent
-    );
-
-    const result = await editFile.execute({
-      display_description: "Replace entire file content",
-      path: filePath,
-      mode: "edit",
-      edits: [{ oldText: originalContent, newText: "Brand new content" }],
-    });
-
-    expect(result.status).toBe("success");
-    expect(await testFS.readFile("replace-all.txt")).toBe("Brand new content");
-  });
-
-  test("should handle adding content to empty sections", async () => {
-    const originalContent = "Before\n\nAfter";
-    const filePath = await testFS.createFile(
-      "empty-section.txt",
-      originalContent
-    );
-
-    const result = await editFile.execute({
-      display_description: "Add content to empty section",
-      path: filePath,
-      mode: "edit",
-      edits: [{ oldText: "\n\n", newText: "\nMiddle content\n" }],
-    });
-
-    expect(result.status).toBe("success");
-    expect(await testFS.readFile("empty-section.txt")).toBe(
-      "Before\nMiddle content\nAfter"
-    );
-  });
-
-  test("should handle complex indentation preservation", async () => {
-    const originalContent =
-      "    function nested() {\n      if (true) {\n        oldFunction();\n      }\n    }";
-    const filePath = await testFS.createFile("nested.js", originalContent);
-
-    const result = await editFile.execute({
-      display_description: "Update nested function logic",
-      path: filePath,
-      mode: "edit",
-      edits: [
-        {
-          oldText: "if (true) {\n        oldFunction();\n      }",
-          newText:
-            "if (false) {\n        newFunction();\n        anotherFunction();\n      }",
-        },
-      ],
-    });
-
-    expect(result.status).toBe("success");
-    const newContent = await testFS.readFile("nested.js");
-    expect(newContent).toContain("newFunction();");
-    expect(newContent).toContain("anotherFunction();");
-    expect(newContent).toContain("      if (false)");
-  });
-
-  test("should return error object for non-existent file", async () => {
-    const nonExistentPath = testFS.getPath("does-not-exist.txt");
-
-    const result = await editFile.execute({
-      display_description: "Try to edit non-existent file",
-      path: nonExistentPath,
-      mode: "edit",
-      edits: [{ oldText: "anything", newText: "something" }],
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("does not exist");
-    expect(result.operation).toBe("edit");
-    expect(result.path).toBe(nonExistentPath);
-  });
-
-  test("should handle overlapping replacements correctly", async () => {
-    const originalContent = "abcdef";
-    const filePath = await testFS.createFile("overlap.txt", originalContent);
-
-    const result = await editFile.execute({
-      display_description: "Replace multiple overlapping parts",
-      path: filePath,
-      mode: "edit",
-      edits: [
-        { oldText: "abc", newText: "xyz" },
-        { oldText: "def", newText: "uvw" },
-      ],
-    });
-
-    expect(result.status).toBe("success");
-    expect(await testFS.readFile("overlap.txt")).toBe("xyzuvw");
-  });
-
-  test("should have correct tool metadata", () => {
-    expect(editFile.description).toContain(
-      "creating a new file or editing an existing file"
-    );
-    expect(editFile.parameters).toBeDefined();
-  });
-
-  test("should handle large file edits", async () => {
-    const largeContent =
-      "x".repeat(5000) + "\nTARGET LINE\n" + "y".repeat(5000);
-    const filePath = await testFS.createFile("large.txt", largeContent);
-
-    const result = await editFile.execute({
-      display_description: "Replace target line in large file",
-      path: filePath,
-      mode: "edit",
-      edits: [{ oldText: "TARGET LINE", newText: "MODIFIED LINE" }],
-    });
-
-    expect(result.status).toBe("success");
-    const newContent = await testFS.readFile("large.txt");
-    expect(newContent).toContain("MODIFIED LINE");
-    expect(newContent).not.toContain("TARGET LINE");
-  });
-
-  test("should create new file", async () => {
-    const filePath = testFS.getPath("new-file.txt");
-    const content = "This is a new file";
-
-    const result = await editFile.execute({
-      display_description: "Create a new file",
-      path: filePath,
-      mode: "create",
-      content,
-    });
-
-    expect(result.status).toBe("success");
-    expect(result.message).toContain("Created file");
-    expect(await testFS.readFile("new-file.txt")).toBe(content);
-  });
-
-  test("should overwrite existing file", async () => {
-    const originalContent = "Original content";
-    const newContent = "Completely new content";
-    const filePath = await testFS.createFile("overwrite.txt", originalContent);
-
-    const result = await editFile.execute({
-      display_description: "Overwrite file with new content",
-      path: filePath,
-      mode: "overwrite",
-      content: newContent,
-    });
-
-    expect(result.status).toBe("success");
-    expect(result.message).toContain("Overwrote file");
-    expect(await testFS.readFile("overwrite.txt")).toBe(newContent);
-  });
-
-  test("should fail to create file that already exists", async () => {
-    const filePath = await testFS.createFile("exists.txt", "content");
-
-    const result = await editFile.execute({
-      display_description: "Try to create existing file",
-      path: filePath,
-      mode: "create",
-      content: "new content",
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("already exists");
-    expect(result.operation).toBe("create");
-    expect(result.path).toBe(filePath);
-  });
-
-  test("should fail to overwrite non-existent file", async () => {
-    const filePath = testFS.getPath("does-not-exist.txt");
-
-    const result = await editFile.execute({
-      display_description: "Try to overwrite non-existent file",
-      path: filePath,
-      mode: "overwrite",
-      content: "content",
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("does not exist");
-    expect(result.operation).toBe("overwrite");
-    expect(result.path).toBe(filePath);
-  });
-
-  test("should require edits parameter for edit mode", async () => {
-    const filePath = await testFS.createFile("test.txt", "content");
-
-    const result = await editFile.execute({
-      display_description: "Edit without providing edits",
-      path: filePath,
-      mode: "edit",
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("'edits' parameter is required");
-    expect(result.operation).toBe("edit");
-    expect(result.path).toBe(filePath);
-  });
-
-  test("should require content parameter for create mode", async () => {
-    const filePath = testFS.getPath("new.txt");
-
-    const result = await editFile.execute({
-      display_description: "Create without providing content",
-      path: filePath,
-      mode: "create",
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("'content' parameter is required");
-    expect(result.operation).toBe("create");
-    expect(result.path).toBe(filePath);
-  });
-
-  test("should return error object with correct structure for validation failures", async () => {
-    const filePath = testFS.getPath("test.txt");
-
-    const result = await editFile.execute({
-      display_description: "Test validation error structure",
-      path: filePath,
-      mode: "edit",
-    });
-
-    expect(result).toHaveProperty("status", "error");
-    expect(result).toHaveProperty("message");
-    expect(result).toHaveProperty("operation", "edit");
-    expect(result).toHaveProperty("path", filePath);
-    expect(typeof result.message).toBe("string");
-  });
-
-  test("should return error for invalid mode", async () => {
-    const filePath = await testFS.createFile("test.txt", "content");
-
-    const result = await editFile.execute({
-      display_description: "Test invalid mode",
-      path: filePath,
-      mode: "invalid" as any,
-    });
-
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("Invalid mode");
-    expect(result.operation).toBe("invalid");
-  });
-
-  test("should handle error cases with proper error object structure", async () => {
-    // Test multiple error scenarios to ensure consistent error object structure
-    const scenarios = [
-      {
-        name: "missing edits parameter",
-        params: {
-          display_description: "Test missing edits",
-          path: await testFS.createFile("test1.txt", "content"),
-          mode: "edit" as const,
-        },
-        expectedError: "'edits' parameter is required",
-      },
-      {
-        name: "missing content parameter",
-        params: {
-          display_description: "Test missing content",
-          path: testFS.getPath("new.txt"),
-          mode: "create" as const,
-        },
-        expectedError: "'content' parameter is required",
-      },
-    ];
-
-    for (const scenario of scenarios) {
-      const result = await editFile.execute(scenario.params);
       expect(result.status).toBe("error");
-      expect(result.message).toContain(scenario.expectedError);
-      expect(result.operation).toBe(scenario.params.mode);
-      expect(result.path).toBe(scenario.params.path);
-    }
+      expect(result.message).toContain("already exists");
+      expect(result.operation).toBe("create");
+    });
   });
 
-  test("should provide helpful error messages for LLM agents", async () => {
-    const filePath = await testFS.createFile(
-      "context.txt",
-      "Hello world\nThis is a test file."
-    );
+  describe("File editing", () => {
+    test("should perform simple text replacement", async () => {
+      const originalContent = "Hello World!\nThis is a test.";
+      const filePath = await testFS.createFile("simple.txt", originalContent);
 
-    const result = await editFile.execute({
-      display_description: "Test descriptive error for agents",
-      path: filePath,
-      mode: "edit",
-      edits: [{ oldText: "non-existent text", newText: "replacement" }],
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "World",
+        new_string: "Universe",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(result.message).toContain("Successfully edited");
+      expect(result.operation).toBe("edited");
+      expect(await testFS.readFile("simple.txt")).toBe(
+        "Hello Universe!\nThis is a test."
+      );
     });
 
-    expect(result.status).toBe("error");
-    expect(result.message).toContain("Could not find exact match");
-    expect(result.message).toContain("non-existent text");
-    expect(result.message).toContain(filePath);
+    test("should handle multiline text replacement", async () => {
+      const originalContent = `function test() {
+  console.log('old');
+  return true;
+}`;
+      const filePath = await testFS.createFile("multiline.js", originalContent);
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: `function test() {
+  console.log('old');
+  return true;
+}`,
+        new_string: `function test() {
+  console.log('new');
+  return false;
+}`,
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(result.operation).toBe("edited");
+      const newContent = await testFS.readFile("multiline.js");
+      expect(newContent).toBe(`function test() {
+  console.log('new');
+  return false;
+}`);
+    });
+
+    test("should handle multiple occurrences with expected_occurrences", async () => {
+      const originalContent = "Hello World!\nGoodbye World!\nAnother World!";
+      const filePath = await testFS.createFile("multiple.txt", originalContent);
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "World",
+        new_string: "Universe",
+        expected_occurrences: 3,
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(result.message).toContain("3 replacement(s)");
+      const newContent = await testFS.readFile("multiple.txt");
+      expect(newContent).toBe(
+        "Hello Universe!\nGoodbye Universe!\nAnother Universe!"
+      );
+    });
+
+    test("should error when occurrence count doesn't match expected", async () => {
+      const originalContent = "Hello World!\nGoodbye World!";
+      const filePath = await testFS.createFile("mismatch.txt", originalContent);
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "World",
+        new_string: "Universe",
+        expected_occurrences: 3,
+      })) as EditFileResult;
+
+      expect(result.status).toBe("error");
+      expect(result.message).toContain("Expected 3 occurrence(s) but found 2");
+      expect(result.operation).toBe("edit");
+    });
+
+    test("should preserve original content when old_string and new_string are identical", async () => {
+      const originalContent = "Hello World!";
+      const filePath = await testFS.createFile(
+        "identical.txt",
+        originalContent
+      );
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "World",
+        new_string: "World",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(result.operation).toBe("no-change");
+      expect(result.message).toContain(
+        "old_string and new_string are identical"
+      );
+    });
+
+    test("should handle line ending normalization", async () => {
+      const originalContent = "Line 1\r\nLine 2\r\nLine 3";
+      const filePath = await testFS.createFile("windows.txt", originalContent);
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "Line 2",
+        new_string: "Modified Line 2",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      const newContent = await testFS.readFile("windows.txt");
+      expect(newContent).toContain("Modified Line 2");
+    });
+  });
+
+  describe("Flexible matching", () => {
+    test("should handle whitespace-flexible matching", async () => {
+      const originalContent = "  if (condition) {\n    doSomething();\n  }";
+      const filePath = await testFS.createFile(
+        "whitespace.js",
+        originalContent
+      );
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "if (condition) {\n  doSomething();\n}",
+        new_string: "if (newCondition) {\n  doSomethingElse();\n}",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(result.message).toContain("flexible matching applied");
+      const newContent = await testFS.readFile("whitespace.js");
+      expect(newContent).toBe(
+        "  if (newCondition) {\n    doSomethingElse();\n  }"
+      );
+    });
+
+    test("should preserve indentation with flexible matching", async () => {
+      const originalContent = `    function nested() {
+      if (true) {
+        oldFunction();
+      }
+    }`;
+      const filePath = await testFS.createFile("nested.js", originalContent);
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: `if (true) {
+  oldFunction();
+}`,
+        new_string: `if (false) {
+  newFunction();
+  anotherFunction();
+}`,
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      const newContent = await testFS.readFile("nested.js");
+      expect(newContent).toContain("newFunction();");
+      expect(newContent).toContain("anotherFunction();");
+      expect(newContent).toContain("      if (false)");
+    });
+
+    test("should maintain relative indentation in multiline replacements", async () => {
+      const originalContent = `  class Example {
+    method() {
+      console.log('old');
+      return true;
+    }
+  }`;
+      const filePath = await testFS.createFile(
+        "indentation.js",
+        originalContent
+      );
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: `method() {
+  console.log('old');
+  return true;
+}`,
+        new_string: `method() {
+  console.log('new');
+  console.log('additional');
+  return false;
+}`,
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      const newContent = await testFS.readFile("indentation.js");
+      expect(newContent).toContain("    method() {");
+      expect(newContent).toContain("      console.log('new');");
+      expect(newContent).toContain("      console.log('additional');");
+    });
+  });
+
+  describe("Error handling", () => {
+    test("should error when editing non-existent file", async () => {
+      const nonExistentPath = testFS.getPath("does-not-exist.txt");
+
+      const result = (await (editFile as any).execute({
+        path: nonExistentPath,
+        old_string: "anything",
+        new_string: "something",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("error");
+      expect(result.message).toContain("does not exist");
+      expect(result.operation).toBe("edit");
+      expect(result.path).toBe(nonExistentPath);
+    });
+
+    test("should error when old_string is not found", async () => {
+      const originalContent = "Hello World!";
+      const filePath = await testFS.createFile("nomatch.txt", originalContent);
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "Non-existent text",
+        new_string: "Replacement",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("error");
+      expect(result.message).toContain("Could not find exact match");
+      expect(result.operation).toBe("edit");
+      expect(result.path).toBe(filePath);
+      expect(result.suggestion).toContain("Include more context");
+    });
+
+    test("should provide helpful suggestions in error messages", async () => {
+      const filePath = await testFS.createFile("test.txt", "Hello world");
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "hello world", // lowercase, won't match
+        new_string: "Hello universe",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("error");
+      expect(result.suggestion).toContain("Include more context");
+    });
+
+    test("should handle file read errors gracefully", async () => {
+      // This test simulates a permission error or other read failure
+      const filePath = testFS.getPath("unreadable.txt");
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "test",
+        new_string: "new",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("error");
+      expect(result.message).toContain("does not exist");
+      expect(result.operation).toBe("edit");
+    });
+  });
+
+  describe("Diff generation", () => {
+    test("should generate proper diff output", async () => {
+      const originalContent = "Line 1\nLine 2\nLine 3";
+      const filePath = await testFS.createFile("diff.txt", originalContent);
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "Line 2",
+        new_string: "Modified Line 2",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(result.diff).toContain("Changes: +1 -1 lines");
+      expect(result.diff).toContain("- Line 2");
+      expect(result.diff).toContain("+ Modified Line 2");
+    });
+
+    test("should show line count in diff for multiline changes", async () => {
+      const originalContent = "function test() {\n  return true;\n}";
+      const filePath = await testFS.createFile(
+        "multiline-diff.js",
+        originalContent
+      );
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "function test() {\n  return true;\n}",
+        new_string:
+          "function test() {\n  console.log('debug');\n  return false;\n}",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(result.diff).toContain("Changes:");
+      expect(result.diff).toContain("lines");
+    });
+
+    test("should return 'No changes' when content is identical after replacement", async () => {
+      const originalContent = "Hello World!";
+      const filePath = await testFS.createFile(
+        "no-change.txt",
+        originalContent
+      );
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "Hello World!",
+        new_string: "Hello World!",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(result.operation).toBe("no-change");
+      expect(result.diff).toBe("No changes");
+    });
+  });
+
+  describe("Special cases", () => {
+    test("should handle special characters in text", async () => {
+      const originalContent = "Special: éñü 🚀 <>&\"'";
+      const filePath = await testFS.createFile("special.txt", originalContent);
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "éñü 🚀",
+        new_string: "abc 123",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(await testFS.readFile("special.txt")).toBe(
+        "Special: abc 123 <>&\"'"
+      );
+    });
+
+    test("should handle replacing entire file content", async () => {
+      const originalContent = "Old content\nMultiple lines\nTo replace";
+      const filePath = await testFS.createFile(
+        "replace-all.txt",
+        originalContent
+      );
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: originalContent,
+        new_string: "Brand new content",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(await testFS.readFile("replace-all.txt")).toBe(
+        "Brand new content"
+      );
+    });
+
+    test("should handle empty file content", async () => {
+      const filePath = await testFS.createFile("empty.txt", "");
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "anything",
+        new_string: "something",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("error");
+      expect(result.message).toContain("Could not find exact match");
+    });
+
+    test("should handle large file edits efficiently", async () => {
+      const largeContent =
+        "x".repeat(5000) + "\nTARGET LINE\n" + "y".repeat(5000);
+      const filePath = await testFS.createFile("large.txt", largeContent);
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "TARGET LINE",
+        new_string: "MODIFIED LINE",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      const newContent = await testFS.readFile("large.txt");
+      expect(newContent).toContain("MODIFIED LINE");
+      expect(newContent).not.toContain("TARGET LINE");
+    });
+
+    test("should handle adding content to empty sections", async () => {
+      const originalContent = "Before\n\nAfter";
+      const filePath = await testFS.createFile(
+        "empty-section.txt",
+        originalContent
+      );
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "\n\n",
+        new_string: "\nMiddle content\n",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(await testFS.readFile("empty-section.txt")).toBe(
+        "Before\nMiddle content\nAfter"
+      );
+    });
+
+    test("should handle zero occurrences with flexible matching fallback", async () => {
+      const originalContent =
+        "  function test() {\n    console.log('hello');\n  }";
+      const filePath = await testFS.createFile(
+        "zero-occur.js",
+        originalContent
+      );
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "function test() {\nconsole.log('hello');\n}", // missing indentation
+        new_string: "function test() {\nconsole.log('world');\n}",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(result.message).toContain("flexible matching applied");
+    });
+  });
+
+  describe("Tool metadata", () => {
+    test("should have correct tool description and schema", () => {
+      expect(editFile.description).toContain("making edits to existing files");
+      expect(editFile.description).toContain("creating new files");
+      expect(editFile.inputSchema).toBeDefined();
+      expect(editFile.inputSchema).toBeDefined();
+    });
+  });
+
+  describe("Edge cases and validation", () => {
+    test("should handle default expected_occurrences of 1", async () => {
+      const originalContent = "Hello World!";
+      const filePath = await testFS.createFile(
+        "default-occur.txt",
+        originalContent
+      );
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "World",
+        new_string: "Universe",
+        // expected_occurrences not provided, should default to 1
+      })) as EditFileResult;
+
+      expect(result.status).toBe("success");
+      expect(result.message).toContain("1 replacement(s)");
+    });
+
+    test("should return consistent error object structure", async () => {
+      const filePath = testFS.getPath("non-existent.txt");
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "test",
+        new_string: "new",
+      })) as EditFileResult;
+
+      expect(result).toHaveProperty("status", "error");
+      expect(result).toHaveProperty("message");
+      expect(result).toHaveProperty("operation", "edit");
+      expect(result).toHaveProperty("path", filePath);
+      expect(typeof result.message).toBe("string");
+    });
+
+    test("should provide helpful context in error messages for LLM agents", async () => {
+      const filePath = await testFS.createFile(
+        "context.txt",
+        "Hello world\nThis is a test file."
+      );
+
+      const result = (await (editFile as any).execute({
+        path: filePath,
+        old_string: "non-existent text",
+        new_string: "replacement",
+      })) as EditFileResult;
+
+      expect(result.status).toBe("error");
+      expect(result.message).toContain("Could not find exact match");
+      expect(result.message).toContain("non-existent text");
+      expect(result.suggestion).toBeDefined();
+    });
   });
 });

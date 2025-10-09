@@ -1,52 +1,43 @@
 import type { DropdownItem, InputContextItem } from "@chara-codes/core";
 import type { RunnerProcess } from "@chara-codes/core";
+import type { FileSystemEntry } from "@chara-codes/server";
+import { getVanillaTrpcClient } from "@chara-codes/core";
 
 // Function to create dropdown items
 export const createDropdownItems = (
   startElementSelection: () => void,
   triggerFileUpload: () => void,
   onAddContext: (item: InputContextItem) => void,
-  runnerProcesses?: Record<string, RunnerProcess>
+  runnerProcesses?: Record<string, RunnerProcess>,
+  fileList?: FileSystemEntry[],
+  fileListLoading?: boolean,
+  fileListError?: string
 ): DropdownItem[] => {
   return [
-    // File items
-    { id: "file-1", label: "package.json", type: "File", section: "Files" },
-    { id: "file-2", label: "README.md", type: "File", section: "Files" },
-    { id: "file-3", label: "index.js", type: "File", section: "Files" },
-    { id: "file-4", label: "tsconfig.json", type: "File", section: "Files" },
-    { id: "file-5", label: ".env.example", type: "File", section: "Files" },
-
-    // Documentation items
-    {
-      id: "doc-1",
-      label: "API Reference",
-      type: "Documentation",
-      section: "Documentation",
-    },
-    {
-      id: "doc-2",
-      label: "Getting Started",
-      type: "Documentation",
-      section: "Documentation",
-    },
-    {
-      id: "doc-3",
-      label: "Tutorials",
-      type: "Documentation",
-      section: "Documentation",
-    },
-    {
-      id: "doc-4",
-      label: "Best Practices",
-      type: "Documentation",
-      section: "Documentation",
-    },
-    {
-      id: "doc-5",
-      label: "Troubleshooting",
-      type: "Documentation",
-      section: "Documentation",
-    },
+    // Dynamic file items from actual file system
+    ...(fileListLoading
+      ? [
+          {
+            id: "files-loading",
+            label: "Loading files...",
+            type: "Files",
+            section: "Files",
+            action: () => {}, // No-op
+          },
+        ]
+      : fileListError
+      ? [
+          {
+            id: "files-error",
+            label: `Error loading files: ${fileListError}`,
+            type: "Files",
+            section: "Files",
+            action: () => {}, // No-op
+          },
+        ]
+      : fileList
+      ? createFileItems(fileList, onAddContext)
+      : []),
 
     // Dynamic terminal items from runner processes
     ...(runnerProcesses
@@ -69,6 +60,54 @@ export const createDropdownItems = (
       action: triggerFileUpload,
     },
   ];
+};
+
+// Helper function to create file items from file system entries
+const createFileItems = (
+  files: FileSystemEntry[],
+  onAddContext: (item: InputContextItem) => void
+): DropdownItem[] => {
+  const fileItems: DropdownItem[] = [];
+
+  // Recursively process files
+  const processFiles = (entries: FileSystemEntry[]) => {
+    entries.forEach((entry) => {
+      if (entry.type === "file" && !entry.isGitIgnored) {
+        fileItems.push({
+          id: `file-${entry.path}`,
+          label: entry.path, // Show full path from working directory
+          type: "File",
+          section: "Files",
+          action: async () => {
+            try {
+              const client = getVanillaTrpcClient();
+              const content = await client.context.getFileContent.query({
+                filePath: entry.path,
+              });
+
+              onAddContext({
+                name: entry.path,
+                type: "File",
+                data: content.content,
+                mimeType: content.mimeType,
+                isBinary: content.isBinary,
+              });
+            } catch (error) {
+              console.error(`Failed to load file ${entry.path}:`, error);
+            }
+          },
+        });
+      }
+
+      // Process children recursively
+      if (entry.children && entry.children.length > 0) {
+        processFiles(entry.children);
+      }
+    });
+  };
+
+  processFiles(files);
+  return fileItems;
 };
 
 // Helper function to create terminal items from runner processes
@@ -95,10 +134,6 @@ const createTerminalItems = (
           data: process.output,
         });
       },
-      metadata: {
-        processId: process.processId,
-        logType: "full",
-      },
     });
 
     // Error logs item process.output.filter((log) => log.type === "stderr")
@@ -114,10 +149,6 @@ const createTerminalItems = (
           data: process.output.filter((log) => log.type === "stderr"),
         });
       },
-      metadata: {
-        processId: process.processId,
-        logType: "errors",
-      },
     });
 
     // Regular logs item
@@ -132,10 +163,6 @@ const createTerminalItems = (
           type: "Terminal",
           data: process.output.filter((log) => log.type !== "stderr"),
         });
-      },
-      metadata: {
-        processId: process.processId,
-        logType: "regular",
       },
     });
   });

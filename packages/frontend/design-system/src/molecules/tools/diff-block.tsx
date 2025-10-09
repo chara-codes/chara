@@ -2,10 +2,17 @@
 
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 import type React from "react";
-import { memo, useEffect, useMemo, useState } from "react";
-import { Diff, Hunk, parseDiff } from "react-diff-view";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Diff,
+  Hunk,
+  parseDiff,
+  type ChangeData,
+  type FileData,
+  type HunkData,
+} from "react-diff-view";
 import "react-diff-view/style/index.css";
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import { FileIcon } from "../../atoms";
 
 // Helper function to create unified diff text from old and new content
@@ -80,14 +87,8 @@ function convertSimpleDiffToUnified(
     simpleDiff.includes("+++") &&
     simpleDiff.includes("@@")
   ) {
-    console.log("Diff is already in unified format");
     return simpleDiff;
   }
-
-  console.log(
-    "Converting simple diff to unified format, input length:",
-    simpleDiff.length
-  );
 
   const lines = simpleDiff.split("\n");
   const removedLines: string[] = [];
@@ -120,7 +121,6 @@ function convertSimpleDiffToUnified(
   }
 
   const result = diffLines.join("\n");
-  console.log("Converted diff result:", result);
   return result;
 }
 
@@ -155,14 +155,16 @@ type ViewMode = "collapsed" | "limited" | "full";
 
 const DiffContainer = styled.div<{ isVisible?: boolean }>`
   margin-top: 16px;
-  background-color: #f9fafb;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
   border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid ${props => props.theme.colors.border};
   font-family: monospace;
   font-size: 12px;
   line-height: 1.5;
   overflow: hidden;
-  transition: opacity 0.2s ease, height 0.2s ease;
+  transition: opacity 0.2s ease, height 0.2s ease,
+              background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
   opacity: ${({ isVisible }) => (isVisible ? 1 : 0)};
   height: ${({ isVisible }) => (isVisible ? "auto" : "0")};
   margin-bottom: ${({ isVisible }) => (isVisible ? "16px" : "0")};
@@ -173,17 +175,20 @@ const DiffHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background-color: #f3f4f6;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: ${props => props.theme.colors.highlight};
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const DiffTitle = styled.div`
   font-weight: 500;
   font-size: 12px;
-  color: #4b5563;
+  color: ${props => props.theme.colors.text};
   display: flex;
   align-items: center;
   gap: 6px;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const DiffActions = styled.div`
@@ -196,17 +201,19 @@ const ExpandCollapseButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 4px;
   font-size: 11px;
   border-radius: 4px;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 
   &:hover {
-    background-color: #e5e7eb;
-    color: #4b5563;
+    background-color: ${props => props.theme.colors.border};
+    color: ${props => props.theme.colors.text};
   }
 `;
 
@@ -215,9 +222,22 @@ const DiffContent = styled.div<{ maxHeight: number; viewMode: ViewMode }>`
     viewMode === "full" ? "none" : `${maxHeight}px`};
   overflow-y: ${({ viewMode }) => (viewMode === "full" ? "visible" : "auto")};
   padding: 0;
-  background-color: #ffffff;
+  background-color: ${props => props.theme.colors.background};
   border-width: 0;
   display: ${({ viewMode }) => (viewMode === "collapsed" ? "none" : "block")};
+  transition: background-color ${props => props.theme.transitions.theme};
+`;
+
+const pulseAnimation = keyframes`
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 `;
 
 const StatusBadge = styled.div<{
@@ -232,40 +252,52 @@ const StatusBadge = styled.div<{
   font-weight: 500;
   margin-left: 8px;
 
-  background-color: ${({ $status }) => {
+  background-color: ${({ $status, theme }) => {
     switch ($status) {
       case "generating":
-        return "#dbeafe";
+        return theme.colors.primaryLight;
       case "complete":
-        return "#d1fae5";
+        return "rgba(16, 185, 129, 0.1)";
       case "error":
-        return "#fee2e2";
+        return theme.colors.errorLight;
       default:
-        return "#f3f4f6";
+        return theme.colors.highlight;
     }
   }};
-  color: ${({ $status }) => {
+  color: ${({ $status, theme }) => {
     switch ($status) {
       case "generating":
-        return "#2563eb";
+        return theme.colors.primary;
       case "complete":
-        return "#10b981";
+        return theme.colors.success;
       case "error":
-        return "#ef4444";
+        return theme.colors.error;
       default:
-        return "#6b7280";
+        return theme.colors.textSecondary;
     }
   }};
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
+
+  animation: ${({ $status }) =>
+    $status === "generating"
+      ? css`
+          ${pulseAnimation} 1.5s ease-in-out infinite
+        `
+      : "none"};
 `;
 
 const DiffStats = styled.div<{ viewMode: ViewMode }>`
   display: ${({ viewMode }) => (viewMode === "collapsed" ? "none" : "flex")};
   gap: 12px;
   padding: 8px 12px;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.backgroundSecondary};
   font-size: 11px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 `;
 
 const ViewModeToggle = styled.div`
@@ -273,15 +305,17 @@ const ViewModeToggle = styled.div`
   justify-content: center;
   align-items: center;
   padding: 8px 12px;
-  background-color: #f9fafb;
-  border-top: 1px solid #e5e7eb;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
+  border-top: 1px solid ${props => props.theme.colors.border};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const ViewModeButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -289,10 +323,12 @@ const ViewModeButton = styled.button`
   padding: 4px 8px;
   font-size: 11px;
   border-radius: 4px;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 
   &:hover {
-    background-color: #e5e7eb;
-    color: #4b5563;
+    background-color: ${props => props.theme.colors.border};
+    color: ${props => props.theme.colors.text};
   }
 `;
 
@@ -309,8 +345,9 @@ const StreamingContainer = styled.div`
 const StreamingCursor = styled.span`
   display: inline-block;
   animation: blink 1s infinite;
-  color: #111827;
+  color: ${props => props.theme.colors.text};
   font-weight: bold;
+  transition: color ${props => props.theme.transitions.theme};
 
   @keyframes blink {
     0%,
@@ -480,6 +517,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     const [displayedNewContent, setDisplayedNewContent] = useState("");
     const [currentIndex, setCurrentIndex] = useState(0);
     const [viewMode, setViewMode] = useState<ViewMode>("collapsed");
+    const diffContentRef = useRef<HTMLDivElement>(null);
 
     // Extract data from toolCall
     const args = toolCall.arguments;
@@ -488,7 +526,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     const filePath = args?.path || "unknown";
     const mode = args?.mode || "unknown";
     const operation = result?.operation || mode;
-    const isGenerating = !args?.path || toolCall.status === "generating";
+    const status = toolCall.result?.status || "generating";
 
     let oldContent = "";
     let newContent = "";
@@ -515,7 +553,8 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     }
 
     // Calculate content to use for display
-    const contentToUse = isGenerating ? displayedNewContent : newContent;
+    const contentToUse =
+      status === "generating" ? displayedNewContent : newContent;
 
     // Calculate stats with useMemo to avoid recalculation
     const { addedLines, removedLines } = useMemo(
@@ -525,7 +564,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
 
     // Streaming animation effect
     useEffect(() => {
-      if (isGenerating && currentIndex < newContent.length) {
+      if (status === "generating" && currentIndex < newContent.length) {
         const timer = setTimeout(() => {
           setDisplayedNewContent(newContent.slice(0, currentIndex + 1));
           setCurrentIndex(currentIndex + 1);
@@ -534,15 +573,27 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
         return () => clearTimeout(timer);
       }
 
-      if (!isGenerating) {
+      if (status !== "generating") {
         setDisplayedNewContent(newContent);
         setCurrentIndex(newContent.length);
       }
-    }, [newContent, currentIndex, isGenerating, streamingSpeed]);
+    }, [newContent, currentIndex, status, streamingSpeed]);
+
+    // Auto-scroll to bottom when expanded and generating
+    useEffect(() => {
+      if (
+        status === "generating" &&
+        viewMode !== "collapsed" &&
+        diffContentRef.current
+      ) {
+        const scrollContainer = diffContentRef.current;
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }, [status, viewMode]);
 
     // Reset when content changes completely
     useEffect(() => {
-      if (!isGenerating) {
+      if (status !== "generating") {
         setDisplayedNewContent(newContent);
         setCurrentIndex(newContent.length);
       } else {
@@ -551,7 +602,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
           setDisplayedNewContent("");
         }
       }
-    }, [newContent, currentIndex, isGenerating]);
+    }, [newContent, currentIndex, status]);
 
     // Validate extracted data after hooks
     if (!filePath || typeof filePath !== "string") {
@@ -563,8 +614,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
       console.warn("DiffBlock: newContent must be a string");
       return null;
     }
-
-    const status = isGenerating ? "generating" : "complete";
 
     // Get file extension for display
     const getFileExtension = (path: string): string => {
@@ -592,10 +641,10 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     };
 
     // Parse diff content for react-diff-view
-    let diffFiles: any[] = [];
+    let diffFiles: FileData[] = [];
 
     // Helper function to validate and parse diff safely
-    const safeParseDiff = (diffText: string): any[] => {
+    const safeParseDiff = (diffText: string): FileData[] => {
       if (!diffText || typeof diffText !== "string") {
         console.warn("Invalid diff text provided:", diffText);
         return [];
@@ -613,11 +662,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
         );
         return [];
       }
-
-      console.log(
-        "Attempting to parse diff text:",
-        diffText.substring(0, 200) + "..."
-      );
 
       try {
         const parsedFiles = parseDiff(diffText);
@@ -640,7 +684,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
           }
 
           // Validate hunks structure
-          const validHunks = file.hunks.every((hunk: any) => {
+          const validHunks = file.hunks.every((hunk: HunkData) => {
             return (
               hunk && typeof hunk === "object" && Array.isArray(hunk.changes)
             );
@@ -653,8 +697,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
 
           return true;
         });
-
-        console.log("Successfully parsed", validFiles.length, "valid files");
         return validFiles;
       } catch (error) {
         console.error("Failed to parse diff:", error);
@@ -671,7 +713,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
       diffFiles = safeParseDiff(unifiedDiff);
       if (diffFiles.length === 0) {
         // Fallback to creating diff from content
-        console.log("Fallback: creating diff from content");
         const diffText = createDiffFromContent(
           oldContent,
           contentToUse,
@@ -685,7 +726,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
           console.error("New content length:", contentToUse.length);
 
           // Final fallback: create a simple diff display without parseDiff
-          console.log("Using final fallback: simple diff display");
           diffFiles = [
             {
               hunks: [
@@ -733,7 +773,6 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
         console.error("Failed to create diff from content");
 
         // Final fallback: create a simple diff display without parseDiff
-        console.log("Using final fallback: simple diff display");
         diffFiles = [
           {
             hunks: [
@@ -783,7 +822,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
 
       // Create a synthetic diff for display
       const syntheticDiff = {
-        type: operation === "created" ? "add" : ("modify" as any),
+        type: operation === "created" ? "add" : "modify",
         hunks: [
           {
             oldStart: 1,
@@ -812,9 +851,9 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
                 isInsert: true,
                 isDelete: false,
               })),
-            ] as any[],
+            ] as ChangeData[],
           },
-        ] as any[],
+        ] as HunkData[],
       };
       return (
         <DiffContainer isVisible={isVisible}>
@@ -833,9 +872,15 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
                   .{fileExtension}
                 </span>
               )}
-              <StatusBadge $status={status}>
-                {isGenerating ? "Generating..." : "Complete"}
-              </StatusBadge>
+              {status !== "error" && (
+                <StatusBadge $status={status}>
+                  {status === "generating"
+                    ? "Generating..."
+                    : status === "error"
+                    ? "Error"
+                    : "Complete"}
+                </StatusBadge>
+              )}
             </DiffTitle>
             <DiffActions>
               <ExpandCollapseButton onClick={toggleCollapse}>
@@ -857,17 +902,13 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
               <span>Lines changed:</span>
               <span>{addedLines + removedLines}</span>
             </StatItem>
-            {isGenerating && newContent.length > 0 && (
-              <StatItem>
-                <span>Progress:</span>
-                <span>
-                  {Math.round((currentIndex / newContent.length) * 100)}%
-                </span>
-              </StatItem>
-            )}
           </DiffStats>
 
-          <DiffContent maxHeight={maxHeight} viewMode={viewMode}>
+          <DiffContent
+            ref={diffContentRef}
+            maxHeight={maxHeight}
+            viewMode={viewMode}
+          >
             <StreamingContainer>
               <DiffViewWrapper>
                 <Diff
@@ -881,7 +922,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
                   }
                 </Diff>
               </DiffViewWrapper>
-              {isGenerating && <StreamingCursor>|</StreamingCursor>}
+              {status === "generating" && <StreamingCursor>|</StreamingCursor>}
             </StreamingContainer>
           </DiffContent>
 
@@ -923,9 +964,15 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
                 .{fileExtension}
               </span>
             )}
-            <StatusBadge $status={status}>
-              {isGenerating ? "Generating..." : "Complete"}
-            </StatusBadge>
+            {status !== "error" && (
+              <StatusBadge $status={status}>
+                {status === "generating"
+                  ? "Generating..."
+                  : status === "error"
+                  ? "Error"
+                  : "Complete"}
+              </StatusBadge>
+            )}
           </DiffTitle>
           <DiffActions>
             <ExpandCollapseButton onClick={toggleCollapse}>
@@ -947,17 +994,13 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
             <span>Lines changed:</span>
             <span>{addedLines + removedLines}</span>
           </StatItem>
-          {isGenerating && newContent.length > 0 && (
-            <StatItem>
-              <span>Progress:</span>
-              <span>
-                {Math.round((currentIndex / newContent.length) * 100)}%
-              </span>
-            </StatItem>
-          )}
         </DiffStats>
 
-        <DiffContent maxHeight={maxHeight} viewMode={viewMode}>
+        <DiffContent
+          ref={diffContentRef}
+          maxHeight={maxHeight}
+          viewMode={viewMode}
+        >
           <StreamingContainer>
             <DiffViewWrapper>
               <Diff
@@ -971,7 +1014,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
                 }
               </Diff>
             </DiffViewWrapper>
-            {isGenerating && <StreamingCursor>|</StreamingCursor>}
+            {status === "generating" && <StreamingCursor>|</StreamingCursor>}
           </StreamingContainer>
         </DiffContent>
 

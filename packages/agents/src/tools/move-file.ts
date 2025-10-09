@@ -5,7 +5,7 @@ import { rename } from "node:fs/promises";
 export const moveFile = tool({
   description:
     "Move or rename files and directories. Can move files between directories and rename them in a single operation.",
-  parameters: z.object({
+  inputSchema: z.object({
     source: z.string().describe("Source path of the file or directory to move"),
     destination: z
       .string()

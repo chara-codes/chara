@@ -21,3 +21,14 @@ export {
   type ConvertedToolCall,
   type ToolCallResultMap,
 } from "./tool-call-converter";
+
+export {
+  convertVercelToolToGemini,
+  convertVercelToolsToGemini,
+  convertJSONSchemaToGeminiSchema,
+  validateSchemaForGeminiConversion,
+  createTestTool,
+  type GeminiSchema,
+  type GeminiSchemaType,
+  type GeminiFunctionDeclaration,
+} from "./vercel-to-gemini-converter";

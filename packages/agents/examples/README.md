@@ -27,7 +27,31 @@ This folder contains example code demonstrating how to use the AI providers regi
 
 ## Available Examples
 
-### `providers-demo.ts`
+### Chat API Examples
+
+#### `simple-chat-api.ts`
+
+A straightforward demonstration of using the `/api/chat` endpoint:
+
+- **Basic Chat**: Simple question-answer interaction
+- **Write Mode**: File creation and modification
+- **Message Loading**: Retrieving existing chat messages
+- **Streaming Response**: Real-time AI response streaming
+
+#### `test-chat-api.ts`
+
+A comprehensive test suite for the chat API featuring:
+
+- **Basic Chat Functionality**: Standard chat interactions
+- **Continued Conversations**: Multi-turn conversation handling
+- **Write Mode Testing**: File operations and git integration
+- **Error Handling**: Testing various error scenarios
+- **CORS Testing**: Cross-origin request validation
+- **Message Persistence**: Database storage testing
+
+### Provider Examples
+
+#### `providers-demo.ts`
 
 A comprehensive demonstration of the providers registry featuring:
 
@@ -286,3 +310,57 @@ bun run examples/dial-tools-example.ts
 ```
 
 For detailed configuration instructions, see `../src/providers-config.md`.
+
+## Running Chat API Examples
+
+To test the chat API endpoints:
+
+```bash
+# Start the Chara agents server first
+bun run src/index.ts
+
+# In another terminal, run the simple chat example
+bun run examples/simple-chat-api.ts
+
+# Or run the comprehensive chat API tests
+bun run examples/test-chat-api.ts
+```
+
+### Chat API Usage Patterns
+
+```typescript
+import { generateId, UIMessage } from "ai";
+
+// Create a user message
+const userMessage: UIMessage = {
+  id: generateId(),
+  role: "user",
+  parts: [{ type: "text", text: "Hello!" }],
+  createdAt: new Date(),
+};
+
+// Send to chat API
+const response = await fetch("http://localhost:3031/api/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "text/plain",
+  },
+  body: JSON.stringify({
+    chatId: generateId(),
+    messages: [userMessage],
+    model: "openai:::gpt-4o-mini",
+    mode: "ask", // or "write" for file operations
+  }),
+});
+
+// Read streaming response
+const reader = response.body?.getReader();
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  process.stdout.write(new TextDecoder().decode(value));
+}
+```
+
+For detailed chat API documentation, see `chat-api-examples.md`.

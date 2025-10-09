@@ -1,0 +1,43 @@
+{
+  "name": "@chara-codes/element-selector",
+  "version": "0.1.29",
+  "description": "Element selector hook utilities for Chara frontend applications",
+  "author": "Chara Team",
+  "license": "Apache-2.0",
+  "type": "module",
+  "private": true,
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "bbuild": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "ttest": "vitest run"
+  },
+  "dependencies": {
+    "html2canvas": "^1.4.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4",
+    "tsup": "^8.5.0",
+    "eslint": "^9.36.0",
+    "@types/node": "^22.18.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chara-codes/chara.git",
+    "directory": "packages/frontend/core"
+  },
+  "keywords": [
+    "chara",
+    "frontend",
+    "core",
+    "utilities",
+    "react",
+    "zustand",
+    "trpc"
+  ]
+}

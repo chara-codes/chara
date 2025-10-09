@@ -1,15 +1,17 @@
-import type { ContextItem, MessageContent, ToolCall } from "@chara-codes/core";
+import type { UIMessage } from "ai";
 
 export interface MessageBubbleProps {
   id?: string;
-  content: string | MessageContent[];
+  content: string;
   isUser: boolean;
   timestamp?: string;
   thinkingContent?: string;
   isThinking?: boolean;
-  contextItems?: ContextItem[];
-  toolCalls?: Record<string, ToolCall>;
+  contextItems?: any[];
+  toolCalls?: Record<string, any>;
   onDeleteMessage?: (messageId: string) => void;
+  isGenerating?: boolean;
+  parts: UIMessage["parts"];
 }
 
 export type TooltipPositionType = "top" | "right" | "bottom" | "left";

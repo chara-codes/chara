@@ -1,4 +1,4 @@
-import type { LanguageModelV1 } from "@ai-sdk/provider";
+import type { LanguageModelV2 } from 'ai';
 
 /**
  * Represents an error that occurred during provider initialization

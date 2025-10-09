@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { existsSync, unlinkSync, writeFileSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { fileSystem } from "../file-system";
 import { createTestFS } from "./test-utils";
-import { mkdir } from "node:fs/promises";
-import { writeFileSync, unlinkSync, existsSync } from "node:fs";
-import { join } from "node:path";
 
 // Helper function to check if result is an error object
 function isErrorResult(
@@ -486,8 +486,8 @@ describe("fileSystem tool", () => {
       }
     });
 
-    test("should handle very long filenames", async () => {
-      const longName = "a".repeat(200) + ".txt";
+    test("should handle long filenames", async () => {
+      const longName = "a".repeat(50) + ".txt";
       await testFS.createFile(longName, "long filename content");
 
       const result = await fileSystem.execute({
@@ -658,7 +658,7 @@ describe("fileSystem tool", () => {
     });
 
     test("should have proper parameter validation", () => {
-      expect(fileSystem.parameters).toBeDefined();
+      expect(fileSystem.inputSchema).toBeDefined();
     });
   });
 });

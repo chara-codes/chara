@@ -1,18 +1,19 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import {
-  allProviders,
-  providerKeys,
-  openaiProvider,
-  anthropicProvider,
-  googleProvider,
-  deepseekProvider,
-  openrouterProvider,
-  ollamaProvider,
-  lmstudioProvider,
-  dialProvider,
-  moonshotProvider,
-  type BaseProvider,
   AbstractProvider,
+  allProviders,
+  anthropicProvider,
+  deepseekProvider,
+  dialProvider,
+  geminiCLIProvider,
+  googleProvider,
+  lmstudioProvider,
+  moonshotProvider,
+  ollamaProvider,
+  openaiProvider,
+  openrouterProvider,
+  providerKeys,
+  type BaseProvider,
 } from "../providers";
 
 // Mock the global config module to prevent file system errors
@@ -39,7 +40,7 @@ describe("New Provider Structure", () => {
   test("should export all required providers", () => {
     expect(allProviders).toBeDefined();
     expect(providerKeys).toBeDefined();
-    expect(providerKeys.length).toBe(9);
+    expect(providerKeys.length).toBe(10);
 
     // Check that all expected providers are present
     expect(providerKeys).toContain("openai");
@@ -51,6 +52,7 @@ describe("New Provider Structure", () => {
     expect(providerKeys).toContain("lmstudio");
     expect(providerKeys).toContain("dial");
     expect(providerKeys).toContain("moonshot");
+    expect(providerKeys).toContain("gemini-cli");
   });
 
   test("should export individual provider instances", () => {
@@ -63,6 +65,7 @@ describe("New Provider Structure", () => {
     expect(lmstudioProvider).toBeDefined();
     expect(dialProvider).toBeDefined();
     expect(moonshotProvider).toBeDefined();
+    expect(geminiCLIProvider).toBeDefined();
   });
 
   test("provider instances should have correct properties", () => {

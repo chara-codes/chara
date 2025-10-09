@@ -1,0 +1,139 @@
+name: Publish Alpha
+
+on:
+  push:
+    branches: [playground]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish-alpha:
+    name: Publish Alpha Packages
+    runs-on: macos-latest
+    timeout-minutes: 20
+    if: github.repository_owner == 'chara-codes'
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Cache turbo build setup
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-build-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-build-
+
+      - name: Build packages
+        run: bun run build
+
+      - name: Setup NPM authentication
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+          echo "access=public" >> ~/.npmrc
+
+      - name: Get current date for alpha version
+        id: date
+        run: echo "date=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Create alpha changeset
+        run: |
+          cat << 'EOF' > .changeset/alpha-release.md
+          ---
+          "@chara-codes/cli": patch
+          ---
+
+          Alpha release from playground branch - ${{ github.sha }}
+          EOF
+
+      - name: Version packages for alpha
+        run: |
+          bun changeset version
+          cd packages/cli
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const baseVersion = pkg.version.split('-')[0];
+            pkg.version = baseVersion + '-alpha.${{ steps.date.outputs.date }}';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log('Updated', pkg.name, 'to version', pkg.version);
+          "
+          cd ../..
+
+      - name: Publish alpha packages
+        run: |
+          cd packages/cli
+          pkg_name=$(node -e "console.log(require('./package.json').name)")
+          echo "Publishing $pkg_name..."
+          if [ -f "dist/chara" ]; then
+            npm publish --tag alpha --access public || echo "Failed to publish $pkg_name (might already exist)"
+          else
+            echo "Error: CLI build output not found at dist/chara"
+            exit 1
+          fi
+
+      # - name: Create GitHub Release
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: |
+      #     gh release create "alpha-${{ steps.date.outputs.date }}" \
+      #       --title "Alpha Release ${{ steps.date.outputs.date }}" \
+      #       --notes "🚀 Alpha release from playground branch
+
+      #     **Commit:** ${{ github.sha }}
+      #     **Branch:** playground
+      #     **Timestamp:** ${{ steps.date.outputs.date }}
+
+      #     This is an automated alpha release. Install with:
+      #     \`\`\`bash
+      #     npm install @chara-codes/cli@alpha
+      #     \`\`\`
+
+      #     **⚠️ Warning:** Alpha releases are experimental and may contain breaking changes." \
+      #       --prerelease
+
+      # - name: Comment on commit
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       const { data: commit } = await github.rest.repos.getCommit({
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         ref: context.sha
+      #       });
+
+      #       await github.rest.repos.createCommitComment({
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         commit_sha: context.sha,
+      #         body: `🚀 Alpha packages published!\n\nInstall with: \`npm install @chara-codes/cli@alpha\`\n\nVersion: \`alpha.${{ steps.date.outputs.date }}\``
+      #       });
+
+      # - name: Cleanup changeset
+      #   run: rm -f .changeset/alpha-release.md

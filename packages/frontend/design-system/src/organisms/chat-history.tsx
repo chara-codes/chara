@@ -1,11 +1,12 @@
 "use client";
 
+import type { Chat } from "@chara-codes/core";
+import { isValid } from "date-fns"; // Added isValid import
 import type React from "react";
 import { useState } from "react";
 import styled from "styled-components";
-import { format, isValid } from "date-fns"; // Added isValid import
-import type { Chat } from "@chara-codes/core";
 import { TrashIcon } from "../atoms/icons";
+import { formatChatTime } from "../utils";
 
 interface ChatHistoryProps {
   chats: Chat[];
@@ -18,8 +19,9 @@ const HistoryContainer = styled.div`
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background-color: #f9fafb;
+  background-color: ${props => props.theme.colors.background};
   border-radius: 4px;
+  transition: background-color ${props => props.theme.transitions.theme};
 `;
 
 const HistoryContent = styled.div`
@@ -35,10 +37,12 @@ const DateSection = styled.div`
 const DateHeader = styled.h3`
   font-size: 13px; // Reduced from 14px
   font-weight: 500;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   margin-bottom: 8px; // Reduced from 12px
   padding-bottom: 6px; // Reduced from 8px
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  transition: color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 `;
 
 const ChatList = styled.ul`
@@ -50,13 +54,13 @@ const ChatList = styled.ul`
 const ChatItem = styled.li`
   margin-bottom: 6px; // Reduced from 8px
   border-radius: 6px; // Reduced from 8px
-  background-color: white;
-  border: 1px solid #e5e7eb;
-  transition: all 0.2s ease;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
+  border: 1px solid ${props => props.theme.colors.border};
+  transition: all ${props => props.theme.transitions.theme};
 
   &:hover {
-    border-color: #d1d5db;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border-color: ${props => props.theme.colors.borderHover};
+    box-shadow: ${props => props.theme.shadows.sm};
   }
 `;
 
@@ -70,9 +74,10 @@ const ChatButton = styled.button`
   border: none;
   cursor: pointer;
   border-radius: 6px;
+  transition: background-color ${props => props.theme.transitions.theme};
 
   &:hover {
-    background-color: #f9fafb;
+    background-color: ${props => props.theme.colors.highlight};
   }
 `;
 
@@ -86,32 +91,36 @@ const ChatHeader = styled.div`
 const ChatTitle = styled.h4`
   font-size: 13px;
   font-weight: 500;
-  color: #111827;
+  color: ${props => props.theme.colors.text};
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 85%;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const ChatTime = styled.span`
   font-size: 11px; // Reduced from 12px
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const ChatPreview = styled.p`
   font-size: 12px; // Reduced from 13px
-  color: #4b5563;
+  color: ${props => props.theme.colors.textSecondary};
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const MessageCount = styled.div`
   font-size: 11px; // Reduced from 12px
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   margin-top: 4px; // Reduced from 8px
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const EmptyState = styled.div`
@@ -127,15 +136,17 @@ const EmptyState = styled.div`
 const EmptyStateTitle = styled.h3`
   font-size: 16px;
   font-weight: 500;
-  color: #374151;
+  color: ${props => props.theme.colors.text};
   margin-bottom: 8px;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const EmptyStateText = styled.p`
   font-size: 14px;
-  color: #6b7280;
+  color: ${props => props.theme.colors.textSecondary};
   max-width: 300px;
   margin: 0 auto;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const ChatItemContainer = styled.div`
@@ -156,10 +167,10 @@ const DeleteButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: ${props => props.theme.colors.textSecondary};
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, color ${props => props.theme.transitions.theme};
   z-index: 1;
 
   ${ChatItem}:hover & {
@@ -167,7 +178,7 @@ const DeleteButton = styled.button`
   }
 
   &:hover {
-    color: #ef4444;
+    color: ${props => props.theme.colors.error};
   }
 `;
 
@@ -185,24 +196,27 @@ const DeleteConfirmationOverlay = styled.div`
 `;
 
 const DeleteConfirmationDialog = styled.div`
-  background-color: white;
+  background-color: ${props => props.theme.colors.backgroundSecondary};
   border-radius: 8px;
   padding: 16px;
   width: 300px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: ${props => props.theme.shadows.lg};
+  transition: background-color ${props => props.theme.transitions.theme};
 `;
 
 const DeleteConfirmationTitle = styled.h4`
   font-size: 16px;
   font-weight: 500;
-  color: #111827;
+  color: ${props => props.theme.colors.text};
   margin: 0 0 12px 0;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const DeleteConfirmationText = styled.p`
   font-size: 14px;
-  color: #4b5563;
+  color: ${props => props.theme.colors.textSecondary};
   margin: 0 0 16px 0;
+  transition: color ${props => props.theme.transitions.theme};
 `;
 
 const DeleteConfirmationButtons = styled.div`
@@ -216,13 +230,15 @@ const CancelButton = styled.button`
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: ${props => props.theme.colors.highlight};
+  color: ${props => props.theme.colors.text};
   border: none;
   cursor: pointer;
+  transition: background-color ${props => props.theme.transitions.theme},
+              color ${props => props.theme.transitions.theme};
 
   &:hover {
-    background-color: #e5e7eb;
+    background-color: ${props => props.theme.colors.border};
   }
 `;
 
@@ -231,13 +247,14 @@ const ConfirmButton = styled.button`
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
-  background-color: #ef4444;
-  color: white;
+  background-color: ${props => props.theme.colors.error};
+  color: ${props => props.theme.colors.background};
   border: none;
   cursor: pointer;
+  transition: background-color ${props => props.theme.transitions.theme};
 
   &:hover {
-    background-color: #dc2626;
+    background-color: ${props => props.theme.colors.errorHover};
   }
 `;
 
@@ -276,25 +293,6 @@ const groupChatsByDate = (chats: Chat[]) => {
     yesterday: yesterdayChats,
     older: olderChats,
   };
-};
-
-// Helper function to format chat time with error handling
-const formatChatTime = (timestamp: string | number | Date) => {
-  try {
-    // Handle different timestamp formats
-    const date =
-      timestamp instanceof Date ? timestamp : new Date(timestamp || Date.now());
-
-    // Check if the date is valid before formatting
-    if (!isValid(date)) {
-      return "Unknown time";
-    }
-
-    return format(date, "h:mm a");
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return "Unknown time";
-  }
 };
 
 // Helper function to get chat preview

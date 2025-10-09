@@ -1,14 +1,14 @@
-import { db } from "../api/db";
-import { stacks, links, mcp } from "../db/schema";
 import { eq, like, sql } from "drizzle-orm";
-import { techsToLinks } from "../utils/techLinks";
-import { mcpsToDb } from "../utils/mcpUtils";
+import { db } from "../api/db";
+import { links, mcp, stacks } from "../db/schema";
 import {
-  createStackSchema,
-  updateStackSchema,
   toStackDTO,
+  type createStackSchema,
   type StackDTO,
+  type updateStackSchema,
 } from "../dto";
+import { mcpsToDb } from "../utils/mcpUtils";
+import { techsToLinks } from "../utils/techLinks";
 
 export class StackNotFoundError extends Error {
   constructor() {
@@ -34,7 +34,7 @@ export async function listWithLinks(conn: Conn = db): Promise<StackDTO[]> {
 
 export async function findById(
   id: number,
-  conn: Conn = db,
+  conn: Conn = db
 ): Promise<StackDTO | null> {
   const row = await conn.query.stacks.findFirst({
     where: eq(stacks.id, id),
@@ -48,7 +48,7 @@ export async function findById(
 
 // ——— Mutations ———
 export async function create(
-  input: typeof createStackSchema._type,
+  input: typeof createStackSchema._type
 ): Promise<StackDTO> {
   return db.transaction(async (tx) => {
     const [stack] = await tx
@@ -79,7 +79,7 @@ export async function create(
 }
 
 export async function update(
-  input: typeof updateStackSchema._type,
+  input: typeof updateStackSchema._type
 ): Promise<StackDTO> {
   return db.transaction(async (tx) => {
     const [stack] = await tx

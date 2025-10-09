@@ -1,4 +1,4 @@
-import { logger } from "@chara-codes/logger";
+import { parseArgs } from "node:util";
 import {
   generateText,
   StreamData,
@@ -6,9 +6,9 @@ import {
   tool,
   type LanguageModelV1,
 } from "ai";
-import { parseArgs } from "node:util";
 import z from "zod";
 import { providersRegistry } from "../src/providers";
+import { logger } from "../src/utils/logger";
 
 const { values } = parseArgs({
   // args: Bun.argv,
@@ -50,7 +50,7 @@ const result = streamText({
   tools: {
     weather: tool({
       description: "Get the weather in a location",
-      parameters: z.object({
+      inputSchema: z.object({
         location: z.string().describe("The location to get the weather for"),
       }),
       execute: async ({ location }, { toolCallId }) => {
@@ -74,17 +74,24 @@ const result = streamText({
   messages: [
     {
       role: "system",
-      content:
-        "Choose and call right tools to answer the users question. You the synoptic, please provide professional information about the weather, it should include current weather and weather forecast.",
+
+      parts: [{
+        type: 'text',
+        text: "Choose and call right tools to answer the users question. You the synoptic, please provide professional information about the weather, it should include current weather and weather forecast."
+      }]
     },
     {
       role: "user",
-      content: "What is the weather in Durres?",
+
+      parts: [{
+        type: 'text',
+        text: "What is the weather in Durres?"
+      }]
     },
   ],
 });
 
-const res = result.toDataStream({ data });
+const res = result.toUIMessageStream({ data });
 for await (const chunk of res) {
   logger.dump(chunk);
 }

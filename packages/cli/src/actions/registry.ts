@@ -1,4 +1,4 @@
-import { defaultModelAction } from "./default-model";
+
 import {
   ActionFactory,
   compose,
@@ -6,8 +6,6 @@ import {
   withErrorHandling,
   withLogging,
 } from "./factory";
-import { initAction } from "./init";
-import { initializeConfigAction } from "./initialize-config";
 import { loadConfigAction } from "./load-config";
 import { resetAction } from "./reset";
 import { serveStaticAction, stopStaticAction } from "./serve-static";
@@ -18,17 +16,14 @@ import { startAgentsAction, stopAgentsAction } from "./start-agents";
 import { startServerAction } from "./start-server";
 import { stopServerAction } from "./stop-server";
 import {
-  startTunnelServerAction,
-  stopTunnelServerAction,
-} from "./tunnel-server";
-import {
   startTunnelClientAction,
   stopTunnelClientAction,
 } from "./tunnel-client";
+import {
+  startTunnelServerAction,
+  stopTunnelServerAction,
+} from "./tunnel-server";
 import type {
-  DefaultModelActionOptions,
-  InitActionOptions,
-  InitializeConfigActionOptions,
   LoadConfigActionOptions,
   ResetActionOptions,
   ServeStaticActionOptions,
@@ -37,28 +32,17 @@ import type {
   ShowActionOptions,
   StartAgentsActionOptions,
   StartServerActionOptions,
-  StartTunnelServerActionOptions,
   StartTunnelClientActionOptions,
+  StartTunnelServerActionOptions,
   StopAgentsActionOptions,
   StopServerActionOptions,
   StopServeStaticActionOptions,
-  StopTunnelServerActionOptions,
   StopTunnelClientActionOptions,
+  StopTunnelServerActionOptions,
 } from "./types";
 
 // Register all actions with the factory
 export function registerActions(): void {
-  // Register init action
-  ActionFactory.register(
-    createAction(
-      "init",
-      "Initialize Chara configuration with AI provider settings",
-      compose<InitActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "init")
-      )(initAction)
-    )
-  );
-
   // Register reset action
   ActionFactory.register(
     createAction(
@@ -78,17 +62,6 @@ export function registerActions(): void {
       compose<ShowActionOptions>(withErrorHandling, (fn) =>
         withLogging(fn, "show")
       )(showAction)
-    )
-  );
-
-  // Register default-model action
-  ActionFactory.register(
-    createAction(
-      "default-model",
-      "Set default AI model for Chara Codes",
-      compose<DefaultModelActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "default-model")
-      )(defaultModelAction)
     )
   );
 
@@ -168,17 +141,6 @@ export function registerActions(): void {
       compose<LoadConfigActionOptions>(withErrorHandling, (fn) =>
         withLogging(fn, "load-config")
       )(loadConfigAction)
-    )
-  );
-
-  // Register initialize-config action
-  ActionFactory.register(
-    createAction(
-      "initialize-config",
-      "Initialize Chara configuration with default model from global config",
-      compose<InitializeConfigActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "initialize-config")
-      )(initializeConfigAction)
     )
   );
 

@@ -1,9 +1,8 @@
 import * as fs from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { logger } from "@chara-codes/logger";
 import git from "isomorphic-git";
-
+import { logger } from "../../utils/logger";
 import type {
   GitCommitByOidResult,
   GitCommitHistoryResult,

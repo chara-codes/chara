@@ -1,8 +1,8 @@
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { tool } from "ai";
 import z from "zod";
-import { readFile } from "node:fs/promises";
-import { resolve, join, relative, isAbsolute } from "node:path";
-import { existsSync } from "node:fs";
 
 interface DiagnosticEntry {
   file: string;
@@ -50,7 +50,7 @@ interface DetectedProject {
  * Detects if project has TypeScript/JavaScript setup and available tools
  */
 async function detectProjectType(
-  projectRoot: string,
+  projectRoot: string
 ): Promise<DetectedProject> {
   const types: string[] = [];
   const tools = {
@@ -66,7 +66,7 @@ async function detectProjectType(
 
     try {
       const pkg = JSON.parse(
-        await readFile(join(projectRoot, "package.json"), "utf-8"),
+        await readFile(join(projectRoot, "package.json"), "utf-8")
       );
 
       // Check for TypeScript
@@ -143,7 +143,7 @@ async function detectProjectType(
  */
 async function getTypeScriptDiagnostics(
   projectRoot: string,
-  filePath?: string,
+  filePath?: string
 ): Promise<DiagnosticEntry[]> {
   const diagnostics: DiagnosticEntry[] = [];
 
@@ -153,11 +153,17 @@ async function getTypeScriptDiagnostics(
       args.push(filePath);
     }
 
-    const proc = Bun.spawn(args, {
-      cwd: projectRoot,
-      stderr: "pipe",
-      stdout: "pipe",
-    });
+    let proc;
+    try {
+      proc = Bun.spawn(args, {
+        cwd: projectRoot,
+        stderr: "pipe",
+        stdout: "pipe",
+      });
+    } catch (spawnError) {
+      console.error("TypeScript spawn failed:", spawnError);
+      return diagnostics;
+    }
 
     const [stdout, stderr] = await Promise.all([
       new Response(proc.stdout).text(),
@@ -172,7 +178,7 @@ async function getTypeScriptDiagnostics(
     for (const line of lines) {
       // Parse TypeScript error format: file(line,column): error TS#### message
       const match = line.match(
-        /^(.+?)\((\d+),(\d+)\):\s+(error|warning|info)\s+TS\d+:\s+(.+)$/,
+        /^(.+?)\((\d+),(\d+)\):\s+(error|warning|info)\s+TS\d+:\s+(.+)$/
       );
       if (match) {
         const [, file, lineStr, columnStr, severity, message] = match;
@@ -203,7 +209,7 @@ async function getTypeScriptDiagnostics(
  */
 async function getESLintDiagnostics(
   projectRoot: string,
-  filePath?: string,
+  filePath?: string
 ): Promise<DiagnosticEntry[]> {
   const diagnostics: DiagnosticEntry[] = [];
 
@@ -252,7 +258,7 @@ async function getESLintDiagnostics(
  */
 async function getPrettierDiagnostics(
   projectRoot: string,
-  filePath?: string,
+  filePath?: string
 ): Promise<DiagnosticEntry[]> {
   const diagnostics: DiagnosticEntry[] = [];
 
@@ -311,7 +317,7 @@ async function getPrettierDiagnostics(
  */
 async function getBiomeDiagnostics(
   projectRoot: string,
-  filePath?: string,
+  filePath?: string
 ): Promise<DiagnosticEntry[]> {
   const diagnostics: DiagnosticEntry[] = [];
 
@@ -387,7 +393,7 @@ async function getBiomeDiagnostics(
  * Runs unit tests using project's test script
  */
 async function getUnitTestDiagnostics(
-  projectRoot: string,
+  projectRoot: string
 ): Promise<DiagnosticEntry[]> {
   const diagnostics: DiagnosticEntry[] = [];
 
@@ -515,7 +521,7 @@ async function getUnitTestDiagnostics(
  */
 function aggregateDiagnostics(
   diagnostics: DiagnosticEntry[],
-  executedChecks: ExecutedCheck[] = [],
+  executedChecks: ExecutedCheck[] = []
 ): ProjectDiagnostics {
   const fileMap = new Map<string, DiagnosticSummary>();
   let totalErrors = 0;
@@ -565,7 +571,7 @@ function aggregateDiagnostics(
  */
 function formatDiagnostics(
   diagnostics: ProjectDiagnostics,
-  showDetails: boolean = false,
+  showDetails: boolean = false
 ): string {
   let output = "";
 
@@ -580,13 +586,13 @@ function formatDiagnostics(
       } else if (check.executed) {
         const checkDiagnostics =
           diagnostics.details?.filter(
-            (d) => d.source === check.name.toLowerCase(),
+            (d) => d.source === check.name.toLowerCase()
           ) || [];
         const errors = checkDiagnostics.filter(
-          (d) => d.severity === "error",
+          (d) => d.severity === "error"
         ).length;
         const warnings = checkDiagnostics.filter(
-          (d) => d.severity === "warning",
+          (d) => d.severity === "warning"
         ).length;
         if (errors > 0 || warnings > 0) {
           output += ` - found ${errors} error(s), ${warnings} warning(s)`;
@@ -675,14 +681,14 @@ To get a project-wide diagnostic summary:
 - Don't remove code you've generated just because you can't fix an error. The user can help you fix it.
 </guidelines>`,
 
-  parameters: z.object({
+  inputSchema: z.object({
     path: z
       .string()
       .optional()
       .describe(
         "The path to get diagnostics for. If not provided, returns a project-wide summary. " +
           "This path should never be absolute, and the first component of the path should always be a root directory in a project. " +
-          "Example: If the project has root directories 'src' and 'tests', you can access diagnostics for 'main.ts' in 'src' using 'src/main.ts'.",
+          "Example: If the project has root directories 'src' and 'tests', you can access diagnostics for 'main.ts' in 'src' using 'src/main.ts'."
       ),
   }),
 
@@ -735,7 +741,7 @@ To get a project-wide diagnostic summary:
       // TypeScript diagnostics
       if (detected.tools.typescript) {
         diagnosticPromises.push(
-          getTypeScriptDiagnostics(projectRoot, targetPath),
+          getTypeScriptDiagnostics(projectRoot, targetPath)
         );
         executedChecks.push({
           name: "TypeScript",
@@ -827,12 +833,16 @@ To get a project-wide diagnostic summary:
 
       // Add project type information
       if (!targetPath) {
-        result = `Project types detected: ${detected.types.join(", ")}\n\n${result}`;
+        result = `Project types detected: ${detected.types.join(
+          ", "
+        )}\n\n${result}`;
       }
 
       return result;
     } catch (error) {
-      return `Error running diagnostics: ${error instanceof Error ? error.message : String(error)}`;
+      return `Error running diagnostics: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
     }
   },
 });

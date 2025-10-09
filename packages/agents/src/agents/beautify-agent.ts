@@ -1,6 +1,6 @@
-import { logger } from "@chara-codes/logger";
-import { type CoreMessage, streamText } from "ai";
+import { streamText, type ModelMessage } from "ai";
 import { providersRegistry } from "../providers";
+import { logger } from "../utils/logger";
 
 export const beautifyAgent = async (
   {
@@ -8,7 +8,7 @@ export const beautifyAgent = async (
     messages,
   }: {
     model: string;
-    messages: CoreMessage[];
+    messages: ModelMessage[];
   },
   options: { headers?: Record<string, string> } = {}
 ) => {
@@ -23,21 +23,12 @@ export const beautifyAgent = async (
       {
         role: "system",
         content:
-          "Use previous messages and the current user prompt to generate a better, implementation-focused answer. Limit the response to 300 symbols, make it actionable for development, and use plain text only. Prioritize clarity and practical instructions.",
+          "Use provided messages to generate a better implementation-focused prompt.  Limit the response to 300 symbols, make it actionable for development, and use plain text only. Prioritize clarity and practical instructions.",
       },
-      ...messages,
+      messages[messages.length - 1] as any,
     ],
     onError: (err) => {
       logger.dump(err);
     },
-    // experimental_telemetry: {
-    //   isEnabled: true,
-    //   tracer: getTracer(),
-    //   metadata: {
-    //     agent: "beautify",
-    //     provider: providerName,
-    //     model: modelName,
-    //   },
-    // },
   });
 };

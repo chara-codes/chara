@@ -1,8 +1,8 @@
 import { logger } from "@chara-codes/logger";
-import { isCancel, text } from "./prompts";
 import { green, yellow } from "picocolors";
 import type { ProviderConfig } from "../config/provider-configs";
 import { PROVIDER_CONFIGS } from "../config/provider-configs";
+import { isCancel, text } from "./prompts";
 
 export async function promptForProviderConfig(
   _providerKey: string,
@@ -23,6 +23,22 @@ export async function promptForProviderConfig(
       );
     }
 
+    // Special handling for gemini-cli provider
+    if (_providerKey === "gemini-cli") {
+      logger.info(
+        `${yellow("ℹ")} Gemini CLI supports two authentication methods:`
+      );
+      logger.info(`  1. API Key (recommended): Set GEMINI_API_KEY`);
+      logger.info(
+        `  2. OAuth (fallback): Run 'npm install -g @google/gemini-cli && gemini' for setup`
+      );
+      logger.info(
+        `  ${yellow(
+          "→"
+        )} API key authentication will be tried first, OAuth as fallback`
+      );
+    }
+
     // Show if using environment variable
     if (envValue && !existingConfig[config.envKey]) {
       logger.info(
@@ -31,10 +47,23 @@ export async function promptForProviderConfig(
     }
 
     const apiKey = await text({
-      message: `Enter your ${config.name} API key:`,
-      placeholder: "sk-...",
+      message:
+        _providerKey === "gemini-cli"
+          ? `Enter your ${config.name} API key (leave empty to use OAuth fallback):`
+          : `Enter your ${config.name} API key:`,
+      placeholder:
+        _providerKey === "gemini-cli"
+          ? "Your Google AI Studio API key or leave empty"
+          : "sk-...",
       defaultValue: currentValue,
       validate: (value) => {
+        // Allow empty for gemini-cli (OAuth fallback)
+        if (
+          _providerKey === "gemini-cli" &&
+          (!value || value.trim().length === 0)
+        ) {
+          return undefined; // Valid - will use OAuth fallback
+        }
         if (!value || value.trim().length === 0) {
           return `${config.name} API key is required`;
         }
@@ -49,7 +78,23 @@ export async function promptForProviderConfig(
       return null;
     }
 
-    envConfig[config.envKey] = apiKey as string;
+    // Only set the API key if provided, for gemini-cli allow empty (OAuth fallback)
+    if (apiKey && (apiKey as string).trim().length > 0) {
+      envConfig[config.envKey] = apiKey as string;
+    } else if (_providerKey === "gemini-cli") {
+      logger.info(
+        `${yellow(
+          "ℹ"
+        )} No API key provided for Gemini CLI - will use OAuth authentication as fallback`
+      );
+      logger.info(
+        `  Make sure you have authenticated with: npm install -g @google/gemini-cli && gemini`
+      );
+      // Set a placeholder value to indicate gemini-cli is configured for OAuth
+      envConfig[config.envKey] = "OAUTH_FALLBACK";
+    } else {
+      envConfig[config.envKey] = apiKey as string;
+    }
   } else {
     // For providers that don't require API keys (like Ollama, LMStudio)
     const envValue = process.env[config.envKey];
@@ -143,7 +188,19 @@ export async function validateProviderConfig(
   try {
     if (config.requiresApiKey) {
       const apiKey = envConfig[config.envKey];
-      if (!apiKey || apiKey.trim().length === 0) {
+      // Special case for gemini-cli: API key is optional (OAuth fallback available)
+      if (providerKey === "gemini-cli") {
+        if (
+          !apiKey ||
+          apiKey.trim().length === 0 ||
+          apiKey === "OAUTH_FALLBACK"
+        ) {
+          logger.info(
+            `${config.name} will use OAuth authentication (no API key provided)`
+          );
+          return true; // Valid - will use OAuth fallback
+        }
+      } else if (!apiKey || apiKey.trim().length === 0) {
         logger.error(`Missing API key for ${config.name}`);
         return false;
       }
@@ -195,6 +252,13 @@ export function getConfiguredProviders(
 ): string[] {
   return Object.keys(PROVIDER_CONFIGS).filter((providerKey) => {
     const config = PROVIDER_CONFIGS[providerKey];
+    // Special case for gemini-cli: treat OAUTH_FALLBACK as configured
+    if (
+      providerKey === "gemini-cli" &&
+      envConfig[config.envKey] === "OAUTH_FALLBACK"
+    ) {
+      return true;
+    }
     return (
       envConfig[config.envKey] ||
       config.additionalEnvKeys?.some((key) => envConfig[key])
@@ -203,5 +267,9 @@ export function getConfiguredProviders(
 }
 
 export function maskSensitiveValue(key: string, value: string): string {
+  // Special case for gemini-cli OAuth fallback
+  if (value === "OAUTH_FALLBACK") {
+    return "OAuth (CLI authenticated)";
+  }
   return key.includes("KEY") ? "***" + value.slice(-4) : value;
 }

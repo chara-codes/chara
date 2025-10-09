@@ -1,6 +1,6 @@
 {
   "name": "@chara-codes/web",
-  "version": "0.1.20",
+  "version": "0.1.30",
   "main": "src/index.tsx",
   "module": "src/index.tsx",
   "types": "src/index.tsx",
@@ -16,6 +16,7 @@
   "dependencies": {
     "@ai-sdk/react": "^1.2.12",
     "@chara-codes/core": "workspace:*",
+    "@chara-codes/element-selector": "workspace:*",
     "@chara-codes/design-system": "workspace:*",
     "@r2wc/react-to-web-component": "^2.0.4",
     "@radix-ui/react-slot": "^1.2.3",

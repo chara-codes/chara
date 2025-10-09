@@ -1,23 +1,24 @@
 import { sql } from "drizzle-orm";
 import {
-  type AnySQLiteColumn,
   index,
   int,
   sqliteTable,
   text,
+  type AnySQLiteColumn,
 } from "drizzle-orm/sqlite-core";
 
 /**
- * Represents chat conversations in the system.
- * Chats can be organized hierarchically using parentId references.
+ * Represents chat conversations in the system using string IDs for better
+ * compatibility with AI SDK and modern chat applications.
+ *
+ * Chats can be organized hierarchically using parentId references and
+ * support status tracking for real-time conversation management.
  */
 export const chats = sqliteTable(
   "chats",
   {
-    /** Unique identifier for the chat. Auto-incremented. */
-    id: int().primaryKey({
-      autoIncrement: true,
-    }),
+    /** Unique identifier for the chat - compatible with UIMessage chatId */
+    id: text().primaryKey(),
 
     /** The title/name of the chat conversation */
     title: text().notNull(),
@@ -33,11 +34,19 @@ export const chats = sqliteTable(
       .default(sql`CURRENT_TIMESTAMP`),
 
     /** Optional reference to a parent chat, allowing for hierarchical chat organization */
-    parentId: int().references((): AnySQLiteColumn => chats.id, {
+    parentId: text().references((): AnySQLiteColumn => chats.id, {
       onDelete: "cascade",
     }),
+
+    /** Current status of the chat conversation */
+    status: text()
+      .notNull()
+      .default("idle")
+      .$type<"idle" | "in_progress" | "completed" | "error">(),
   },
   (table) => ({
     parentIdx: index("idx_chats_parent_id").on(table.parentId),
+    statusIdx: index("idx_chats_status").on(table.status),
+    updatedAtIdx: index("idx_chats_updated_at").on(table.updatedAt),
   })
 );

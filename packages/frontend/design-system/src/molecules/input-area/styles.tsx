@@ -1,24 +1,5 @@
-import styled, { keyframes } from "styled-components";
-
-const shimmer = keyframes`
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-`;
-
-const pulse = keyframes`
-  0%, 100% {
-    opacity: 0.6;
-    transform: scaleY(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scaleY(1.2);
-  }
-`;
+import styled from "styled-components";
+import { pulse, shimmer, spin } from "./constants/animations";
 
 export const LoadingLine = styled.div`
   position: absolute;
@@ -39,18 +20,16 @@ export const LoadingLine = styled.div`
     background: linear-gradient(
       90deg,
       transparent 0%,
-      #3b82f6 15%,
-      #8b5cf6 30%,
-      #ec4899 50%,
-      #8b5cf6 70%,
-      #3b82f6 85%,
+      ${props => props.theme.colors.primary} 15%,
+      ${props => props.theme.colors.secondary} 30%,
+      ${props => props.theme.colors.primary} 50%,
+      ${props => props.theme.colors.secondary} 70%,
+      ${props => props.theme.colors.primary} 85%,
       transparent 100%
     );
     background-size: 200% 100%;
-    box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
-    animation:
-      ${shimmer} 2s infinite linear,
-      ${pulse} 2s infinite ease-in-out;
+    box-shadow: 0 0 8px ${props => props.theme.colors.primaryLight};
+    animation: ${shimmer} 2s infinite linear, ${pulse} 2s infinite ease-in-out;
   }
 `;
 
@@ -58,13 +37,14 @@ export const InputContainer = styled.div<{ isLoading?: boolean }>`
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background-color: #f9fafb;
+  background-color: ${props => props.theme.colors.background};
   position: relative;
-  border-top: 1px solid rgba(229, 231, 235, 0.5);
-  transition: background-color 0.2s ease;
+  border-top: 1px solid ${props => props.theme.colors.border};
+  transition: background-color ${props => props.theme.transitions.theme},
+              border-color ${props => props.theme.transitions.theme};
 
   &:focus-within {
-    background-color: #fff;
+    background-color: ${props => props.theme.colors.backgroundSecondary};
   }
 
   ${(props) =>
@@ -92,7 +72,7 @@ export const InputWrapper = styled.div<{ hasContext?: boolean }>`
   background-color: transparent;
   border-radius: 12px;
   padding: 0;
-  transition: all 0.2s ease;
+  transition: all ${props => props.theme.transitions.theme};
 
   ${(props) =>
     props.hasContext &&
@@ -107,7 +87,7 @@ export const InputWrapper = styled.div<{ hasContext?: boolean }>`
       transform: translateY(-50%);
       width: 3px;
       height: 70%;
-      background-color: #2563eb;
+      background-color: ${props.theme.colors.primary};
       border-radius: 3px;
     }
   `}
@@ -125,7 +105,8 @@ export const ButtonsRow = styled.div`
   align-items: center;
   gap: 10px;
   padding-top: 8px;
-  border-top: 1px solid rgba(229, 231, 235, 0.3);
+  border-top: 1px solid ${props => props.theme.colors.border};
+  transition: border-color ${props => props.theme.transitions.theme};
 `;
 
 export const ButtonsContainer = styled.div`
@@ -134,35 +115,30 @@ export const ButtonsContainer = styled.div`
   position: relative;
 `;
 
-export const spin = keyframes`
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-`;
-
 export const SendButton = styled.button<{ $isResponding?: boolean }>`
   margin-left: 12px;
-  background-color: ${(props) => (props.$isResponding ? "#ef4444" : "#2563eb")};
+  background-color: ${(props) => (props.$isResponding ? props.theme.colors.error : props.theme.colors.primary)};
   border-radius: 12px;
   width: 40px;
   height: 40px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: all ${props => props.theme.transitions.normal} ease;
+  box-shadow: ${props => props.theme.shadows.sm};
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: ${props => props.theme.colors.background};
 
   &:hover:not(:disabled) {
     background-color: ${(props) =>
-      props.$isResponding ? "#dc2626" : "#1d4ed8"};
+      props.$isResponding ? props.theme.colors.errorHover : props.theme.colors.primaryHover};
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: ${props => props.theme.shadows.md};
   }
 
   &:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: ${props => props.theme.shadows.sm};
   }
 
   &:disabled {
@@ -190,9 +166,9 @@ export const LoaderContainer = styled.div`
 `;
 
 export const Loader = styled.div`
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid ${props => props.theme.colors.primaryLight};
   border-radius: 50%;
-  border-top: 2px solid white;
+  border-top: 2px solid ${props => props.theme.colors.background};
   width: 16px;
   height: 16px;
   animation: ${spin} 1s linear infinite;
@@ -203,22 +179,23 @@ export const StyledInput = styled.textarea`
   padding: 6px 0;
   width: 100%;
   min-height: 24px;
-  max-height: 150px;
+  max-height: 300px;
   border: none;
   outline: none;
   resize: none;
   background: transparent;
+  color: ${props => props.theme.colors.text};
   line-height: 1.5;
-  transition: height 0.1s ease;
+  transition: height 0.1s ease, color ${props => props.theme.transitions.theme};
   overflow-y: hidden;
 
   &::placeholder {
-    color: #9ca3af;
-    transition: color 0.2s ease;
+    color: ${props => props.theme.colors.textSecondary};
+    transition: color ${props => props.theme.transitions.theme};
   }
 
   &:focus::placeholder {
-    color: #d1d5db;
+    color: ${props => props.theme.colors.border};
   }
 
   &:disabled {

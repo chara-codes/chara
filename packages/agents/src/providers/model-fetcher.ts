@@ -1,20 +1,20 @@
-import { logger } from "@chara-codes/logger";
-import type {
-  ModelInfo,
-  OpenAIModelsResponse,
-  OpenAIModel,
-  OpenRouterModelsResponse,
-  OpenRouterModel,
-  OllamaModelsResponse,
-  OllamaModel,
-  AnthropicModelsResponse,
-  AnthropicModel,
-  GoogleModelsResponse,
-  GoogleModel,
-  DeepSeekModelsResponse,
-  DeepSeekModel,
-} from "./types";
 import { getVarFromEnvOrGlobalConfig } from "@chara-codes/settings";
+import { logger } from "../utils/logger";
+import type {
+  AnthropicModel,
+  AnthropicModelsResponse,
+  DeepSeekModel,
+  DeepSeekModelsResponse,
+  GoogleModel,
+  GoogleModelsResponse,
+  ModelInfo,
+  OllamaModel,
+  OllamaModelsResponse,
+  OpenAIModel,
+  OpenAIModelsResponse,
+  OpenRouterModel,
+  OpenRouterModelsResponse,
+} from "./types";
 
 /**
  * Utilities for fetching models from different providers
@@ -432,6 +432,28 @@ export namespace ModelFetcher {
         "https://api.moonshot.ai/v1/models"
       );
     }
+  }
+
+  /**
+   * Fetches available models from Gemini CLI
+   * @returns Array of Gemini CLI models
+   */
+  export async function fetchGeminiCLIModels(): Promise<ModelInfo[]> {
+    // Gemini CLI supports a fixed set of models as per documentation
+    return [
+      {
+        id: "gemini-2.5-pro",
+        name: "Gemini 2.5 Pro",
+        description: "Most capable model for complex tasks (64K output tokens)",
+        contextLength: 2097152, // 2M tokens context
+      },
+      {
+        id: "gemini-2.5-flash",
+        name: "Gemini 2.5 Flash",
+        description: "Faster model for simpler tasks (64K output tokens)",
+        contextLength: 1048576, // 1M tokens context
+      },
+    ];
   }
 
   /**

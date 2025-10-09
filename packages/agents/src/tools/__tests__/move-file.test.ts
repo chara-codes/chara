@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { mkdir, stat } from "fs/promises";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { moveFile } from "../move-file";
 import { createTestFS } from "./test-utils";
-import { mkdir, stat } from "fs/promises";
 
 describe("moveFile tool", () => {
   const testFS = createTestFS();
@@ -96,11 +96,11 @@ describe("moveFile tool", () => {
     expect(await testFS.fileExists("destination-dir/file1.txt")).toBe(true);
     expect(await testFS.fileExists("destination-dir/file2.txt")).toBe(true);
     expect(await testFS.fileExists("destination-dir/subdir/nested.txt")).toBe(
-      true,
+      true
     );
     expect(await testFS.readFile("destination-dir/file1.txt")).toBe("content1");
     expect(await testFS.readFile("destination-dir/subdir/nested.txt")).toBe(
-      "nested content",
+      "nested content"
     );
   });
 
@@ -128,7 +128,7 @@ describe("moveFile tool", () => {
     const content = "Special content éñü 🚀";
     const sourcePath = await testFS.createFile(
       "special-chars éñü.txt",
-      content,
+      content
     );
     const destPath = testFS.getPath("moved-special 🚀.txt");
 
@@ -157,10 +157,10 @@ describe("moveFile tool", () => {
     expect(result.status).toBe("success");
     expect(await testFS.fileExists("source.txt")).toBe(false);
     expect(await testFS.fileExists("level1/level2/level3/moved.txt")).toBe(
-      true,
+      true
     );
     expect(await testFS.readFile("level1/level2/level3/moved.txt")).toBe(
-      content,
+      content
     );
   });
 
@@ -215,7 +215,7 @@ describe("moveFile tool", () => {
       await moveFile.execute({
         source: nonExistentPath,
         destination: destPath,
-      }),
+      })
     ).toInclude("Failed to move");
   });
 
@@ -244,7 +244,7 @@ describe("moveFile tool", () => {
       await moveFile.execute({
         source: sourcePath,
         destination: destPath,
-      }),
+      })
     ).toInclude("Failed to move");
   });
 
@@ -304,9 +304,9 @@ describe("moveFile tool", () => {
 
   test("should have correct tool metadata", () => {
     expect(moveFile.description).toBe(
-      "Move or rename files and directories. Can move files between directories and rename them in a single operation.",
+      "Move or rename files and directories. Can move files between directories and rename them in a single operation."
     );
-    expect(moveFile.parameters).toBeDefined();
+    expect(moveFile.inputSchema).toBeDefined();
   });
 
   test("should handle binary-like content", async () => {
@@ -364,7 +364,7 @@ describe("moveFile tool", () => {
     for (let i = 0; i < 20; i++) {
       expect(await testFS.fileExists(`dest-many/file${i}.txt`)).toBe(true);
       expect(await testFS.readFile(`dest-many/file${i}.txt`)).toBe(
-        `content${i}`,
+        `content${i}`
       );
     }
   });

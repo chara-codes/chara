@@ -1,4 +1,8 @@
-# Pretty Stream Logger
+# Utilities
+
+This directory contains various utility functions for the agents package.
+
+## Pretty Stream Logger
 
 A lightweight, developer-friendly stream logger for agent interactions with beautiful colors and clear visual indicators.
 
@@ -338,4 +342,503 @@ flushTextBuffer();
 
 // Or even simpler:
 logWithPreset(buffer, 'detailed');
+```
+
+---
+
+# Vercel-to-Gemini Tool Converter
+
+A utility to convert Vercel AI SDK tools to Google Gemini FunctionDeclaration format, enabling seamless integration between different AI providers.
+
+## Overview
+
+This converter bridges the gap between Vercel AI SDK's tool format and Google Gemini's function declaration format. It handles the conversion of JSON Schema definitions to Gemini's native schema format while preserving all constraints and validation rules.
+
+Based on the comprehensive mapping documented in: [Zod to Gemini Function Declaration Mapping](https://github.com/ben-vargas/ai-sdk-provider-gemini-cli/blob/main/docs/zod-to-gemini-mapping.md)
+
+## Features
+
+- 🔄 **Complete Conversion**: Converts Vercel AI SDK tools to Gemini FunctionDeclaration format
+- 📋 **Schema Mapping**: Maps JSON Schema types to Gemini Schema types
+- ✅ **Constraint Preservation**: Maintains validation rules (min/max, patterns, etc.)
+- 🧪 **Validation**: Detects unsupported schema features before conversion
+- 🎯 **Flexible Options**: Choose between native Gemini schema or JSON schema fallback
+- 🔍 **Type Safety**: Full TypeScript support with proper type definitions
+
+## Quick Start
+
+```typescript
+import { convertVercelToolToGemini, createTestTool } from './vercel-to-gemini-converter';
+
+// Create a sample tool
+const weatherTool = createTestTool(
+  'get_weather',
+  'Get weather information',
+  {
+    type: 'object',
+    properties: {
+      location: { type: 'string', description: 'City name' },
+      units: { type: 'string', enum: ['celsius', 'fahrenheit'] }
+    },
+    required: ['location']
+  }
+);
+
+// Convert to Gemini format
+const geminiTool = convertVercelToolToGemini(weatherTool);
+```
+
+## API Reference
+
+### Main Functions
+
+#### `convertVercelToolToGemini(tool, useJsonSchema?)`
+
+Converts a single Vercel AI SDK tool to Gemini format.
+
+```typescript
+function convertVercelToolToGemini(
+  tool: LanguageModelV1FunctionTool,
+  useJsonSchema?: boolean
+): GeminiFunctionDeclaration
+```
+
+**Parameters:**
+- `tool` - The Vercel AI SDK tool to convert
+- `useJsonSchema` - If true, uses `parametersJsonSchema` instead of converting to Gemini schema (default: false)
+
+**Example:**
+```typescript
+import type { LanguageModelV1FunctionTool } from '@ai-sdk/provider';
+
+const vercelTool: LanguageModelV1FunctionTool = {
+  type: 'function',
+  name: 'search_files',
+  description: 'Search for files matching a pattern',
+  parameters: {
+    type: 'object',
+    properties: {
+      pattern: {
+        type: 'string',
+        description: 'Search pattern',
+        minLength: 1,
+        maxLength: 100
+      },
+      recursive: {
+        type: 'boolean',
+        default: false
+      }
+    },
+    required: ['pattern']
+  }
+};
+
+// Native Gemini schema conversion
+const geminiTool = convertVercelToolToGemini(vercelTool);
+
+// JSON Schema fallback
+const jsonSchemaTool = convertVercelToolToGemini(vercelTool, true);
+```
+
+#### `convertVercelToolsToGemini(tools, useJsonSchema?)`
+
+Converts multiple tools at once.
+
+```typescript
+function convertVercelToolsToGemini(
+  tools: LanguageModelV1FunctionTool[],
+  useJsonSchema?: boolean
+): GeminiFunctionDeclaration[]
+```
+
+**Example:**
+```typescript
+const vercelTools = [weatherTool, fileSearchTool, calculatorTool];
+const geminiTools = convertVercelToolsToGemini(vercelTools);
+```
+
+#### `convertJSONSchemaToGeminiSchema(jsonSchema)`
+
+Converts a JSON Schema to Gemini Schema format.
+
+```typescript
+function convertJSONSchemaToGeminiSchema(jsonSchema: JSONSchema7): GeminiSchema
+```
+
+**Example:**
+```typescript
+const jsonSchema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string', minLength: 1 },
+    age: { type: 'integer', minimum: 0, maximum: 150 }
+  },
+  required: ['name']
+};
+
+const geminiSchema = convertJSONSchemaToGeminiSchema(jsonSchema);
+```
+
+### Validation Functions
+
+#### `validateSchemaForGeminiConversion(jsonSchema)`
+
+Validates if a JSON Schema can be successfully converted to Gemini format.
+
+```typescript
+function validateSchemaForGeminiConversion(jsonSchema: JSONSchema7): {
+  isValid: boolean;
+  issues: string[];
+}
+```
+
+**Example:**
+```typescript
+const schema = {
+  type: 'object',
+  properties: {
+    user: { $ref: '#/definitions/User' } // Unsupported
+  }
+};
+
+const validation = validateSchemaForGeminiConversion(schema);
+if (!validation.isValid) {
+  console.log('Issues found:', validation.issues);
+  // Output: ["Unsupported $ref at .user: #/definitions/User"]
+}
+```
+
+### Utility Functions
+
+#### `createTestTool(name, description, parameters)`
+
+Helper function to create test tools for development and testing.
+
+```typescript
+function createTestTool(
+  name: string,
+  description: string,
+  parameters: JSONSchema7
+): LanguageModelV1FunctionTool
+```
+
+## Type Mapping
+
+### JSON Schema to Gemini Schema Types
+
+| JSON Schema | Gemini Schema | Notes |
+|-------------|---------------|-------|
+| `string` | `STRING` | |
+| `number` | `NUMBER` | |
+| `integer` | `INTEGER` | |
+| `boolean` | `BOOLEAN` | |
+| `array` | `ARRAY` | |
+| `object` | `OBJECT` | |
+| `null` | `TYPE_UNSPECIFIED` | |
+| `['string', 'null']` | `STRING` + `nullable: true` | Nullable types |
+
+### Constraint Mapping
+
+#### String Constraints
+```typescript
+// JSON Schema
+{
+  type: 'string',
+  minLength: 5,
+  maxLength: 100,
+  pattern: '^[A-Z]'
+}
+
+// Gemini Schema
+{
+  type: 'STRING',
+  minLength: '5',    // Note: string value
+  maxLength: '100',  // Note: string value
+  pattern: '^[A-Z]'
+}
+```
+
+#### Number Constraints
+```typescript
+// JSON Schema
+{
+  type: 'number',
+  minimum: 0,
+  maximum: 100,
+  exclusiveMinimum: true
+}
+
+// Gemini Schema
+{
+  type: 'NUMBER',
+  minimum: 0,
+  maximum: 100,
+  exclusiveMinimum: true
+}
+```
+
+#### Array Constraints
+```typescript
+// JSON Schema
+{
+  type: 'array',
+  items: { type: 'string' },
+  minItems: 1,
+  maxItems: 10
+}
+
+// Gemini Schema
+{
+  type: 'ARRAY',
+  items: { type: 'STRING' },
+  minItems: '1',   // Note: string value
+  maxItems: '10'   // Note: string value
+}
+```
+
+### Format Mapping
+
+| JSON Schema Format | Gemini Format |
+|-------------------|---------------|
+| `email` | `email` |
+| `url` | `uri` |
+| `uuid` | `uuid` |
+| `date-time` | `date-time` |
+| `date` | `date` |
+| `time` | `time` |
+| `ipv4` | `ipv4` |
+| `ipv6` | `ipv6` |
+
+## Advanced Usage
+
+### Complex Schema Conversion
+
+```typescript
+const complexTool = createTestTool(
+  'process_user_data',
+  'Process user data with validation',
+  {
+    type: 'object',
+    properties: {
+      user: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            minLength: 2,
+            maxLength: 50,
+            pattern: '^[A-Za-z\\s]+$'
+          },
+          email: {
+            type: 'string',
+            format: 'email'
+          },
+          age: {
+            type: 'integer',
+            minimum: 13,
+            maximum: 120
+          },
+          preferences: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['email', 'sms', 'push']
+            },
+            minItems: 1,
+            maxItems: 3,
+            uniqueItems: true
+          }
+        },
+        required: ['name', 'email']
+      },
+      options: {
+        anyOf: [
+          { type: 'null' },
+          {
+            type: 'object',
+            properties: {
+              validateOnly: { type: 'boolean', default: false },
+              timeout: { type: 'number', minimum: 1000 }
+            }
+          }
+        ]
+      }
+    },
+    required: ['user']
+  }
+);
+
+const converted = convertVercelToolToGemini(complexTool);
+```
+
+### Validation Before Conversion
+
+```typescript
+import { validateSchemaForGeminiConversion, convertVercelToolToGemini } from './vercel-to-gemini-converter';
+
+function safeConvertTool(tool: LanguageModelV1FunctionTool) {
+  // Validate first
+  const validation = validateSchemaForGeminiConversion(tool.parameters);
+  
+  if (!validation.isValid) {
+    console.warn(`Tool ${tool.name} has conversion issues:`, validation.issues);
+    
+    // Fall back to JSON schema approach
+    return convertVercelToolToGemini(tool, true);
+  }
+  
+  // Safe to use native conversion
+  return convertVercelToolToGemini(tool, false);
+}
+```
+
+### Batch Processing
+
+```typescript
+function convertToolsWithValidation(tools: LanguageModelV1FunctionTool[]) {
+  const results = {
+    successful: [] as GeminiFunctionDeclaration[],
+    failed: [] as { tool: string; issues: string[] }[]
+  };
+  
+  for (const tool of tools) {
+    const validation = validateSchemaForGeminiConversion(tool.parameters);
+    
+    if (validation.isValid) {
+      results.successful.push(convertVercelToolToGemini(tool));
+    } else {
+      results.failed.push({
+        tool: tool.name,
+        issues: validation.issues
+      });
+    }
+  }
+  
+  return results;
+}
+```
+
+## Supported Features
+
+### ✅ Fully Supported
+- All primitive types (`string`, `number`, `integer`, `boolean`)
+- Object and array types with full constraint support
+- Nullable types (`type: ['string', 'null']`)
+- Enum values and const values
+- String constraints (length, pattern)
+- Number constraints (min/max, exclusive bounds)
+- Array constraints (min/max items, unique items)
+- Object constraints (required fields, additional properties)
+- Union types (`anyOf`, `oneOf`)
+- Intersection types (`allOf`) - with property merging
+- Format specifications (email, url, date, etc.)
+- Default and example values
+
+### ⚠️ Partially Supported
+- Tuple arrays (converted to single item type)
+- Complex `allOf` schemas (simplified merging)
+- Multiple non-null union types (falls back to `TYPE_UNSPECIFIED`)
+
+### ❌ Unsupported
+- Schema references (`$ref`)
+- Recursive schemas
+- Conditional schemas (`if`/`then`/`else`)
+- Negation (`not`)
+- Complex `additionalProperties` schemas
+
+## Error Handling
+
+The converter gracefully handles unsupported features:
+
+```typescript
+// Schema with unsupported features
+const problematicSchema = {
+  type: 'object',
+  properties: {
+    data: { $ref: '#/definitions/Data' } // Unsupported
+  },
+  if: { properties: { type: { const: 'special' } } }, // Unsupported
+  then: { required: ['specialField'] }
+};
+
+// Validation will catch these issues
+const validation = validateSchemaForGeminiConversion(problematicSchema);
+console.log(validation.issues);
+// Output: [
+//   "Unsupported $ref at .data: #/definitions/Data",
+//   "Unsupported conditional schema at "
+// ]
+```
+
+## Integration Examples
+
+### With Gemini AI Provider
+
+```typescript
+import { convertVercelToolsToGemini } from './vercel-to-gemini-converter';
+import { generateObject } from 'ai';
+
+// Your Vercel AI SDK tools
+const vercelTools = [weatherTool, fileSearchTool];
+
+// Convert to Gemini format
+const geminiTools = convertVercelToolsToGemini(vercelTools);
+
+// Use with Gemini provider
+const result = await generateObject({
+  model: geminiModel,
+  tools: geminiTools, // Now in correct format
+  // ... other options
+});
+```
+
+### Testing Your Conversions
+
+```typescript
+import { describe, test, expect } from 'bun:test';
+import { convertVercelToolToGemini, createTestTool } from './vercel-to-gemini-converter';
+
+describe('Tool Conversion Tests', () => {
+  test('should convert custom tool correctly', () => {
+    const myTool = createTestTool(
+      'my_function',
+      'Does something useful',
+      {
+        type: 'object',
+        properties: {
+          input: { type: 'string', minLength: 1 }
+        },
+        required: ['input']
+      }
+    );
+
+    const converted = convertVercelToolToGemini(myTool);
+    
+    expect(converted.name).toBe('my_function');
+    expect(converted.parameters?.type).toBe('OBJECT');
+    expect(converted.parameters?.properties?.input?.type).toBe('STRING');
+    expect(converted.parameters?.properties?.input?.minLength).toBe('1');
+  });
+});
+```
+
+## Performance Considerations
+
+- Conversion is synchronous and lightweight
+- No external dependencies beyond TypeScript types
+- Memory usage scales linearly with schema complexity
+- Validation is optional and can be skipped for performance-critical paths
+- Caching of converted schemas is recommended for repeated use
+
+## Best Practices
+
+1. **Validate First**: Use `validateSchemaForGeminiConversion()` before conversion in production
+2. **Handle Failures Gracefully**: Fall back to JSON schema mode for problematic schemas
+3. **Test Thoroughly**: Create unit tests for your specific tool conversions
+4. **Document Limitations**: Note any unsupported features in your tool documentation
+5. **Cache Results**: Cache converted schemas to avoid repeated conversion overhead
+
+Run the tests:
+```bash
+bun test packages/agents/src/utils/__tests__/vercel-to-gemini-converter.test.ts
 ```

@@ -20,7 +20,7 @@ export async function showAction(
   const configExists = await existsGlobalConfig();
   if (!configExists) {
     logger.info(
-      "No configuration found. Run 'chara init' to set up your providers."
+      "No configuration found. Configure providers via the web interface."
     );
     return;
   }

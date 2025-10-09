@@ -1,12 +1,12 @@
-import chokidar from "chokidar";
 import { on } from "events";
 import fs from "fs/promises";
 import path from "path";
+import chokidar from "chokidar";
 import { z } from "zod";
 import { ee } from "../../utils/event-emitter";
 import { resolveProjectPath } from "../../utils/file-utils";
+import { logger } from "../../utils/logger";
 import { publicProcedure, router } from "../trpc";
-import { logger } from "@chara-codes/logger";
 
 interface FileSystemEntry {
   name: string;
@@ -18,13 +18,13 @@ interface FileSystemEntry {
 // Utility to fetch directory contents
 async function getProjectContents(
   projectName?: string,
-  currentPath = "",
+  currentPath = ""
 ): Promise<FileSystemEntry[]> {
   if (!projectName) return [];
 
   const projectLocation = path.join(
     resolveProjectPath(projectName),
-    currentPath,
+    currentPath
   );
   const entries = await fs.readdir(projectLocation, { withFileTypes: true });
 
@@ -47,7 +47,7 @@ async function getProjectContents(
           type: "file",
         };
       }
-    }),
+    })
   );
 
   return contents;
@@ -58,7 +58,7 @@ export const filesRouter = router({
     .input(
       z.object({
         projectName: z.string().optional(),
-      }),
+      })
     )
     .query(async ({ input }) => {
       const contents = await getProjectContents(input.projectName);
@@ -69,13 +69,13 @@ export const filesRouter = router({
       z.object({
         relativePath: z.string().min(1),
         projectName: z.string(),
-      }),
+      })
     )
     .query(async ({ input }) => {
       const { relativePath, projectName } = input;
       const fileLocation = path.join(
         resolveProjectPath(projectName),
-        relativePath,
+        relativePath
       );
       logger.info("Fetching file contents for fileLocation", fileLocation);
       const content = await fs.readFile(fileLocation, "utf-8");
@@ -85,7 +85,7 @@ export const filesRouter = router({
     .input(
       z.object({
         projectName: z.string(),
-      }),
+      })
     )
     .subscription(async function* ({ input, signal }) {
       const projectPath = resolveProjectPath(input.projectName);
@@ -137,7 +137,7 @@ export const filesRouter = router({
           error: error.message,
         });
         logger.error(
-          `Watcher error for project ${input.projectName}: ${error.message}`,
+          `Watcher error for project ${input.projectName}: ${error.message}`
         );
       });
 
@@ -149,7 +149,7 @@ export const filesRouter = router({
 
       logger.success(
         "File watcher initialized for project:",
-        input.projectName,
+        input.projectName
       );
 
       try {

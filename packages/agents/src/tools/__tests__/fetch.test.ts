@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { fetchTool } from "../fetch";
 
 // Mock fetch globally
@@ -300,7 +300,7 @@ describe("fetch tool", () => {
   test("should have correct tool metadata", () => {
     expect(fetchTool.description).toContain("Fetches a URL from the internet");
     expect(fetchTool.description).toContain("internet access");
-    expect(fetchTool.parameters).toBeDefined();
+    expect(fetchTool.inputSchema).toBeDefined();
   });
 
   test("should handle JSON content", async () => {
@@ -453,7 +453,7 @@ describe("fetch tool", () => {
   });
 
   test("should not have ignoreRobotsTxt parameter", () => {
-    const parameters = fetchTool.parameters.shape;
+    const parameters = fetchTool.inputSchema.shape;
     expect(parameters.ignoreRobotsTxt).toBeUndefined();
   });
 

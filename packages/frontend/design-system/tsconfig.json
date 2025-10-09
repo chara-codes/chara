@@ -3,6 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "jsx": "react-jsx",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
     "paths": {
       "@/*": ["./src/*"],
       "@chara-codes/core": ["../core/src"],

@@ -1,3 +1,6 @@
+// Create and export a singleton instance
+import { ProvidersRegistry } from "./registry";
+
 // Export all types
 export type {
   InitializationError,
@@ -43,8 +46,6 @@ export {
   providerKeys,
 } from "./providers";
 
-// Create and export a singleton instance
-import { ProvidersRegistry } from "./registry";
 export const providersRegistry = new ProvidersRegistry();
 
 /**

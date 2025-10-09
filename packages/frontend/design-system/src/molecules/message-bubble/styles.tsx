@@ -656,17 +656,19 @@ export const ToolCallStatus = styled.span<{ status: string; theme: Theme }>`
   background-color: ${(props) => {
     switch (props.status) {
       case "success":
-        return "#d1fae5";
+        return "rgba(16, 185, 129, 0.1)";
       case "error":
         return props.theme.colors.errorLight;
       case "in-progress":
-        return "#fef3c7";
+        return "rgba(245, 158, 11, 0.1)";
       case "pending":
         return props.theme.colors.highlight;
       default:
         return props.theme.colors.highlight;
     }
   }};
+  transition: background-color ${({ theme }) => theme.transitions.theme},
+              color ${({ theme }) => theme.transitions.theme};
 `;
 
 export const ToolCallContent = styled.div<{
