@@ -6,7 +6,6 @@ import {
   withErrorHandling,
   withLogging,
 } from "./factory";
-import { initAction } from "./init";
 import { loadConfigAction } from "./load-config";
 import { resetAction } from "./reset";
 import { serveStaticAction, stopStaticAction } from "./serve-static";
@@ -26,7 +25,6 @@ import {
 } from "./tunnel-server";
 import type {
   DefaultModelActionOptions,
-  InitActionOptions,
   LoadConfigActionOptions,
   ResetActionOptions,
   ServeStaticActionOptions,
@@ -46,17 +44,6 @@ import type {
 
 // Register all actions with the factory
 export function registerActions(): void {
-  // Register init action
-  ActionFactory.register(
-    createAction(
-      "init",
-      "Initialize Chara configuration with AI provider settings",
-      compose<InitActionOptions>(withErrorHandling, (fn) =>
-        withLogging(fn, "init")
-      )(initAction)
-    )
-  );
-
   // Register reset action
   ActionFactory.register(
     createAction(
