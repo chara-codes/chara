@@ -1,6 +1,6 @@
 import { dirname, resolve } from "node:path";
 import { logger } from "@chara-codes/logger";
-import { existsGlobalConfig, readGlobalConfig } from "@chara-codes/settings";
+import { existsGlobalConfig, readGlobalConfig, updateGlobalConfig } from "@chara-codes/settings";
 import { bold, cyan, green, yellow } from "picocolors";
 import ping from "ping";
 import type { CommandModule } from "yargs";
@@ -159,6 +159,7 @@ export const devCommand: CommandModule<
       const steps = [
         "Setting up logging",
         "Preparing project directory",
+        "Ensuring configuration",
         "Starting backend server",
         "Starting agents server",
         "Setting up web interface",
@@ -187,7 +188,17 @@ export const devCommand: CommandModule<
         projectDir: argv.projectDir,
       });
 
-      // Step 3: Start server with appropriate configuration
+      // Step 3: Ensure global config exists
+      showProgress("Ensuring configuration");
+      const globalConfigExists = await existsGlobalConfig();
+      if (!globalConfigExists) {
+        if (argv.verbose) {
+          logger.info("Creating empty global configuration file...");
+        }
+        await updateGlobalConfig({ env: {} });
+      }
+
+      // Step 4: Start server with appropriate configuration
       showProgress("Starting backend server");
       const serverResult = await ActionFactory.execute("start-server", {
         verbose: argv.verbose,
