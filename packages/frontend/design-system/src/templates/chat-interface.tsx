@@ -402,6 +402,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   // const isAnyConnecting = isConnecting || wsStatus.reconnecting;
   // const hasAnyConnectionError = connectionError || wsStatus.error;
 
+  // Check if we have any active connection
+  const hasAnyConnection = isConnected || wsStatus.connected;
+
+  // Show ServerConnectionView when no connection (blocks all other views)
+  if (!hasAnyConnection) {
+    return (
+      <Container>
+        <Content>
+          <ServerConnectionView onBack={navigateToConversation} />
+        </Content>
+      </Container>
+    );
+  }
+
   // Only show ServerConnectionView when explicitly on that screen
   if (currentScreen === Screen.SERVER_CONNECTION) {
     return (

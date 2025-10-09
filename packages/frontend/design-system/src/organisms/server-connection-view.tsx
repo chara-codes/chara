@@ -126,6 +126,108 @@ const CommandText = styled.code`
   font-family: inherit;
   font-size: inherit;
   font-weight: ${({ theme }) => (theme as Theme).typography.fontWeight.medium};
+  flex: 1;
+`;
+
+const PackageManagerSelector = styled.div`
+  display: flex;
+  gap: ${({ theme }) => (theme as Theme).spacing.xs};
+  margin-bottom: ${({ theme }) => (theme as Theme).spacing.md};
+`;
+
+const PackageManagerButton = styled.button<{ $isActive: boolean }>`
+  padding: ${({ theme }) => (theme as Theme).spacing.xs}
+    ${({ theme }) => (theme as Theme).spacing.sm};
+  border-radius: ${({ theme }) => (theme as Theme).borderRadius.sm};
+  border: 1px solid ${({ theme }) => (theme as Theme).colors.border};
+  background-color: ${({ $isActive, theme }) =>
+    $isActive
+      ? (theme as Theme).colors.primary
+      : (theme as Theme).colors.background};
+  color: ${({ $isActive, theme }) =>
+    $isActive
+      ? (theme as Theme).colors.background
+      : (theme as Theme).colors.text};
+  font-family: "SF Mono", "Monaco", "Menlo", "Consolas", "Ubuntu Mono",
+    monospace;
+  font-size: ${({ theme }) => (theme as Theme).typography.fontSize.xs};
+  cursor: pointer;
+  transition: all ${({ theme }) => (theme as Theme).transitions.fast} ease;
+  font-weight: ${({ $isActive, theme }) =>
+    $isActive
+      ? (theme as Theme).typography.fontWeight.semibold
+      : (theme as Theme).typography.fontWeight.medium};
+
+  &:hover {
+    background-color: ${({ $isActive, theme }) =>
+      $isActive
+        ? (theme as Theme).colors.primary
+        : (theme as Theme).colors.highlight};
+    border-color: ${({ theme }) => (theme as Theme).colors.primary};
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+`;
+
+const ToggleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => (theme as Theme).spacing.sm};
+  margin-bottom: ${({ theme }) => (theme as Theme).spacing.md};
+  font-size: ${({ theme }) => (theme as Theme).typography.fontSize.sm};
+  color: ${({ theme }) => (theme as Theme).colors.textSecondary};
+`;
+
+const ToggleSwitch = styled.label`
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  cursor: pointer;
+`;
+
+const ToggleInput = styled.input`
+  opacity: 0;
+  width: 0;
+  height: 0;
+
+  &:checked + span {
+    background-color: ${({ theme }) => (theme as Theme).colors.primary};
+  }
+
+  &:checked + span:before {
+    transform: translateX(20px);
+  }
+`;
+
+const ToggleSlider = styled.span`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: ${({ theme }) => (theme as Theme).colors.border};
+  border-radius: 20px;
+  transition: all ${({ theme }) => (theme as Theme).transitions.fast} ease;
+
+  &:before {
+    content: "";
+    position: absolute;
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: ${({ theme }) => (theme as Theme).colors.background};
+    border-radius: 50%;
+    transition: all ${({ theme }) => (theme as Theme).transitions.fast} ease;
+  }
+`;
+
+const ToggleLabel = styled.span`
+  font-family: ${({ theme }) => (theme as Theme).typography.fontFamily};
+  user-select: none;
 `;
 
 const CopyButton = styled.button`
@@ -237,6 +339,10 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
   const connect = useRunnerConnect();
   const wsStatus = useWebSocketStatus();
   const [copyFeedback, setCopyFeedback] = useState<string>("");
+  const [packageManager, setPackageManager] = useState<"bunx" | "npx" | "pnpm">(
+    "npx"
+  );
+  const [enableAlpha, setEnableAlpha] = useState<boolean>(false);
 
   const handleRetryConnection = useCallback(async () => {
     try {
@@ -250,7 +356,12 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
   }, [connect]);
 
   const handleCopyCommand = useCallback(() => {
-    const command = "bunx @chara-codes/cli dev";
+    const packageName = enableAlpha
+      ? "@chara-codes/cli@alpha"
+      : "@chara-codes/cli";
+    const command = `${
+      packageManager === "pnpm" ? "pnpm dlx" : packageManager
+    } ${packageName} dev`;
     navigator.clipboard
       .writeText(command)
       .then(() => {
@@ -261,7 +372,7 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
         setCopyFeedback("Failed to copy");
         setTimeout(() => setCopyFeedback(""), 2000);
       });
-  }, []);
+  }, [packageManager, enableAlpha]);
 
   return (
     <ConnectionContainer>
@@ -273,6 +384,7 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
         }}
         placeholder=""
         showSearch={false}
+        leftElement={<div />}
       />
 
       <ConnectionContent>
@@ -293,8 +405,45 @@ const ServerConnectionView: React.FC<ServerConnectionViewProps> = ({
 
         <CommandSection>
           <CommandTitle>› Start Local Chara Codes Server</CommandTitle>
+          <PackageManagerSelector>
+            <PackageManagerButton
+              $isActive={packageManager === "npx"}
+              onClick={() => setPackageManager("npx")}
+              title="Use npx (npm)"
+            >
+              npx
+            </PackageManagerButton>
+            <PackageManagerButton
+              $isActive={packageManager === "bunx"}
+              onClick={() => setPackageManager("bunx")}
+              title="Use bunx (Bun)"
+            >
+              bunx
+            </PackageManagerButton>
+            <PackageManagerButton
+              $isActive={packageManager === "pnpm"}
+              onClick={() => setPackageManager("pnpm")}
+              title="Use pnpm dlx"
+            >
+              pnpm
+            </PackageManagerButton>
+          </PackageManagerSelector>
+          <ToggleContainer>
+            <ToggleSwitch>
+              <ToggleInput
+                type="checkbox"
+                checked={enableAlpha}
+                onChange={(e) => setEnableAlpha(e.target.checked)}
+              />
+              <ToggleSlider />
+            </ToggleSwitch>
+            <ToggleLabel>Enable Alpha Version</ToggleLabel>
+          </ToggleContainer>
           <CommandBlock>
-            <CommandText>bunx @chara-codes/cli dev</CommandText>
+            <CommandText>
+              {packageManager === "pnpm" ? "pnpm dlx" : packageManager}{" "}
+              {enableAlpha ? "@chara-codes/cli@alpha" : "@chara-codes/cli"} dev
+            </CommandText>
             <CopyButton onClick={handleCopyCommand} title="Copy command">
               ⧉<span>{copyFeedback || "Copy"}</span>
             </CopyButton>
