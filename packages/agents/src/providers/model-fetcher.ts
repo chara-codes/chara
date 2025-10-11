@@ -332,6 +332,8 @@ export namespace ModelFetcher {
       }
 
       const data = (await response.json()) as DeepSeekModelsResponse;
+      console.log(data);
+
       return data.data.map((model: DeepSeekModel) => ({
         id: model.id,
         name: model.id,

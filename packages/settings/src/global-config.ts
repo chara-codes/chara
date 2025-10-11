@@ -28,7 +28,7 @@ export const readGlobalConfig = async (file: string = ".chararc") => {
 
 export const writeGlobalConfig = async (
   config: any,
-  file: string = ".chararc",
+  file: string = ".chararc"
 ) => {
   const configPath = getPathToGlobalConfig(file);
   const configFile = Bun.file(configPath);
@@ -38,7 +38,7 @@ export const writeGlobalConfig = async (
 
 export const updateGlobalConfig = async (
   config: any,
-  file: string = ".chararc",
+  file: string = ".chararc"
 ) => {
   const currentConfig = (await existsGlobalConfig(file))
     ? await readGlobalConfig(file)
@@ -63,6 +63,15 @@ export const removeGlobalConfig = async (file: string = ".chararc") => {
 };
 
 export const getVarFromEnvOrGlobalConfig = async (name: string) => {
-  const { env = {} } = await readGlobalConfig();
-  return process.env[name] ?? env[name];
+  const {
+    env = {},
+    providers = {},
+  }: { env?: Record<string, string>; providers?: Record<string, any> } =
+    (await existsGlobalConfig()) ? await readGlobalConfig() : {};
+
+  const value = Object.values(providers).find(
+    (provider) => !!provider?.enabled && !!provider?.configuration[name]
+  );
+
+  return value?.configuration[name] ?? process.env[name] ?? env[name];
 };

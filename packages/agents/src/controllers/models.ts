@@ -1,10 +1,73 @@
-import { fetchAllModels } from "../providers";
-import { getModelsWhitelist, type ModelConfig } from "@chara-codes/settings";
+import {
+  getModelsWhitelist,
+  readGlobalConfig,
+  type ModelConfig,
+} from "@chara-codes/settings";
+import {
+  fetchAllModels,
+  fetchModels,
+  hasProvider,
+  providersRegistry,
+  type ModelInfo,
+} from "../providers";
+import { logger } from "../utils/logger";
 
 export const modelsController = {
   async getModels(req: Request) {
+    logger.info("Fetch Models Started");
     try {
-      const allModels = await fetchAllModels();
+      const url = new URL(req.url);
+      const providerParam = url.searchParams.get("provider");
+
+      let allModels: Record<string, ModelInfo[]>;
+
+      if (providerParam) {
+        // Check if provider exists and is enabled
+        let isProviderAvailable = await hasProvider(providerParam);
+        if (!isProviderAvailable) {
+          // Check if provider exists in global config
+          try {
+            const config = await readGlobalConfig();
+            const providerConfig = config.providers?.[providerParam];
+            if (providerConfig?.enabled) {
+              // Reinitialize registry to pick up the provider
+              await providersRegistry.initialize();
+              // Check again
+              isProviderAvailable = await hasProvider(providerParam);
+              if (!isProviderAvailable) {
+                return Response.json(
+                  {
+                    error: `Provider '${providerParam}' is configured but could not be initialized`,
+                  },
+                  { status: 400 }
+                );
+              }
+            } else {
+              return Response.json(
+                {
+                  error: `Provider '${providerParam}' is not available or enabled`,
+                },
+                { status: 400 }
+              );
+            }
+          } catch (error) {
+            return Response.json(
+              {
+                error: `Failed to check global config: ${
+                  error instanceof Error ? error.message : "Unknown error"
+                }`,
+              },
+              { status: 500 }
+            );
+          }
+        }
+        // Fetch models for the specific provider
+        const models = await fetchModels(providerParam);
+        allModels = { [providerParam]: models };
+      } else {
+        // Fetch all models
+        allModels = await fetchAllModels();
+      }
 
       // Get whitelist from settings with fallback to legacy whitelist
       let whitelistedModels: ModelConfig[] = [];
@@ -56,13 +119,14 @@ export const modelsController = {
               provider: provider,
               // Add enhanced fields from whitelist if available
               ...(whitelistModel &&
-                (provider === whitelistModel.provider || whitelistModel.id === prefixedId) && {
-                name: whitelistModel.name,
-                contextSize: whitelistModel.contextSize,
-                hasTools: whitelistModel.hasTools,
-                recommended: whitelistModel.recommended,
-                approved: whitelistModel.approved,
-              }),
+                (provider === whitelistModel.provider ||
+                  whitelistModel.id === prefixedId) && {
+                  name: whitelistModel.name,
+                  contextSize: whitelistModel.contextSize,
+                  hasTools: whitelistModel.hasTools,
+                  recommended: whitelistModel.recommended,
+                  approved: whitelistModel.approved,
+                }),
             };
           })
       );

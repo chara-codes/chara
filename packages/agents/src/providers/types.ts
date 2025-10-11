@@ -1,4 +1,4 @@
-import type { LanguageModelV2 } from 'ai';
+import type { LanguageModelV2 } from "ai";
 
 /**
  * Represents an error that occurred during provider initialization
@@ -145,7 +145,7 @@ export interface ProviderConfig {
   /** Human-readable name of the provider */
   name: string;
   /** The AI SDK provider factory function */
-  provider: (modelId: string) => LanguageModelV1;
+  provider: (modelId: string) => LanguageModelV2;
   /** Whether the provider is available and properly initialized */
   isAvailable: boolean;
   /** Function to fetch available models from the provider */

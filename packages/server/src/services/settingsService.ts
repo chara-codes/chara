@@ -80,9 +80,7 @@ export class SettingsService {
       }
 
       // Generate unique ID
-      const id = `${providerData.type}_${Date.now()}_${Math.random()
-        .toString(36)
-        .substring(2)}`;
+      const id = providerData.type;
       const now = new Date();
 
       // Generate name from provider type if not provided
