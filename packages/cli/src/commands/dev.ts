@@ -1,6 +1,6 @@
 import { dirname, resolve } from "node:path";
 import { logger } from "@chara-codes/logger";
-import { existsGlobalConfig, readGlobalConfig, updateGlobalConfig } from "@chara-codes/settings";
+import { existsGlobalConfig, updateGlobalConfig } from "@chara-codes/settings";
 import { bold, cyan, green, yellow } from "picocolors";
 import ping from "ping";
 import type { CommandModule } from "yargs";
@@ -247,7 +247,6 @@ export const devCommand: CommandModule<
         showProgress("Configuring tunnel");
         const pingControl = await ping.promise.probe("control.localhost");
         const pingChara = await ping.promise.probe("chara.localhost");
-
 
         let runnerStatus = "inactive";
         let runnerInfo: any = null;

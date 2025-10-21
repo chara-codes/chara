@@ -1,4 +1,4 @@
-import type { LanguageModelV1 } from "ai";
+import type { LanguageModelV2 } from "@ai-sdk/provider";
 import { logger } from "../utils/logger";
 import { ModelFetcher } from "./model-fetcher";
 import { ProviderConfigs } from "./provider-configs";
@@ -195,7 +195,7 @@ export class ProvidersRegistry {
   public async getModel(
     providerName: string,
     modelName: string
-  ): Promise<LanguageModelV1> {
+  ): Promise<LanguageModelV2> {
     const provider = await this.getProvider(providerName);
     if (!provider || !provider.isAvailable) {
       throw new Error(`Provider ${providerName} is not available`);
