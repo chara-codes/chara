@@ -6,6 +6,35 @@ import styled from "styled-components";
 import { ScrollDownIcon } from "../atoms/icons";
 import MessageBubble from "../molecules/message-bubble";
 
+// Legacy message content types
+type LegacyMessageContent = string | LegacyMessageContentItem[];
+
+interface LegacyMessageContentItem {
+  type: string;
+  text?: string;
+  [key: string]: unknown;
+}
+
+// Context item structure
+interface ContextItem {
+  id: string;
+  name: string;
+  type: string;
+  url?: string;
+  content?: string;
+  mediaType?: string;
+  data: unknown;
+}
+
+// Tool call structure
+interface ToolCall {
+  id: string;
+  name: string;
+  arguments?: Record<string, unknown>;
+  status?: string;
+  result?: unknown;
+}
+
 // Helper function to ensure message has proper parts structure
 const ensureMessageParts = (message: UIMessage): UIMessage => {
   if (message.parts && Array.isArray(message.parts)) {
@@ -16,9 +45,9 @@ const ensureMessageParts = (message: UIMessage): UIMessage => {
   }
 
   // If message has content property (legacy format), convert to parts
-  if ((message as any).content) {
-    const content = (message as any).content;
-    const parts: any[] = [];
+  if ((message as unknown).content) {
+    const content = (message as unknown).content as LegacyMessageContent;
+    const parts: UIMessage["parts"] = [];
 
     if (typeof content === "string") {
       parts.push({
@@ -27,7 +56,7 @@ const ensureMessageParts = (message: UIMessage): UIMessage => {
       });
     } else if (Array.isArray(content)) {
       // Handle array content (legacy MessageContent format)
-      content.forEach((item: any) => {
+      content.forEach((item: LegacyMessageContentItem) => {
         if (typeof item === "string") {
           parts.push({
             type: "text",
@@ -67,7 +96,7 @@ const getMessageContent = (message: UIMessage): string => {
 
 // Helper function to extract context items from parts
 // Only extract non-text parts as context items
-const getContextItems = (message: UIMessage): any[] => {
+const getContextItems = (message: UIMessage): ContextItem[] => {
   const ensuredMessage = ensureMessageParts(message);
   return ensuredMessage.parts
     .filter(
@@ -77,7 +106,7 @@ const getContextItems = (message: UIMessage): any[] => {
         !part.type?.startsWith("tool-") &&
         part.type !== "tool-call" &&
         part.type !== "tool-result" &&
-        !(part as any).toolCallId
+        !(part as unknown).toolCallId
     )
     .map((part) => {
       if (part.type === "source-url") {
@@ -86,7 +115,7 @@ const getContextItems = (message: UIMessage): any[] => {
           name: part.title || part.url || "Unknown",
           type: part.type,
           url: part.url,
-          content: (part as any).content,
+          content: part.content,
           data: part,
         };
       } else if (part.type === "source-document") {
@@ -95,7 +124,7 @@ const getContextItems = (message: UIMessage): any[] => {
           name: part.title || part.filename || "Unknown",
           type: part.type,
           mediaType: part.mediaType,
-          content: (part as any).content,
+          content: part.content,
           data: part,
         };
       } else if (part.type === "file") {
@@ -111,10 +140,10 @@ const getContextItems = (message: UIMessage): any[] => {
       } else if (part.type?.startsWith("data-")) {
         return {
           id: Math.random().toString(),
-          name: (part as any).data?.filename || "Unknown",
+          name: (part as unknown).data?.filename || "Unknown",
           type: "data",
-          mediaType: (part as any).data?.mimeType,
-          content: (part as any).data?.content,
+          mediaType: (part as unknown).data?.mimeType,
+          content: (part as unknown).data?.content,
           data: part,
         };
       }
@@ -129,11 +158,11 @@ const getContextItems = (message: UIMessage): any[] => {
 };
 
 // Helper function to extract tool calls from parts
-const getToolCalls = (message: UIMessage): Record<string, any> => {
-  const toolCalls: Record<string, any> = {};
+const getToolCalls = (message: UIMessage): Record<string, ToolCall> => {
+  const toolCalls: Record<string, ToolCall> = {};
   const ensuredMessage = ensureMessageParts(message);
 
-  ensuredMessage.parts.forEach((part: any) => {
+  ensuredMessage.parts.forEach((part) => {
     if (part.toolCallId) {
       if (!toolCalls[part.toolCallId]) {
         toolCalls[part.toolCallId] = {
@@ -295,8 +324,6 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
         messagesContainerRef.current.scrollHeight;
-      setShouldAutoScroll(true);
-      setUserScrolledUp(false);
     }
   }, []);
 

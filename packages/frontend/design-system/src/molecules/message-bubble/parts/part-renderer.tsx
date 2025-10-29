@@ -85,7 +85,7 @@ export interface Part {
   mediaType?: string;
   size?: number;
   lastModified?: string;
-  data?: any;
+  data?: unknown;
   [key: string]: unknown;
 }
 

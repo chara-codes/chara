@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useLayoutEffect } from "react"
 import styled, { keyframes, css } from "styled-components"
 
 const fadeInScale = keyframes`
@@ -57,14 +57,15 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({ isVisible, children }) 
   const [shouldRender, setShouldRender] = useState(isVisible)
   const [isExiting, setIsExiting] = useState(false)
 
-  useEffect(() => {
+  // Handle animation state changes based on visibility prop
+  useLayoutEffect(() => {
     if (isVisible) {
-      setShouldRender(true)
-      setIsExiting(false)
+      setShouldRender(true) // eslint-disable-line react-hooks/set-state-in-effect
+      setIsExiting(false)  
     } else if (shouldRender) {
       setIsExiting(true)
       const timer = setTimeout(() => {
-        setShouldRender(false)
+        setShouldRender(false)  
       }, 200) // Match this to the fadeOut animation duration
       return () => clearTimeout(timer)
     }

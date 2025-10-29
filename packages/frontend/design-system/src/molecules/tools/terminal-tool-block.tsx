@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 import type React from "react";
-import { memo, useEffect, useState } from "react";
+import { memo, useLayoutEffect, useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { TerminalIcon } from "../../atoms/icons";
 
@@ -364,7 +364,7 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
     // Validate props and provide fallbacks instead of early return
     const validCommand = command && typeof command === "string" ? command : "";
 
-    useEffect(() => {
+    useLayoutEffect(() => {
       if (isGenerating && currentIndex < output.length) {
         const timer = setTimeout(() => {
           setDisplayedOutput(output.slice(0, currentIndex + 1));
@@ -375,21 +375,21 @@ const TerminalToolBlock: React.FC<TerminalToolBlockProps> = memo(
       }
 
       if (!isGenerating) {
-        setDisplayedOutput(output);
-        setCurrentIndex(output.length);
+        setDisplayedOutput(output); // eslint-disable-line react-hooks/set-state-in-effect
+        setCurrentIndex(output.length);  
       }
     }, [output, currentIndex, isGenerating, streamingSpeed]);
 
     // Reset when output changes completely
-    useEffect(() => {
+    useLayoutEffect(() => {
       if (!isGenerating) {
-        setDisplayedOutput(output);
-        setCurrentIndex(output.length);
+        setDisplayedOutput(output); // eslint-disable-line react-hooks/set-state-in-effect
+        setCurrentIndex(output.length);  
       } else {
         // If generating and output is completely different, restart
         if (currentIndex > output.length) {
-          setCurrentIndex(0);
-          setDisplayedOutput("");
+          setCurrentIndex(0);  
+          setDisplayedOutput("");  
         }
       }
     }, [output, currentIndex, isGenerating]);

@@ -177,7 +177,8 @@ const ConversationView: React.FC = () => {
           const errorPart = {
             type: "error",
             error: error.message || "An unexpected error occurred",
-          } as any; // Using 'any' because UIMessage doesn't officially support custom error parts
+          } as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+            // Using 'any' because UIMessage doesn't officially support custom error parts
 
           updatedMessages[lastAssistantIndex] = {
             ...lastMessage,
@@ -194,7 +195,8 @@ const ConversationView: React.FC = () => {
               {
                 type: "error",
                 error: error.message || "An unexpected error occurred",
-              } as any, // Using 'any' because UIMessage doesn't officially support custom error parts
+              } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+                // Using 'any' because UIMessage doesn't officially support custom error parts
             ],
           };
           updatedMessages.push(errorMessage);

@@ -228,7 +228,7 @@ const TerminalView: React.FC<TerminalViewProps> = ({
       }));
     }
     return fallbackLogs;
-  }, [activeProcess?.output, activeProcess?.processId, fallbackLogs]);
+  }, [activeProcess, fallbackLogs]);
 
   // Add error messages to logs if there are any
   const enhancedLogs = useMemo(() => {
@@ -254,7 +254,7 @@ const TerminalView: React.FC<TerminalViewProps> = ({
     return baseLogs.sort(
       (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
     );
-  }, [logs, activeProcess?.error, activeProcess?.processId]);
+  }, [logs, activeProcess]);
 
   const serverInfo = activeProcess
     ? {

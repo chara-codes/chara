@@ -1,7 +1,7 @@
 "use client";
 
 import type { FileDiff as FileDiffType } from "@chara-codes/core";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { FileIcon, UndoIcon } from "../atoms";
 import { ArrowLeftIcon } from "../atoms/icons/arrow-left-icon";
@@ -314,12 +314,7 @@ const FileDiff: React.FC<FileDiffProps> = ({
       0
     ) || 0;
 
-  // Add effect to log when diff status changes
-  useEffect(() => {
-    console.log(`Diff status changed to: ${diff.status}`);
-    // This will trigger a re-render when the status changes
-    setStatus(diff.status);
-  }, [diff.status]);
+
 
   return (
     <DiffContainer

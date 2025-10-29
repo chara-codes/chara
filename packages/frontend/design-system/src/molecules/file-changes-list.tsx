@@ -2,7 +2,7 @@
 
 import type React from "react";
 import styled from "styled-components";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import type { FileDiff } from "@chara-codes/core";
 import { parsePatchStats } from "@chara-codes/core";
 
@@ -362,15 +362,13 @@ const FileChangesList: React.FC<FileChangesListProps> = ({
   const [statusFilter, setStatusFilter] = useState<
     "all" | "kept" | "reverted" | "pending"
   >("all");
-  const [filteredDiffs, setFilteredDiffs] = useState<FileDiff[]>(diffs);
 
-  // Add this after the useState declarations
-  useEffect(() => {
-    // This will re-filter the diffs when statuses change
+  // Use useMemo to compute filtered diffs instead of state and effect
+  const filteredDiffs = useMemo(() => {
     if (statusFilter !== "all") {
-      setFilteredDiffs(diffs.filter((diff) => diff.status === statusFilter));
+      return diffs.filter((diff) => diff.status === statusFilter);
     } else {
-      setFilteredDiffs(diffs);
+      return diffs;
     }
   }, [statusFilter, diffs]);
 

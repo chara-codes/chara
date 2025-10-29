@@ -169,7 +169,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   // Add tool calls as tool parts if available
   if (toolCalls && Object.keys(toolCalls).length > 0) {
     Object.entries(toolCalls).forEach(([toolCallId, toolCall]) => {
-      if (!ensuredParts.some((part: any) => part.toolCallId === toolCallId)) {
+      if (!ensuredParts.some((part: { toolCallId?: string }) => part.toolCallId === toolCallId)) {
         // Add tool call part
         fallbackParts.push({
           type: "tool-call",

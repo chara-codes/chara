@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 import type React from "react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Diff,
   Hunk,
@@ -563,7 +563,7 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     );
 
     // Streaming animation effect
-    useEffect(() => {
+    useLayoutEffect(() => {
       if (status === "generating" && currentIndex < newContent.length) {
         const timer = setTimeout(() => {
           setDisplayedNewContent(newContent.slice(0, currentIndex + 1));
@@ -574,8 +574,8 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
       }
 
       if (status !== "generating") {
-        setDisplayedNewContent(newContent);
-        setCurrentIndex(newContent.length);
+        setDisplayedNewContent(newContent); // eslint-disable-line react-hooks/set-state-in-effect
+        setCurrentIndex(newContent.length);  
       }
     }, [newContent, currentIndex, status, streamingSpeed]);
 
@@ -592,14 +592,14 @@ const DiffBlock: React.FC<DiffBlockProps> = memo(
     }, [status, viewMode]);
 
     // Reset when content changes completely
-    useEffect(() => {
+    useLayoutEffect(() => {
       if (status !== "generating") {
-        setDisplayedNewContent(newContent);
-        setCurrentIndex(newContent.length);
+        setDisplayedNewContent(newContent); // eslint-disable-line react-hooks/set-state-in-effect
+        setCurrentIndex(newContent.length);  
       } else {
         if (currentIndex > newContent.length) {
-          setCurrentIndex(0);
-          setDisplayedNewContent("");
+          setCurrentIndex(0);  
+          setDisplayedNewContent("");  
         }
       }
     }, [newContent, currentIndex, status]);

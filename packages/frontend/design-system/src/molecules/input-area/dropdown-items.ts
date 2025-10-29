@@ -22,6 +22,7 @@ export const createDropdownItems = (
             label: "Loading files...",
             type: "Files",
             section: "Files",
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
             action: () => {}, // No-op
           },
         ]
@@ -32,6 +33,7 @@ export const createDropdownItems = (
             label: `Error loading files: ${fileListError}`,
             type: "Files",
             section: "Files",
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
             action: () => {}, // No-op
           },
         ]

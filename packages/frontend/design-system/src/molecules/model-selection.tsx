@@ -16,6 +16,17 @@ interface ModelConfig {
   approved?: boolean;
 }
 
+interface ApiModel {
+  id?: string;
+  name?: string;
+  contextSize?: number;
+  contextLength?: number;
+  context_length?: number;
+  hasTools?: boolean;
+  has_tools?: boolean;
+  recommended?: boolean;
+}
+
 interface ProviderConfig {
   id: string;
   name: string;
@@ -315,7 +326,7 @@ const ModelSelection: React.FC<ModelSelectionProps> = ({
         const modelsData = responseData.models || responseData;
 
         // Convert to ModelConfig format
-        const formattedModels: ModelConfig[] = modelsData.map((model: any) => ({
+        const formattedModels: ModelConfig[] = modelsData.map((model: ApiModel) => ({
           id: model.id || `${provider.type}_${model.name}`,
           name: model.name || model.id,
           provider: provider.type,

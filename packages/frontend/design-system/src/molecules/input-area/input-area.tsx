@@ -11,7 +11,7 @@ import {
 } from "@chara-codes/core";
 import { useElementSelector } from "@chara-codes/element-selector";
 import type React from "react";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import IconButton from "../../atoms/icon-button";
 import {
@@ -136,14 +136,14 @@ const InputArea: React.FC<InputAreaProps> = ({
 
   const { startElementSelection } = useElementSelector(onAddContext);
 
-  const startSelection = async () => {
+  const startSelection = useCallback(async () => {
     if (browser) {
       const contextItem = await sentMessageToApp("selectElement");
       onAddContext(contextItem);
     } else {
       startElementSelection();
     }
-  };
+  }, [browser, sentMessageToApp, onAddContext, startElementSelection]);
 
   // Auto-resize textarea
   const adjustTextareaHeight = useCallback(() => {
@@ -333,15 +333,15 @@ const InputArea: React.FC<InputAreaProps> = ({
     }
   }, [isDropdownOpen, fileListQuery]);
 
-  const dropdownItems = createDropdownItems(
+  const dropdownItems = useMemo(() => createDropdownItems(
     startSelection,
-    triggerFileUpload,
+    triggerFileUpload, // eslint-disable-line react-hooks/refs
     onAddContext,
     runnerProcesses,
     fileListQuery.data?.files,
     fileListQuery.isFetching,
     fileListQuery.error?.message
-  );
+  ), [startSelection, triggerFileUpload, onAddContext, runnerProcesses, fileListQuery.data, fileListQuery.isFetching, fileListQuery.error]);
 
   const handleDropdownSelect = useCallback(
     (item: {

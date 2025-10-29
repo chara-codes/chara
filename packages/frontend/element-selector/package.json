@@ -17,11 +17,16 @@
     "ttest": "vitest run"
   },
   "devDependencies": {
+    "@eslint/js": "^9.38.0",
+    "@types/node": "^22.18.13",
+    "eslint": "^9.38.0",
+    "tsup": "^8.5.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4",
-    "tsup": "^8.5.0",
-    "eslint": "^9.38.0",
-    "@types/node": "^22.18.13"
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.4.0",
+    "typescript-eslint": "^8.46.2"
   },
   "repository": {
     "type": "git",

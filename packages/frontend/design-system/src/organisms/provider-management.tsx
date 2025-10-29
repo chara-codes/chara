@@ -34,16 +34,23 @@ interface ProviderConfig {
   updatedAt: Date;
 }
 
+interface ProviderData {
+  name: string;
+  type: ProviderConfig["type"];
+  enabled: boolean;
+  configuration: Record<string, unknown>;
+}
+
 const ManagementContainer = styled.div`
   display: flex;
   flex-direction: column;
   padding: 0;
-  
+
   /* Remove extra spacing to align with settings items */
   & > div {
     gap: 8px;
   }
-  
+
   /* Adjust list header to match settings style */
   & h3 {
     font-size: 13px;
@@ -117,7 +124,7 @@ const ProviderManagement: React.FC = () => {
     setSelectingModelsFor(null);
   };
 
-  const handleSubmitProvider = async (providerData: any) => {
+  const handleSubmitProvider = async (providerData: ProviderData) => {
     try {
       let createdProvider: ProviderConfig;
 
@@ -125,12 +132,12 @@ const ProviderManagement: React.FC = () => {
         // Update existing provider
         createdProvider = await updateProviderMutation.mutateAsync({
           id: editingProvider.id,
-          updates: providerData as any,
+          updates: providerData,
         });
       } else {
         // Create new provider
         createdProvider = await createProviderMutation.mutateAsync(
-          providerData as any
+          providerData
         );
       }
 

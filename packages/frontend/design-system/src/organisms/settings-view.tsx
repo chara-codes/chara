@@ -343,6 +343,18 @@ interface SettingsViewProps {
   initialTab?: "general" | "providers";
 }
 
+interface SettingsGroup {
+  id: string;
+  title: string;
+  items: Array<{
+    id: string;
+    title: string;
+    description: string;
+    control: string;
+  }>;
+  isSpecial?: boolean;
+}
+
 type SettingsTab = "general" | "providers";
 
 const SettingsView: React.FC<SettingsViewProps> = ({
@@ -483,7 +495,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                     </SettingsGroupIcon>
                   </SettingsGroupHeader>
                   <SettingsGroupContent $isOpen={openGroups[group.id]}>
-                    {(group as any).isSpecial && group.id === "providers" ? (
+                    {(group as SettingsGroup).isSpecial && group.id === "providers" ? (
                       <ProviderManagement />
                     ) : (
                       group.items.map((item) => (
