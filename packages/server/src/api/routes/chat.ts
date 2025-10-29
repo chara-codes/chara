@@ -248,12 +248,19 @@ export const chatRouter = router({
     )
     .mutation(async ({ input }) => {
       try {
-        const updatedMessage = await updateMessage(input.messageId, {
-          parts: input.parts,
-          role: input.role,
-          metadata: input.metadata,
-          commit: input.commit,
-        });
+        const updates: {
+          parts?: typeof input.parts;
+          role?: typeof input.role;
+          metadata?: typeof input.metadata;
+          commit?: string;
+        } = {};
+
+        if (input.parts !== undefined) updates.parts = input.parts;
+        if (input.role !== undefined) updates.role = input.role;
+        if (input.metadata !== undefined) updates.metadata = input.metadata;
+        if (input.commit !== undefined) updates.commit = input.commit;
+
+        const updatedMessage = await updateMessage(input.messageId, updates);
 
         return {
           success: true,

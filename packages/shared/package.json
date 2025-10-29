@@ -13,14 +13,14 @@
     "test:coverage": "bun test --coverage ."
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.1.2",
+    "@biomejs/biome": "^2.3.2",
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@netlify/build-info": "^10.0.7"
+    "@netlify/build-info": "^10.0.9"
   },
   "keywords": [
     "chara",

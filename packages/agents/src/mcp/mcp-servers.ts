@@ -1,9 +1,9 @@
 import {
   experimental_createMCPClient,
-  type MCPClient,
   type MCPTransport,
-} from "ai";
-import { Experimental_StdioMCPTransport } from "ai/mcp-stdio";
+  type experimental_MCPClient as MCPClient,
+} from '@ai-sdk/mcp';
+import { Experimental_StdioMCPTransport } from '@ai-sdk/mcp/mcp-stdio';
 import { z } from "zod";
 import { logger } from "../utils/logger";
 

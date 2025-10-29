@@ -33,12 +33,12 @@
     "@base2/pretty-print-object": "^1.0.2",
     "@poppinss/dumper": "^0.6.4",
     "picocolors": "^1.1.1",
-    "pino": "^9.7.0",
+    "pino": "^9.14.0",
     "pino-abstract-transport": "^2.0.0",
-    "pino-pretty": "^13.1.1"
+    "pino-pretty": "^13.1.2"
   },
   "devDependencies": {
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "typescript": "^5.8.2"

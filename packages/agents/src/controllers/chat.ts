@@ -112,7 +112,7 @@ async function createGitCommit(
   model: string,
   uiMessages: UIMessage[],
   workingDir: string
-): Promise<string> {
+): Promise<string | undefined> {
   const commitMessage = await gitAgent({
     model,
     messages: convertToModelMessages(uiMessages),
@@ -123,7 +123,7 @@ async function createGitCommit(
     commitMessage.text
   );
 
-  return commitSha as string;
+  return commitSha;
 }
 
 async function updateMessageWithCommit(
@@ -143,8 +143,11 @@ async function handleWriteModeCompletion(
 ): Promise<void> {
   try {
     const commitSha = await createGitCommit(model, uiMessages, workingDir);
-    const lastMessageId = uiMessages[uiMessages.length - 1]?.id as string;
-    await updateMessageWithCommit(lastMessageId, commitSha);
+    // Only update message if we actually got a commit SHA (i.e., there were changes)
+    if (commitSha) {
+      const lastMessageId = uiMessages[uiMessages.length - 1]?.id as string;
+      await updateMessageWithCommit(lastMessageId, commitSha);
+    }
   } catch (error) {
     logger.error("Failed to save to git history:", error);
   }
