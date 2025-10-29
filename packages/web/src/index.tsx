@@ -46,7 +46,7 @@ const ResizeHandle = styled.div`
     left: 3px;
     width: 2px;
     height: 100%;
-    background-color: ${({ theme }) => (theme as Theme).colors.primary};
+    background-color: ${({ theme }) => (theme as Theme).colors?.primary};
     opacity: 0.6;
   }
 

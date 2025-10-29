@@ -1,3 +1,4 @@
+
 import { describe, expect, test, beforeEach, afterEach, spyOn } from "bun:test";
 
 // Helper functions for creating mock streams
@@ -20,19 +21,20 @@ function createEmptyStream(): ReadableStream<Uint8Array> {
 
 describe("examination tool", () => {
   let existsSyncSpy: any;
-  let readFileSyncSpy: any;
+  let readFileSpy: any;
   let statSyncSpy: any;
   let readdirSyncSpy: any;
   let bunSpawnSpy: any;
   let processCwdSpy: any;
 
   beforeEach(async () => {
-    // Import modules dynamically to ensure fresh imports
+    // Import modules from the same paths that examination.ts uses
     const fs = await import("node:fs");
+    const fsPromises = await import("node:fs/promises");
 
     // Create spies
     existsSyncSpy = spyOn(fs, "existsSync");
-    readFileSyncSpy = spyOn(fs, "readFileSync");
+    readFileSpy = spyOn(fsPromises, "readFile");
     statSyncSpy = spyOn(fs, "statSync");
     readdirSyncSpy = spyOn(fs, "readdirSync");
     bunSpawnSpy = spyOn(Bun, "spawn");
@@ -40,7 +42,7 @@ describe("examination tool", () => {
 
     // Set default implementations
     existsSyncSpy.mockImplementation(() => false);
-    readFileSyncSpy.mockImplementation(() => "");
+    readFileSpy.mockImplementation(() => Promise.resolve(""));
     statSyncSpy.mockImplementation(() => ({
       isDirectory: () => false,
       isFile: () => true,
@@ -57,7 +59,7 @@ describe("examination tool", () => {
   afterEach(() => {
     // Restore all spies
     existsSyncSpy?.mockRestore?.();
-    readFileSyncSpy?.mockRestore?.();
+    readFileSpy?.mockRestore?.();
     statSyncSpy?.mockRestore?.();
     readdirSyncSpy?.mockRestore?.();
     bunSpawnSpy?.mockRestore?.();
@@ -114,14 +116,14 @@ describe("examination tool", () => {
         return typeof path === "string" && path.includes("package.json");
       });
 
-      readFileSyncSpy.mockImplementation((path) => {
+      readFileSpy.mockImplementation((path) => {
         if (typeof path === "string" && path.includes("package.json")) {
-          return JSON.stringify({
+          return Promise.resolve(JSON.stringify({
             name: "test-project",
             version: "1.0.0",
-          });
+          }));
         }
-        return "";
+        return Promise.resolve("");
       });
 
       const { examination } = await import("../examination");
@@ -138,17 +140,17 @@ describe("examination tool", () => {
                (path.includes("package.json") || path.includes("tsconfig.json"));
       });
 
-      readFileSyncSpy.mockImplementation((path) => {
+      readFileSpy.mockImplementation((path) => {
         if (typeof path === "string" && path.includes("package.json")) {
-          return JSON.stringify({
+          return Promise.resolve(JSON.stringify({
             name: "test-project",
             devDependencies: { typescript: "^5.0.0" },
-          });
+          }));
         }
         if (typeof path === "string" && path.includes("tsconfig.json")) {
-          return JSON.stringify({ compilerOptions: { strict: true } });
+          return Promise.resolve(JSON.stringify({ compilerOptions: { strict: true } }));
         }
-        return "";
+        return Promise.resolve("");
       });
 
       const { examination } = await import("../examination");
@@ -165,15 +167,15 @@ describe("examination tool", () => {
                !path.includes("tsconfig.json");
       });
 
-      readFileSyncSpy.mockImplementation((path) => {
+      readFileSpy.mockImplementation((path) => {
         if (typeof path === "string" && path.includes("package.json")) {
-          return JSON.stringify({
+          return Promise.resolve(JSON.stringify({
             name: "test-project",
             version: "1.0.0",
             devDependencies: {},
-          });
+          }));
         }
-        return "";
+        return Promise.resolve("");
       });
 
       const { examination } = await import("../examination");
@@ -192,14 +194,14 @@ describe("examination tool", () => {
                (path.includes("test.ts") || path.includes("package.json"));
       });
 
-      readFileSyncSpy.mockImplementation((path) => {
+      readFileSpy.mockImplementation((path) => {
         if (typeof path === "string" && path.includes("test.ts")) {
-          return "export const test = 'hello';";
+          return Promise.resolve("export const test = 'hello';");
         }
         if (typeof path === "string" && path.includes("package.json")) {
-          return JSON.stringify({ name: "test-project" });
+          return Promise.resolve(JSON.stringify({ name: "test-project" }));
         }
-        return "";
+        return Promise.resolve("");
       });
 
       const { examination } = await import("../examination");
@@ -231,6 +233,18 @@ describe("examination tool", () => {
         throw new Error("File system error");
       });
 
+      // Reset readFileSpy to return valid JSON in case any functions try to read files
+      readFileSpy.mockImplementation((path) => {
+        if (typeof path === "string" && path.includes("package.json")) {
+          return Promise.resolve(JSON.stringify({
+            name: "test-project",
+            version: "1.0.0",
+            scripts: { test: "echo 'Error: no test specified' && exit 1" }
+          }));
+        }
+        return Promise.resolve("");
+      });
+
       const { examination } = await import("../examination");
       const result = await examination.execute({ path: undefined });
 
@@ -240,18 +254,20 @@ describe("examination tool", () => {
 
     test("should handle invalid JSON gracefully", async () => {
       existsSyncSpy.mockImplementation((path) => {
-        return typeof path === "string" && path.includes("package.json");
+        // Only return true for a specific test path, not general package.json
+        return typeof path === "string" && path.includes("invalid-json-test");
       });
 
-      readFileSyncSpy.mockImplementation((path) => {
-        if (typeof path === "string" && path.includes("package.json")) {
-          return "{ invalid json content";
+      readFileSpy.mockImplementation((path) => {
+        if (typeof path === "string" && path.includes("invalid-json-test")) {
+          return Promise.resolve("{ invalid json content");
         }
-        return "";
+        // For all other paths, return empty to avoid interference
+        return Promise.resolve("");
       });
 
       const { examination } = await import("../examination");
-      const result = await examination.execute({ path: undefined });
+      const result = await examination.execute({ path: "invalid-json-test" });
 
       expect(typeof result).toBe("string");
       // Should not crash on invalid JSON
@@ -264,17 +280,18 @@ describe("examination tool", () => {
                (path.includes("package.json") || path.includes("tsconfig.json"));
       });
 
-      readFileSyncSpy.mockImplementation((path) => {
+      readFileSpy.mockImplementation((path) => {
         if (typeof path === "string" && path.includes("package.json")) {
-          return JSON.stringify({
+          return Promise.resolve(JSON.stringify({
             name: "test-project",
             devDependencies: { typescript: "^5.0.0" },
-          });
+            scripts: { test: "echo 'Error: no test specified' && exit 1" }
+          }));
         }
         if (typeof path === "string" && path.includes("tsconfig.json")) {
-          return JSON.stringify({ compilerOptions: {} });
+          return Promise.resolve(JSON.stringify({ compilerOptions: {} }));
         }
-        return "";
+        return Promise.resolve("");
       });
 
       // Ensure spawn fails
@@ -300,14 +317,14 @@ describe("examination tool", () => {
                 path.includes("package.json"));
       });
 
-      readFileSyncSpy.mockImplementation((path) => {
+      readFileSpy.mockImplementation((path) => {
         if (typeof path === "string" && path.includes("package.json")) {
-          return JSON.stringify({
+          return Promise.resolve(JSON.stringify({
             name: "test-project",
             devDependencies: { "@biomejs/biome": "^1.0.0" },
-          });
+          }));
         }
-        return "";
+        return Promise.resolve("");
       });
 
       const { examination } = await import("../examination");
@@ -323,14 +340,14 @@ describe("examination tool", () => {
                (path.includes(".eslintrc") || path.includes("package.json"));
       });
 
-      readFileSyncSpy.mockImplementation((path) => {
+      readFileSpy.mockImplementation((path) => {
         if (typeof path === "string" && path.includes("package.json")) {
-          return JSON.stringify({
+          return Promise.resolve(JSON.stringify({
             name: "test-project",
             devDependencies: { eslint: "^8.0.0" },
-          });
+          }));
         }
-        return "";
+        return Promise.resolve("");
       });
 
       const { examination } = await import("../examination");
