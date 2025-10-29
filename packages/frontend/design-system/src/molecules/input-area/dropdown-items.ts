@@ -23,7 +23,7 @@ export const createDropdownItems = (
             type: "Files",
             section: "Files",
             // eslint-disable-next-line @typescript-eslint/no-empty-function
-            action: () => {}, // No-op
+            action: () => { /* no-op */ }, // No-op
           },
         ]
       : fileListError
@@ -34,7 +34,7 @@ export const createDropdownItems = (
             type: "Files",
             section: "Files",
             // eslint-disable-next-line @typescript-eslint/no-empty-function
-            action: () => {}, // No-op
+            action: () => { /* no-op */ }, // No-op
           },
         ]
       : fileList

@@ -1,8 +1,8 @@
 import { createContext } from "react";
 
 interface IBrowserContext {
-  browser?: any;
-  sentMessageToApp?: any;
+  browser?: unknown;
+  sentMessageToApp?: unknown;
 }
 
 export const BrowserContext = createContext<IBrowserContext>({});

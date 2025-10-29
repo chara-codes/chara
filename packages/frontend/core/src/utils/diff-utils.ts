@@ -1,5 +1,20 @@
 import type { FileDiff, DiffStats } from "../types";
 
+// Interface to replace any usage in legacy diff functions
+interface LegacyDiff {
+  filePath?: string;
+  originalContent?: string;
+  newContent?: string;
+  patchContent?: string;
+  hunks?: Array<{
+    oldStart: number;
+    oldLines: number;
+    newStart: number;
+    newLines: number;
+    lines: string[];
+  }>;
+}
+
 /**
  * Parse a unified diff patch to extract statistics
  */
@@ -226,7 +241,7 @@ export function hasDiffChanges(diff: FileDiff): boolean {
 /**
  * Migration helper: Convert legacy hunk-based diff to new patch-based structure
  */
-export function migrateLegacyDiff(legacyDiff: any): FileDiff {
+export function migrateLegacyDiff(legacyDiff: LegacyDiff): FileDiff {
   // If it's already in the new format, return as-is
   if (legacyDiff.patchContent && legacyDiff.originalContent) {
     return legacyDiff as FileDiff;
@@ -298,6 +313,6 @@ export function migrateLegacyDiff(legacyDiff: any): FileDiff {
 /**
  * Batch migration helper for converting multiple legacy diffs
  */
-export function migrateLegacyDiffs(legacyDiffs: any[]): FileDiff[] {
+export function migrateLegacyDiffs(legacyDiffs: LegacyDiff[]): FileDiff[] {
   return legacyDiffs.map(migrateLegacyDiff);
 }

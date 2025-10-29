@@ -135,6 +135,7 @@
         "zustand": "^5.0.8",
       },
       "devDependencies": {
+        "@biomejs/biome": "2.3.2",
         "@eslint/js": "^9.38.0",
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.0",
@@ -195,6 +196,7 @@
         "tailwindcss-animate": "^1.0.7",
       },
       "devDependencies": {
+        "@biomejs/biome": "2.3.2",
         "@eslint/js": "^9.38.0",
         "@types/react": "^18.3.24",
         "@types/react-dom": "^18.3.7",

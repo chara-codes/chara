@@ -9,6 +9,47 @@ import type { StackDTO } from "@chara-codes/server";
 import { toast } from "../components";
 import { Screen, useRoutingStore } from "./routing-store";
 
+// Interfaces to replace any usages
+interface CreateInput {
+  title: string;
+  type: string;
+  shortDescription: string | null;
+  longDescription: string | null;
+  icon: string | null;
+  isNew: boolean;
+  popularity: number;
+  links: Array<{
+    title: string;
+    url: string;
+    description: string | null;
+  }>;
+  mcps: Array<{
+    name: string;
+    serverConfig: {
+      command: string;
+      args: string[];
+      env: Record<string, string>;
+    };
+  }>;
+}
+
+interface LinkData {
+  title: string;
+  url: string;
+  description?: string;
+}
+
+interface MCPData {
+  name: string;
+  serverConfig: {
+    command: string;
+    args?: string[];
+    env?: Record<string, string>;
+  };
+}
+
+
+
 interface TechStacksState {
   // State
   techStacks: TechStackDetail[];
@@ -221,7 +262,7 @@ export function useUpdateTechStack() {
   };
 }
 
-function detailToCreateInput(s: Omit<TechStackDetail, "id">): any {
+function detailToCreateInput(s: Omit<TechStackDetail, "id">): CreateInput {
   return {
     title: s.name,
     type: s.category,
@@ -258,14 +299,14 @@ function mapServerStackToDetail(s: StackDTO): TechStackDetail {
     icon: s.icon,
     isNew: s.isNew ?? false,
     popularity: s.popularity ?? 0,
-    documentationLinks: s.links.map((link: any) => ({
+    documentationLinks: s.links.map((link: LinkData) => ({
       id: crypto.randomUUID(),
       name: link.title,
       url: link.url,
       description: link.description ?? undefined,
     })),
     mcpServers:
-      s.mcps?.map((mcp: any) => ({
+      s.mcps?.map((mcp: MCPData) => ({
         id: crypto.randomUUID(),
         name: mcp.name,
         configuration: {

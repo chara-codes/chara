@@ -17,6 +17,18 @@ export interface BeautifyState {
   error: Error | null;
 }
 
+// Chat message interfaces to replace any usage
+export interface ChatPart {
+  type: string;
+  [key: string]: unknown;
+}
+
+export interface ChatMessage {
+  role: string;
+  parts: ChatPart[];
+  [key: string]: unknown;
+}
+
 /**
  * Advanced hook for prompt beautification that integrates with the chat store
  * and provides a more convenient API for components
@@ -35,7 +47,7 @@ export const usePromptBeautifier = (): {
     onComplete: (finalText: string) => void,
     onError: (error: Error) => void
   ) => void;
-  messages: any[];
+  messages: ChatMessage[];
   status: string;
 } => {
   const chatStore = useChatStore();

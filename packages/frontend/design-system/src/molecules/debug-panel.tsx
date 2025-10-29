@@ -7,7 +7,7 @@ import {
   webSocketService,
 } from "@chara-codes/core";
 import type { ConnectionStatus } from "@chara-codes/core";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import styled from "styled-components";
 
 const DebugContainer = styled.div`
@@ -186,7 +186,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
   const { isConnected: runnerConnected, isConnecting: runnerConnecting } =
     useRunnerConnection();
 
-  const addLog = (level: "info" | "warning" | "error", message: string) => {
+  const addLog = useCallback((level: "info" | "warning" | "error", message: string) => {
     setLogs((prev) => [
       ...prev.slice(-9),
       {
@@ -195,7 +195,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
         message,
       },
     ]);
-  };
+  }, []);
 
   useEffect(() => {
     const unsubscribe = webSocketService.onStatusChange((status) => {
@@ -207,7 +207,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
     });
 
     return unsubscribe;
-  }, []);
+  }, [addLog]);
 
   const getStatus = (
     loading: boolean,

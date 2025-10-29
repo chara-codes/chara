@@ -344,7 +344,6 @@ const TechStackDetailView: React.FC<TechStackDetailViewProps> = ({
                     </ServerHeader>
                     <ServerContent>
                       <JsonConfig
-                        // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                         dangerouslySetInnerHTML={{
                           __html: highlightJson(
                             JSON.stringify(server.configuration, null, 2)

@@ -534,7 +534,7 @@ const FileDiff: React.FC<FileDiffProps> = ({
                 .map((_, i) => (
                   <div
                     key={`line-${
-                      // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+
                       i
                     }`}
                   >

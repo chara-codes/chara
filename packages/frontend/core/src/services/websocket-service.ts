@@ -3,7 +3,122 @@ import type {
   ConnectionStatus,
   RunnerEvent,
   SharedWebSocketCallbacks,
+  ChatStatus,
 } from "../types/websocket-types";
+
+// Callback data types for better type safety
+type ChatChunkData = {
+  chatId: number;
+  assistantMessageId: number | null;
+  chunk: string;
+  type: "text" | "tool-call" | "tool-result";
+};
+
+type ChatCompleteData = {
+  chatId: number;
+  assistantMessageId: number | null;
+  fullResponse: string;
+  usage?: Record<string, unknown>;
+};
+
+type ChatErrorData = {
+  chatId: number;
+  assistantMessageId: number | null;
+  error: string;
+  code?: string;
+};
+
+type RunnerStartedData = {
+  processId: string;
+  serverInfo: {
+    name: string;
+    command: string;
+    cwd: string;
+    pid: number;
+    serverUrl?: string;
+    os: string;
+    shell: string;
+    startTime: Date;
+  };
+};
+
+type RunnerStoppedData = {
+  processId: string;
+  exitCode: number;
+  serverInfo: {
+    name: string;
+    command: string;
+    cwd: string;
+    uptime?: number;
+  };
+};
+
+type RunnerOutputData = {
+  processId: string;
+  type: "stdout" | "stderr";
+  chunk: string;
+  command: string;
+  cwd: string;
+};
+
+type RunnerErrorData = {
+  processId: string;
+  error: string;
+  serverInfo: {
+    name: string;
+    command: string;
+    cwd: string;
+  };
+};
+
+type RunnerStatusData = {
+  processId: string;
+  status: "starting" | "active" | "stopped" | "error";
+  serverInfo: {
+    name: string;
+    command: string;
+    cwd: string;
+    pid?: number;
+    uptime?: number;
+    serverUrl?: string;
+    host?: string;
+    port?: number;
+  };
+  logs?: Array<{
+    id: string;
+    timestamp: Date;
+    type: "stdout" | "stderr" | "error";
+    content: string;
+    processId?: string;
+  }>;
+};
+
+type RunnerRestartedData = {
+  processId: string;
+  oldCommand: string;
+  newCommand: string;
+  serverInfo: {
+    name: string;
+    command: string;
+    cwd: string;
+    pid?: number;
+  };
+};
+
+type RunnerInfoUpdatedData = {
+  processId: string;
+  updates: Partial<{
+    name: string;
+    serverUrl: string;
+  }>;
+  serverInfo: {
+    name: string;
+    command: string;
+    cwd: string;
+    pid?: number;
+    serverUrl?: string;
+  };
+};
 
 /**
  * Shared WebSocket service that manages a single connection for both chat and runner services.
@@ -627,25 +742,25 @@ export class WebSocketService {
         switch (event.event) {
           case "chat:status":
             if (callbacks.onChatStatus) {
-              callbacks.onChatStatus(event.data as any);
+              callbacks.onChatStatus(event.data as unknown as ChatStatus);
             }
             break;
 
           case "chat:chunk":
             if (callbacks.onChatChunk) {
-              callbacks.onChatChunk(event.data as any);
+              callbacks.onChatChunk(event.data as unknown as ChatChunkData);
             }
             break;
 
           case "chat:complete":
             if (callbacks.onChatComplete) {
-              callbacks.onChatComplete(event.data as any);
+              callbacks.onChatComplete(event.data as unknown as ChatCompleteData);
             }
             break;
 
           case "chat:error":
             if (callbacks.onChatError) {
-              callbacks.onChatError(event.data as any);
+              callbacks.onChatError(event.data as unknown as ChatErrorData);
             }
             break;
 
@@ -667,43 +782,43 @@ export class WebSocketService {
         switch (runnerEvent.event) {
           case "runner:started":
             if (callbacks.onRunnerStarted) {
-              callbacks.onRunnerStarted(runnerEvent.data as any);
+              callbacks.onRunnerStarted(runnerEvent.data as unknown as RunnerStartedData);
             }
             break;
 
           case "runner:stopped":
             if (callbacks.onRunnerStopped) {
-              callbacks.onRunnerStopped(runnerEvent.data as any);
+              callbacks.onRunnerStopped(runnerEvent.data as unknown as RunnerStoppedData);
             }
             break;
 
           case "runner:output":
             if (callbacks.onRunnerOutput) {
-              callbacks.onRunnerOutput(runnerEvent.data as any);
+              callbacks.onRunnerOutput(runnerEvent.data as unknown as RunnerOutputData);
             }
             break;
 
           case "runner:error":
             if (callbacks.onRunnerError) {
-              callbacks.onRunnerError(runnerEvent.data as any);
+              callbacks.onRunnerError(runnerEvent.data as unknown as RunnerErrorData);
             }
             break;
 
           case "runner:status":
             if (callbacks.onRunnerStatus) {
-              callbacks.onRunnerStatus(runnerEvent.data as any);
+              callbacks.onRunnerStatus(runnerEvent.data as unknown as RunnerStatusData);
             }
             break;
 
           case "runner:restarted":
             if (callbacks.onRunnerRestarted) {
-              callbacks.onRunnerRestarted(runnerEvent.data as any);
+              callbacks.onRunnerRestarted(runnerEvent.data as unknown as RunnerRestartedData);
             }
             break;
 
           case "runner:info-updated":
             if (callbacks.onRunnerInfoUpdated) {
-              callbacks.onRunnerInfoUpdated(runnerEvent.data as any);
+              callbacks.onRunnerInfoUpdated(runnerEvent.data as unknown as RunnerInfoUpdatedData);
             }
             break;
 

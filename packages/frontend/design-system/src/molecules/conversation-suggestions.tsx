@@ -301,7 +301,7 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
     }
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -324,7 +324,7 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
       window.removeEventListener("resize", debouncedCheck);
       resizeObserver.disconnect();
     };
-  }, [checkScrollability, suggestedPrompts]); // Re-check if prompts change
+  }, [checkScrollability]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -351,7 +351,7 @@ const ConversationSuggestions: React.FC<ConversationSuggestionsProps> = ({
         <ScrollContainer ref={scrollRef}>
           {suggestedPrompts.map((prompt, index) => (
             <PromptBlockComponent
-              // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+
               key={`${isLoadingPrompts ? "placeholder" : "real"}-${index}`}
               text={prompt}
               onClick={() => onSelectSuggestion(prompt)}

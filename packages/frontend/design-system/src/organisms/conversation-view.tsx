@@ -20,6 +20,12 @@ import ChatMessages from "./chat-messages";
 import ContextPanel from "./context-panel";
 import RecentHistory from "./recent-history";
 
+// Custom interface for error parts in UIMessage since it's not officially supported
+interface ErrorPart {
+  type: "error";
+  error: string;
+}
+
 const ChatContent = styled.div`
   flex: 1;
   overflow: hidden;
@@ -174,11 +180,11 @@ const ConversationView: React.FC = () => {
         ) {
           // Add error part to the last assistant message
           const lastMessage = updatedMessages[lastAssistantIndex];
-          const errorPart = {
+          const errorPart: ErrorPart = {
             type: "error",
             error: error.message || "An unexpected error occurred",
-          } as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-            // Using 'any' because UIMessage doesn't officially support custom error parts
+          };
+            // This allows adding error parts to assistant messages when UI errors occur
 
           updatedMessages[lastAssistantIndex] = {
             ...lastMessage,
@@ -195,8 +201,8 @@ const ConversationView: React.FC = () => {
               {
                 type: "error",
                 error: error.message || "An unexpected error occurred",
-              } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-                // Using 'any' because UIMessage doesn't officially support custom error parts
+              } as ErrorPart, // Type assertion needed: UIMessage doesn't officially support custom error parts
+                // This allows adding error parts when no assistant message exists to append to
             ],
           };
           updatedMessages.push(errorMessage);

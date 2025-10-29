@@ -25,6 +25,28 @@ interface ChatsWithPagination {
   hasMore: boolean;
 }
 
+// Chat message interfaces to replace any usage
+export interface ChatPart {
+  type: string;
+  [key: string]: unknown;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: string;
+  parts: ChatPart[];
+  metadata?: Record<string, unknown>;
+  createdAt?: Date;
+}
+
+export interface MessageContext {
+  [key: string]: unknown;
+}
+
+export interface ToolCall {
+  [key: string]: unknown;
+}
+
 // Update the fetchChats function to use tRPC getChatList route
 export async function fetchChats(_options?: {
   limit?: number;
@@ -166,15 +188,15 @@ export async function saveMessage(
   chatId: string,
   content: string,
   role: "user" | "assistant",
-  context?: any,
-  toolCalls?: any
+  context?: MessageContext,
+  toolCalls?: ToolCall[]
 ): Promise<{
   id: string;
   content: string;
   role: string;
   timestamp: number;
-  context?: any;
-  toolCalls?: any;
+  context?: MessageContext;
+  toolCalls?: ToolCall[];
 }> {
   try {
     const client = getVanillaTrpcClient();
@@ -237,13 +259,7 @@ export async function fetchChatHistory(
   }
 ): Promise<{
   chatId: string;
-  history: Array<{
-    id: string;
-    role: string;
-    parts: any[];
-    metadata?: any;
-    createdAt?: Date;
-  }>;
+  history: Array<ChatMessage>;
   hasMore: boolean;
 }> {
   try {
@@ -371,13 +387,7 @@ export async function fetchFirstMessageFromRecentChats(options?: {
       createdAt: string;
       updatedAt: string;
     };
-    firstMessage: {
-      id: string;
-      role: string;
-      parts: any[];
-      metadata?: any;
-      createdAt?: Date;
-    } | null;
+    firstMessage: ChatMessage | null;
   }>
 > {
   try {
@@ -410,13 +420,7 @@ export async function fetchFirstMessageFromRecentChats(options?: {
 }
 
 // Helper function to get just the first message from a chat
-export async function getFirstMessage(chatId: string): Promise<{
-  id: string;
-  role: string;
-  parts: any[];
-  metadata?: any;
-  createdAt?: Date;
-} | null> {
+export async function getFirstMessage(chatId: string): Promise<ChatMessage | null> {
   try {
     const result = await fetchChatHistory(chatId, { firstMessageOnly: true });
     return result.history.length > 0 ? result.history[0] : null;
