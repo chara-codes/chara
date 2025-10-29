@@ -12,7 +12,7 @@
   "scripts": {
     "bbuild": "tsup src/index.ts --format cjs,esm --dts",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
-    "lint": "biome lint",
+    "lint": "bunx biome lint",
     "llint": "eslint \"src/**/*.ts*\"",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
   },
