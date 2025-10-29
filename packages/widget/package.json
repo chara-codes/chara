@@ -13,7 +13,7 @@
     "build": "vite build --base=/widget/",
     "typecheck": "tsc --noEmit --project tsconfig.typecheck.json",
     "build:check": "bun run typecheck && vite build",
-    "lint": "eslint .",
+    "llint": "eslint .",
     "preview": "vite preview --port 3000 --host 0.0.0.0"
   },
   "dependencies": {
