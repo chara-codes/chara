@@ -39,6 +39,8 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
     setIsExpanded((prev) => !prev);
   }, []);
 
+  console.log(toolCall);
+
   /*
    * SPECIALIZED TOOL COMPONENT ROUTING
    *
@@ -83,12 +85,12 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
       <div>
         <ToolCallItemHeader>
           <ToolCallName>
-            {getToolIcon(type)}
-            {type}
+            {getToolIcon(type as string)}
+            {type as string}
           </ToolCallName>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <ToolCallStatus status={toolCall.status || "success"}>
-              {toolCall.status || "completed"}
+            <ToolCallStatus status={(toolCall.status || "success") as string}>
+              {(toolCall.status || "completed") as string}
             </ToolCallStatus>
             <ToolCallToggle onClick={handleToggle}>
               <ExpandableChevronIcon isExpanded={isExpanded} />
@@ -112,7 +114,7 @@ const ToolCallComponent: React.FC<ToolCallComponentProps> = ({
             {toolCall.result ? (
               <ToolCallResult>
                 <ToolCallResultLabel>Result</ToolCallResultLabel>
-                <ToolCallResultContent $hasError={toolCall.status === "error"}>
+                <ToolCallResultContent hasError={toolCall.status === "error"}>
                   {typeof toolCall.result === "string"
                     ? (toolCall.result as string)
                     : JSON.stringify(toolCall.result, null, 2)}
