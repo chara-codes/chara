@@ -20,11 +20,13 @@ import Footer from "@/components/Footer";
 
 export default function Home() {
   const [copied, setCopied] = useState(false);
+  const [packageVersion, setPackageVersion] = useState('prod');
 
   const copyToClipboard = () => {
     const packageManager =
       document.getElementById("package-manager")?.textContent?.trim() || "bunx";
-    const command = `${packageManager} @chara-codes/cli dev`;
+    const packageSuffix = packageVersion === 'alpha' ? '@alpha' : '';
+    const command = `${packageManager} @chara-codes/cli${packageSuffix} dev`;
     navigator.clipboard.writeText(command);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -114,6 +116,35 @@ export default function Home() {
                 {/* Replace the existing tab buttons with this segmented control */}
                 <div className="absolute top-0 right-0 z-10 translate-y-[-100%]">
                   <div className="inline-flex p-1 bg-navy-800/50 backdrop-blur-sm rounded-t-lg shadow-lg">
+                    {/* Alpha/Prod Toggle */}
+                    <div className="inline-flex border-r border-navy-700/30 pr-2 mr-2">
+                      {[
+                        {
+                          value: "prod",
+                          label: "PROD",
+                          color: "from-green-500 to-green-600",
+                        },
+                        {
+                          value: "alpha",
+                          label: "ALPHA",
+                          color: "from-orange-500 to-orange-600",
+                        },
+                      ].map((option, index) => (
+                        <button
+                          key={option.value}
+                          className={`px-2 py-1.5 text-xs font-medium transition-all duration-300 ${
+                            packageVersion === option.value
+                              ? "bg-gradient-to-r " +
+                                option.color +
+                                " text-white rounded-md shadow-inner"
+                              : "text-white/80 hover:text-white hover:bg-white/10 rounded-md"
+                          }`}
+                          onClick={() => setPackageVersion(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
                     {[
                       {
                         value: "npx",
@@ -197,13 +228,18 @@ export default function Home() {
                     )}
                   </button>
                   <code className="text-sm md:text-base font-mono flex flex-col">
-                    <div className="flex items-center">
-                      <span className="text-green-400 mr-2">$</span>
-                      <span id="package-manager" className="text-amber-300">
-                        bunx
-                      </span>
-                      <span className="text-white"> @chara-codes/cli dev</span>
-                    </div>
+                                        <div className="flex items-center">
+                                          <span className="text-green-400 mr-2">$</span>
+                                          <span id="package-manager" className="text-amber-300">
+                                            bunx
+                                          </span>
+                                          <span className="text-white">
+                                            {" "}
+                                            @chara-codes/cli
+                                            {packageVersion === "alpha" ? "@alpha" : ""}
+                                          {" dev"}
+                                        </span>
+                                      </div>
                   </code>
                 </pre>
               </div>
