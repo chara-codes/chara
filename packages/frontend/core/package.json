@@ -18,18 +18,18 @@
     "ttest": "vitest run"
   },
   "dependencies": {
-    "@ai-sdk/react": "^2.0.82",
+    "@ai-sdk/react": "^2.0.118",
     "@radix-ui/react-toast": "^1.2.15",
-    "@tanstack/react-query": "^5.90.5",
-    "@trpc/client": "^11.7.1",
-    "@trpc/react-query": "^11.7.1",
-    "ai": "^5.0.82",
+    "@tanstack/react-query": "^5.90.12",
+    "@trpc/client": "^11.8.1",
+    "@trpc/react-query": "^11.8.1",
+    "ai": "^5.0.116",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.548.0",
     "styled-components": "^6.1.19",
-    "superjson": "^2.2.5",
+    "superjson": "^2.2.6",
     "zod": "^3.25.76",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.9"
   },
   "peerDependencies": {
     "react": "^19.2.3",
@@ -37,16 +37,16 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.2",
-    "@eslint/js": "^9.38.0",
+    "@eslint/js": "^9.39.2",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.0",
-    "@types/node": "^22.18.13",
-    "eslint": "^9.38.0",
-    "globals": "^16.4.0",
-    "jsdom": "^27.0.1",
-    "tsup": "^8.5.0",
+    "@testing-library/react": "^16.3.1",
+    "@types/node": "^22.19.3",
+    "eslint": "^9.39.2",
+    "globals": "^16.5.0",
+    "jsdom": "^27.3.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.2",
+    "typescript-eslint": "^8.50.1",
     "vitest": "^3.2.4"
   },
   "repository": {
