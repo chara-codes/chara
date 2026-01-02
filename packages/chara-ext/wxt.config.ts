@@ -15,6 +15,8 @@ export default defineConfig({
         "@chara-codes/core": resolve(__dirname, "../frontend/core/src"),
         // Add alias for design-system internal paths
         "@/theme": resolve(__dirname, "../frontend/design-system/src/theme"),
+        react: resolve(__dirname, "node_modules/react"),
+        "react-dom": resolve(__dirname, "node_modules/react-dom"),
       },
     },
   }),
