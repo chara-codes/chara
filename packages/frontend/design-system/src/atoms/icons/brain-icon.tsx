@@ -54,4 +54,3 @@ export const BrainIcon: React.FC<BrainIconProps> = ({
   )
 }
 
-export default BrainIcon

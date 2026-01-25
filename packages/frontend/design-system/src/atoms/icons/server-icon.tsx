@@ -51,4 +51,3 @@ export const ServerIcon: React.FC<ServerIconProps> = ({
   );
 };
 
-export default ServerIcon;

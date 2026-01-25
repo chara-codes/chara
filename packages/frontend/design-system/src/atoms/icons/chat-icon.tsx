@@ -24,4 +24,3 @@ export const ChatIcon: React.FC<ChatIconProps> = ({ size = 24 }) => (
   </svg>
 )
 
-export default ChatIcon

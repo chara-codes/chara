@@ -8,7 +8,7 @@ import superjson from "superjson";
 
 export const trpc = createTRPCReact<AppRouter>();
 
-export const createTrpcClient = getVanillaTrpcClient;
+
 
 export function createVanillaTrpcClient() {
   const server = import.meta.env?.VITE_SERVER_URL || "localhost:3030";

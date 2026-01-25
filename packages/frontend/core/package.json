@@ -24,10 +24,10 @@
     "@trpc/client": "^11.7.1",
     "@trpc/react-query": "^11.7.1",
     "ai": "^5.0.82",
-    "date-fns": "^4.1.0",
     "lucide-react": "^0.548.0",
     "styled-components": "^6.1.19",
     "superjson": "^2.2.5",
+
     "zod": "^3.25.76",
     "zustand": "^5.0.8"
   },
@@ -38,8 +38,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.3.2",
     "@eslint/js": "^9.38.0",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.0",
+
     "@types/node": "^22.18.13",
     "eslint": "^9.38.0",
     "globals": "^16.4.0",

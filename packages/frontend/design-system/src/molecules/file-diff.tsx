@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { FileIcon, UndoIcon } from "../atoms";
 import { ArrowLeftIcon } from "../atoms/icons/arrow-left-icon";
-import CheckIcon from "../atoms/icons/check-icon";
+import { CheckIcon } from "../atoms/icons/check-icon";
 import { CloseIcon } from "../atoms/icons/close-icon";
 
 interface FileDiffProps {

@@ -25,4 +25,3 @@ export const HistoryIcon: React.FC<HistoryIconProps> = ({ size = 18 }) => (
   </svg>
 )
 
-export default HistoryIcon

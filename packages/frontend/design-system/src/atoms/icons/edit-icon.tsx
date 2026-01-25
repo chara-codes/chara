@@ -35,4 +35,3 @@ export const EditIcon: React.FC<EditIconProps> = ({
   );
 };
 
-export default EditIcon;

@@ -56,4 +56,3 @@ export const ArrowLeftIcon: React.FC<ArrowLeftIconProps> = ({
   );
 };
 
-export default ArrowLeftIcon;
