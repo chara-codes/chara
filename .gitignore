@@ -18,6 +18,14 @@ deploy.log
 tmp
 config.json
 
+# agents
+.opencode
+.agents
+.agent
+.claude
+.gemini
+.github/skills
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json

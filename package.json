@@ -27,6 +27,6 @@
     "@changesets/cli": "^2.29.8",
     "http-proxy": "^1.18.1",
     "pretty-bytes": "^7.1.0",
-    "turbo": "^2.7.0"
+    "turbo": "^2.7.2"
   }
 }
