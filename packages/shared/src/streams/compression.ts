@@ -1,6 +1,6 @@
 import { Writable } from "stream";
 import * as zlib from "zlib";
-import { logger } from "../logger";
+import { logger } from "@chara-codes/logger";
 
 /**
  * Determines the compression type to use based on Content-Encoding header

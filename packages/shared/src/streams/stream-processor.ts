@@ -1,11 +1,8 @@
-import { createReplacementStream } from "./replacement-stream";
-import {
-  createCompressionStream,
-  prepareHeadersForCompression,
-} from "../compression";
-import type { ServerConfig } from "../../types/server.types";
-import { isTextResponse } from "../../utils/content-type";
 import { logger } from "@chara-codes/logger";
+import { isTextResponse } from "../utils/content-type.js";
+import { createReplacementStream } from "./replacement-stream.js";
+import { createCompressionStream, prepareHeadersForCompression } from "./compression.js";
+import type { StreamReplacementConfig } from "../types/index.js";
 
 /**
  * Processes a stream with optional text replacements and compression
@@ -15,7 +12,7 @@ import { logger } from "@chara-codes/logger";
  * @param headers The HTTP response headers
  * @param resolver The function to resolve the pending request
  * @param requestId The request ID for logging purposes
- * @param config Server configuration containing replacements (if needed)
+ * @param config Configuration containing replacements (if needed)
  * @param compressionType The type of compression to apply (if any)
  */
 export function processStream(
@@ -24,23 +21,23 @@ export function processStream(
   headers: Headers,
   resolver: (response: Response) => void,
   requestId: string,
-  config?: ServerConfig,
-  compressionType?: string
+  config?: StreamReplacementConfig,
+  compressionType?: string,
 ): void {
   let processedStream = stream;
   let responseHeaders = new Headers(headers);
 
   // Apply text replacements if configured and content type is appropriate
-  const shouldApplyReplacements =
-    config?.replacements &&
-    config.replacements.length > 0 &&
+  const shouldApplyReplacements = 
+    config?.replacements && 
+    config.replacements.length > 0 && 
     isTextResponse(responseHeaders);
-
+    
   if (shouldApplyReplacements) {
     logger.debug(
       `Applying text replacements to response for request ${requestId}`
     );
-    processedStream = createReplacementStream(processedStream, config);
+    processedStream = createReplacementStream(processedStream, config!);
   }
 
   // Apply compression if requested
@@ -58,7 +55,7 @@ export function processStream(
 
       // Apply compression
       processedStream = createCompressionStream(
-        processedStream,
+        processedStream, 
         compressionType
       );
 

@@ -1,5 +1,5 @@
-import type { TextReplacement } from "../types/server.types";
 import { logger } from "@chara-codes/logger";
+import type { TextReplacement } from "../types/index.js";
 
 /**
  * Applies a series of text replacements to a string

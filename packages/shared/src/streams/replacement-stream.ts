@@ -1,6 +1,6 @@
-import type { ServerConfig } from "../../types/server.types";
 import { logger } from "@chara-codes/logger";
-import { applyReplacements } from "../../utils/replacements";
+import { applyReplacements } from "../utils/replacements.js";
+import type { StreamReplacementConfig } from "../types/index.js";
 
 /**
  * Creates a transform stream that applies text replacements to chunks of data
@@ -11,7 +11,7 @@ import { applyReplacements } from "../../utils/replacements";
  */
 export function createReplacementStream(
   stream: ReadableStream<Uint8Array>,
-  config: ServerConfig,
+  config: StreamReplacementConfig,
 ): ReadableStream<Uint8Array> {
   if (!config.replacements || config.replacements.length === 0) {
     return stream; // No replacements needed, return original stream
