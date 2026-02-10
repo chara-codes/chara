@@ -20,9 +20,8 @@
     "@chara-codes/element-selector": "workspace:*",
     "@webext-core/messaging": "^2.3.0",
     "@webext-pegasus/rpc": "^0.3.6",
-    "@webext-pegasus/transport": "^0.3.6",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "@webext-pegasus/transport": "^0.3.6"
+
   },
   "devDependencies": {
     "@types/chrome": "^0.1.32",

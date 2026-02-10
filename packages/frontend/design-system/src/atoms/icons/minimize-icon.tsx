@@ -24,4 +24,3 @@ export const MinimizeIcon: React.FC<MinimizeIconProps> = ({ size = 24 }) => (
   </svg>
 )
 
-export default MinimizeIcon

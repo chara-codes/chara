@@ -16,4 +16,3 @@ export const SettingsIcon: React.FC<SettingsIconProps> = ({ size = 24 }) => (
   </svg>
 )
 
-export default SettingsIcon

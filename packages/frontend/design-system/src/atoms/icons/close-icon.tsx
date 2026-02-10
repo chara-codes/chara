@@ -25,4 +25,3 @@ export const CloseIcon: React.FC<CloseIconProps> = ({ size = 24 }) => (
   </svg>
 )
 
-export default CloseIcon

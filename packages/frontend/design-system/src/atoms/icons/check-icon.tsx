@@ -43,4 +43,3 @@ export const CheckIcon: React.FC<CheckIconProps> = ({
   </svg>
 )
 
-export default CheckIcon

@@ -50,4 +50,3 @@ export const DatabaseIcon: React.FC<DatabaseIconProps> = ({
   )
 }
 
-export default DatabaseIcon
