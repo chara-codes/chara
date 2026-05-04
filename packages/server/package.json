@@ -30,7 +30,7 @@
     "@trpc/server": "^11.6.0",
     "chokidar": "^4.0.3",
     "dotenv": "^16.6.1",
-    "drizzle-orm": "^0.43.1",
+    "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.7.1",
     "eventsource": "^4.0.0",
     "ignore": "^7.0.5",
